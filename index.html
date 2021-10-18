@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<title>FBX Editor</title>
+
+		<link rel="stylesheet" href="css/style.css">
+
+		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+	</head>
+	<body>
+
+		<div id="loading" class="modal">
+			<div class="lds-default"><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div></div>
+			<div>Loading...</div>
+		</div>
+
+        <div id="header">
+			<button class="button" style="vertical-align:middle"><span>Capture </span></button>
+			<div class="inputDiv">
+				<div class="etiqueta" id="dete_card" style="left: 110px;"></div>
+				<input type="range" value="50" min="0" max="100" autocomplete="off" id="minDetectionConfidence">
+				<!-- autocomplete="off" pare que Firefox no "recuerde" el valor del input "on refresh" -->
+			</div>
+			<div class="inputDiv">
+				<div class="etiqueta" id="track_card" style="left: 110px;" :after></div>
+				<input type="range" value="50" min="0" max="100" autocomplete="off" id="minTrackingConfidence">
+				<!-- autocomplete="off" pare que Firefox no "recuerde" el valor del input "on refresh" -->
+			</div>
+			<span class="text" style="color: #eeeeee;">Developed for SignON European Project</span>
+			<img class="logo" src="img/logo_SignON.png" width="50px" style="vertical-align:middle; cursor:pointer;" onclick="window.open('https://signon-project.eu/')"></img>
+		</div>
+
+		<div class="top">
+			<div class="top-left">
+				<video class="input_video" style="display:none"></video>
+				<canvas id="output_video" width="1280px" height="720px" style="width: 99%"></canvas>
+			</div>
+			<div class="top-right">
+				<button id="play" style="z-index: 265; position: absolute; display: none; left: 5%; top: 88%;">PLAY</button>
+				<canvas id="scene3d" style="width: 99%; height: 93%"></canvas>
+			</div>
+		</div>
+
+		<div class="bottom">
+			<canvas id="timeline-canvas" style="height: 90%; width: 99%; border-radius: 0px"></canvas>
+		</div>
+
+		<script type="module" src="jsm/main.js"></script>
+	</body>
+</html>
