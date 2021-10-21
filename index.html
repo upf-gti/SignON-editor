@@ -4,12 +4,16 @@
 		<meta charset="utf-8">
 		<title>FBX Editor</title>
 
+		<link rel="stylesheet" href="css/w2ui.css">
 		<link rel="stylesheet" href="css/style.css">
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"> <!-- Icon library -->
 
 		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
 		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
 		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
+		<script type="text/javascript" src="src/libs/jquery-3.5.0.min.js"></script>
 	</head>
 	<body>
 
@@ -40,7 +44,7 @@
 				<canvas id="output_video" width="1280px" height="720px" style="width: 99%"></canvas>
 			</div>
 			<div class="top-right">
-				<button id="play" style="z-index: 265; position: absolute; display: none; left: 5%; top: 88%;">PLAY</button>
+				<button id="play" class="btn" style="z-index: 265; position: absolute; display: none; left: 5%; top: 88%;"><i class="fa fa-pause"></i></button>
 				<canvas id="scene3d" style="width: 99%; height: 93%"></canvas>
 			</div>
 		</div>
@@ -49,6 +53,6 @@
 			<canvas id="timeline-canvas" style="height: 90%; width: 99%; border-radius: 0px"></canvas>
 		</div>
 
-		<script type="module" src="jsm/main.js"></script>
+		<script type="module" src="src/main.js"></script>
 	</body>
 </html>
