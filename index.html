@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="utf-8">
-		<title>FBX Editor</title>
+		<title>Animation Editor</title>
 
 		<link rel="stylesheet" href="css/w2ui.css">
 		<link rel="stylesheet" href="css/style.css">
@@ -38,19 +38,18 @@
 			<img class="logo" src="img/logo_SignON.png" width="50px" style="vertical-align:middle; cursor:pointer;" onclick="window.open('https://signon-project.eu/')"></img>
 		</div>
 
-		<div class="top">
-			<div class="top-left">
+		<div class="top expanded">
+			<div id="capture" class="top-left expanded">
 				<video class="input_video" style="display:none"></video>
 				<canvas id="output_video" width="1280px" height="720px" style="width: 99%"></canvas>
 			</div>
-			<div class="top-right">
-				<button id="play" class="btn" style="z-index: 265; position: absolute; display: none; left: 5%; top: 88%;"><i class="fa fa-pause"></i></button>
+			<div id="scene" class="top-right hidden">
 				<canvas id="scene3d" style="width: 99%; height: 93%"></canvas>
 			</div>
 		</div>
 
-		<div class="bottom">
-			<canvas id="timeline-canvas" style="height: 90%; width: 99%; border-radius: 0px"></canvas>
+		<div id="timeline" class="bottom hidden">
+			<canvas id="timeline-canvas" style="height: 95%; width: 99%; border-radius: 0px"></canvas>
 		</div>
 
 		<script type="module" src="src/main.js"></script>

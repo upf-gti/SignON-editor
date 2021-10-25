@@ -1,57 +1,60 @@
 import * as THREE from './libs/three.module.js';
-
 import { OrbitControls } from './controls/OrbitControls.js';
 import { BVHLoader } from './loaders/BVHLoader.js';
 import { load_timeline } from './timeline_manager.js';
+import { createButton } from './utils.js';
 
 const clock = new THREE.Clock();
 const loader = new BVHLoader();
 
-let camera, controls, scene, renderer, state = true;
+let camera, controls, scene, renderer, state = false; //state defines how the animation starts (moving/static)
 let mixer, skeletonHelper;
 
-var button = document.getElementById('play');
-button.addEventListener("click", function PlayPause() {
-    var icon = this.firstChild;
-    if (icon.className == "fa fa-play") {
-        icon.className = "fa fa-pause";
-        state = true;
-    }
-    else {
-        icon.className = "fa fa-play";
-        state = false;
-    }
-});
 
 function load_animation(project, path) {
 
+    //create and init the 3D scene
+    init_scene();
+    
     path = path == undefined ? "models/bvh/pirouette.bvh" : path;
-
+    
     loader.load(path, function (result) {
-
+        
         skeletonHelper = new THREE.SkeletonHelper(result.skeleton.bones[0]);
         skeletonHelper.skeleton = result.skeleton; // allow animation mixer to bind to THREE.SkeletonHelper directly
-
+        
         const boneContainer = new THREE.Group();
         boneContainer.add(result.skeleton.bones[0]);
-
+        
         scene.add(skeletonHelper);
         scene.add(boneContainer);
-
+        
         // play animation
         mixer = new THREE.AnimationMixer(skeletonHelper);
         mixer.clipAction(result.clip).setEffectiveWeight(1.0).play();
+        mixer.update(clock.getDelta()); //do first iteration to update from T pose
 
         // set info of the project
         project.prepare_data(mixer, result.clip, result.skeleton);
-
+        
         // init the timeline with the corresponding bones and duration
         load_timeline(project);
     })
-
+    
     // show the button to stop the animation
-    var button = document.getElementById('play');
-    button.style.display = 'block';
+    var element = document.getElementsByClassName('top-right')[0];
+    createButton(element, {id: "play", top: "85%", left: "5%", size: "20px", padding: "2px 6px", icon_name: "fa fa-play"}, function () {
+        var icon = this.firstChild;
+        if (icon.className == "fa fa-play") {
+            icon.className = "fa fa-pause";
+            state = true;
+        }
+        else {
+            icon.className = "fa fa-play";
+            state = false;
+        }
+    });
+
 };
 
 function init_scene() {
@@ -108,4 +111,4 @@ function onWindowResize() {
 
 }
 
-export { init_scene, load_animation, state };
+export { load_animation, state };

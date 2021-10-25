@@ -13838,7 +13838,7 @@ class w2toolbar extends w2event {
             box.find('.w2ui-scroll-left, .w2ui-scroll-right').hide()
             let scrollBox  = box.find('.w2ui-scroll-wrapper')
             let $right     = $(box).find('.w2ui-tb-right')
-            let boxWidth   = scrollBox.outerWidth()
+            let boxWidth   = Math.ceil(scrollBox.outerWidth())
             let itemsWidth = ($right.length > 0 ? $right[0].offsetLeft + $right[0].clientWidth : 0)
             let padding    = parseInt(box.css('padding-right'))
             if (boxWidth < itemsWidth - padding) {

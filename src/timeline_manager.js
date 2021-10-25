@@ -1,25 +1,28 @@
 import { state } from './3Dview.js';
-import { getTime } from './utils.js';
+import { getTime, storeAnimation } from './utils.js';
 import { Timeline } from './libs/timeline.module.js';
 import { w2popup } from './libs/w2ui.es6.js'
 
 var timeline = null;
 var project = null;
+var canvas = null;
+var ctx = null; 
 var pause_rendering = false;
 var update_timeline = true;
-var canvas = document.getElementById("timeline-canvas");
-var w = canvas.width = canvas.clientWidth;
-var h = canvas.height = canvas.clientHeight;
-var ctx = canvas.getContext('2d');
+window.storeAnimation = storeAnimation;
 
 function load_timeline(_project) {
+    canvas = document.getElementById("timeline-canvas");
+    canvas.width = canvas.clientWidth;
+    canvas.height = canvas.clientHeight;
+    ctx = canvas.getContext('2d');
     project = _project;
     timeline = new Timeline();
     timeline.onDrawContent = onDrawContent;
     timeline.setScale(150.0946352969992);
     timeline.framerate = _project.framerate;
 
-    timeline.draw(ctx, project, timeline.current_time, [0, 0, canvas.width, canvas.height]);
+    timeline.draw(ctx, project, timeline.current_time, [0, 0, canvas.clientWidth, canvas.clientHeight]);
     var mouse_control = onMouse.bind(timeline);
     canvas.addEventListener("mouseup", mouse_control);
     canvas.addEventListener("mousedown", mouse_control);
@@ -39,8 +42,12 @@ function load_timeline(_project) {
         $('#toolbar').w2toolbar({
             name: 'toolbar',
             items: [
-                { type: 'radio', id: 'item1', group: '1', text: 'Keyframes', icon: 'fa fa-sliders', checked: true },
-                { type: 'radio', id: 'item2', group: '1', text: 'Curves', icon: 'fa fa-star' },
+                { type: 'radio', id: 'item1', group: '1', title: "Keyframe", icon: 'fa fa-star', checked: true,
+                    tooltip: function (item) { return 'Keyframe'; } 
+                },
+                { type: 'radio', id: 'item2', group: '1', title: "Curves", icon: 'fa fa-random',
+                    tooltip: function (item) { return 'Curves'; } 
+                },
                 { type: 'break' },
                 { type: 'button', id: 'item3', text: 'Save Animation', }
             ],
@@ -57,11 +64,10 @@ function load_timeline(_project) {
                       break;
                     case "item3":
                         w2popup.open({
-                            title: 'Popup Title',
-                            body: '<div class="w2ui-centered">This is text inside the popup</div>',
-                            buttons: '<button class="w2ui-btn" onclick="w2popup.close();">Close</button> '+
-                                '<button class="w2ui-btn" onclick="w2popup.lock(\'Loading\', true); '+
-                                '        setTimeout(function () { w2popup.unlock(); }, 2000);">Lock</button>',
+                            title: 'Store Animation in Database',
+                            body: '<div class="w2ui-centered">Have you finished editing your animation? Remember that uploading the animation to the database implies that it will be used in the synthesis of the 3D avatar used in SignON European project.</div>',
+                            buttons: '<button class="w2ui-btn" onclick="w2popup.close();">Nope, I am not done yet.</button> '+
+                                '<button class="w2ui-btn" onclick="storeAnimation();">Yes, I would like to upload my animation!</button>',
                             width: 500,
                             height: 300,
                             overflow: 'hidden',
@@ -84,46 +90,10 @@ function load_timeline(_project) {
                   }
             }
         });
-        $('#toolbar')[0].style.position = "absolute";
         $('#toolbar')[0].style.padding = "2px";
         $('#toolbar')[0].style.left = "8px";
-        $('#toolbar')[0].style.backgroundColor = "transparent";
         $('#toolbar')[0].style.width = timeline.sidebar_width.toString() + "px";
     });
-
-
-
-
-
-    // var element = document.getElementsByClassName('bottom')[0];
-    // createButton(element, {icon_name: "fa fa-sliders"}, function(){ timeline.mode = "keyframes"; update_timeline = true; });
-    // createButton(element, {top: "2%", left: "4%", text: "Curves"}, function(){ timeline.mode = "curves"; update_timeline = true; });
-
-    // //function to store the bvh with the label in our database
-    // function storeAnimation() {
-    //     w2popup.open({
-    //         title: 'Popup Title',
-    //         body: '<div class="w2ui-centered">This is text inside the popup</div>',
-    //         buttons: '<button class="w2ui-btn" onclick="w2popup.close();">Close</button> '+
-    //             '<button class="w2ui-btn" onclick="w2popup.lock(\'Loading\', true); '+
-    //             '        setTimeout(function () { w2popup.unlock(); }, 2000);">Lock</button>',
-    //         width: 500,
-    //         height: 300,
-    //         overflow: 'hidden',
-    //         color: '#333',
-    //         speed: '0.3',
-    //         opacity: '0.8',
-    //         modal: true,
-    //         showClose: true,
-    //         showMax: true,
-    //         onOpen(event) { console.log('open'); },
-    //         onClose(event) { console.log('close'); },
-    //         onMax(event) { console.log('max'); },
-    //         onMin(event) { console.log('min'); },
-    //         onKeydown(event) { console.log('keydown'); }
-    //     });
-    // }
-    // createButton(element, {top: "2%", left: "8%", text: "Save Animation"}, storeAnimation);
 
     renderFrame();
 };
@@ -373,27 +343,5 @@ function onMouse(e) {
 
     this.processMouse(e);
 };
-
-//this function requires font awesome
-function createButton(element, options, onClick) {
-    var button = document.createElement("BUTTON");
-    button.className = "btn";
-    button.style.position = "absolute";
-    button.style.top = options.top || "2%";
-    button.style.left = options.left || "1%";
-    button.style.fontSize = options.size || "14px";
-    button.style.fontWeight = 100;
-    button.style.zIndex = "265";
-	if (onClick) 
-        button.addEventListener("click", onClick);
-    if (options.text)
-        button.innerHTML = options.text;
-    element.appendChild(button);
-    if (options.icon_name) {
-        var icon = document.createElement("i");
-        icon.className = options.icon_name;
-        button.appendChild(icon);
-    }
-}
 
 export { load_timeline };
