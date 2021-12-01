@@ -1,9 +1,10 @@
-//
+import { Vector3 } from './libs/three.module.js';
 
 function Project() {
     this.captured_data = [];
     this.bvh_name = '';
     this.bones = []; // list of joints with a hierarchy value
+    this.path = undefined;
     this.mixer = undefined; // ?
     this.duration = 0; // seconds
     this.max_keyframes = 0;
@@ -30,6 +31,18 @@ Project.prototype.prepare_data = function (mixer, clip, skeleton) {
         this.pos.push(aux_list);
     }
 
+    //ONWORK
+    var example = clip.tracks[4].values; //positions of chest
+    var aaa = [];
+    for (var i = 0, j = 0; i < example.length-3; i=i+3, j=j+4)
+    {
+        var x = example[i];
+        var y = example[i+1];
+        var z = example[i+2];
+        var vec = new Vector3(x, y, z);
+        //aaa.push(vec.applyQuaternion());
+    }
+
     //compute framerate
     var frames_list = clip.tracks.map(v => v.times.length);
     var max_keyframes = Math.max.apply(Math, frames_list);
@@ -37,7 +50,6 @@ Project.prototype.prepare_data = function (mixer, clip, skeleton) {
     this.names = this.bones.map(v => [v.name, v.depth, v.selected, v.childs]);
     this.times = clip.tracks.map(v => v.times);
 }
-
 
 Project.prototype.listNames = function (bones, _depth, list) {
     for (var index in bones) {

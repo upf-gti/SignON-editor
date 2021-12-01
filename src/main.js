@@ -1,21 +1,81 @@
 import { start_webcam } from './pointsDet.js';
 import { Project } from './project.js';
-import { load_animation } from './3Dview.js';
-import { createButton } from './utils.js';
+import { loadInScene } from './3Dview.js';
+import { FileSystem } from './libs/filesystem.js';
 
 
+//Create the fileSystem and log the user
+var FS = new FileSystem("signon", "signon", () => console.log("Wellcome user"));
 //create the project object
 var project = new Project();
-//init the header
-init_header();
+var mediaRecorder = null;
+
 //switch on the webcam
 start_webcam();
+//prepare the device to capture the video
+if (navigator.mediaDevices) {
+    console.log('getUserMedia supported.');
 
+    var constraints = { video: true, audio: false };
+    var chunks = [];
+
+    navigator.mediaDevices.getUserMedia(constraints)
+        .then(function (stream) {
+            var videoElement = document.getElementsByClassName('input_video')[0];
+            mediaRecorder = new MediaRecorder(videoElement.srcObject);
+
+            mediaRecorder.onstop = function (e) {
+
+                var clipName = prompt('Enter a name for your sound clip');
+
+                var video = document.getElementById('recorded');
+                video.setAttribute('controls', 'controlslist', 'name', '');
+                video.controls = true;
+                video.controlsList = 'nodownload nofullscreen';
+                video.disablePictureInPicture = true;
+                video.autoplay = false;
+                video.loop = true;
+                video.name = clipName;
+
+                var blob = new Blob(chunks, { 'type': 'video/mp4; codecs=avc1' });
+                chunks = [];
+                var videoURL = URL.createObjectURL(blob);
+                video.src = videoURL;
+                console.log("Recording correctly saved");
+            }
+
+            mediaRecorder.ondataavailable = function (e) {
+                chunks.push(e.data);
+            }
+        })
+        .catch(function (err) {
+            console.log('The following error occurred: ' + err);
+        })
+}
+else {
+    console.log('This app is not supported in your browser anymore');
+}
+//init the header
+init_header();
+
+// function previewFile() {
+//     const file = document.getElementById("testInput").files[0];
+//     const reader = new FileReader();
+
+//     reader.addEventListener("load", function () {
+//         loadAnimation();
+//         load_animation(project, reader.result);
+//         project.path = reader.result;
+//     }, false);
+
+//     if (file) {
+//       reader.readAsDataURL(file);
+//     }
+// }
 
 // ---------------------------------------------------------------------------------------------------------------- //
 
-function init_header() { //improve the header (use w2ui)
-    // Sliders Set-up
+// Sliders Set-up
     /* EL INPUT */
     var DeteConfidence = document.querySelector("#minDetectionConfidence");
     var TrackConfidence = document.querySelector("#minTrackingConfidence");
@@ -60,8 +120,16 @@ function init_header() { //improve the header (use w2ui)
         etq_track.style.left = (nuevoValorCalculado + 7) + "px";
     }, false);
 
-    //configurate button
-    var capture = document.getElementsByClassName('button')[0];
+    //adjust canvas
+    var video_canvas = document.getElementById('output_video');
+    video_canvas.style.width = video_canvas.style.clientHeight / video_canvas.height * video_canvas.width;
+
+function init_header() { //improve the header (use w2ui)
+
+    //configurate buttons
+    var elem = document.getElementById('endOfCapture');
+
+    var capture = document.getElementById('capture_btn');
     capture.onclick = function () {
 
         if (this.children[0].innerText == "Capture") {
@@ -69,61 +137,105 @@ function init_header() { //improve the header (use w2ui)
             this.style.backgroundColor = "lightcoral";
             this.style.border = "solid #924242";
             //start the capture
-            //TODO
+            mediaRecorder.start();
+            console.log(mediaRecorder.state);
+            console.log("Start recording");
         }
         else {
-            this.children[0].innerText = "Capture";
-            //once it is done, store the data in project, and store a bvh of it
-            //TODO
-
-            //create a button that will load the animation in the scene
-            var element = document.getElementById('capture');
-            var button = document.createElement("BUTTON");
-            button.innerHTML = "Convert captured data<br/>into a 3D Animation";
-            button.className = "btn";
-            button.style.position = "absolute";
-            button.style.display = "flex";
-            button.style.alignItems = "center";
-            button.style.fontSize = "30px";
-            button.addEventListener("click", loadAnimation); //sets the new webpage composition
-            element.appendChild(button);
-
-            //deactivates the button
-            this.onclick = null;
-            this.children[0].style.color = "black";
-            this.style.backgroundColor = "#333";
-            this.style.border = "solid #333";
+            //show modal to redo or load the animation in the scene
+            elem.style.display = "flex";
+            //stop the video recording
+            mediaRecorder.stop();
+            console.log(mediaRecorder.state);
+            console.log("Stop recording");
         }
+    };
+
+    var redo = document.getElementById('redo_btn');
+    redo.onclick = function () {
+        elem.style.display = "none";
+
+        //clear data????
+
+        //back to initial values
+        capture.children[0].innerText = "Capture"
+        capture.style.removeProperty("background-color");
+        capture.style.removeProperty("border");
+    };
+
+    var loadData = document.getElementById('loadData_btn');
+    loadData.onclick = function () {
+        elem.style.display = "none";
+        
+        //display recorded video
+        var video = document.getElementById('recorded');
+        video.style.display = 'block';
+
+        //store the data in project, and store a bvh of it
+        //TODO
+
+        //display message that animation doesnt represent the video (remove later)
+        var elem_scene = document.getElementById("scene");
+        var dateSpan = document.createElement('span')
+        dateSpan.innerHTML = "Currenlty under Development to syncronize video and animation";
+        dateSpan.style.position = "absolute";
+        dateSpan.style.top = "20px";
+        dateSpan.style.font = "icon";
+        dateSpan.style.fontSize = "larger";
+        elem_scene.appendChild(dateSpan);
+
+        loadAnimation();
     };
 };
 
 function loadAnimation() {
+    
+    //deactivates the button
+    var capture = document.getElementById('capture_btn');
+    capture.disabled = true;
+    capture.children[0].innerText = "Captured";
+    capture.style.removeProperty("background-color");
+    capture.style.removeProperty("border");
+
     var elements = document.getElementsByClassName('expanded');
     var expanded_length = elements.length;
     for (var i = 0; i < expanded_length; i++) {
         elements[0].classList.remove("expanded");
     }
+    //uncover timeline and scene windows
     var scene_elem = document.getElementById("scene");
     scene_elem.classList.remove("hidden");
     var timeline_elem = document.getElementById("timeline");
     timeline_elem.classList.remove("hidden");
-    
+
     //solve the aspect ratio problem with the camera video
     var elem = document.getElementById("capture");
     var canv = document.getElementById("output_video");
-    if (canv.height > elem.clientHeight) {
-        canv.height = elem.clientHeight * 0.95;
+    if (canv.clientHeight > elem.clientHeight) {
         var ar_elem = elem.clientWidth / elem.clientHeight;
+        canv.height = elem.clientHeight * 0.99;
         canv.width = ar_elem * canv.height;
     }
 
-    //make the scene canvas same as video
-    //TODO
+    //show the recorded video element instead of the canvas
+    var recording = document.getElementById("recorded");
+    recording.width = canv.width;
+    recording.height = canv.height;
+    canv.style.display = "none";
 
-    //creates and loads the scene and the animation
-    load_animation(project);
-    this.style.display = "none"; //hide the button
+    //mirror canvas video
+    // var canvasCtx = canv.getContext('2d');
+    // canvasCtx.translate(canv.width, 0);
+    // canvasCtx.scale(-1, 1);
+
+    //make the scene canvas same as video
+    var scene3d = document.getElementById("scene3d");
+    scene3d.width = recording.clientWidth;
+    scene3d.height = recording.clientHeight;
+
+    //creates the scene and loads the animation
+    loadInScene(project);
 };
 
 
-export { project };
+export { project, FS };

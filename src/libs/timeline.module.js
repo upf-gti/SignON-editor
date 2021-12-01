@@ -58,7 +58,7 @@ Timeline.prototype.draw = function (ctx, project, current_time, rect) {
 
 	//background
 	ctx.fillStyle = "#111";
-	ctx.globalAlpha = this.opacity * 0.5;
+	ctx.globalAlpha = 1;
 	ctx.fillRect(0, -20, w, 20);
 	ctx.globalAlpha = this.opacity;
 	ctx.globalAlpha = 1;

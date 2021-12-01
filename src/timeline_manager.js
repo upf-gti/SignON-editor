@@ -42,14 +42,14 @@ function load_timeline(_project) {
         $('#toolbar').w2toolbar({
             name: 'toolbar',
             items: [
-                { type: 'radio', id: 'item1', group: '1', title: "Keyframe", icon: 'fa fa-star', checked: true,
+                { type: 'radio', id: 'item1', group: '1', title: "Keyframe", icon: 'fas fa-edit', checked: true,
                     tooltip: function (item) { return 'Keyframe'; } 
                 },
-                { type: 'radio', id: 'item2', group: '1', title: "Curves", icon: 'fa fa-random',
-                    tooltip: function (item) { return 'Curves'; } 
-                },
+                // { type: 'radio', id: 'item2', group: '1', title: "Curves", icon: 'fas fa-wave-square',
+                //     tooltip: function (item) { return 'Curves'; } 
+                // },
                 { type: 'break' },
-                { type: 'button', id: 'item3', text: 'Save Animation', }
+                { type: 'button', id: 'item3', text: 'Save Animation', icon: 'fas fa-save', }
             ],
             onClick: function (event) {
                 console.log('Target: '+ event.target, event);
@@ -66,8 +66,8 @@ function load_timeline(_project) {
                         w2popup.open({
                             title: 'Store Animation in Database',
                             body: '<div class="w2ui-centered">Have you finished editing your animation? Remember that uploading the animation to the database implies that it will be used in the synthesis of the 3D avatar used in SignON European project.</div>',
-                            buttons: '<button class="w2ui-btn" onclick="w2popup.close();">Nope, I am not done yet.</button> '+
-                                '<button class="w2ui-btn" onclick="storeAnimation();">Yes, I would like to upload my animation!</button>',
+                            buttons: '<button class="w2ui-btn" onclick="w2popup.close();">No, I am not done yet.</button> '+
+                                '<button class="w2ui-btn" onclick="storeAnimation();">Yes, upload my animation.</button>',
                             width: 500,
                             height: 300,
                             overflow: 'hidden',
@@ -90,7 +90,7 @@ function load_timeline(_project) {
                   }
             }
         });
-        $('#toolbar')[0].style.padding = "2px";
+        $('#toolbar')[0].style.padding = "1px";
         $('#toolbar')[0].style.left = "8px";
         $('#toolbar')[0].style.width = timeline.sidebar_width.toString() + "px";
     });

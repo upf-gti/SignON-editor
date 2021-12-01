@@ -2,11 +2,14 @@
 <html>
 	<head>
 		<meta charset="utf-8">
-		<title>Animation Editor</title>
+		<title>Animations Editor</title>
 
 		<link rel="stylesheet" href="css/w2ui.css">
+		<link rel="stylesheet" href="css/w2ui_mod.css">
 		<link rel="stylesheet" href="css/style.css">
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"> <!-- Icon library -->
+		
+		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+  		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/v4-shims.css"> <!-- Icon library -->
 
 		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
@@ -22,8 +25,13 @@
 			<div>Loading...</div>
 		</div>
 
+		<div id="endOfCapture" class="modal" style="display: none">
+			<button id="redo_btn" class="button"><span>Redo the video</span></button>
+			<button id="loadData_btn" class="button"><span>Convert captured data into a 3D Animation</span></button>
+		</div>
+
         <div id="header">
-			<button class="button" style="vertical-align:middle"><span>Capture </span></button>
+			<button id="capture_btn" class="button"><span>Capture</span></button>
 			<div class="inputDiv">
 				<div class="etiqueta" id="dete_card" style="left: 110px;"></div>
 				<input type="range" value="50" min="0" max="100" autocomplete="off" id="minDetectionConfidence">
@@ -41,15 +49,16 @@
 		<div class="top expanded">
 			<div id="capture" class="top-left expanded">
 				<video class="input_video" style="display:none"></video>
-				<canvas id="output_video" width="1280px" height="720px" style="width: 99%"></canvas>
+				<canvas id="output_video" width="1280px" height="720px"></canvas>
+				<video id="recorded" style="display:none"></video>
 			</div>
 			<div id="scene" class="top-right hidden">
-				<canvas id="scene3d" style="width: 99%; height: 93%"></canvas>
+				<canvas id="scene3d"></canvas>
 			</div>
 		</div>
 
 		<div id="timeline" class="bottom hidden">
-			<canvas id="timeline-canvas" style="height: 95%; width: 99%; border-radius: 0px"></canvas>
+			<canvas id="timeline-canvas" style="height: 98%; width: 99%; border-radius: 0px"></canvas>
 		</div>
 
 		<script type="module" src="src/main.js"></script>

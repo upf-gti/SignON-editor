@@ -4,6 +4,10 @@ async function start_webcam() {
     const canvasElement = document.getElementById('output_video');
     const canvasCtx = canvasElement.getContext('2d');
 
+    // mirror canvas video
+    canvasCtx.translate(canvasElement.width, 0);
+    canvasCtx.scale(-1, 1);
+
     function onResults(results) {
         canvasCtx.save();
         canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
@@ -39,6 +43,7 @@ async function start_webcam() {
         width: 1280,
         height: 720,
     });
+    
     webcamera.start();
 }
 
