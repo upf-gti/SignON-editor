@@ -1,4 +1,4 @@
-import { FS } from './main.js';
+import { FS } from "./main.js";
 
 Math.clamp = function (v, a, b) {
 	return a > v ? a : b < v ? b : v;
@@ -11,7 +11,7 @@ function getTime() {
 async function storeAnimation() {
 
 	//CHECK THE INPUT FILE !!!!TODO!!!!
-    var file = undefined;//document.getElementById("testInput").files[0];
+    var file = undefined;
 
     //Check if are files loaded
     if (!file) {
@@ -24,7 +24,7 @@ async function storeAnimation() {
     await FS.login();
 
     //folder, data, filename, metadata
-    await FS.uploadData('animations', file, file.name || 'noName', '');
+    await FS.uploadData("animations", file, file.name || "noName", "");
 
     //Log out the user
     FS.logout();
