@@ -89,6 +89,12 @@ init_header();
 
 function fillLandmarks(data, _dt) 
 {
+    for (var j = 0; j < data.poseLandmarks.length; ++j) {
+        data.poseLandmarks[j].x = (data.poseLandmarks[j].x - 0.5);
+        data.poseLandmarks[j].y = (1.0 - data.poseLandmarks[j].y) + 2;
+        data.poseLandmarks[j].z = data.poseLandmarks[j].z * 0.5;
+    }
+
     project.landmarks.push({RLM: data.rightHandLandmarks, LLM: data.leftHandLandmarks, FLM: data.faceLandmarks, PLM: data.poseLandmarks, dt: _dt});
 }
 
