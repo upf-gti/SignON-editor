@@ -2,6 +2,8 @@ import * as THREE from "./libs/three.module.js";
 import { OrbitControls } from "./controls/OrbitControls.js";
 import { BVHLoader } from "./loaders/BVHLoader.js";
 import { load_timeline } from "./timeline_manager.js";
+import { createSkeleton, createAnimation } from "./skeleton.js";
+import { export_bvh } from "./bvh_exporter.js";
 
 const clock = new THREE.Clock();
 const loader = new BVHLoader();
@@ -27,27 +29,26 @@ function loadInScene(project) {
     init_scene();
 
     project.path = project.path || "models/bvh/victor.bvh";
-    
-    loader.load(project.path, function (result) {
+
+    var skeleton = createSkeleton(landmarks_array);
+
+    //loader.load(project.path, function (result) {
         
-        skeletonHelper = new THREE.SkeletonHelper(result.skeleton.bones[0]);
-        skeletonHelper.skeleton = result.skeleton; // allow animation mixer to bind to THREE.SkeletonHelper directly
+        skeletonHelper = new THREE.SkeletonHelper(skeleton.bones[0]);
+        skeletonHelper.skeleton = skeleton; // allow animation mixer to bind to THREE.SkeletonHelper directly
         
         const boneContainer = new THREE.Group();
-        boneContainer.add(result.skeleton.bones[0]);
+        boneContainer.add(skeleton.bones[0]);
         
         scene.add(skeletonHelper);
         scene.add(boneContainer);
         
+        var animation_clip = createAnimation(landmarks_array);
+
         // play animation
         mixer = new THREE.AnimationMixer(skeletonHelper);
-        mixer.clipAction(result.clip).setEffectiveWeight(1.0).play();
+        mixer.clipAction(animation_clip).setEffectiveWeight(1.0).play();
         mixer.update(clock.getDelta()); //do first iteration to update from T pose
-
-
-
-
-
 
         points_geometry = new THREE.BufferGeometry();
 
@@ -57,6 +58,8 @@ function loadInScene(project) {
         const points = new THREE.Points( points_geometry, material );
 
         scene.add( points );
+
+        export_bvh(skeleton, animation_clip, landmarks_array.length);
         
         // play animation
         // mixer = new THREE.AnimationMixer(skeletonHelper);
@@ -68,7 +71,7 @@ function loadInScene(project) {
 
         
         // set info of the project (ONGOING WORK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!)
-        project.prepare_data(mixer, result.clip, result.skeleton);
+        project.prepare_data(mixer, animation_clip, skeleton);
         var father = mixer._actions[0]._clip.tracks[0].values;
         var father_quat = mixer._actions[0]._clip.tracks[1].values;
         var father2 = mixer._actions[0]._clip.tracks[2].values;
@@ -94,7 +97,7 @@ function loadInScene(project) {
         
         // init the timeline with the corresponding bones and duration
         load_timeline(project);
-    })
+    //})
     
     // show the button to stop the animation
     var element = document.getElementsByClassName("top-right")[0];
@@ -163,7 +166,7 @@ function init_scene() {
 
     // camera
     camera = new THREE.PerspectiveCamera(60, CANVAS_WIDTH / CANVAS_HEIGHT, 1, 1000);
-    camera.position.set(0, 5, 10);
+    camera.position.set(0, 5, -8);
     camera.lookAt(0, 0, 0);
 
     renderer = new THREE.WebGLRenderer({ canvas: scene3d, antialias: true });
@@ -190,26 +193,26 @@ function init_scene() {
     //scene.add( sphere3 );
 
     //animate();
-} 
+}
 
 function animate() {
     requestAnimationFrame(animate);
 
     const delta = clock.getDelta();
 
-    // if (mixer && state == true) {
-    //     console.log("Scene!");
-    //     mixer.update(delta);
-    //     // Object.assign(sphere1.position, b[aaa]);
-    //     // Object.assign(sphere2.position, c[aaa]);
-    //     // sphere3.position.x = d[a];
-    //     // sphere3.position.y = d[a+1];
-    //     // sphere3.position.z = d[a+2];
-    //     // aaa=aaa+7;
-    //     // a=a+3*7;
-    //     // if (a > d.length) a=0;
-    //     // if (aaa > b.length) aaa=0;
-    // }
+    if (mixer && state == true) {
+        //console.log("Scene!");
+        mixer.update(delta);
+        // Object.assign(sphere1.position, b[aaa]);
+        // Object.assign(sphere2.position, c[aaa]);
+        // sphere3.position.x = d[a];
+        // sphere3.position.y = d[a+1];
+        // sphere3.position.z = d[a+2];
+        // aaa=aaa+7;
+        // a=a+3*7;
+        // if (a > d.length) a=0;
+        // if (aaa > b.length) aaa=0;
+    }
 
 
     //New testing
@@ -224,7 +227,7 @@ function animate() {
         
         for (let i = 0; i < curr_lm.PLM.length; i++) {
             const x = curr_lm.PLM[i].x;
-            const y = 1.0 - curr_lm.PLM[i].y + 2.0;
+            const y = curr_lm.PLM[i].y;
             const z = curr_lm.PLM[i].z;
             
             vertices.push( x, y, z );
