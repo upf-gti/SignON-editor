@@ -1,7 +1,7 @@
-import * as THREE from './libs/three.module.js';
-import { OrbitControls } from './controls/OrbitControls.js';
-import { BVHLoader } from './loaders/BVHLoader.js';
-import { load_timeline } from './timeline_manager.js';
+import * as THREE from "./libs/three.module.js";
+import { OrbitControls } from "./controls/OrbitControls.js";
+import { BVHLoader } from "./loaders/BVHLoader.js";
+import { load_timeline } from "./timeline_manager.js";
 
 const clock = new THREE.Clock();
 const loader = new BVHLoader();
@@ -10,13 +10,23 @@ let camera, controls, scene, renderer, state = false; //state defines how the an
 let mixer, skeletonHelper;
 let sphere1, sphere2, sphere3, a = 0, aaa = 0, b = [], c = [], d = [];
 
+let points_geometry;
+let landmarks_array;
+var prev_time = 0, iter = 0;
+
+function setState(val) //boolean
+{
+    state = val;
+};
 
 function loadInScene(project) {
+
+    landmarks_array = project.landmarks;
 
     //create and init the 3D scene
     init_scene();
 
-    project.path = project.path || "models/bvh/pirouette.bvh";
+    project.path = project.path || "models/bvh/victor.bvh";
     
     loader.load(project.path, function (result) {
         
@@ -34,6 +44,29 @@ function loadInScene(project) {
         mixer.clipAction(result.clip).setEffectiveWeight(1.0).play();
         mixer.update(clock.getDelta()); //do first iteration to update from T pose
 
+
+
+
+
+
+        points_geometry = new THREE.BufferGeometry();
+
+        const material = new THREE.PointsMaterial( { color: 0x880000 } );
+        material.size = 0.025;
+
+        const points = new THREE.Points( points_geometry, material );
+
+        scene.add( points );
+        
+        // play animation
+        // mixer = new THREE.AnimationMixer(skeletonHelper);
+        // mixer.clipAction(result.clip).setEffectiveWeight(1.0).play();
+        // mixer.update(clock.getDelta()); //do first iteration to update from T pose
+
+        animate()
+
+
+        
         // set info of the project (ONGOING WORK!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!)
         project.prepare_data(mixer, result.clip, result.skeleton);
         var father = mixer._actions[0]._clip.tracks[0].values;
@@ -64,7 +97,7 @@ function loadInScene(project) {
     })
     
     // show the button to stop the animation
-    var element = document.getElementsByClassName('top-right')[0];
+    var element = document.getElementsByClassName("top-right")[0];
     var sidebar = document.createElement("DIV");
     sidebar.id = "sidebar";
     sidebar.style.position = "absolute";
@@ -74,37 +107,31 @@ function loadInScene(project) {
     sidebar.style.left = "3%";
     element.appendChild(sidebar);
     $(function () {
-        $('#sidebar').w2sidebar({
-            name : 'sidebar',
+        $("#sidebar").w2sidebar({
+            name : "sidebar",
             flatButton: true,
             flat: true,
             nodes: [
-                { id: 'level-1', text: 'options', img: 'icon-folder', expanded: true, group: true, groupShowHide: false,
-                  nodes: [ { id: 'play', text: 'Play/Pause', icon: 'fa fa-play' },
-                           { id: 'selectable', text: 'Select Bone', icon: 'fas fa-crosshairs' },
+                { id: "level-1", text: "options", img: "icon-folder", expanded: true, group: true, groupShowHide: false,
+                  nodes: [ { id: "play", text: "Play/Pause", icon: "fa fa-play" },
+                           { id: "selectable", text: "Select Bone", icon: "fas fa-crosshairs" },
                          ]
                 },
             ],
             onFlat: function (event) {
-                $('#sidebar').css('width', (event.goFlat ? '35px' : '150px'));
+                $("#sidebar").css("width", (event.goFlat ? "35px" : "150px"));
             },
             onClick: function (event) {
-                console.log('Target: '+ event.target, event);
-                var video = document.getElementById('recorded');
+                console.log("Target: "+ event.target, event);
                 switch (event.target) {
                     case "play":
-                        var icon = event.node.icon;
-                        if (icon == 'fa fa-play') {
-                            icon = 'fa fa-pause';
-                            state = true;
+                        var video = document.getElementById("recorded");
+                        if (video.paused == true) {
                             video.play();
                         }
                         else {
-                            icon = 'fa fa-play';
-                            state = false;
                             video.pause();
                         }
-                        this.update('play', {"icon": icon});
                       break;
                     case "selectable":
                         //select bone option TODO
@@ -136,7 +163,7 @@ function init_scene() {
 
     // camera
     camera = new THREE.PerspectiveCamera(60, CANVAS_WIDTH / CANVAS_HEIGHT, 1, 1000);
-    camera.position.set(0, 200, 300);
+    camera.position.set(0, 5, 10);
     camera.lookAt(0, 0, 0);
 
     renderer = new THREE.WebGLRenderer({ canvas: scene3d, antialias: true });
@@ -146,10 +173,10 @@ function init_scene() {
     renderer.shadowMap.enabled = true;
 
     controls = new OrbitControls(camera, renderer.domElement);
-    controls.minDistance = 100;
-    controls.maxDistance = 700;
+    controls.minDistance = 1;
+    controls.maxDistance = 7;
 
-    window.addEventListener('resize', onWindowResize);
+    window.addEventListener("resize", onWindowResize);
 
     const geometry = new THREE.SphereGeometry(3, 32, 16);
     const material1 = new THREE.MeshBasicMaterial( { color: 0xff00ff } );
@@ -162,7 +189,7 @@ function init_scene() {
     sphere3 = new THREE.Mesh( geometry, material3 );
     //scene.add( sphere3 );
 
-    animate();
+    //animate();
 } 
 
 function animate() {
@@ -170,19 +197,48 @@ function animate() {
 
     const delta = clock.getDelta();
 
-    if (mixer && state == true) {
-        mixer.update(delta);
-        // Object.assign(sphere1.position, b[aaa]);
-        // Object.assign(sphere2.position, c[aaa]);
-        // sphere3.position.x = d[a];
-        // sphere3.position.y = d[a+1];
-        // sphere3.position.z = d[a+2];
-        // aaa=aaa+7;
-        // a=a+3*7;
-        // if (a > d.length) a=0;
-        // if (aaa > b.length) aaa=0;
+    // if (mixer && state == true) {
+    //     console.log("Scene!");
+    //     mixer.update(delta);
+    //     // Object.assign(sphere1.position, b[aaa]);
+    //     // Object.assign(sphere2.position, c[aaa]);
+    //     // sphere3.position.x = d[a];
+    //     // sphere3.position.y = d[a+1];
+    //     // sphere3.position.z = d[a+2];
+    //     // aaa=aaa+7;
+    //     // a=a+3*7;
+    //     // if (a > d.length) a=0;
+    //     // if (aaa > b.length) aaa=0;
+    // }
+
+
+    //New testing
+    //if (points_geometry == undefined || landmarks_array == undefined) return;
+    
+    var curr_lm = landmarks_array[iter];
+    var curr_time = Date.now();
+    var et = (curr_time - prev_time);
+    if (et > curr_lm.dt) {
+        
+        const vertices = [];
+        
+        for (let i = 0; i < curr_lm.PLM.length; i++) {
+            const x = curr_lm.PLM[i].x;
+            const y = 1.0 - curr_lm.PLM[i].y + 2.0;
+            const z = curr_lm.PLM[i].z;
+            
+            vertices.push( x, y, z );
+        }
+        
+        points_geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+        
+        prev_time = curr_time + curr_lm.dt;
+        iter++;
+        iter = iter % landmarks_array.length;
     }
+
     renderer.render(scene, camera);
+
 }
 
 function onWindowResize() {
@@ -210,4 +266,4 @@ function onWindowResize() {
 
 }
 
-export { loadInScene, state };
+export { loadInScene, state, setState, animate };

@@ -1,7 +1,7 @@
-import { state } from './3Dview.js';
-import { getTime, storeAnimation } from './utils.js';
-import { Timeline } from './libs/timeline.module.js';
-import { w2popup } from './libs/w2ui.es6.js'
+import { state } from "./3Dview.js";
+import { getTime, storeAnimation } from "./utils.js";
+import { Timeline } from "./libs/timeline.module.js";
+import { w2popup } from "./libs/w2ui.es6.js"
 
 var timeline = null;
 var project = null;
@@ -15,7 +15,7 @@ function load_timeline(_project) {
     canvas = document.getElementById("timeline-canvas");
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
-    ctx = canvas.getContext('2d');
+    ctx = canvas.getContext("2d");
     project = _project;
     timeline = new Timeline();
     timeline.onDrawContent = onDrawContent;
@@ -34,32 +34,32 @@ function load_timeline(_project) {
 
 
     //initialize timeline UI
-    var element = document.getElementsByClassName('bottom')[0];
+    var element = document.getElementsByClassName("bottom")[0];
     var toolbar = document.createElement("DIV");
     element.appendChild(toolbar);
     toolbar.id = "toolbar";
     $(function () {
-        $('#toolbar').w2toolbar({
-            name: 'toolbar',
+        $("#toolbar").w2toolbar({
+            name: "toolbar",
             items: [
-                { type: 'radio', id: 'item1', group: '1', title: "Keyframe", icon: 'fas fa-edit', checked: true,
-                    tooltip: function (item) { return 'Keyframe'; } 
+                { type: "radio", id: "item1", group: "1", title: "Keyframe", icon: "fas fa-edit", checked: true,
+                    tooltip: function (item) { return "Keyframe"; } 
                 },
-                // { type: 'radio', id: 'item2', group: '1', title: "Curves", icon: 'fas fa-wave-square',
-                //     tooltip: function (item) { return 'Curves'; } 
+                // { type: "radio", id: "item2", group: "1", title: "Curves", icon: "fas fa-wave-square",
+                //     tooltip: function (item) { return "Curves"; } 
                 // },
-                { type: 'break' },
-                { type: 'button', id: 'item3', text: 'Save Animation', icon: 'fas fa-save', }
+                { type: "break" },
+                { type: "button", id: "item3", text: "Save Animation", icon: "fas fa-save", }
             ],
             onClick: function (event) {
-                console.log('Target: '+ event.target, event);
+                console.log("Target: "+ event.target, event);
                 switch (event.target) {
                     case "item1":
                         timeline.mode = "keyframes"; 
                         update_timeline = true;
                       break;
                     case "item2":
-                        timeline.mode = "curves"; 
+                        timeline.mode = "curves";
                         update_timeline = true;
                       break;
                     case "item3":
@@ -70,18 +70,18 @@ function load_timeline(_project) {
                                 '<button class="w2ui-btn" onclick="storeAnimation();">Yes, upload my animation.</button>',
                             width: 500,
                             height: 300,
-                            overflow: 'hidden',
-                            color: '#333',
-                            speed: '0.3',
-                            opacity: '0.8',
+                            overflow: "hidden",
+                            color: "#333",
+                            speed: "0.3",
+                            opacity: "0.8",
                             modal: true,
                             showClose: true,
                             showMax: true,
-                            onOpen(event) { console.log('open'); },
-                            onClose(event) { console.log('close'); },
-                            onMax(event) { console.log('max'); },
-                            onMin(event) { console.log('min'); },
-                            onKeydown(event) { console.log('keydown'); }
+                            onOpen(event) { console.log("open"); },
+                            onClose(event) { console.log("close"); },
+                            onMax(event) { console.log("max"); },
+                            onMin(event) { console.log("min"); },
+                            onKeydown(event) { console.log("keydown"); }
                         });
                       break;
                     default:
@@ -90,9 +90,9 @@ function load_timeline(_project) {
                   }
             }
         });
-        $('#toolbar')[0].style.padding = "1px";
-        $('#toolbar')[0].style.left = "8px";
-        $('#toolbar')[0].style.width = timeline.sidebar_width.toString() + "px";
+        $("#toolbar")[0].style.padding = "1px";
+        $("#toolbar")[0].style.left = "8px";
+        $("#toolbar")[0].style.width = timeline.sidebar_width.toString() + "px";
     });
 
     renderFrame();

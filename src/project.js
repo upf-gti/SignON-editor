@@ -1,14 +1,16 @@
-import { Vector3 } from './libs/three.module.js';
+import { Vector3 } from "./libs/three.module.js";
 
 function Project() {
     this.captured_data = [];
-    this.bvh_name = '';
+    this.bvh_name = "";
     this.bones = []; // list of joints with a hierarchy value
     this.path = undefined;
     this.mixer = undefined; // ?
     this.duration = 0; // seconds
     this.max_keyframes = 0;
     this.framerate = 0;
+
+    this.landmarks = [];
 
     // data to speed the render
     this.pos = [];
@@ -53,7 +55,7 @@ Project.prototype.prepare_data = function (mixer, clip, skeleton) {
 
 Project.prototype.listNames = function (bones, _depth, list) {
     for (var index in bones) {
-        var result = { name: '', depth: null, childs: false, selected: false };
+        var result = { name: "", depth: null, childs: false, selected: false };
         var read = bones[index];
         result.name = read.name;
         result.depth = _depth;
