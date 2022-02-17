@@ -1,5 +1,5 @@
-import { state } from "./3Dview.js";
-import { getTime, storeAnimation } from "./utils.js";
+import { app } from "./app.js";
+import { getTime } from "./utils.js";
 import { Timeline } from "./libs/timeline.module.js";
 import { w2popup } from "./libs/w2ui.es6.js"
 
@@ -9,7 +9,6 @@ var canvas = null;
 var ctx = null; 
 var pause_rendering = false;
 var update_timeline = true;
-window.storeAnimation = storeAnimation;
 
 function load_timeline(_project) {
     canvas = document.getElementById("timeline-canvas");
@@ -99,6 +98,9 @@ function load_timeline(_project) {
 };
 
 function renderFrame() {
+
+    let state = app.editor.getState();
+
     if (!pause_rendering) {
         if (project.mixer && state == true) {
             timeline.current_time = project.mixer.time % project.duration;
