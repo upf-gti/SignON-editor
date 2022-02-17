@@ -1,5 +1,9 @@
 import * as THREE from "./libs/three.module.js";
 
+Math.clamp = function (v, a, b) {
+	return a > v ? a : b < v ? b : v;
+};
+
 // Returns the shortest-path rotational difference between two quaternions
 // from: https://github.com/blender/blender-addons/blob/master/rigify/rig_ui_template.py
 function rotation_difference(quat1, quat2) {

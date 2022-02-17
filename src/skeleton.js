@@ -1,5 +1,5 @@
 import * as THREE from "./libs/three.module.js";
-import * as MATH_UTILS from "./math_utils.js";
+import * as MATH_UTILS from "./math.js";
 
 var base_size = 1;
 
