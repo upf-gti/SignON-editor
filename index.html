@@ -35,37 +35,32 @@
 		<!-- Main Body -->
         <div id="header">
 			<button id="capture_btn" class="button"><span>Capture</span></button>
-			<div class="inputDiv">
-				<div class="etiqueta" id="dete_card" style="left: 110px;"></div>
-				<input type="range" value="50" min="0" max="100" autocomplete="off" id="minDetectionConfidence">
-			</div>
-			<div class="inputDiv">
-				<div class="etiqueta" id="track_card" style="left: 110px;" :after></div>
-				<input type="range" value="50" min="0" max="100" autocomplete="off" id="minTrackingConfidence">
-			</div>
 			<span class="text" style="color: #eeeeee;">Developed for SignON European Project</span>
-			<img class="logo" src="img/logo_SignON.png" width="50px" style="vertical-align: middle; cursor: pointer;" onclick="window.open('https://signon-project.eu/')"></img>
+			<img class="logo" src="img/logo_SignON.png" width="50px" onclick="window.open('https://signon-project.eu/')"></img>
 		</div>
 
-		<div class="top expanded">
-			<div id="capture" class="top-left expanded">
-				<video id="input_video" style="display: none"></video>
-				<canvas id="output_video" width="1280px" height="720px" style="z-index: 1"></canvas>
-				<video id="recorded" style="display: none; position: absolute;"></video>
+		<div id="capture" class="expanded">
+			<video id="inputVideo" class="hidden"></video>
+			<canvas id="outputVideo" width="1280px" height="720px" style="z-index: 1"></canvas>
+			<video id="recording" class="hidden"></video>
+		</div>
+
+		<div id="mainBody">
+			<div id="scene">
+				<canvas id="scene3D"></canvas>
 			</div>
-			<div id="scene" class="top-right hidden">
-				<canvas id="scene3d"></canvas>
+
+			<div id="rightPanel">
+				<canvas id="skeleton"></canvas>
+				<canvas id="settings" style="background-color: black;"></canvas>
 			</div>
 		</div>
 
-		<div id="timeline" class="bottom hidden">
-			<canvas id="timeline-canvas" style="height: 98%; width: 99%; border-radius: 0px"></canvas>
+		<div id="timeline" class="hidden" style="background-color: brown; opacity: 0.5;">
+			<canvas id="timelineCanvas"></canvas>
 		</div>
 
-		<script type="module" src="src/app.js">
-
-			// import { App } from "./app.js";
-
-		</script>
+		<!-- Init -->
+		<script type="module" src="src/app.js"></script>
 	</body>
 </html>

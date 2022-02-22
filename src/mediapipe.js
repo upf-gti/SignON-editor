@@ -8,8 +8,8 @@ const MediaPipe = {
     start: async function()
     {
         // Webcam and MediaPipe Set-up
-        const videoElement = document.getElementById("input_video");
-        const canvasElement = document.getElementById("output_video");
+        const videoElement = document.getElementById("inputVideo");
+        const canvasElement = document.getElementById("outputVideo");
         const canvasCtx = canvasElement.getContext("2d");
 
         // mirror canvas video
@@ -90,7 +90,7 @@ const MediaPipe = {
     stop: function()
     {
         // get reference of the video element the Camera is constructed on
-        let $feed = $("#input_video")[0];
+        let $feed = $("#inputVideo")[0];
 
         // reset feed source 
         $feed.pause();

@@ -6,14 +6,16 @@ import { FileSystem } from "./libs/filesystem.js";
 class App {
 
     constructor(){
-        this.mediaRecorder = null
+
+        // Flags
         this.recording = false;
-        //Create the fileSystem and log the user
-        this.FS = new FileSystem("signon", "signon", () => console.log("Auto login of guest user"));
-        //create the project object
+        
+        this.mediaRecorder = null
         this.project = new Project();
-        // ...
         this.editor = new Editor();
+
+        // Create the fileSystem and log the user
+        this.FS = new FileSystem("signon", "signon", () => console.log("Auto login of guest user"));
     }
 
     init() {
@@ -22,23 +24,23 @@ class App {
 
         MediaPipe.start();
 
-        //prepare the device to capture the video
+        // prepare the device to capture the video
         if (navigator.mediaDevices) {
             console.log("getUserMedia supported.");
 
-            var constraints = { video: true, audio: false };
-            var chunks = [];
+            let constraints = { video: true, audio: false };
+            let chunks = [];
 
             navigator.mediaDevices.getUserMedia(constraints)
                 .then(function (stream) {
-                    var videoElement = document.getElementById("input_video");
+                    let videoElement = document.getElementById("inputVideo");
                     that.mediaRecorder = new MediaRecorder(videoElement.srcObject);
 
                     that.mediaRecorder.onstop = function (e) {
 
-                        var video = document.getElementById("recorded");
+                        let video = document.getElementById("recording");
                         video.addEventListener("play", function() {
-                            var icon = w2ui.sidebar.get("play").icon;
+                            let icon = w2ui.sidebar.get("play").icon;
                             if (icon == "fa fa-play") {
                                 icon = "fa fa-pause";
                                 that.editor.setState(true);
@@ -51,7 +53,7 @@ class App {
                             w2ui.sidebar.update("play", {"icon": icon});
                         });
                         video.addEventListener("pause", function() {
-                            var icon = w2ui.sidebar.get("play").icon;
+                            let icon = w2ui.sidebar.get("play").icon;
                             if (icon == "fa fa-play") {
                                 icon = "fa fa-pause";
                                 that.editor.setState(true);
@@ -62,16 +64,13 @@ class App {
                             }
                             w2ui.sidebar.update("play", {"icon": icon});
                         });
-                        video.setAttribute('controls', 'controlslist', 'name', '');
-                        video.controls = true;
-                        video.controlsList = 'download nofullscreen';
-                        video.disablePictureInPicture = true;
-                        video.autoplay = false;
+                        video.setAttribute('controls', 'name');
+                        video.controls = false;
                         video.loop = true;
                         
-                        var blob = new Blob(chunks, { "type": "video/mp4; codecs=avc1" });
+                        let blob = new Blob(chunks, { "type": "video/mp4; codecs=avc1" });
                         chunks = [];
-                        var videoURL = URL.createObjectURL(blob);
+                        let videoURL = URL.createObjectURL(blob);
                         video.src = videoURL;
                         console.log("Recording correctly saved");
                     }
@@ -88,7 +87,7 @@ class App {
             console.log("This app is not supported in your browser anymore");
         }
 
-        //init the header
+        // init the header
         this.initHeader();
 
         window.addEventListener("resize", this.onResize);
@@ -102,72 +101,29 @@ class App {
         this.recording = value;
     }
 
-    initHeader() { //improve the header (use w2ui)
+    initHeader() {
 
         let that = this;
-
-        // Sliders Set-up
-        /* EL INPUT */
-        var DeteConfidence = document.querySelector("#minDetectionConfidence");
-        var TrackConfidence = document.querySelector("#minTrackingConfidence");
-        var w1 = parseInt(window.getComputedStyle(DeteConfidence, null).getPropertyValue("width"));
-        var w2 = parseInt(window.getComputedStyle(TrackConfidence, null).getPropertyValue("width"));
-    
-        /* LA ETIQUETA */
-        var etq_dete = document.querySelector("#dete_card");
-        var etq_track = document.querySelector("#track_card");
-        /* el valor de la etiqueta (el tooltip) */
-        etq_dete.innerHTML = DeteConfidence.value;
-        etq_track.innerHTML = TrackConfidence.value;
-    
-        /* calcula la posición inicial de la etiqueta (el tooltip) */
-        var inputMin_dete = DeteConfidence.getAttribute("min");
-        var inputMax_dete = DeteConfidence.getAttribute("max");
-        var inputMin_track = TrackConfidence.getAttribute("min");
-        var inputMax_track = TrackConfidence.getAttribute("max");
-    
-        var pxls_dete = w1 / 100;
-        var k_dete = (inputMax_dete - inputMin_dete) / 100;
-        var pxls_track = w2 / 100;
-        var k_track = (inputMax_track - inputMin_track) / 100;
-    
-        var valorCalculado_dete = ((DeteConfidence.value - inputMin_dete) / k_dete) * pxls_dete;
-        etq_dete.style.left = (valorCalculado_dete + 7) + "px";
-        var valorCalculado_track = ((TrackConfidence.value - inputMin_track) / k_track) * pxls_track;
-        etq_track.style.left = (valorCalculado_track + 7) + "px";
-    
-        DeteConfidence.addEventListener("input", function () {
-            /* cambia el valor de la etiqueta (el tooltip) */
-            etq_dete.innerHTML = this.value;
-            /* cambia la posición de la etiqueta (el tooltip) */
-            var nuevoValorCalculado = ((this.value - inputMin_dete) / k_dete) * pxls_dete;
-            etq_dete.style.left = (nuevoValorCalculado + 7) + "px";
-        }, false);
-        TrackConfidence.addEventListener("input", function () {
-            /* cambia el valor de la etiqueta (el tooltip) */
-            etq_track.innerHTML = this.value;
-            /* cambia la posición de la etiqueta (el tooltip) */
-            var nuevoValorCalculado = ((this.value - inputMin_track) / k_track) * pxls_track;
-            etq_track.style.left = (nuevoValorCalculado + 7) + "px";
-        }, false);
-    
-        //--------------------------------------------------------------- Borrar arriba
         
-        //adjust canvas
-        var video_canvas = document.getElementById("output_video");
-        video_canvas.style.width = video_canvas.style.clientHeight / video_canvas.height * video_canvas.width;
+        // adjust video canvas
+        let captureDiv = document.getElementById("capture");
+        let videoCanvas = document.getElementById("outputVideo");
+        let h = captureDiv.clientHeight * 0.8;
+        let aspectRatio = videoCanvas.width / videoCanvas.height;
+        videoCanvas.height = captureDiv.height = videoCanvas.style.height = h;
+        videoCanvas.width = captureDiv.width = videoCanvas.style.width = h * aspectRatio;
+
+        // configurate buttons
+        let elem = document.getElementById("endOfCapture");
     
-        //configurate buttons
-        var elem = document.getElementById("endOfCapture");
-    
-        var capture = document.getElementById("capture_btn");
+        let capture = document.getElementById("capture_btn");
         capture.onclick = function () {
             if (this.children[0].innerText == "Capture") {
                 this.children[0].innerText = "Stop";
                 this.style.backgroundColor = "lightcoral";
                 this.style.border = "solid #924242";
                 
-                //start the capture
+                // start the capture
                 that.project.landmarks = []; //reset array
                 that.recording = true;
                 that.mediaRecorder.start();
@@ -175,41 +131,41 @@ class App {
                 console.log("Start recording");
             }
             else if(that.recording) {
-                //show modal to redo or load the animation in the scene
+                // show modal to redo or load the animation in the scene
                 elem.style.display = "flex";
                 
-                //stop the video recording
+                // stop the video recording
                 that.recording = false;
                 
                 that.mediaRecorder.stop();
                 console.log(that.mediaRecorder.state);
                 console.log("Stop recording");
     
-                //correct first dt of landmarks
+                // correct first dt of landmarks
                 that.project.landmarks[0].dt = 0;
             }
         };
     
-        var redo = document.getElementById("redo_btn");
+        let redo = document.getElementById("redo_btn");
         redo.onclick = function () {
             elem.style.display = "none";
     
-            //clear data????
+            // clear data????
     
-            //back to initial values
+            // back to initial values
             capture.children[0].innerText = "Capture"
             capture.style.removeProperty("background-color");
             capture.style.removeProperty("border");
         };
     
-        var loadData = document.getElementById("loadData_btn");
+        let loadData = document.getElementById("loadData_btn");
         loadData.onclick = function () {
             elem.style.display = "none";
     
             MediaPipe.stop();
             
-            //store the data in project, and store a bvh of it
-            //TODO
+            // store the data in project, and store a bvh of it
+            // TODO
     
             that.loadAnimation();
         };
@@ -217,7 +173,7 @@ class App {
 
     fillLandmarks(data, _dt) 
     {
-        for (var j = 0; j < data.poseLandmarks.length; ++j) {
+        for (let j = 0; j < data.poseLandmarks.length; ++j) {
             data.poseLandmarks[j].x = (data.poseLandmarks[j].x - 0.5);
             data.poseLandmarks[j].y = (1.0 - data.poseLandmarks[j].y) + 2;
             data.poseLandmarks[j].z = data.poseLandmarks[j].z * 0.5;
@@ -230,44 +186,43 @@ class App {
     
         let that = this;
 
-        //deactivates the button
-        var capture = document.getElementById("capture_btn");
+        // Update header
+        // ...
+
+        // Deactivates the button
+        let capture = document.getElementById("capture_btn");
         capture.disabled = true;
         capture.children[0].innerText = "Captured";
         capture.style.removeProperty("background-color");
         capture.style.removeProperty("border");
     
-        var elements = document.getElementsByClassName("expanded");
-        var expanded_length = elements.length;
-        for (var i = 0; i < expanded_length; i++) {
-            elements[0].classList.remove("expanded");
-        }
-        //uncover timeline and scene windows
-        var scene_elem = document.getElementById("scene");
-        scene_elem.classList.remove("hidden");
-        var timeline_elem = document.getElementById("timeline");
-        timeline_elem.classList.remove("hidden");
+        // Reposition the canvas elements
+        let videoDiv = document.getElementById("capture");
+        videoDiv.classList.remove("expanded");
+        let videoRec = document.getElementById("recording");
+        videoRec.classList.remove("hidden");
+        let sceneDiv = document.getElementById("mainBody");
+        sceneDiv.classList.remove("hidden");
+        sceneDiv.width = sceneDiv.clientWidth;
+        let skeletonCanvas = document.getElementById("skeleton");
+        skeletonCanvas.width = skeletonCanvas.clientWidth;
+        skeletonCanvas.height = skeletonCanvas.clientHeight;
+        let settingsCanvas = document.getElementById("settings");
+        settingsCanvas.width = settingsCanvas.clientWidth;
+        settingsCanvas.height = settingsCanvas.clientHeight; 
+        let timelineDiv = document.getElementById("timeline");
+        timelineDiv.classList.remove("hidden");
     
-        //solve the aspect ratio problem with the camera video
-        var elem = document.getElementById("capture");
-        var canv = document.getElementById("output_video");
-        if (canv.clientHeight > elem.clientHeight) {
-            var ar_elem = elem.clientWidth / elem.clientHeight;
-            canv.height = elem.clientHeight * 0.99;
-            canv.width = ar_elem * canv.height;
-        }
-    
-        //display recorded video
-        //show the recorded video element instead of the canvas
-        var recording = document.getElementById("recorded");
-        recording.style.display = "flex";
-        //recording.src = "models/bvh/victor.mp4";
-        recording.width = canv.width;
-        recording.height = canv.height;
+        // Solve the aspect ratio problem of the video
+        let videoCanvas = document.getElementById("outputVideo");
+        let aspectRatio = videoDiv.width / videoDiv.height;
+        videoRec.width  = videoDiv.width  = videoCanvas.width  = videoDiv.clientWidth;
+        videoRec.height = videoDiv.height = videoCanvas.height = videoCanvas.width / aspectRatio;
+
         const updateFrame = (now, metadata) => {
             // Do something with the frame.
             // console.log(now, metadata);
-            const canvasElement = document.getElementById("output_video");
+            const canvasElement = document.getElementById("outputVideo");
             const canvasCtx = canvasElement.getContext("2d");
     
             //let frame = metadata.presentedFrames % project.landmarks; //maybe use project.duration, but first we need to take the animation from the video
@@ -300,37 +255,32 @@ class App {
         // Initially register the callback to be notified about the first frame.
         recording.requestVideoFrameCallback(updateFrame);
     
-        //make the scene canvas same as video
-        var scene3d = document.getElementById("scene3d");
-        scene3d.width = recording.clientWidth;
-        scene3d.height = recording.clientHeight;
-    
-        var clipName = prompt("Please, enter the name of the sign performed and the language. (Example: Dog in Irish Sign Language --> dog_ISL)");
+        let clipName = prompt("Please, enter the name of the sign performed and the language. (Example: Dog in Irish Sign Language --> dog_ISL)");
         recording.name = clipName;
     
-        // creates the scene and loads the animation
+        // Creates the scene and loads the animation
         this.editor.loadInScene(that.project);
     }
 
     async storeAnimation() {
 
-        //CHECK THE INPUT FILE !!!!TODO!!!!
-        var file = undefined;
+        // CHECK THE INPUT FILE !!!!TODO!!!!
+        let file = undefined;
     
-        //Check if are files loaded
+        // Check if are files loaded
         if (!file) {
             w2popup.close();
             console.log("Not BVH found.");
             return;
         }
     
-        //Log the user
+        // Log the user
         await this.FS.login();
     
-        //folder, data, filename, metadata
+        // folder, data, filename, metadata
         await this.FS.uploadData("animations", file, file.name || "noName", "");
     
-        //Log out the user
+        // Log out the user
         this.FS.logout();
     
         console.log("Upload Clicked");
@@ -344,21 +294,34 @@ class App {
 
     onResize() {
 
-        var elem = document.getElementById("capture");
-        var video = document.getElementById("recording");
-        var scene_canv = document.getElementById("scene3d");
-        var aspect_ratio = elem.clientWidth / elem.clientHeight;
-        // video.height = scene_canv.height = elem.clientHeight * 0.99;
-        // video.width = scene_canv.width = aspect_ratio * video.height;
-    
-        var timeline_elem = document.getElementById("timeline");
-        var distance = window.innerHeight * 0.4 - 82/2; //intial distance computed in style.css
-        timeline_elem.style.height = Math.max(distance, 300).toString() + "px";
-    
-        // Resize the toolbar and sidebar elements
+        let WIDTH = window.innerWidth;
+        let HEIGHT = window.innerHeight;
+
+        let videoDiv = document.getElementById("capture");
+        let videoCanvas = document.getElementById("outputVideo");
+        let bodyDiv = document.getElementById("mainBody");
+        let sceneCanvas = document.getElementById("scene");
+        let headerDiv = document.getElementById("header");
+        let timelineDiv = document.getElementById("timeline");
+        let skeletonCanvas = document.getElementById("skeleton");
+        let settingsCanvas = document.getElementById("settings");
+        
+        let relation = bodyDiv.width / WIDTH;                           // resize proportion
+        let AR = videoCanvas.clientWidth / videoCanvas.clientHeight;    // aspect ratio
+        
+        bodyDiv.width = WIDTH;
+        videoCanvas.width  = videoDiv.width  = videoDiv.width / relation;
+        videoCanvas.height = videoDiv.height = videoDiv.width / AR;
+
+        skeletonCanvas.width = skeletonCanvas.clientWidth;
+        skeletonCanvas.height = skeletonCanvas.clientHeight;
+        settingsCanvas.width = settingsCanvas.clientWidth;
+        settingsCanvas.height = settingsCanvas.clientHeight;
+
+        // maybe resize timeline and header?
         // ...
 
-        this.editor.resize(scene_canv.width, scene_canv.height);
+        app.editor.resize(sceneCanvas.clientWidth, sceneCanvas.clientHeight);
     }
 
 }
