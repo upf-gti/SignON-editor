@@ -1,3 +1,4 @@
+import { ObjectLoader } from "./libs/three.module.js";
 import { Timeline } from "./libs/timeline.module.js";
 
 class Gui {
@@ -6,7 +7,6 @@ class Gui {
         // Get the canvas for each GUI element
         // this.skeletonCTX = document.getElementById("skeleton").getContext("2d");
         // this.settingsCTX = document.getElementById("settings").getContext("2d");
-        // this.timelineCTX = document.getElementById("timelineCanvas").getContext("2d");
 
         // let mouse_control = this.onMouse.bind(this.timeline);
         // let canvas = this.timelineCTX.canvas;
@@ -33,6 +33,8 @@ class Gui {
         this.timeline = new Timeline();
         this.timeline.setScale(150.0946352969992);
         this.timeline.framerate = project.framerate;
+
+        this.render();
     }
 
     create() {
@@ -45,11 +47,16 @@ class Gui {
         // Create main area
         this.mainArea = new LiteGUI.Area({id: "mainarea", content_id:"canvasarea", height: "calc( 100% - 31px )", main: true});
         LiteGUI.add( this.mainArea );
-
         
+        const canvasArea = document.getElementById("canvasarea");
+        canvasarea.appendChild( document.getElementById("timeline") );
 
         // this.mainArea.onresize = resize;
-        // this.mainArea.content.appendChild(document.getElementById("scene3D"));
+
+        let timelineCanvas = document.getElementById("timelineCanvas");
+        timelineCanvas.width = canvasArea.clientWidth;
+        timelineCanvas.height = 100;
+        this.timelineCTX = timelineCanvas.getContext("2d");
     }
 
     createMenubar() {
@@ -75,25 +82,24 @@ class Gui {
 
         const buttonContainer = document.createElement('div');
         buttonContainer.style.margin = "0 auto";
+        buttonContainer.style.display = "flex";
         menubar.root.appendChild(buttonContainer);
 
         const buttons = [
             {
                 id: "state_btn",
                 text: "►",
-                display: "none",
-                callback: () => console.log("Play!")
+                display: "none"
             },
             {
                 id: "capture_btn",
-                text: "Capture",
-                callback: () => console.log("Capture!")
+                text: "Capture"
             },
             {
                 id: "upload_btn",
                 text: "Upload animation",
                 display: "none",
-                callback: () => console.log("Upload!")
+                styles: { position: "absolute", right: "20px", marginTop: "5px !important"}
             }
         ];
 
@@ -103,7 +109,8 @@ class Gui {
             button.style.display = b.display || "block";
             button.innerHTML = b.text;
             button.classList.add( "litebutton", "menuButton" );
-            button.addEventListener('click', b.callback);
+            if(b.styles) Object.assign(button.style, b.styles);
+            if(b.callback) button.addEventListener('click', b.callback);
             buttonContainer.appendChild(button);
         }
     }
@@ -112,7 +119,7 @@ class Gui {
 
         // this.drawSkeleton();
         // this.drawSettings();
-        // this.drawTimeline();
+        this.drawTimeline();
     }
 
     drawSkeleton() {

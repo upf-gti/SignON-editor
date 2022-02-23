@@ -56,8 +56,8 @@ html, body { width: 100%; height: 100%; margin: 0; padding: 0; background-color:
 }
 
 .menuButton {
-	margin-top: 5px  !important;
-	padding-left: 15px  !important;
+	margin-top: 2px !important;
+	padding-left: 15px !important;
 	padding-right: 15px !important;
 	font-size: 1.6em  !important;
 }
@@ -76,9 +76,9 @@ html, body { width: 100%; height: 100%; margin: 0; padding: 0; background-color:
 }
 
 #capture {
-	width: 35%;
-	left: 3%;
-	top: calc(var(--header-size) + 5%);
+	width: 30%;
+	left: 40px;
+	top: 90px;
 	position: absolute;
 	z-index: 10;
 
@@ -131,12 +131,15 @@ html, body { width: 100%; height: 100%; margin: 0; padding: 0; background-color:
 }
 
 #timeline {
-	width: var(--start-scene-proportion);
-	height: 10%;
+	width: 100%;
+	height: 100px;
 	bottom: 10%;
 	position: relative;
 	z-index: 5;
 	
+	position: absolute;
+	bottom: 0px;
+
 	display: flex;
 	justify-content: center;
 	align-content: center;
