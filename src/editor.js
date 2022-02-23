@@ -28,30 +28,32 @@ class Editor {
     	this.onDrawTimeline = null;
 	    this.onDrawSettings = null;
 
-        this.gui = null;
+        this.gui = new Gui();
     }
     
     init() {
 
-        var scene3d = document.getElementById("scene");
-        var mainBody = document.getElementById("mainBody");
-        var canvas3D = document.getElementById("scene3D");
+        // var scene3d = document.getElementById("scene");
+        // var mainBody = document.getElementById("mainBody");
 
-        var CANVAS_WIDTH = scene3d.clientWidth;
-        var CANVAS_HEIGHT = scene3d.clientHeight;
-        mainBody.classList.add("hidden"); // Once we optain the size, we hide it
+        // var CANVAS_WIDTH = scene3d.clientWidth;
+        // var CANVAS_HEIGHT = scene3d.clientHeight;
+
+        // Once we optain the size, we hide it
+        // mainBody.classList.add("hidden"); 
         
         let scene = new THREE.Scene();
         scene.background = new THREE.Color(0xeeeeee);
         scene.add(new THREE.GridHelper(400, 10));
         
-        let renderer = new THREE.WebGLRenderer({ canvas: canvas3D, antialias: true });
+        let renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setPixelRatio(window.devicePixelRatio);
-        renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT);
+        // renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT);
         renderer.outputEncoding = THREE.sRGBEncoding;
         
         // camera
-        let camera = new THREE.PerspectiveCamera(60, CANVAS_WIDTH / CANVAS_HEIGHT, 1, 1000);
+        // let camera = new THREE.PerspectiveCamera(60, CANVAS_WIDTH / CANVAS_HEIGHT, 1, 1000);
+        let camera = new THREE.PerspectiveCamera(60, 1, 1, 1000);
         let controls = new OrbitControls(camera, renderer.domElement);
         controls.minDistance = 1;
         controls.maxDistance = 7;
@@ -114,8 +116,8 @@ class Editor {
         // mixer.update(clock.getDelta()); //do first iteration to update from T pose
         
         project.prepareData(this.mixer, animation_clip, skeleton);
-        this.gui = new Gui(project);
-        this.gui.render();
+        this.gui.loadProject(project);
+        // this.gui.render();
 
         // set onlcick function to play button
         let that = this;

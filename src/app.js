@@ -80,15 +80,14 @@ class App {
                     }
                 })
                 .catch(function (err) {
-                    console.log("The following error occurred: " + err);
+                    console.error("The following error occurred: " + err);
                 })
         }
         else {
             console.log("This app is not supported in your browser anymore");
         }
 
-        // init the header
-        this.initHeader();
+        this.setEvents();
 
         window.addEventListener("resize", this.onResize);
     }
@@ -101,7 +100,7 @@ class App {
         this.recording = value;
     }
 
-    initHeader() {
+    setEvents() {
 
         let that = this;
         
@@ -118,10 +117,14 @@ class App {
     
         let capture = document.getElementById("capture_btn");
         capture.onclick = function () {
-            if (this.children[0].innerText == "Capture") {
-                this.children[0].innerText = "Stop";
-                this.style.backgroundColor = "lightcoral";
-                this.style.border = "solid #924242";
+            
+            if (!that.recording) {
+                
+                capture.innerText = "Stop";
+                capture.style.backgroundColor = "lightcoral";
+                capture.style.border = "solid #924242";
+
+                videoCanvas.style.border = "solid #924242";
                 
                 // start the capture
                 that.project.landmarks = []; //reset array
@@ -130,7 +133,7 @@ class App {
                 console.log(that.mediaRecorder.state);
                 console.log("Start recording");
             }
-            else if(that.recording) {
+            else {
                 // show modal to redo or load the animation in the scene
                 elem.style.display = "flex";
                 
@@ -148,18 +151,19 @@ class App {
     
         let redo = document.getElementById("redo_btn");
         redo.onclick = function () {
+            
             elem.style.display = "none";
     
-            // clear data????
-    
             // back to initial values
-            capture.children[0].innerText = "Capture"
+            capture.innerText = "Capture"
             capture.style.removeProperty("background-color");
             capture.style.removeProperty("border");
+            videoCanvas.style.removeProperty("border");
         };
     
         let loadData = document.getElementById("loadData_btn");
         loadData.onclick = function () {
+            
             elem.style.display = "none";
     
             MediaPipe.stop();
@@ -226,6 +230,7 @@ class App {
         let aspectRatio = videoDiv.width / videoDiv.height;
         videoRec.width  = videoDiv.width  = videoCanvas.width  = videoDiv.clientWidth;
         videoRec.height = videoDiv.height = videoCanvas.height = videoCanvas.width / aspectRatio;
+        videoRec.src = "models/bvh/victor.mp4";
 
         const updateFrame = (now, metadata) => {
             // Do something with the frame.

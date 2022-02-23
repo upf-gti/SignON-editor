@@ -10,7 +10,9 @@
 		<link rel="stylesheet" href="css/style.css">
 		
 		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
-  		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/v4-shims.css"> <!-- Icon library -->
+		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/v4-shims.css"> <!-- Icon library -->
+
+		<link rel="stylesheet" href="css/litegui.css">
 
 		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
@@ -32,7 +34,7 @@
 			<button id="loadData_btn" class="button"><span>Convert captured data into a 3D Animation</span></button>
 		</div>
 
-		<!-- Main Body -->
+		<!-- Main 
         <div id="header">
 			<button id="capture_btn" class="button"><span>Capture</span></button>
 			<button id="state_btn" class="btn hidden">
@@ -40,7 +42,7 @@
 			</button>
 			<button id="upload_btn" class="btn hidden"><span>Upload Animation</span></button>
 			<img class="logo" src="img/logo_SignON.png" width="50px" style="position: absolute; right: 15px;" onclick="window.open('https://signon-project.eu/')"></img>
-		</div>
+		</div>-->
 
 		<div id="capture" class="expanded">
 			<video id="inputVideo" class="hidden"></video>
@@ -48,7 +50,7 @@
 			<video id="recording" class="hidden"></video>
 		</div>
 
-		<div id="mainBody">
+		<!--<div id="mainBody">
 			<div id="scene">
 				<canvas id="scene3D"></canvas>
 			</div>
@@ -57,13 +59,15 @@
 				<canvas id="skeleton"></canvas>
 				<canvas id="settings" style="background-color: black;"></canvas>
 			</div>
-		</div>
+		</div>-->
 
 		<div id="timeline" class="hidden" style="opacity: 0.5;">
 			<canvas id="timelineCanvas"></canvas>
 		</div>
 
 		<!-- Init -->
+
+		<script type="text/javascript" src="src/libs/litegui.js"></script>
 		<script type="module" src="src/app.js"></script>
 	</body>
 </html>

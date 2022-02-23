@@ -55,7 +55,22 @@ html, body { width: 100%; height: 100%; margin: 0; padding: 0; background-color:
     align-items: center;
 }
 
-#header > * {
+.menuButton {
+	margin-top: 5px  !important;
+	padding-left: 15px  !important;
+	padding-right: 15px !important;
+	font-size: 1.6em  !important;
+}
+
+#signOn-logo {
+	width: 40px;
+	padding: 3px;
+	cursor: pointer;
+	margin-right: 5px;
+	margin-left: 5px;
+}
+
+#header #capture_btn {
     padding-left: 20px;
     padding-right: 20px;
 }

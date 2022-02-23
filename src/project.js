@@ -22,6 +22,8 @@ class Project {
 
     prepareData(mixer, clip, skeleton) {
         
+        return;
+
         this.mixer = mixer;
         this.duration = clip.duration;
         this.listNames(mixer._root.bones, 0, []);
