@@ -187,14 +187,19 @@ class App {
         let that = this;
 
         // Update header
-        // ...
-
-        // Deactivates the button
         let capture = document.getElementById("capture_btn");
         capture.disabled = true;
-        capture.children[0].innerText = "Captured";
-        capture.style.removeProperty("background-color");
-        capture.style.removeProperty("border");
+        capture.classList.add("hidden");
+        
+        let stateBtn = document.getElementById("state_btn");
+        stateBtn.classList.remove("hidden");
+        stateBtn.style.width = "75px";
+        let uploadBtn = document.getElementById("upload_btn");
+        uploadBtn.classList.remove("hidden");
+        uploadBtn.style.position = "absolute";
+        uploadBtn.style.height = "inherit";
+        uploadBtn.style.right = "150px";
+        uploadBtn.onclick = this.storeAnimation;
     
         // Reposition the canvas elements
         let videoDiv = document.getElementById("capture");
@@ -212,6 +217,9 @@ class App {
         settingsCanvas.height = settingsCanvas.clientHeight; 
         let timelineDiv = document.getElementById("timeline");
         timelineDiv.classList.remove("hidden");
+        let timelineCanvas = document.getElementById("timelineCanvas");
+        timelineCanvas.width = timelineCanvas.clientWidth;
+        timelineCanvas.height = timelineCanvas.clientHeight; 
     
         // Solve the aspect ratio problem of the video
         let videoCanvas = document.getElementById("outputVideo");
@@ -266,30 +274,32 @@ class App {
 
         // CHECK THE INPUT FILE !!!!TODO!!!!
         let file = undefined;
-    
-        // Check if are files loaded
-        if (!file) {
-            w2popup.close();
-            console.log("Not BVH found.");
-            return;
-        }
-    
-        // Log the user
-        await this.FS.login();
-    
-        // folder, data, filename, metadata
-        await this.FS.uploadData("animations", file, file.name || "noName", "");
-    
-        // Log out the user
-        this.FS.logout();
-    
-        console.log("Upload Clicked");
-    
-        w2popup.close();
 
-        // For now this is used in timeline_maanager
-        // refactor!!
-        window.storeAnimation = this.storeAnimation;
+        if (confirm("Have you finished editing your animation? Remember that uploading the animation to the database implies that it will be used in the synthesis of the 3D avatar used in SignON European project.")) {
+            // Check if are files loaded
+            if (!file) {
+                w2popup.close();
+                console.log("Not BVH found.");
+                return;
+            }
+
+            // Log the user
+            await this.FS.login();
+
+            // folder, data, filename, metadata
+            await this.FS.uploadData("animations", file, file.name || "noName", "");
+
+            // Log out the user
+            this.FS.logout();
+
+            console.log("Upload Clicked");
+
+            w2popup.close();
+
+            // For now this is used in timeline_maanager
+            // refactor!!
+            window.storeAnimation = this.storeAnimation;
+        }
     }
 
     onResize() {
@@ -297,14 +307,14 @@ class App {
         let WIDTH = window.innerWidth;
         let HEIGHT = window.innerHeight;
 
+        let headerDiv = document.getElementById("header");
         let videoDiv = document.getElementById("capture");
         let videoCanvas = document.getElementById("outputVideo");
         let bodyDiv = document.getElementById("mainBody");
         let sceneCanvas = document.getElementById("scene");
-        let headerDiv = document.getElementById("header");
-        let timelineDiv = document.getElementById("timeline");
         let skeletonCanvas = document.getElementById("skeleton");
         let settingsCanvas = document.getElementById("settings");
+        let timelineCanvas = document.getElementById("timelineCanvas");
         
         let relation = bodyDiv.width / WIDTH;                           // resize proportion
         let AR = videoCanvas.clientWidth / videoCanvas.clientHeight;    // aspect ratio
@@ -317,10 +327,10 @@ class App {
         skeletonCanvas.height = skeletonCanvas.clientHeight;
         settingsCanvas.width = settingsCanvas.clientWidth;
         settingsCanvas.height = settingsCanvas.clientHeight;
+        timelineCanvas.width = timelineCanvas.clientWidth;
+        timelineCanvas.height = timelineCanvas.clientHeight;
 
-        // maybe resize timeline and header?
-        // ...
-
+        // renderGUI???
         app.editor.resize(sceneCanvas.clientWidth, sceneCanvas.clientHeight);
     }
 

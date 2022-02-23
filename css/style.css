@@ -1,5 +1,5 @@
 :root {
-	--header-size: 72px;
+	--header-size: 70px;
     --global-font-family: Verdana, sans-serif;
     --global-font-size: 0.8rem;
     --global-text-color: #555;
@@ -47,10 +47,9 @@ html, body { width: 100%; height: 100%; margin: 0; padding: 0; background-color:
 
 /* ---------- Main elements ---------- */
 #header {
-    height: 70px;
+    height: var(--header-size);
     text-align: center;
     background-color: var(--global-color-primary);
-    border-bottom: 2px solid #555;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -127,6 +126,11 @@ html, body { width: 100%; height: 100%; margin: 0; padding: 0; background-color:
 	justify-content: center;
 	align-content: center;
 	align-items: center;
+}
+
+#timelineCanvas {
+	width: 100%;
+	height: 100%;
 }
 
 /* ---------- Auxiliary Elements ---------- */
@@ -250,12 +254,15 @@ html, body { width: 100%; height: 100%; margin: 0; padding: 0; background-color:
 
 /* Style buttons */
 .btn {
-	background-color: var(--global-color-secondary); /* Blue background */
-	border: 0px solid;
-	border-radius: 4px; /* Remove borders */
-	color: white; /* White text */
-	font-size: 20px; /* Set a font size */
-	cursor: pointer; /* Mouse pointer on hover */
+	height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+	font-size: larger;
+	border: hidden;
+    cursor: pointer;
+    color: white;
+	background-color: var(--global-color-secondary);
 }
 
 /* Darker background on mouse-over */

@@ -35,8 +35,11 @@
 		<!-- Main Body -->
         <div id="header">
 			<button id="capture_btn" class="button"><span>Capture</span></button>
-			<span class="text" style="color: #eeeeee;">Developed for SignON European Project</span>
-			<img class="logo" src="img/logo_SignON.png" width="50px" onclick="window.open('https://signon-project.eu/')"></img>
+			<button id="state_btn" class="btn hidden">
+				<i class="fa fa-pause"></i>
+			</button>
+			<button id="upload_btn" class="btn hidden"><span>Upload Animation</span></button>
+			<img class="logo" src="img/logo_SignON.png" width="50px" style="position: absolute; right: 15px;" onclick="window.open('https://signon-project.eu/')"></img>
 		</div>
 
 		<div id="capture" class="expanded">
@@ -56,7 +59,7 @@
 			</div>
 		</div>
 
-		<div id="timeline" class="hidden" style="background-color: brown; opacity: 0.5;">
+		<div id="timeline" class="hidden" style="opacity: 0.5;">
 			<canvas id="timelineCanvas"></canvas>
 		</div>
 

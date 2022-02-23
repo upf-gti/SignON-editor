@@ -1,10 +1,9 @@
 import * as THREE from "./libs/three.module.js";
 import { OrbitControls } from "./controls/OrbitControls.js";
 import { BVHLoader } from "./loaders/BVHLoader.js";
-import { Timeline } from "./libs/timeline.module.js";
-import { load_timeline } from "./timeline_manager.js";
 import { createSkeleton, createAnimation } from "./skeleton.js";
 import { BVHExporter } from "./bvh_exporter.js";
+import { Gui } from "./gui.js";
 
 class Editor {
 
@@ -25,12 +24,11 @@ class Editor {
         this.landmarks_array = [];
         this.prev_time = this.iter = 0;
 
-        this.names = [];
-
         this.init();
     	this.onDrawTimeline = null;
 	    this.onDrawSettings = null;
 
+        this.gui = null;
     }
     
     init() {
@@ -65,20 +63,15 @@ class Editor {
         this.camera = camera;
         this.renderer = renderer;
         this.controls = controls;
-
-    	this.onDrawTimeline = null;//Timeline.draw;
-    	this.onDrawSettings = null;
-
-        //animate();
     }
 
-    getState() {
-        return this.state;
-    }
+    // getState() {
+    //     return this.state;
+    // }
 
-    setState(value) {
-        this.state = value;
-    }
+    // setState(value) {
+    //     this.state = value;
+    // }
 
     loadInScene(project) {
 
@@ -121,7 +114,24 @@ class Editor {
         // mixer.update(clock.getDelta()); //do first iteration to update from T pose
         
         project.prepareData(this.mixer, animation_clip, skeleton);
-        this.names = project.names;
+        this.gui = new Gui(project);
+        this.gui.render();
+
+        // set onlcick function to play button
+        let that = this;
+        let stateBtn = document.getElementById("state_btn");
+        stateBtn.onclick = function(event) {
+            if(that.state) {
+                that.state = false;
+                this.children[0].classList.remove("fa-play");
+                this.children[0].classList.add("fa-pause");
+            }
+            else {
+                that.state = true;
+                this.children[0].classList.remove("fa-pause");
+                this.children[0].classList.add("fa-play");
+            }
+        }
         
         this.animate();
     }
@@ -135,40 +145,33 @@ class Editor {
         if (this.mixer && this.state) {
             //console.log("Scene!");
             this.mixer.update(dt);
-
-            if (this.onDrawTimeline)
-                this.onDrawTimeline();
-            if (this.drawSettings)
-                this.drawSettings();
         }
-
-        if (this.drawSettings)
-            this.drawSettings();
-    
-        //New testing
-        //if (points_geometry == undefined || landmarks_array == undefined) return;
+        if (this.gui)
+            this.gui.render();
         
-        var curr_lm = this.landmarks_array[this.iter];
-        var curr_time = Date.now();
-        var et = (curr_time - this.prev_time);
-        if (et > curr_lm.dt) {
-            
-            const vertices = [];
-            
-            for (let i = 0; i < curr_lm.PLM.length; i++) {
-                const x = curr_lm.PLM[i].x;
-                const y = curr_lm.PLM[i].y;
-                const z = curr_lm.PLM[i].z;
+        // if (points_geometry == undefined || landmarks_array == undefined) {
+        //     var curr_lm = this.landmarks_array[this.iter];
+        //     var curr_time = Date.now();
+        //     var et = (curr_time - this.prev_time);
+        //     if (et > curr_lm.dt) {
                 
-                vertices.push( x, y, z );
-            }
-            
-            this.points_geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
-            
-            this.prev_time = curr_time + curr_lm.dt;
-            this.iter++;
-            this.iter = this.iter % this.landmarks_array.length;
-        }
+        //         const vertices = [];
+                
+        //         for (let i = 0; i < curr_lm.PLM.length; i++) {
+        //             const x = curr_lm.PLM[i].x;
+        //             const y = curr_lm.PLM[i].y;
+        //             const z = curr_lm.PLM[i].z;
+                    
+        //             vertices.push( x, y, z );
+        //         }
+                
+        //         this.points_geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+                
+        //         this.prev_time = curr_time + curr_lm.dt;
+        //         this.iter++;
+        //         this.iter = this.iter % this.landmarks_array.length;
+        //     }
+        // }
     
         this.renderer.render(this.scene, this.camera);
     }
@@ -178,92 +181,6 @@ class Editor {
         this.camera.aspect = width / height;
         this.camera.updateProjectionMatrix();
         this.renderer.setSize(width, height);
-    }
-
-    drawSettings() {
-
-        const ctx = document.getElementById("skeleton").getContext("2d");
-        const canvas = ctx.canvas;
-        
-        let scroll_y = 0; // pixels scrolled (it can cause to move the whole text to the top)
-        let startx = 0; // starting pixel (it can cause to move the whole text to the left)
-
-        let vertical_offset = 15; // top space
-        let name_height = 25; // space between names
-        let sidebar_width = ctx.width; // width
-        let sidebar_height = ctx.height;
-        let names = this.names;
-        let scrollable_height = names.length * name_height;
-        let current_scroll_in_pixels = 0;
-
-        //compute the current y scrollable value
-        if (sidebar_height < scrollable_height)
-            scroll_y = -current_scroll_in_pixels; //TODO
-        if (scroll_y) {
-            ctx.beginPath();
-            ctx.rect(0, vertical_offset, canvas.width, sidebar_height);
-            ctx.clip();
-        }
-
-        //fill bone lines
-        var w = canvas.width;
-        ctx.globalAlpha = 0.1;
-        for (var i = 0; i < names.length; ++i) {
-            ctx.fillStyle = i % 2 == 0 ? "#2D2D2D" : "#2A2A2A";
-            ctx.fillRect(0, scroll_y + vertical_offset + i * name_height, w, name_height);
-        }
-
-        //draw names of bones from list
-        ctx.textAlign = "left";
-
-        //estimated starting distance of timeline in the canvas
-        var w = 60; //left space for names start
-        var y = scroll_y + 0.5 + vertical_offset;
-
-        if (names)
-            for (var i = 0; i < names.length; ++i) {
-                var bone = names[i];
-                var [name, depth, is_selected, has_childs] = bone;
-
-                //compute horizontal position
-                var x = startx > w ? startx : w;
-                x = x + (20 * depth);
-
-                //draw an opening triangle
-                if (has_childs) {
-                    ctx.fillStyle = "#FFF";
-                    ctx.beginPath();
-                    ctx.moveTo(x - 35, y + name_height * 0.4);
-                    ctx.lineTo(x - 25, y + name_height * 0.4);
-                    ctx.lineTo(x - 30, y + name_height * 0.7);
-                    ctx.fill();
-                }
-
-                //name
-                ctx.fillStyle = "#AAA";
-                ctx.font = '13px sans-serif';
-                ctx.fillText(name, x - 20, y + name_height * 0.65);
-                ctx.fillStyle = "#123";
-                ctx.globalAlpha = 1;
-
-                if (is_selected) {
-                    ctx.fillStyle = "white";
-                    ctx.globalCompositeOperation = "difference";
-                    ctx.beginPath();
-                    ctx.moveTo(0, y);
-                    ctx.lineTo(sidebar_width - 7, y);
-                    ctx.lineTo(sidebar_width - 2, y + name_height * 0.5);
-                    ctx.lineTo(sidebar_width - 7, y + name_height);
-                    ctx.lineTo(0, y + name_height);
-                    ctx.closePath();
-                    ctx.fill();
-                    ctx.globalCompositeOperation = "source-over";
-                }
-
-                y += name_height;
-            }
-
-        ctx.restore();
     }
 };
 
