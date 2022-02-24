@@ -82,15 +82,14 @@ class App {
                     }
                 })
                 .catch(function (err) {
-                    console.log("The following error occurred: " + err);
+                    console.error("The following error occurred: " + err);
                 })
         }
         else {
             console.log("This app is not supported in your browser anymore");
         }
 
-        // init the header
-        this.initHeader();
+        this.setEvents();
 
         window.addEventListener("resize", this.onResize);
     }
@@ -103,7 +102,7 @@ class App {
         this.recording = value;
     }
 
-    initHeader() {
+    setEvents() {
 
         let that = this;
         
@@ -120,12 +119,16 @@ class App {
     
         let capture = document.getElementById("capture_btn");
         capture.onclick = function () {
-            if (this.children[0].innerText == "Capture") {
-                this.children[0].innerText = "Stop";
-                this.style.backgroundColor = "lightcoral";
-                this.style.border = "solid #924242";
+            
+            if (!that.recording) {
                 
-                // start the capture
+                capture.innerText = "Stop";
+                capture.style.backgroundColor = "lightcoral";
+                capture.style.border = "solid #924242";
+
+                videoCanvas.style.border = "solid #924242";
+                
+                // Start the capture
                 that.project.landmarks = []; //reset array
                 that.recording = true;
                 that.mediaRecorder.start();
@@ -133,11 +136,11 @@ class App {
                 console.log(that.mediaRecorder.state);
                 console.log("Start recording");
             }
-            else if(that.recording) {
-                // show modal to redo or load the animation in the scene
+            else {
+                // Show modal to redo or load the animation in the scene
                 elem.style.display = "flex";
                 
-                // stop the video recording
+                // Stop the video recording
                 that.recording = false;
                 
                 that.mediaRecorder.stop();
@@ -146,30 +149,31 @@ class App {
                 console.log(that.mediaRecorder.state);
                 console.log("Stop recording");
     
-                // correct first dt of landmarks
+                // Correct first dt of landmarks
                 that.project.landmarks[0].dt = 0;
+
+                // Back to initial values
+                capture.innerText = "Capture";
+                capture.style.removeProperty("background-color");
+                capture.style.removeProperty("border");
+                videoCanvas.style.removeProperty("border");
             }
         };
     
         let redo = document.getElementById("redo_btn");
         redo.onclick = function () {
+            
             elem.style.display = "none";
-    
-            // clear data????
-    
-            // back to initial values
-            capture.children[0].innerText = "Capture"
-            capture.style.removeProperty("background-color");
-            capture.style.removeProperty("border");
         };
     
         let loadData = document.getElementById("loadData_btn");
         loadData.onclick = function () {
+            
             elem.style.display = "none";
     
             MediaPipe.stop();
             
-            // store the data in project, and store a bvh of it
+            // Store the data in project, and store a bvh of it
             // TODO
     
             that.loadAnimation();
@@ -194,7 +198,7 @@ class App {
         // Update header
         let capture = document.getElementById("capture_btn");
         capture.disabled = true;
-        capture.classList.add("hidden");
+        capture.style.display = "none";
         
         let stateBtn = document.getElementById("state_btn");
         stateBtn.classList.remove("hidden");
@@ -208,30 +212,27 @@ class App {
         videoDiv.classList.remove("expanded");
         let videoRec = document.getElementById("recording");
         videoRec.classList.remove("hidden");
-        let sceneDiv = document.getElementById("mainBody");
-        sceneDiv.classList.remove("hidden");
-        sceneDiv.width = sceneDiv.clientWidth;
-        let skeletonCanvas = document.getElementById("skeleton");
-        skeletonCanvas.width = skeletonCanvas.clientWidth;
-        skeletonCanvas.height = skeletonCanvas.clientHeight;
-        let settingsCanvas = document.getElementById("settings");
-        settingsCanvas.width = settingsCanvas.clientWidth;
-        settingsCanvas.height = settingsCanvas.clientHeight; 
+
+        // let skeletonCanvas = document.getElementById("skeleton");
+        // skeletonCanvas.width = skeletonCanvas.clientWidth;
+        // skeletonCanvas.height = skeletonCanvas.clientHeight;
+        // let settingsCanvas = document.getElementById("settings");
+        // settingsCanvas.width = settingsCanvas.clientWidth;
+        // settingsCanvas.height = settingsCanvas.clientHeight; 
+
         let timelineDiv = document.getElementById("timeline");
         timelineDiv.classList.remove("hidden");
-        let timelineCanvas = document.getElementById("timelineCanvas");
-        timelineCanvas.width = timelineCanvas.clientWidth;
-        timelineCanvas.height = timelineCanvas.clientHeight; 
     
         // Solve the aspect ratio problem of the video
         let videoCanvas = document.getElementById("outputVideo");
         let aspectRatio = videoDiv.width / videoDiv.height;
         videoRec.width  = videoDiv.width  = videoCanvas.width  = videoDiv.clientWidth;
         videoRec.height = videoDiv.height = videoCanvas.height = videoCanvas.width / aspectRatio;
+        // videoRec.src = "models/bvh/victor.mp4";
 
         const updateFrame = (now, metadata) => {
+            
             // Do something with the frame.
-            // console.log(now, metadata);
             const canvasElement = document.getElementById("outputVideo");
             const canvasCtx = canvasElement.getContext("2d");
     
@@ -306,33 +307,44 @@ class App {
 
     onResize() {
 
-        let WIDTH = window.innerWidth;
-        let HEIGHT = window.innerHeight;
+        let canvasArea = document.getElementById("canvasarea");
 
-        let headerDiv = document.getElementById("header");
-        let videoDiv = document.getElementById("capture");
-        let videoCanvas = document.getElementById("outputVideo");
-        let bodyDiv = document.getElementById("mainBody");
-        let sceneCanvas = document.getElementById("scene");
-        let skeletonCanvas = document.getElementById("skeleton");
-        let settingsCanvas = document.getElementById("settings");
-        let timelineCanvas = document.getElementById("timelineCanvas");
+        // let headerDiv = document.getElementById("header");
+        // let videoDiv = document.getElementById("capture");
+        // let videoCanvas = document.getElementById("outputVideo");
+        // let bodyDiv = document.getElementById("mainBody");
+        // let sceneCanvas = document.getElementById("scene");
+        // let skeletonCanvas = document.getElementById("skeleton");
+        // let settingsCanvas = document.getElementById("settings");
+        // let timelineCanvas = document.getElementById("timelineCanvas");
         
-        let relation = bodyDiv.width / WIDTH;                           // resize proportion
-        let AR = videoCanvas.clientWidth / videoCanvas.clientHeight;    // aspect ratio
+        // let relation = bodyDiv.width / WIDTH;                           // resize proportion
+        // let AR = videoCanvas.clientWidth / videoCanvas.clientHeight;    // aspect ratio
         
-        bodyDiv.width = WIDTH;
-        videoCanvas.width  = videoDiv.width  = videoDiv.width / relation;
-        videoCanvas.height = videoDiv.height = videoDiv.width / AR;
+        // bodyDiv.width = WIDTH;
+        // videoCanvas.width  = videoDiv.width  = videoDiv.width / relation;
+        // videoCanvas.height = videoDiv.height = videoDiv.width / AR;
 
-        skeletonCanvas.width = skeletonCanvas.clientWidth;
-        skeletonCanvas.height = skeletonCanvas.clientHeight;
-        settingsCanvas.width = settingsCanvas.clientWidth;
-        settingsCanvas.height = settingsCanvas.clientHeight;
-        timelineCanvas.width = timelineCanvas.clientWidth;
-        timelineCanvas.height = timelineCanvas.clientHeight;
+        // skeletonCanvas.width = skeletonCanvas.clientWidth;
+        // skeletonCanvas.height = skeletonCanvas.clientHeight;
+        // settingsCanvas.width = settingsCanvas.clientWidth;
+        // settingsCanvas.height = settingsCanvas.clientHeight;
+        // timelineCanvas.width = timelineCanvas.clientWidth;
+        // timelineCanvas.height = timelineCanvas.clientHeight;
 
-        app.editor.resize(sceneCanvas.clientWidth, sceneCanvas.clientHeight);
+        // app.editor.resize(sceneCanvas.clientWidth, sceneCanvas.clientHeight);
+
+        const CANVAS_WIDTH = canvasArea.clientWidth;
+        const CANVAS_HEIGHT = canvasArea.clientHeight;
+
+        // skeletonCanvas.width = skeletonCanvas.clientWidth;
+        // skeletonCanvas.height = skeletonCanvas.clientHeight;
+        // settingsCanvas.width = settingsCanvas.clientWidth;
+        // settingsCanvas.height = settingsCanvas.clientHeight;
+        // timelineCanvas.width = timelineCanvas.clientWidth;
+        // timelineCanvas.height = timelineCanvas.clientHeight;
+
+        app.editor.resize(CANVAS_WIDTH, CANVAS_HEIGHT);
     }
 
 }

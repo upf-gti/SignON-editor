@@ -23,35 +23,35 @@ class Editor {
         this.points_geometry = null;
         this.landmarks_array = [];
         this.prev_time = this.iter = 0;
-
-        this.init();
     	this.onDrawTimeline = null;
 	    this.onDrawSettings = null;
+        this.gui = new Gui();
 
-        this.gui = null;
+        this.init();
+        
     }
     
     init() {
 
-        var scene3d = document.getElementById("scene");
-        var mainBody = document.getElementById("mainBody");
-        var canvas3D = document.getElementById("scene3D");
+        let canvasArea = document.getElementById("canvasarea");
 
-        var CANVAS_WIDTH = scene3d.clientWidth;
-        var CANVAS_HEIGHT = scene3d.clientHeight;
-        mainBody.classList.add("hidden"); // Once we optain the size, we hide it
-        
+        const CANVAS_WIDTH = canvasArea.clientWidth;
+        const CANVAS_HEIGHT = canvasArea.clientHeight;
+
         let scene = new THREE.Scene();
         scene.background = new THREE.Color(0xeeeeee);
         scene.add(new THREE.GridHelper(400, 10));
         
-        let renderer = new THREE.WebGLRenderer({ canvas: canvas3D, antialias: true });
-        renderer.setPixelRatio(window.devicePixelRatio);
+        const pixelRatio = CANVAS_WIDTH / CANVAS_HEIGHT;
+        let renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setPixelRatio(pixelRatio);
         renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT);
         renderer.outputEncoding = THREE.sRGBEncoding;
+        canvasArea.appendChild(renderer.domElement);
         
         // camera
-        let camera = new THREE.PerspectiveCamera(60, CANVAS_WIDTH / CANVAS_HEIGHT, 1, 1000);
+        let camera = new THREE.PerspectiveCamera(60, pixelRatio, 1, 1000);
+        window.camera = camera;
         let controls = new OrbitControls(camera, renderer.domElement);
         controls.minDistance = 1;
         controls.maxDistance = 7;
@@ -106,23 +106,20 @@ class Editor {
         // mixer.update(clock.getDelta()); //do first iteration to update from T pose
         
         project.prepareData(this.mixer, animation_clip, skeleton);
-        this.gui = new Gui(project);
-        this.gui.render();
+        this.gui.loadProject(project);
 
         // set onlcick function to play button
         let that = this;
         let stateBtn = document.getElementById("state_btn");
-        stateBtn.onclick = function(event) {
-            if(that.state) {
-                that.state = false;
-                this.children[0].classList.remove("fa-pause");
-                this.children[0].classList.add("fa-play");
-            }
-            else {
-                that.state = true;
-                this.children[0].classList.remove("fa-play");
-                this.children[0].classList.add("fa-pause");
-            }
+        stateBtn.onclick = function(e) {
+
+            that.state = !that.state;
+            stateBtn.innerHTML = that.state ? "❚❚" : "►";
+
+            if(that.state)
+                stateBtn.style.border = "solid #268581";
+            else
+                stateBtn.style.removeProperty("border");
         }
         
         this.animate();
@@ -170,8 +167,10 @@ class Editor {
 
     resize(width, height) {
         
-        this.camera.aspect = width / height;
+        const aspect = width / height;
+        this.camera.aspect = aspect;
         this.camera.updateProjectionMatrix();
+        this.renderer.setPixelRatio(aspect);
         this.renderer.setSize(width, height);
     }
 };

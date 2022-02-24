@@ -10,7 +10,9 @@
 		<link rel="stylesheet" href="css/style.css">
 		
 		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
-  		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/v4-shims.css"> <!-- Icon library -->
+		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/v4-shims.css"> <!-- Icon library -->
+
+		<link rel="stylesheet" href="css/litegui.css">
 
 		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
@@ -32,38 +34,20 @@
 			<button id="loadData_btn" class="btn" style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Convert captured data into a 3D Animation</span></button>
 		</div>
 
-		<!-- Main Body -->
-        <div id="header">
-			<img class="logo" src="img/logo_SignON.png" width="50px" onclick="window.open('https://signon-project.eu/')"></img>
-			<button id="upload_btn" class="btn hidden" style="margin-left: 2%"><span>Upload Animation</span></button>
-			<button id="capture_btn" class="button"><span>Capture</span></button>
-			<button id="state_btn" class="btn hidden" style="margin-left: 30%">
-				<i class="fa fa-play"></i>
-			</button>
-		</div>
-
-		<div id="capture" class="expanded">
+		<!---->
+		<div id="capture" class="expanded" draggable="false">
 			<video id="inputVideo" class="hidden"></video>
 			<canvas id="outputVideo" width="1280px" height="720px" style="z-index: 1"></canvas>
 			<video id="recording" class="hidden"></video>
-		</div>
-
-		<div id="mainBody">
-			<div id="scene">
-				<canvas id="scene3D"></canvas>
-			</div>
-
-			<div id="rightPanel">
-				<canvas id="skeleton"></canvas>
-				<canvas id="settings" style="background-color: black;"></canvas>
-			</div>
 		</div>
 
 		<div id="timeline" class="hidden" style="opacity: 0.5;">
 			<canvas id="timelineCanvas"></canvas>
 		</div>
 
-		<!-- Init -->
-		<script type="module" src="src/app.js"></script>
 	</body>
+
+	<script type="text/javascript" src="src/libs/litegui.js"></script>
+	<script type="module" src="src/app.js"></script>
+
 </html>

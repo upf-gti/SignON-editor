@@ -1,20 +1,12 @@
+import { ObjectLoader } from "./libs/three.module.js";
 import { Timeline } from "./libs/timeline.module.js";
 
 class Gui {
 
-    constructor(project) {
+    constructor() {
         // Get the canvas for each GUI element
-        this.skeletonCTX = document.getElementById("skeleton").getContext("2d");
-        this.settingsCTX = document.getElementById("settings").getContext("2d");
-        this.timelineCTX = document.getElementById("timelineCanvas").getContext("2d");
-        
-        this.project = project;
-        this.names = project.names;
-        this.duration = project.duration;
-
-        this.timeline = new Timeline();
-        this.timeline.setScale(150.0946352969992);
-        this.timeline.framerate = project.framerate;
+        // this.skeletonCTX = document.getElementById("skeleton").getContext("2d");
+        // this.settingsCTX = document.getElementById("settings").getContext("2d");
 
         // let mouse_control = this.onMouse.bind(this.timeline);
         // let canvas = this.timelineCTX.canvas;
@@ -28,12 +20,105 @@ class Gui {
         // ...
         this.current_time = 0;
         this.skeletonScroll = 0;
+
+        this.create();
+    }
+
+    loadProject(project) {
+
+        this.project = project;
+        this.names = project.names;
+        this.duration = project.duration;
+
+        this.timeline = new Timeline();
+        this.timeline.setScale(150.0946352969992);
+        this.timeline.framerate = project.framerate;
+
+        this.render();
+    }
+
+    create() {
+
+        LiteGUI.init(); 
+	
+        // Create menu bar
+        this.createMenubar();
+
+        // Create main area
+        this.mainArea = new LiteGUI.Area({id: "mainarea", content_id:"canvasarea", height: "calc( 100% - 31px )", main: true});
+        LiteGUI.add( this.mainArea );
+        
+        const canvasArea = document.getElementById("canvasarea");
+        canvasarea.appendChild( document.getElementById("timeline") );
+
+        // this.mainArea.onresize = resize;
+
+        let timelineCanvas = document.getElementById("timelineCanvas");
+        timelineCanvas.width = canvasArea.clientWidth;
+        timelineCanvas.height = 100;
+        this.timelineCTX = timelineCanvas.getContext("2d");
+    }
+
+    createMenubar() {
+        var menubar = new LiteGUI.Menubar("mainmenubar");
+        LiteGUI.add( menubar );
+
+        window.menubar = menubar;
+
+        const logo = document.createElement("img");
+        logo.id = "signOn-logo"
+        logo.src = "img/logo_SignON.png";
+        logo.alt = "SignON"
+        logo.addEventListener('click', () => window.open('https://signon-project.eu/'));
+        menubar.root.prepend(logo);
+
+        menubar.add("Project/Any option", { callback: () => console.log() });
+        menubar.add("View/Any option", { callback: () => console.log() });
+
+        this.appendButtons( menubar );
+    }
+
+    appendButtons(menubar) {
+
+        const buttonContainer = document.createElement('div');
+        buttonContainer.style.margin = "0 auto";
+        buttonContainer.style.display = "flex";
+        menubar.root.appendChild(buttonContainer);
+
+        const buttons = [
+            {
+                id: "state_btn",
+                text: "►",
+                display: "none"
+            },
+            {
+                id: "capture_btn",
+                text: "Capture"
+            },
+            {
+                id: "upload_btn",
+                text: "Upload animation",
+                display: "none",
+                styles: { position: "absolute", right: "20px", marginTop: "5px !important"}
+            }
+        ];
+
+        for(let b of buttons) {
+            const button = document.createElement("button");
+            button.id = b.id;
+            button.style.display = b.display || "block";
+            button.innerHTML = b.text;
+            button.classList.add( "litebutton", "menuButton" );
+            if(b.styles) Object.assign(button.style, b.styles);
+            if(b.callback) button.addEventListener('click', b.callback);
+            buttonContainer.appendChild(button);
+        }
     }
 
     render() {
 
-        this.drawSkeleton();
-        this.drawSettings();
+        // this.drawSkeleton();
+        // this.drawSettings();
         this.drawTimeline();
     }
 
