@@ -7,9 +7,11 @@ class App {
 
     constructor(){
 
-        // Flags
+        // Helpers
         this.recording = false;
-        
+        this.startTime = 0;
+        this.duration = 0;
+
         this.mediaRecorder = null
         this.project = new Project();
         this.editor = new Editor();
@@ -127,6 +129,7 @@ class App {
                 that.project.landmarks = []; //reset array
                 that.recording = true;
                 that.mediaRecorder.start();
+                that.startTime = Date.now();
                 console.log(that.mediaRecorder.state);
                 console.log("Start recording");
             }
@@ -138,6 +141,8 @@ class App {
                 that.recording = false;
                 
                 that.mediaRecorder.stop();
+                let endTime = Date.now();
+                that.duration = endTime - that.startTime;
                 console.log(that.mediaRecorder.state);
                 console.log("Stop recording");
     
@@ -193,12 +198,9 @@ class App {
         
         let stateBtn = document.getElementById("state_btn");
         stateBtn.classList.remove("hidden");
-        stateBtn.style.width = "75px";
+        //stateBtn.style.width = "75px";
         let uploadBtn = document.getElementById("upload_btn");
         uploadBtn.classList.remove("hidden");
-        uploadBtn.style.position = "absolute";
-        uploadBtn.style.height = "inherit";
-        uploadBtn.style.right = "150px";
         uploadBtn.onclick = this.storeAnimation;
     
         // Reposition the canvas elements
@@ -258,14 +260,14 @@ class App {
             //animate();
     
             // Re-register the callback to be notified about the next frame.
-            recording.requestVideoFrameCallback(updateFrame);
+            videoRec.requestVideoFrameCallback(updateFrame);
         };
         // Initially register the callback to be notified about the first frame.
-        recording.requestVideoFrameCallback(updateFrame);
+        videoRec.requestVideoFrameCallback(updateFrame);
     
         let clipName = prompt("Please, enter the name of the sign performed and the language. (Example: Dog in Irish Sign Language --> dog_ISL)");
-        recording.name = clipName;
-    
+        videoRec.name = clipName;
+
         // Creates the scene and loads the animation
         this.editor.loadInScene(that.project);
     }
@@ -330,7 +332,6 @@ class App {
         timelineCanvas.width = timelineCanvas.clientWidth;
         timelineCanvas.height = timelineCanvas.clientHeight;
 
-        // renderGUI???
         app.editor.resize(sceneCanvas.clientWidth, sceneCanvas.clientHeight);
     }
 

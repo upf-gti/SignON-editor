@@ -28,18 +28,18 @@
 		</div>
 
 		<div id="endOfCapture" class="modal" style="display: none">
-			<button id="redo_btn" class="button"><span>Redo the video</span></button>
-			<button id="loadData_btn" class="button"><span>Convert captured data into a 3D Animation</span></button>
+			<button id="redo_btn" class="btn" style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Redo the video</span></button>
+			<button id="loadData_btn" class="btn" style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Convert captured data into a 3D Animation</span></button>
 		</div>
 
 		<!-- Main Body -->
         <div id="header">
+			<img class="logo" src="img/logo_SignON.png" width="50px" onclick="window.open('https://signon-project.eu/')"></img>
+			<button id="upload_btn" class="btn hidden" style="margin-left: 2%"><span>Upload Animation</span></button>
 			<button id="capture_btn" class="button"><span>Capture</span></button>
-			<button id="state_btn" class="btn hidden">
-				<i class="fa fa-pause"></i>
+			<button id="state_btn" class="btn hidden" style="margin-left: 30%">
+				<i class="fa fa-play"></i>
 			</button>
-			<button id="upload_btn" class="btn hidden"><span>Upload Animation</span></button>
-			<img class="logo" src="img/logo_SignON.png" width="50px" style="position: absolute; right: 15px;" onclick="window.open('https://signon-project.eu/')"></img>
 		</div>
 
 		<div id="capture" class="expanded">

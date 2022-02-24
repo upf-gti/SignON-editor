@@ -65,14 +65,6 @@ class Editor {
         this.controls = controls;
     }
 
-    // getState() {
-    //     return this.state;
-    // }
-
-    // setState(value) {
-    //     this.state = value;
-    // }
-
     loadInScene(project) {
 
         this.landmarks_array = project.landmarks;
@@ -123,13 +115,13 @@ class Editor {
         stateBtn.onclick = function(event) {
             if(that.state) {
                 that.state = false;
-                this.children[0].classList.remove("fa-play");
-                this.children[0].classList.add("fa-pause");
+                this.children[0].classList.remove("fa-pause");
+                this.children[0].classList.add("fa-play");
             }
             else {
                 that.state = true;
-                this.children[0].classList.remove("fa-pause");
-                this.children[0].classList.add("fa-play");
+                this.children[0].classList.remove("fa-play");
+                this.children[0].classList.add("fa-pause");
             }
         }
         
