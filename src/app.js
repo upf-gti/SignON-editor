@@ -201,10 +201,10 @@ class App {
         capture.style.display = "none";
         
         let stateBtn = document.getElementById("state_btn");
-        stateBtn.classList.remove("hidden");
+        stateBtn.style.display = "block";
         //stateBtn.style.width = "75px";
         let uploadBtn = document.getElementById("upload_btn");
-        uploadBtn.classList.remove("hidden");
+        uploadBtn.style.display = "block";
         uploadBtn.onclick = this.storeAnimation;
     
         // Reposition the canvas elements
