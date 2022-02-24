@@ -7,7 +7,7 @@ import { Gui } from "./gui.js";
 
 class Editor {
 
-    constructor() {
+    constructor(app) {
         this.clock = new THREE.Clock();
         this.loader = new BVHLoader();
         
@@ -25,7 +25,10 @@ class Editor {
         this.prev_time = this.iter = 0;
     	this.onDrawTimeline = null;
 	    this.onDrawSettings = null;
-        this.gui = new Gui();
+        this.gui = new Gui(this);
+
+        // Keep "private"
+        this.__app = app;
 
         this.init();
         
@@ -63,6 +66,10 @@ class Editor {
         this.camera = camera;
         this.renderer = renderer;
         this.controls = controls;
+    }
+
+    getApp() {
+        return this.__app;
     }
 
     loadInScene(project) {

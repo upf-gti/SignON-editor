@@ -3,7 +3,7 @@ import { Timeline } from "./libs/timeline.module.js";
 
 class Gui {
 
-    constructor() {
+    constructor(editor) {
         // Get the canvas for each GUI element
         // this.skeletonCTX = document.getElementById("skeleton").getContext("2d");
         // this.settingsCTX = document.getElementById("settings").getContext("2d");
@@ -17,9 +17,10 @@ class Gui {
         // canvas.addEventListener("wheel", mouse_control, false);
         // canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); return true; }, false);
 
-        // ...
+        this.showTimeline = true;
         this.current_time = 0;
         this.skeletonScroll = 0;
+        this.editor = editor;
 
         this.create();
     }
@@ -33,6 +34,14 @@ class Gui {
         this.timeline = new Timeline();
         this.timeline.setScale(150.0946352969992);
         this.timeline.framerate = project.framerate;
+
+        // Move this to another place
+        // the idea is to create once and reset on load project
+        const name = project.clipName.length ? project.clipName : null;
+        this.createSidePanel( name );
+
+        let canvasArea = document.getElementById("canvasarea");
+        this.editor.resize(canvasArea.clientWidth, canvasArea.clientHeight);
 
         this.render();
     }
@@ -51,7 +60,7 @@ class Gui {
         const canvasArea = document.getElementById("canvasarea");
         canvasarea.appendChild( document.getElementById("timeline") );
 
-        // this.mainArea.onresize = resize;
+        this.mainArea.onresize = window.onresize;
 
         let timelineCanvas = document.getElementById("timelineCanvas");
         timelineCanvas.width = canvasArea.clientWidth;
@@ -60,6 +69,9 @@ class Gui {
     }
 
     createMenubar() {
+
+        var that = this;
+
         var menubar = new LiteGUI.Menubar("mainmenubar");
         LiteGUI.add( menubar );
 
@@ -72,10 +84,168 @@ class Gui {
         logo.addEventListener('click', () => window.open('https://signon-project.eu/'));
         menubar.root.prepend(logo);
 
-        menubar.add("Project/Any option", { callback: () => console.log() });
-        menubar.add("View/Any option", { callback: () => console.log() });
+        menubar.add("Project/Upload animation", { callback: () => this.editor.getApp().storeAnimation() });
+        menubar.add("View/Show Timeline", { type: "checkbox", instance: this, property: "showTimeline", callback: () => {
+            const tl = document.getElementById("timeline");
+            tl.style.display = that.showTimeline ? "block": "none";
+        }});
 
         this.appendButtons( menubar );
+    }
+
+    createSidePanel( anim_name ) {
+
+        this.mainArea.split("horizontal", [null,"20%"], true);
+        var docked = new LiteGUI.Panel("sidePanel", {title: anim_name || 'Inspector', scroll: true});
+        this.mainArea.getSection(1).add( docked );
+        $(docked).bind("closed", function() { this.mainArea.merge(); });
+        this.sidePanel = docked;
+        this.updateSidePanel( docked, 'root' );
+        
+        docked.content.id = "main-inspector-content";
+        docked.content.style.width = "100%";
+    }
+
+    updateSidePanel(root, item_selected, options) {
+
+        if(!item_selected)
+        return;
+    
+        options = options || {};
+        this.item_selected = item_selected;
+        root = root || this.sidePanel;
+        $(root.content).empty();
+        
+        var mytree = this.updateNodeTree();
+    
+        var litetree = new LiteGUI.Tree(mytree, {id: "tree"});
+        litetree.setSelectedItem(item_selected);
+        var that = this;
+    
+        // Click right mouse
+        // litetree.onItemContextMenu = function(e, el) { 
+    
+        //     e.preventDefault();
+        //     var item = el.item;
+        //     var node_id = el.data.id;
+    
+        //     if(!CORE)
+        //     return;
+    
+        //     var node = CORE.getByName(node_id);
+        //     if(!node) // is root 
+        //     return;
+    
+        //     var actions = [
+        //         {
+        //             title: node.visible ? "Hide" : "Show", //text to show
+        //             callback: function() { 
+        //                 node.visible = !node.visible;
+        //                 node.flags.ignore_collisions = !node.flags.ignore_collisions;
+        //                 that.updateSidePanel(null, node_id);
+        //             }
+        //         },
+        //         {
+        //             title: "Copy",
+        //             callback: function() { 
+        //                 LiteGUI.toClipboard( node.name );
+        //             }
+        //         },
+              
+        //         {
+        //             title: "Delete", //text to show
+        //             callback: function() { 
+        //                 if(RM.Get('NodePicker'))
+        //                     RM.Get('NodePicker').delete( node );
+        //                 that.updateSidePanel(null, "root");
+        //             }
+        //         },
+        //     ];
+            
+        //     new LiteGUI.ContextMenu( actions, { event: e });
+        // };
+    
+        litetree.onItemSelected = function(data){
+            this.expandItem(data.id);
+            item_selected = data.id;
+            widgets.on_refresh();
+        };
+    
+        litetree.root.addEventListener("item_dblclicked", function(e){
+            e.preventDefault();
+        });
+    
+        this.tree = litetree;
+    
+        $(root.content).append( litetree.root );
+    
+        // Editor widgets 
+        var widgets = new LiteGUI.Inspector();
+        $(root.content).append(widgets.root);
+    
+        widgets.on_refresh = () => {
+
+            widgets.clear();
+            widgets.addSection("Skeleton");
+            widgets.widgets_per_row = 2;
+            widgets.addInfo("Name", this.editor.skeletonHelper.name || "Unnamed");
+            widgets.addInfo("Num bones", this.editor.skeletonHelper.bones.length);
+            widgets.widgets_per_row = 1;
+            widgets.addSection("Gizmo");
+            widgets.addButtons( "Mode", ["Translate","Rotate"], { name_width: "50%", width: "100%", callback: function(v){
+                if(v == "Translate")
+                    console.log("TRANSLATE GIZMO MODE");
+                else
+                    console.log("ROTATE GIZMO MODE");
+                
+            }});
+
+            widgets.addSeparator();
+
+            const bone_selected = this.editor.skeletonHelper.skeleton.getBoneByName(item_selected);
+            if(bone_selected) {
+                widgets.addSection("Bone");
+                widgets.addInfo("Name", item_selected);
+                widgets.addVector3("Position", bone_selected.position.toArray());
+                widgets.addVector3("Rotation (XYZ)", bone_selected.rotation.toArray());
+                widgets.addVector4("Rotation (quat)", bone_selected.quaternion.toArray());
+            }
+        };
+
+        widgets.on_refresh();
+        
+        // update scroll position
+        var element = root.content.querySelectorAll(".inspector")[0];
+        var maxScroll = element.scrollHeight;
+        element.scrollTop = options.maxScroll ? maxScroll : (options.scroll ? options.scroll : 0);
+    }
+
+    updateNodeTree() {
+        
+        const rootBone = this.editor.skeletonHelper.bones[0];
+
+        let mytree = { 'id': rootBone.name };
+        let children = [];
+
+        const addChildren = (bone, array) => {
+
+            for( let b of bone.children ) {
+
+                let child = {
+                    id: b.name,
+                    children: []
+                }
+
+                array.push( child );
+
+                addChildren(b, child.children);
+            }
+        };
+
+        addChildren(rootBone, children);
+
+        mytree['children'] = children;
+        return mytree;
     }
 
     appendButtons(menubar) {
@@ -95,12 +265,12 @@ class Gui {
                 id: "capture_btn",
                 text: "Capture"
             },
-            {
-                id: "upload_btn",
-                text: "Upload animation",
-                display: "none",
-                styles: { position: "absolute", right: "20px", marginTop: "5px !important"}
-            }
+            // {
+            //     id: "upload_btn",
+            //     text: "Upload animation",
+            //     display: "none",
+            //     styles: { position: "absolute", right: "20px", marginTop: "5px !important"}
+            // }
         ];
 
         for(let b of buttons) {

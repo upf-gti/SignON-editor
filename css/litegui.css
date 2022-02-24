@@ -636,6 +636,7 @@ input.text.string:hover{
 	width: -moz-calc(100% - 14px);
 	width: -webkit-calc(100% - 14px);
 	width: calc(100% - 14px);
+	height: 25px;
 	margin-right: 3px;
 }
 
@@ -906,7 +907,7 @@ div {
 
 .litepanel .panel-header, .litedialog .panel-header {
 	font-size: 1.35em;
-	padding: 0.2em 0 0 0.2em;
+	padding: 0.35em 0 0 0.5em;
 	background-color: #3d3d3d;/*#778;
     background-image: linear-gradient(right , #555, #333);
     background-image: -moz-linear-gradient(right , #555, #333);

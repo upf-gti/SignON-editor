@@ -14,7 +14,7 @@ class App {
 
         this.mediaRecorder = null
         this.project = new Project();
-        this.editor = new Editor();
+        this.editor = new Editor(this);
 
         // Create the fileSystem and log the user
         this.FS = new FileSystem("signon", "signon", () => console.log("Auto login of guest user"));
@@ -202,23 +202,15 @@ class App {
         
         let stateBtn = document.getElementById("state_btn");
         stateBtn.style.display = "block";
-        //stateBtn.style.width = "75px";
-        let uploadBtn = document.getElementById("upload_btn");
-        uploadBtn.style.display = "block";
-        uploadBtn.onclick = this.storeAnimation;
+        // let uploadBtn = document.getElementById("upload_btn");
+        // uploadBtn.style.display = "block";
+        // uploadBtn.onclick = this.storeAnimation;
     
         // Reposition the canvas elements
         let videoDiv = document.getElementById("capture");
         videoDiv.classList.remove("expanded");
         let videoRec = document.getElementById("recording");
         videoRec.classList.remove("hidden");
-
-        // let skeletonCanvas = document.getElementById("skeleton");
-        // skeletonCanvas.width = skeletonCanvas.clientWidth;
-        // skeletonCanvas.height = skeletonCanvas.clientHeight;
-        // let settingsCanvas = document.getElementById("settings");
-        // settingsCanvas.width = settingsCanvas.clientWidth;
-        // settingsCanvas.height = settingsCanvas.clientHeight; 
 
         let timelineDiv = document.getElementById("timeline");
         timelineDiv.classList.remove("hidden");
@@ -268,9 +260,10 @@ class App {
     
         let clipName = prompt("Please, enter the name of the sign performed and the language. (Example: Dog in Irish Sign Language --> dog_ISL)");
         videoRec.name = clipName;
+        this.project.clipName = clipName;
 
         // Creates the scene and loads the animation
-        this.editor.loadInScene(that.project);
+        this.editor.loadInScene(this.project);
     }
 
     async storeAnimation() {
@@ -278,31 +271,30 @@ class App {
         // CHECK THE INPUT FILE !!!!TODO!!!!
         let file = undefined;
 
-        if (confirm("Have you finished editing your animation? Remember that uploading the animation to the database implies that it will be used in the synthesis of the 3D avatar used in SignON European project.")) {
-            // Check if are files loaded
-            if (!file) {
-                w2popup.close();
-                console.log("Not BVH found.");
-                return;
-            }
-
-            // Log the user
-            await this.FS.login();
-
-            // folder, data, filename, metadata
-            await this.FS.uploadData("animations", file, file.name || "noName", "");
-
-            // Log out the user
-            this.FS.logout();
-
-            console.log("Upload Clicked");
-
+        if (!confirm("Have you finished editing your animation? Remember that uploading the animation to the database implies that it will be used in the synthesis of the 3D avatar used in SignON European project."))
+        return;
+        
+        // Check if are files loaded
+        if (!file) {
             w2popup.close();
-
-            // For now this is used in timeline_maanager
-            // refactor!!
-            window.storeAnimation = this.storeAnimation;
+            console.log("Not BVH found.");
+            return;
         }
+
+        // Log the user
+        await this.FS.login();
+
+        // folder, data, filename, metadata
+        await this.FS.uploadData("animations", file, file.name || "noName", "");
+
+        // Log out the user
+        this.FS.logout();
+
+        w2popup.close();
+
+        // For now this is used in timeline_maanager
+        // refactor!!
+        window.storeAnimation = this.storeAnimation;
     }
 
     onResize() {
@@ -312,11 +304,6 @@ class App {
         // let headerDiv = document.getElementById("header");
         // let videoDiv = document.getElementById("capture");
         // let videoCanvas = document.getElementById("outputVideo");
-        // let bodyDiv = document.getElementById("mainBody");
-        // let sceneCanvas = document.getElementById("scene");
-        // let skeletonCanvas = document.getElementById("skeleton");
-        // let settingsCanvas = document.getElementById("settings");
-        // let timelineCanvas = document.getElementById("timelineCanvas");
         
         // let relation = bodyDiv.width / WIDTH;                           // resize proportion
         // let AR = videoCanvas.clientWidth / videoCanvas.clientHeight;    // aspect ratio
@@ -325,24 +312,11 @@ class App {
         // videoCanvas.width  = videoDiv.width  = videoDiv.width / relation;
         // videoCanvas.height = videoDiv.height = videoDiv.width / AR;
 
-        // skeletonCanvas.width = skeletonCanvas.clientWidth;
-        // skeletonCanvas.height = skeletonCanvas.clientHeight;
-        // settingsCanvas.width = settingsCanvas.clientWidth;
-        // settingsCanvas.height = settingsCanvas.clientHeight;
-        // timelineCanvas.width = timelineCanvas.clientWidth;
-        // timelineCanvas.height = timelineCanvas.clientHeight;
-
-        // app.editor.resize(sceneCanvas.clientWidth, sceneCanvas.clientHeight);
-
         const CANVAS_WIDTH = canvasArea.clientWidth;
         const CANVAS_HEIGHT = canvasArea.clientHeight;
 
-        // skeletonCanvas.width = skeletonCanvas.clientWidth;
-        // skeletonCanvas.height = skeletonCanvas.clientHeight;
-        // settingsCanvas.width = settingsCanvas.clientWidth;
-        // settingsCanvas.height = settingsCanvas.clientHeight;
-        // timelineCanvas.width = timelineCanvas.clientWidth;
-        // timelineCanvas.height = timelineCanvas.clientHeight;
+        const timelineCanvas = document.getElementById("timelineCanvas");
+        timelineCanvas.width = CANVAS_WIDTH;
 
         app.editor.resize(CANVAS_WIDTH, CANVAS_HEIGHT);
     }
