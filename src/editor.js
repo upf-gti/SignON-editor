@@ -54,7 +54,7 @@ class Editor {
         canvasArea.appendChild(renderer.domElement);
         
         // camera
-        let camera = new THREE.PerspectiveCamera(60, pixelRatio, 1, 1000);
+        let camera = new THREE.PerspectiveCamera(60, pixelRatio, 0.1, 1000);
         window.camera = camera;
         let controls = new OrbitControls(camera, renderer.domElement);
         controls.minDistance = 1;
@@ -86,7 +86,7 @@ class Editor {
         this.skeletonHelper = new THREE.SkeletonHelper(skeleton.bones[0]);
         this.skeletonHelper.skeleton = skeleton; // allow animation mixer to bind to THREE.SkeletonHelper directly
 
-        this.gizmo.setSkeletonHelper(this.skeletonHelper);
+        this.gizmo.begin(this.skeletonHelper);
         
         const boneContainer = new THREE.Group();
         boneContainer.add(skeleton.bones[0]);
@@ -136,6 +136,14 @@ class Editor {
         
         this.animate();
     }
+
+    setSelectedBone( name ) {
+        if(!this.gizmo)
+        throw("No gizmo attached to scene");
+
+        this.gizmo.setBone(name);
+        this.gizmo.mustUpdate = true;
+    }
     
     animate() {
         
@@ -144,7 +152,7 @@ class Editor {
         this.render();
         this.update(this.clock.getDelta());
 
-        // if (points_geometry == undefined || landmarks_array == undefined) {
+        // if (this.points_geometry == undefined || this.landmarks_array == undefined) {
         //     var curr_lm = this.landmarks_array[this.iter];
         //     var curr_time = Date.now();
         //     var et = (curr_time - this.prev_time);
@@ -183,11 +191,10 @@ class Editor {
 
     update(dt) {
 
-        if (!this.mixer || !this.state)
-            return;
+        if (this.mixer && this.state)
+            this.mixer.update(dt);
 
-        this.mixer.update(dt);
-        this.gizmo.update(dt);
+        this.gizmo.update(this.state, dt);
     }
 
     resize(width, height) {

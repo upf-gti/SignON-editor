@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import { ShaderChunk } from "./utils.js";
 import { TransformControls } from './libs/TransformControls.js';
 
 class Gizmo {
@@ -23,17 +24,64 @@ class Gizmo {
         transform.attach( this.mesh );
 
         this.camera = editor.camera;
+        this.scene = scene;
         this.transform = transform;
-		this.raycaster = new THREE.Raycaster();
-		this.raycaster.params.Points.threshold = 5;
+		this.raycaster = null;
         this.selectedBone = null;
         this.bonePoints = null;
+
+        this.mustUpdate = false; 
     }
 
-    setSkeletonHelper(skeleton) {
+    begin(skeletonHelper) {
         
-        this.skeletonHelper = skeleton;
+        this.skeletonHelper = skeletonHelper;
+
+        // point cloud for bones
+        const pointsShaderMaterial = new THREE.ShaderMaterial( {
+            uniforms: {
+                color: { value: new THREE.Color( 0xffffff ) },
+                pointTexture: { value: new THREE.TextureLoader().load( 'data/disc.png' ) },
+                alphaTest: { value: 0.9 }
+            },
+            vertexShader: ShaderChunk["Point"].vertexshader,
+            fragmentShader: ShaderChunk["Point"].fragmentshader
+        });
+
+        const geometry = new THREE.BufferGeometry();
+
+        let vertices = [];
+
+        for(let bone of skeletonHelper.bones) {
+            let tempVec = new THREE.Vector3();
+            bone.getWorldPosition(tempVec);
+            vertices.push( tempVec );
+        }
+
+        geometry.setFromPoints(vertices);
+        
+        const positionAttribute = geometry.getAttribute( 'position' );
+        const colors = [];
+        const sizes = [];
+        const color = new THREE.Color(1, 1, 0.41);
+
+        for ( let i = 0, l = positionAttribute.count; i < l; i ++ ) {
+            color.toArray( colors, i * 3 );
+            sizes[i] = 1;
+        }
+
+        geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
+        geometry.setAttribute( 'size', new THREE.Float32BufferAttribute( sizes, 1 ) );
+        this.bonePoints = new THREE.Points( geometry, pointsShaderMaterial );
+        this.scene.add( this.bonePoints );
+
+        this.raycaster = new THREE.Raycaster();
+        this.raycaster.params.Points.threshold = 0.5;
+
         this.bindEvents();
+
+        // First update to get bones in place
+        this.updateBones(0.0);
     }
 
     bindEvents() {
@@ -42,25 +90,27 @@ class Gizmo {
             throw("No skeleton");
 
         let that = this;
+        let transform = this.transform;
 
-        document.addEventListener( 'pointerdown', function(e) {
+        // FIX THIS
+        // document.addEventListener( 'pointerdown', function(e) {
 
-            if(e.button != 0 || !that.bonePoints)
-            return;
+        //     if(e.button != 0 || !that.bonePoints)
+        //     return;
 
-            const pointer = new THREE.Vector2(( e.clientX / window.innerWidth ) * 2 - 1, -( e.clientY / window.innerHeight ) * 2 + 1);
-            that.raycaster.setFromCamera(pointer, that.camera);
-            const intersections = that.raycaster.intersectObject( that.bonePoints );
-            if(!intersections.length)
-                return;
+        //     const pointer = new THREE.Vector2(( e.clientX / window.innerWidth ) * 2 - 1, -( e.clientY / window.innerHeight ) * 2 + 1);
+        //     that.raycaster.setFromCamera(pointer, that.camera);
+        //     const intersections = that.raycaster.intersectObject( that.bonePoints );
+        //     if(!intersections.length)
+        //         return;
 
-            const intersection = intersections.length > 0 ? intersections[ 0 ] : null;
+        //     const intersection = intersections.length > 0 ? intersections[ 0 ] : null;
 
-            if(intersection) {
-                that.selectedBone = intersection.index;
-                console.log( that.skeletonHelper.bones[selectedBone] );
-            }
-        });
+        //     if(intersection) {
+        //         that.selectedBone = intersection.index;
+        //         console.log( that.skeletonHelper.bones[that.selectedBone] );
+        //     }
+        // });
 
         window.addEventListener( 'keydown', function (e) {
 
@@ -127,9 +177,11 @@ class Gizmo {
         });
     }
 
-    update(dt) {
+    update(state, dt) {
 
-        if(this.selectedBone == null)
+        if(state) this.updateBones(dt);
+
+        if(this.selectedBone == null || !this.mustUpdate)
         return;
 
         let bone = this.skeletonHelper.bones[this.selectedBone];
@@ -142,10 +194,10 @@ class Gizmo {
         this.mesh.position.fromArray(tempVec.toArray());
         this.mesh.rotation.setFromQuaternion(quat);
 
-        this.updateBones(dt);
+        this.mustUpdate = false; 
     }
 
-    updateBones(dt) {
+    updateBones( dt ) {
 
         if(!this.bonePoints)
             return;
@@ -160,6 +212,19 @@ class Gizmo {
 
         this.bonePoints.geometry.setFromPoints(vertices);
         this.bonePoints.geometry.computeBoundingSphere();
+    }
+
+    setBone( name ) {
+
+        let bone = this.skeletonHelper.skeleton.getBoneByName(name);
+        if(!bone) {
+            console.warn("No bone with name " + name);
+            return;
+        }
+
+        const boneId = this.skeletonHelper.bones.findIndex((bone) => bone.name == name);
+        if(boneId > -1)
+            this.selectedBone = boneId;
     }
 
 };

@@ -169,6 +169,11 @@ class Gui {
             this.expandItem(data.id);
             item_selected = data.id;
             widgets.on_refresh();
+
+            if(!that.editor)
+            throw("No editor attached");
+
+            that.editor.setSelectedBone( data.id );
         };
     
         litetree.root.addEventListener("item_dblclicked", function(e){
