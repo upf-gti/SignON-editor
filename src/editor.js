@@ -4,6 +4,7 @@ import { BVHLoader } from "./loaders/BVHLoader.js";
 import { createSkeleton, createAnimation } from "./skeleton.js";
 import { BVHExporter } from "./bvh_exporter.js";
 import { Gui } from "./gui.js";
+import { Gizmo } from "./gizmo.js";
 
 class Editor {
 
@@ -14,6 +15,7 @@ class Editor {
         this.camera = null;
         this.controls = null;
         this.scene = null;
+        this.gizmo = null;
         this.renderer = null;
         this.state = false;  // defines how the animation starts (moving/static)
 
@@ -31,7 +33,6 @@ class Editor {
         this.__app = app;
 
         this.init();
-        
     }
     
     init() {
@@ -61,11 +62,13 @@ class Editor {
         camera.position.set(0.5, 2, -3);
         controls.target.set(1.2, 1.5, 0);
         controls.update();  
-        
+
         this.scene = scene;
         this.camera = camera;
         this.renderer = renderer;
         this.controls = controls;
+
+        this.gizmo = new Gizmo(this);
     }
 
     getApp() {
@@ -82,6 +85,8 @@ class Editor {
         
         this.skeletonHelper = new THREE.SkeletonHelper(skeleton.bones[0]);
         this.skeletonHelper.skeleton = skeleton; // allow animation mixer to bind to THREE.SkeletonHelper directly
+
+        this.gizmo.setSkeletonHelper(this.skeletonHelper);
         
         const boneContainer = new THREE.Group();
         boneContainer.add(skeleton.bones[0]);
@@ -115,7 +120,7 @@ class Editor {
         project.prepareData(this.mixer, animation_clip, skeleton);
         this.gui.loadProject(project);
 
-        // set onlcick function to play button
+        // set onclick function to play button
         let that = this;
         let stateBtn = document.getElementById("state_btn");
         stateBtn.onclick = function(e) {
@@ -131,20 +136,14 @@ class Editor {
         
         this.animate();
     }
-        
+    
     animate() {
         
         requestAnimationFrame(this.animate.bind(this));
-        
-        const dt = this.clock.getDelta();
-        
-        if (this.mixer && this.state) {
-            //console.log("Scene!");
-            this.mixer.update(dt);
-        }
-        if (this.gui)
-            this.gui.render();
-        
+
+        this.render();
+        this.update(this.clock.getDelta());
+
         // if (points_geometry == undefined || landmarks_array == undefined) {
         //     var curr_lm = this.landmarks_array[this.iter];
         //     var curr_time = Date.now();
@@ -168,8 +167,27 @@ class Editor {
         //         this.iter = this.iter % this.landmarks_array.length;
         //     }
         // }
-    
+    }
+
+    render() {
+
+        if(!this.renderer)
+        return;
+
         this.renderer.render(this.scene, this.camera);
+
+        if (this.gui)
+            this.gui.render();
+
+    }
+
+    update(dt) {
+
+        if (!this.mixer || !this.state)
+            return;
+
+        this.mixer.update(dt);
+        this.gizmo.update(dt);
     }
 
     resize(width, height) {
