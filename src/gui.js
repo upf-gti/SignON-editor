@@ -95,7 +95,7 @@ class Gui {
 
     createSidePanel( anim_name ) {
 
-        this.mainArea.split("horizontal", [null,"20%"], true);
+        this.mainArea.split("horizontal", [null,"300px"], true);
         var docked = new LiteGUI.Panel("sidePanel", {title: anim_name || 'Inspector', scroll: true});
         this.mainArea.getSection(1).add( docked );
         $(docked).bind("closed", function() { this.mainArea.merge(); });
@@ -201,6 +201,10 @@ class Gui {
                 this.editor.setGizmoMode(v);
             }});
 
+            widgets.addSlider( "Size", this.editor.getGizmoSize(), { min: 0.2, max: 2, step: 0.1, callback: (v) => {
+                this.editor.setGizmoSize(v);
+            }});
+
             widgets.addSeparator();
 
             const bone_selected = this.editor.skeletonHelper.skeleton.getBoneByName(item_selected);
@@ -214,11 +218,13 @@ class Gui {
         };
 
         widgets.on_refresh();
-        
+
         // update scroll position
         var element = root.content.querySelectorAll(".inspector")[0];
         var maxScroll = element.scrollHeight;
         element.scrollTop = options.maxScroll ? maxScroll : (options.scroll ? options.scroll : 0);
+
+        this.resize();
     }
 
     updateNodeTree() {
@@ -289,7 +295,6 @@ class Gui {
     render() {
 
         // this.drawSkeleton();
-        // this.drawSettings();
         this.drawTimeline();
     }
 
@@ -379,10 +384,6 @@ class Gui {
         ctx.restore();
     }
 
-    drawSettings() {
-
-    }
-
     drawTimeline() {
         
         const canvas = this.timelineCTX.canvas;
@@ -415,6 +416,13 @@ class Gui {
         this.processMouse(e);
     }
 
+    resize() {
+        for(let s of LiteGUI.SliderList) {
+            // Resize canvas
+            s.root.width = s.root.parentElement.offsetWidth + 35;
+            s.setValue(null);
+        }
+    }
 };
 
 export { Gui };

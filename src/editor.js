@@ -77,7 +77,8 @@ class Editor {
                 case " ": // Spacebar
                     e.preventDefault();
                     e.stopImmediatePropagation();
-                    this.state = !this.state;
+                    let stateBtn = document.getElementById("state_btn");
+                    stateBtn.click();
                     break;
             }
 
@@ -159,6 +160,15 @@ class Editor {
         
         this.gizmo.setMode( mode.toLowerCase() );
     }
+
+    setGizmoSize( size ) {
+        
+        this.gizmo.transform.setSize( size );
+    }
+
+    getGizmoSize() {
+        return this.gizmo.transform.size;
+    }
     
     animate() {
         
@@ -219,6 +229,7 @@ class Editor {
         this.camera.updateProjectionMatrix();
         this.renderer.setPixelRatio(aspect);
         this.renderer.setSize(width, height);
+        this.gui.resize();
     }
 };
 

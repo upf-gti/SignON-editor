@@ -16,6 +16,8 @@ class Gizmo {
             editor.controls.enabled = !event.value;
         });
 
+        this.initialSize = transform.size;
+
         let scene = editor.scene;
         scene.add( transform );
 
