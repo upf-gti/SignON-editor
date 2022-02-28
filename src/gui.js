@@ -192,7 +192,6 @@ class Gui {
 
             widgets.clear();
             widgets.addSection("Skeleton");
-            widgets.widgets_per_row = 2;
             widgets.addInfo("Name", this.editor.skeletonHelper.name || "Unnamed");
             widgets.addInfo("Num bones", this.editor.skeletonHelper.bones.length);
             widgets.widgets_per_row = 1;
