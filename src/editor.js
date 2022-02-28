@@ -69,6 +69,19 @@ class Editor {
         this.controls = controls;
 
         this.gizmo = new Gizmo(this);
+
+        window.addEventListener( 'keydown', (function (e) {
+
+            switch ( e.key ) {
+
+                case " ": // Spacebar
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    this.state = !this.state;
+                    break;
+            }
+
+        }).bind(this));
     }
 
     getApp() {
@@ -86,8 +99,6 @@ class Editor {
         this.skeletonHelper = new THREE.SkeletonHelper(skeleton.bones[0]);
         this.skeletonHelper.skeleton = skeleton; // allow animation mixer to bind to THREE.SkeletonHelper directly
 
-        this.gizmo.begin(this.skeletonHelper);
-        
         const boneContainer = new THREE.Group();
         boneContainer.add(skeleton.bones[0]);
         
@@ -112,13 +123,10 @@ class Editor {
         
         BVHExporter.export(skeleton, animation_clip, this.landmarks_array.length);
         
-        // play animation
-        // mixer = new THREE.AnimationMixer(skeletonHelper);
-        // mixer.clipAction(result.clip).setEffectiveWeight(1.0).play();
-        // mixer.update(clock.getDelta()); //do first iteration to update from T pose
-        
         project.prepareData(this.mixer, animation_clip, skeleton);
         this.gui.loadProject(project);
+
+        this.gizmo.begin(this.skeletonHelper);
 
         // set onclick function to play button
         let that = this;
@@ -143,6 +151,13 @@ class Editor {
 
         this.gizmo.setBone(name);
         this.gizmo.mustUpdate = true;
+    }
+
+    setGizmoMode( mode ) {
+        if(!mode.length)
+        throw("Invalid Gizmo mode");
+        
+        this.gizmo.setMode( mode.toLowerCase() );
     }
     
     animate() {

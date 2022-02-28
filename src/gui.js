@@ -197,12 +197,8 @@ class Gui {
             widgets.addInfo("Num bones", this.editor.skeletonHelper.bones.length);
             widgets.widgets_per_row = 1;
             widgets.addSection("Gizmo");
-            widgets.addButtons( "Mode", ["Translate","Rotate"], { name_width: "50%", width: "100%", callback: function(v){
-                if(v == "Translate")
-                    console.log("TRANSLATE GIZMO MODE");
-                else
-                    console.log("ROTATE GIZMO MODE");
-                
+            widgets.addButtons( "Mode", ["Translate","Rotate"], { name_width: "50%", width: "100%", callback: (v) => {
+                this.editor.setGizmoMode(v);
             }});
 
             widgets.addSeparator();

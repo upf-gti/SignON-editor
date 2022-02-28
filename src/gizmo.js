@@ -29,8 +29,10 @@ class Gizmo {
 		this.raycaster = null;
         this.selectedBone = null;
         this.bonePoints = null;
+        this.editor = editor;
 
-        this.mustUpdate = false; 
+        // Update in first iteration
+        this.mustUpdate = true; 
     }
 
     begin(skeletonHelper) {
@@ -58,16 +60,18 @@ class Gizmo {
             vertices.push( tempVec );
         }
 
+        this.selectedBone = vertices.length ? 0 : null;
+
         geometry.setFromPoints(vertices);
         
         const positionAttribute = geometry.getAttribute( 'position' );
         const colors = [];
         const sizes = [];
-        const color = new THREE.Color(1, 1, 0.41);
+        const color = new THREE.Color(0.9, 0.9, 0.3);
 
         for ( let i = 0, l = positionAttribute.count; i < l; i ++ ) {
             color.toArray( colors, i * 3 );
-            sizes[i] = 1;
+            sizes[i] = 0.5;
         }
 
         geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
@@ -76,12 +80,12 @@ class Gizmo {
         this.scene.add( this.bonePoints );
 
         this.raycaster = new THREE.Raycaster();
-        this.raycaster.params.Points.threshold = 0.5;
+        this.raycaster.params.Points.threshold = 0.05;
 
         this.bindEvents();
 
         // First update to get bones in place
-        this.updateBones(0.0);
+        this.update(true, 0.0);
     }
 
     bindEvents() {
@@ -92,25 +96,28 @@ class Gizmo {
         let that = this;
         let transform = this.transform;
 
-        // FIX THIS
-        // document.addEventListener( 'pointerdown', function(e) {
+        const canvasArea = document.getElementById("canvasarea");
 
-        //     if(e.button != 0 || !that.bonePoints)
-        //     return;
+        canvasArea.addEventListener( 'pointerdown', function(e) {
 
-        //     const pointer = new THREE.Vector2(( e.clientX / window.innerWidth ) * 2 - 1, -( e.clientY / window.innerHeight ) * 2 + 1);
-        //     that.raycaster.setFromCamera(pointer, that.camera);
-        //     const intersections = that.raycaster.intersectObject( that.bonePoints );
-        //     if(!intersections.length)
-        //         return;
+            if(e.button != 0 || !that.bonePoints)
+            return;
 
-        //     const intersection = intersections.length > 0 ? intersections[ 0 ] : null;
+            const pointer = new THREE.Vector2(( e.offsetX / canvasArea.clientWidth ) * 2 - 1, -( e.offsetY / canvasArea.clientHeight ) * 2 + 1);
+            that.raycaster.setFromCamera(pointer, that.camera);
+            const intersections = that.raycaster.intersectObject( that.bonePoints );
+            if(!intersections.length)
+                return;
 
-        //     if(intersection) {
-        //         that.selectedBone = intersection.index;
-        //         console.log( that.skeletonHelper.bones[that.selectedBone] );
-        //     }
-        // });
+            const intersection = intersections.length > 0 ? intersections[ 0 ] : null;
+
+            if(intersection) {
+                that.selectedBone = intersection.index;
+                that.mustUpdate = true;
+                that.editor.gui.updateSidePanel(null, that.skeletonHelper.bones[that.selectedBone].name);
+                // console.log( that.skeletonHelper.bones[that.selectedBone].name );
+            }
+        });
 
         window.addEventListener( 'keydown', function (e) {
 
@@ -154,12 +161,6 @@ class Gizmo {
 
                 case 90: // Z
                     transform.showZ = ! transform.showZ;
-                    break;
-
-                case 32: // Spacebar
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    // mixer.togglePause();
                     break;
             }
 
@@ -225,6 +226,10 @@ class Gizmo {
         const boneId = this.skeletonHelper.bones.findIndex((bone) => bone.name == name);
         if(boneId > -1)
             this.selectedBone = boneId;
+    }
+
+    setMode( mode ) {
+        this.transform.setMode( mode );
     }
 
 };
