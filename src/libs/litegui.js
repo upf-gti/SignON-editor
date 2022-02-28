@@ -10133,7 +10133,7 @@ Inspector.prototype.addSection = function( name, options )
 
 	var code = "";
 	if(name)
-		code += "<div class='wsectiontitle'>"+(options.no_collapse ? "" : "<span class='switch-section-button'></span>")+name+"</div>";
+		code += "<div class='wsectiontitle'>"+(options.no_collapse ? "" : "<span class='switch-section-button'></span>")+(options.pretitle?options.pretitle:"")+name+"</div>";
 	code += "<div class='wsectioncontent'></div>";
 	element.innerHTML = code;
 

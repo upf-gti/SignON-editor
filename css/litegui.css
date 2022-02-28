@@ -280,7 +280,7 @@ display: none;
 	padding: 0px; /* 2px */
 	padding-left: 4px;
 	font-weight: normal;
-	font-size: 1em;
+	font-size: 0.9em;
 	/* text-shadow: 0 1px 0 black; */
 	vertical-align: top;
 	user-select: none;
@@ -1793,13 +1793,22 @@ button.litebutton.close-button {
 .litetree{
 
 	max-height: 325px;
-	overflow: scroll;
 	background: #222;
+
+	overflow-y: scroll;
+	overflow-x: hidden;
 }
 
 .litetree::-webkit-scrollbar{
 
-	display: none;
+	display: block !important;
+	width: 8px !important;
+}
+
+.litetree::-webkit-scrollbar-thumb {
+    -webkit-border-radius: 5px;
+    border-radius: 5px;
+    background: rgba(200,200,200,0.3); 
 }
 
 li.ltreeitem {
@@ -1810,7 +1819,7 @@ li.ltreeitem {
 	-moz-user-select: none;  
 	-webkit-user-select: none;  
 	user-select: none;
-	font-size: 1.1em;
+	font-size: 1em;
 }
 
 li.ltreeitem.dbl_clicked div.ltreeitemtitle .incontent{

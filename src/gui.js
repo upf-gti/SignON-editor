@@ -6,7 +6,6 @@ class Gui {
     constructor(editor) {
         // Get the canvas for each GUI element
         // this.skeletonCTX = document.getElementById("skeleton").getContext("2d");
-        // this.settingsCTX = document.getElementById("settings").getContext("2d");
 
         // let mouse_control = this.onMouse.bind(this.timeline);
         // let canvas = this.timelineCTX.canvas;
@@ -188,14 +187,16 @@ class Gui {
         var widgets = new LiteGUI.Inspector();
         $(root.content).append(widgets.root);
     
+        const makePretitle = (src) => { return "<img src='data/imgs/mini-icon-"+src+".png' style='margin-right: 4px;margin-top: 4px;'>"; }
+
         widgets.on_refresh = () => {
 
             widgets.clear();
-            widgets.addSection("Skeleton");
+            widgets.addSection("Skeleton", { pretitle: makePretitle('stickman') });
             widgets.addInfo("Name", this.editor.skeletonHelper.name || "Unnamed");
             widgets.addInfo("Num bones", this.editor.skeletonHelper.bones.length);
             widgets.widgets_per_row = 1;
-            widgets.addSection("Gizmo");
+            widgets.addSection("Gizmo", { pretitle: makePretitle('gizmo') });
             widgets.addButtons( "Mode", ["Translate","Rotate"], { name_width: "50%", width: "100%", callback: (v) => {
                 this.editor.setGizmoMode(v);
             }});
@@ -268,15 +269,14 @@ class Gui {
                 display: "none"
             },
             {
+                id: "stop_btn",
+                text: "∎",
+                display: "none"
+            },
+            {
                 id: "capture_btn",
                 text: "Capture"
-            },
-            // {
-            //     id: "upload_btn",
-            //     text: "Upload animation",
-            //     display: "none",
-            //     styles: { position: "absolute", right: "20px", marginTop: "5px !important"}
-            // }
+            }
         ];
 
         for(let b of buttons) {

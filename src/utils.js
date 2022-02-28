@@ -1,3 +1,6 @@
+/*
+	Some utils
+*/
 function getTime() {
 	return new Date().getTime();
 };

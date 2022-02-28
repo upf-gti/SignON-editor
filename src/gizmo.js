@@ -45,7 +45,7 @@ class Gizmo {
         const pointsShaderMaterial = new THREE.ShaderMaterial( {
             uniforms: {
                 color: { value: new THREE.Color( 0xffffff ) },
-                pointTexture: { value: new THREE.TextureLoader().load( 'data/disc.png' ) },
+                pointTexture: { value: new THREE.TextureLoader().load( 'data/imgs/disc.png' ) },
                 alphaTest: { value: 0.9 }
             },
             vertexShader: ShaderChunk["Point"].vertexshader,

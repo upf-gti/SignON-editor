@@ -202,9 +202,8 @@ class App {
         
         let stateBtn = document.getElementById("state_btn");
         stateBtn.style.display = "block";
-        // let uploadBtn = document.getElementById("upload_btn");
-        // uploadBtn.style.display = "block";
-        // uploadBtn.onclick = this.storeAnimation;
+        let stopBtn = document.getElementById("stop_btn");
+        stopBtn.style.display = "block";
     
         // Reposition the canvas elements
         let videoDiv = document.getElementById("capture");
@@ -220,6 +219,9 @@ class App {
         let aspectRatio = videoDiv.width / videoDiv.height;
         videoRec.width  = videoDiv.width  = videoCanvas.width  = videoDiv.clientWidth;
         videoRec.height = videoDiv.height = videoCanvas.height = videoCanvas.width / aspectRatio;
+
+        $(videoDiv).draggable({containment: "#canvasarea"}).resizable({ aspectRatio: true, containment: "#canvasarea"});
+
         // videoRec.src = "models/bvh/victor.mp4";
 
         const updateFrame = (now, metadata) => {

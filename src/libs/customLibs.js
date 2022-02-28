@@ -94,7 +94,7 @@ function Slider(value, options)
 	canvas.className = "slider " + (options.extraclass ? options.extraclass : "");
 
 	canvas.width = 300;
-	canvas.height = 25; 	
+	canvas.height = 22; 	
 
 	this.root = canvas;
 	var that = this;
@@ -126,10 +126,10 @@ function Slider(value, options)
 		ctx.fillRect(0,0, canvas.width * norm, canvas.height);
 
 		ctx.fillStyle = "#EEE";
-		ctx.font = "14px Arial";
+		ctx.font = "13px Arial";
 
 		var text = value.toFixed(options.precision);
-		ctx.fillText(text, canvas.width - 20 - text.length * 8, 18);
+		ctx.fillText(text, canvas.width - 16 - text.length * 8, 15);
 
 		if(value != this.value)
 		{

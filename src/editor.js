@@ -130,17 +130,19 @@ class Editor {
         this.gizmo.begin(this.skeletonHelper);
 
         // set onclick function to play button
-        let that = this;
         let stateBtn = document.getElementById("state_btn");
-        stateBtn.onclick = function(e) {
+        stateBtn.onclick = (e) => {
+            this.state = !this.state;
+            stateBtn.innerHTML = this.state ? "❚❚" : "►";
+            stateBtn.style.border = "solid #268581";
+        };
 
-            that.state = !that.state;
-            stateBtn.innerHTML = that.state ? "❚❚" : "►";
-
-            if(that.state)
-                stateBtn.style.border = "solid #268581";
-            else
-                stateBtn.style.removeProperty("border");
+        let stopBtn = document.getElementById("stop_btn");
+        stopBtn.onclick = (e) => {
+            this.state = false;
+            stateBtn.innerHTML = "►";
+            stateBtn.style.removeProperty("border");
+            this.stopAnimation();
         }
         
         this.animate();
@@ -168,6 +170,12 @@ class Editor {
 
     getGizmoSize() {
         return this.gizmo.transform.size;
+    }
+
+    stopAnimation() {
+        
+        this.mixer.setTime(0.0);
+        this.gizmo.updateBones(0.0);
     }
     
     animate() {
