@@ -5,6 +5,7 @@ import { createSkeleton, createAnimation } from "./skeleton.js";
 import { BVHExporter } from "./bvh_exporter.js";
 import { Gui } from "./gui.js";
 import { Gizmo } from "./gizmo.js";
+import { firstToUpperCase } from "./utils.js"
 
 class Editor {
 
@@ -23,11 +24,14 @@ class Editor {
         this.skeletonHelper = null;
         
         this.points_geometry = null;
-        this.landmarks_array = [];
-        this.prev_time = this.iter = 0;
+        this.landmarksArray = [];
+        this.prevTime = this.iter = 0;
     	this.onDrawTimeline = null;
 	    this.onDrawSettings = null;
         this.gui = new Gui(this);
+
+        this.defaultTranslationSnapValue = 1;
+        this.defaultRotationSnapValue = 30; // Degrees
 
         // Keep "private"
         this.__app = app;
@@ -91,11 +95,11 @@ class Editor {
 
     loadInScene(project) {
 
-        this.landmarks_array = project.landmarks;
+        this.landmarksArray = project.landmarks;
         
         project.path = project.path || "models/bvh/victor.bvh";
         
-        let skeleton = createSkeleton(this.landmarks_array);
+        let skeleton = createSkeleton(this.landmarksArray);
         
         this.skeletonHelper = new THREE.SkeletonHelper(skeleton.bones[0]);
         this.skeletonHelper.skeleton = skeleton; // allow animation mixer to bind to THREE.SkeletonHelper directly
@@ -106,7 +110,7 @@ class Editor {
         this.scene.add(this.skeletonHelper);
         this.scene.add(boneContainer);
         
-        var animation_clip = createAnimation(this.landmarks_array);
+        var animation_clip = createAnimation(this.landmarksArray);
         
         // play animation
         this.mixer = new THREE.AnimationMixer(this.skeletonHelper);
@@ -122,7 +126,7 @@ class Editor {
         
         this.scene.add( points );
         
-        BVHExporter.export(skeleton, animation_clip, this.landmarks_array.length);
+        BVHExporter.export(skeleton, animation_clip, this.landmarksArray.length);
         
         project.prepareData(this.mixer, animation_clip, skeleton);
         this.gui.loadProject(project);
@@ -156,6 +160,10 @@ class Editor {
         this.gizmo.mustUpdate = true;
     }
 
+    getGizmoMode() {
+        return firstToUpperCase( this.gizmo.transform.mode );
+    }
+
     setGizmoMode( mode ) {
         if(!mode.length)
         throw("Invalid Gizmo mode");
@@ -163,13 +171,48 @@ class Editor {
         this.gizmo.setMode( mode.toLowerCase() );
     }
 
+    getGizmoSpace() {
+        return firstToUpperCase( this.gizmo.transform.space );
+    }
+
+    setGizmoSpace( space ) {
+        if(!space.length)
+        throw("Invalid Gizmo mode");
+        
+        this.gizmo.setSpace( space.toLowerCase() );
+    }
+
+    getGizmoSize() {
+        return this.gizmo.transform.size;
+    }
+
     setGizmoSize( size ) {
         
         this.gizmo.transform.setSize( size );
     }
 
-    getGizmoSize() {
-        return this.gizmo.transform.size;
+    isGizmoSnapActive() {
+
+        return this.getGizmoMode() === 'Translate' ? 
+            this.gizmo.transform.translationSnap != null : 
+            this.gizmo.transform.rotationSnap != null;
+
+    }
+    
+    toggleGizmoSnap() {
+
+        if( this.getGizmoMode() === 'Translate' )
+            this.gizmo.transform.setTranslationSnap( this.isGizmoSnapActive() ? null : this.defaultTranslationSnapValue );
+        else
+            this.gizmo.transform.setRotationSnap( this.isGizmoSnapActive() ? null : THREE.MathUtils.degToRad( this.defaultRotationSnapValue ) );
+    }
+
+    updateGizmoSnap() {
+        
+        if(!this.isGizmoSnapActive())
+        return;
+        this.gizmo.transform.setTranslationSnap( this.defaultTranslationSnapValue );
+        this.gizmo.transform.setRotationSnap( THREE.MathUtils.degToRad( this.defaultRotationSnapValue ) );
     }
 
     stopAnimation() {
@@ -185,27 +228,27 @@ class Editor {
         this.render();
         this.update(this.clock.getDelta());
 
-        // if (this.points_geometry == undefined || this.landmarks_array == undefined) {
-        //     var curr_lm = this.landmarks_array[this.iter];
-        //     var curr_time = Date.now();
-        //     var et = (curr_time - this.prev_time);
-        //     if (et > curr_lm.dt) {
+        // if (this.points_geometry == undefined || this.landmarksArray == undefined) {
+        //     var currLM = this.landmarksArray[this.iter];
+        //     var currTime = Date.now();
+        //     var et = (currTime - this.prevTime);
+        //     if (et > currLM.dt) {
                 
         //         const vertices = [];
                 
-        //         for (let i = 0; i < curr_lm.PLM.length; i++) {
-        //             const x = curr_lm.PLM[i].x;
-        //             const y = curr_lm.PLM[i].y;
-        //             const z = curr_lm.PLM[i].z;
+        //         for (let i = 0; i < currLM.PLM.length; i++) {
+        //             const x = currLM.PLM[i].x;
+        //             const y = currLM.PLM[i].y;
+        //             const z = currLM.PLM[i].z;
                     
         //             vertices.push( x, y, z );
         //         }
                 
         //         this.points_geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
                 
-        //         this.prev_time = curr_time + curr_lm.dt;
+        //         this.prevTime = currTime + currLM.dt;
         //         this.iter++;
-        //         this.iter = this.iter % this.landmarks_array.length;
+        //         this.iter = this.iter % this.landmarksArray.length;
         //     }
         // }
     }

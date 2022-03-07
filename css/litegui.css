@@ -99,8 +99,10 @@ display: none;
 
 .inspector .wtitle {
 	margin-top: 6px;
-	background-color: #444;
-	color: #888;
+	padding-top: 6px;
+	/* background-color: #444; */
+	color: rgb(226, 225, 225);
+	font-size: 1.05em;
 }
 
 .inspector .wtitle:first-child {
@@ -549,7 +551,7 @@ input.text.string:hover{
 .inspector .wcontent .checkbox.on {
 	background-color: #FEE;
 /*	border-radius: 50%;*/
-	background: url("../imgs/tick.png");
+	background: url("../data/imgs/tick.png");
     background-size: cover;
 }
 
@@ -898,7 +900,7 @@ div {
 }
 
 .litedialog .content {
-	padding: 0px;
+	padding: 12px;
 	/*font-size: 12px;*/
 }
 
@@ -1585,12 +1587,16 @@ button.litebutton {
     /* box-shadow: 0.01em 0.06em 0px 0px #333; */
 }
 
+button.litebutton.selected {
+	background-color: var(--global-color-selected); 
+}
+
 button.litebutton:active, button.litebutton:focus {
     outline: none !important;
 }
 
 button.litebutton:hover:not(:disabled) {
-    background: #626262 !important;
+    background: var(--global-color-highlight) !important;
 }
 
 button.litebutton:active:not(:disabled) {

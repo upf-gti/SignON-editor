@@ -1,5 +1,5 @@
-import { ObjectLoader } from "./libs/three.module.js";
 import { Timeline } from "./libs/timeline.module.js";
+import { firstToUpperCase } from "./utils.js";
 
 class Gui {
 
@@ -78,7 +78,7 @@ class Gui {
 
         const logo = document.createElement("img");
         logo.id = "signOn-logo"
-        logo.src = "img/logo_SignON.png";
+        logo.src = "data/imgs/logo_SignON.png";
         logo.alt = "SignON"
         logo.addEventListener('click', () => window.open('https://signon-project.eu/'));
         menubar.root.prepend(logo);
@@ -99,7 +99,7 @@ class Gui {
         this.mainArea.getSection(1).add( docked );
         $(docked).bind("closed", function() { this.mainArea.merge(); });
         this.sidePanel = docked;
-        this.updateSidePanel( docked, 'root' );
+        this.updateSidePanel( docked, 'root', {firstBone: true} );
         
         docked.content.id = "main-inspector-content";
         docked.content.style.width = "100%";
@@ -122,47 +122,28 @@ class Gui {
         var that = this;
     
         // Click right mouse
-        // litetree.onItemContextMenu = function(e, el) { 
+        litetree.onItemContextMenu = (e, el) => { 
     
-        //     e.preventDefault();
-        //     var item = el.item;
-        //     var node_id = el.data.id;
+            e.preventDefault();
+            var bone_id = el.data.id;
     
-        //     if(!CORE)
-        //     return;
+            const bone = this.editor.skeletonHelper.skeleton.getBoneByName(bone_id);
+            if(!bone)
+            return;
     
-        //     var node = CORE.getByName(node_id);
-        //     if(!node) // is root 
-        //     return;
-    
-        //     var actions = [
-        //         {
-        //             title: node.visible ? "Hide" : "Show", //text to show
-        //             callback: function() { 
-        //                 node.visible = !node.visible;
-        //                 node.flags.ignore_collisions = !node.flags.ignore_collisions;
-        //                 that.updateSidePanel(null, node_id);
-        //             }
-        //         },
-        //         {
-        //             title: "Copy",
-        //             callback: function() { 
-        //                 LiteGUI.toClipboard( node.name );
-        //             }
-        //         },
-              
-        //         {
-        //             title: "Delete", //text to show
-        //             callback: function() { 
-        //                 if(RM.Get('NodePicker'))
-        //                     RM.Get('NodePicker').delete( node );
-        //                 that.updateSidePanel(null, "root");
-        //             }
-        //         },
-        //     ];
+            var actions = [
+                {
+                    title: "Disable", //text to show
+                    callback: () => console.log("TODO: Disable")
+                },
+                {
+                    title: "Copy",
+                    callback: () => LiteGUI.toClipboard( bone )
+                }
+            ];
             
-        //     new LiteGUI.ContextMenu( actions, { event: e });
-        // };
+            new LiteGUI.ContextMenu( actions, { event: e });
+        };
     
         litetree.onItemSelected = function(data){
             this.expandItem(data.id);
@@ -187,33 +168,47 @@ class Gui {
         var widgets = new LiteGUI.Inspector();
         $(root.content).append(widgets.root);
     
-        const makePretitle = (src) => { return "<img src='data/imgs/mini-icon-"+src+".png' style='margin-right: 4px;margin-top: 4px;'>"; }
+        const makePretitle = (src) => { return "<img src='data/imgs/mini-icon-"+src+".png' style='margin-right: 4px;margin-top: 6px;'>"; }
 
         widgets.on_refresh = () => {
+
+            const numBones = this.editor.skeletonHelper.bones.length;
 
             widgets.clear();
             widgets.addSection("Skeleton", { pretitle: makePretitle('stickman') });
             widgets.addInfo("Name", this.editor.skeletonHelper.name || "Unnamed");
-            widgets.addInfo("Num bones", this.editor.skeletonHelper.bones.length);
+            widgets.addInfo("Num bones", numBones);
             widgets.widgets_per_row = 1;
-            widgets.addSection("Gizmo", { pretitle: makePretitle('gizmo') });
-            widgets.addButtons( "Mode", ["Translate","Rotate"], { name_width: "50%", width: "100%", callback: (v) => {
+            widgets.addSection("Gizmo", { pretitle: makePretitle('gizmo'), settings: (e) => this.openSettings( 'gizmo' ) });
+            widgets.addButtons( "Mode", ["Translate","Rotate"], { selected: this.editor.getGizmoMode(), name_width: "50%", width: "100%", callback: (v) => {
                 this.editor.setGizmoMode(v);
+                widgets.on_refresh();
             }});
 
-            widgets.addSlider( "Size", this.editor.getGizmoSize(), { min: 0.2, max: 2, step: 0.1, callback: (v) => {
-                this.editor.setGizmoSize(v);
+            widgets.addButtons( "Space", ["Local","World"], { selected: this.editor.getGizmoSpace(), name_width: "50%", width: "100%", callback: (v) => {
+                this.editor.setGizmoSpace(v);
+                widgets.on_refresh();
             }});
+
+            widgets.addCheckbox( "Snap", this.editor.isGizmoSnapActive(), {callback: () => this.editor.toggleGizmoSnap() } );
 
             widgets.addSeparator();
 
-            const bone_selected = this.editor.skeletonHelper.skeleton.getBoneByName(item_selected);
+            const bone_selected = !(options.firstBone && numBones) ? 
+                this.editor.skeletonHelper.skeleton.getBoneByName(item_selected) : 
+                this.editor.skeletonHelper.bones[0];
+
             if(bone_selected) {
-                widgets.addSection("Bone");
-                widgets.addInfo("Name", item_selected);
-                widgets.addVector3("Position", bone_selected.position.toArray());
-                widgets.addVector3("Rotation (XYZ)", bone_selected.rotation.toArray());
-                widgets.addVector4("Rotation (quat)", bone_selected.quaternion.toArray());
+                widgets.addSection("Bone", { pretitle: makePretitle('circle') });
+                widgets.addInfo("Name", bone_selected.name);
+                widgets.addTitle("Position");
+                widgets.addVector3(null, bone_selected.position.toArray());
+
+                widgets.addTitle("Rotation (XYZ)");
+                widgets.addVector3(null, bone_selected.rotation.toArray());
+
+                widgets.addTitle("Quaternion");
+                widgets.addVector4(null, bone_selected.quaternion.toArray());
             }
         };
 
@@ -225,6 +220,39 @@ class Gui {
         element.scrollTop = options.maxScroll ? maxScroll : (options.scroll ? options.scroll : 0);
 
         this.resize();
+    }
+
+    openSettings( settings ) {
+
+        let prevDialog = document.getElementById("settings-dialog");
+        if(prevDialog) prevDialog.remove();
+
+        const dialog = new LiteGUI.Dialog({ id: 'settings-dialog', title: firstToUpperCase(settings), close: true, width: 380, height: 128, scroll: false, draggable: true});
+		dialog.show();
+
+        const inspector = new LiteGUI.Inspector();
+
+        switch( settings ) {
+            case 'gizmo': 
+
+            inspector.addNumber( "Translation snap", this.editor.defaultTranslationSnapValue, { min: 0.5, max: 5, step: 0.5, callback: (v) => {
+                this.editor.defaultTranslationSnapValue = v;
+                this.editor.updateGizmoSnap();
+            }});
+
+            inspector.addNumber( "Rotation snap", this.editor.defaultRotationSnapValue, { min: 15, max: 180, step: 15, callback: (v) => {
+                this.editor.defaultRotationSnapValue = v;
+                this.editor.updateGizmoSnap();
+            }});
+
+            inspector.addSlider( "Size", this.editor.getGizmoSize(), { min: 0.2, max: 2, step: 0.1, callback: (v) => {
+                this.editor.setGizmoSize(v);
+            }});
+
+            break;
+        };
+
+        dialog.add( inspector );
     }
 
     updateNodeTree() {
@@ -385,6 +413,9 @@ class Gui {
 
     drawTimeline() {
         
+        if(!this.project)
+        return;
+
         const canvas = this.timelineCTX.canvas;
         this.current_time = this.timeline.current_time = this.project.mixer.time % this.duration;
         this.timeline.draw(this.timelineCTX, this.project, this.current_time, [0, 0, canvas.width, canvas.height]);

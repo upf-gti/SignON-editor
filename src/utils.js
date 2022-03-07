@@ -3,7 +3,11 @@
 */
 function getTime() {
 	return new Date().getTime();
-};
+}
+
+function firstToUpperCase(string) {
+	return string.charAt(0).toUpperCase() + string.slice(1);
+}
 
 const ShaderChunk = {
 
@@ -52,4 +56,4 @@ const ShaderChunk = {
 
 };
 
-export { getTime, ShaderChunk }
+export { getTime, firstToUpperCase, ShaderChunk }

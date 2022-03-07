@@ -9574,9 +9574,10 @@ Inspector.prototype.addButtons = function(name, value, options)
 		for(var i in value)
 		{
 			var title = "";
+			var is_selected = (value[i] === options.selected);
 			if( options.title && options.title.constructor === Array)
 				title = options.title[i] || "";
-			code += "<button class='litebutton' title='"+title+"' tabIndex='"+this.tab_index+"' style='"+style+"'>"+value[i]+"</button>";
+			code += "<button class='litebutton " + (is_selected ? "selected" : "") + "' title='"+title+"' tabIndex='"+this.tab_index+"' style='"+style+"'>"+value[i]+"</button>";
 			this.tab_index++;
 		}
 	}
@@ -10131,9 +10132,12 @@ Inspector.prototype.addSection = function( name, options )
 	if(options.instance)
 		element.instance = options.instance;
 
+	
+    const makeSettings = () => { return "<img class='section-settings' src='data/imgs/mini-icon-gear.png' style='cursor:pointer;margin-right: 4px;margin-top: 4px; float:right;'>"; }
+
 	var code = "";
 	if(name)
-		code += "<div class='wsectiontitle'>"+(options.no_collapse ? "" : "<span class='switch-section-button'></span>")+(options.pretitle?options.pretitle:"")+name+"</div>";
+		code += "<div class='wsectiontitle'>"+(options.no_collapse ? "" : "<span class='switch-section-button'></span>")+(options.pretitle?options.pretitle:"")+name+(options.settings?makeSettings():"")+"</div>";
 	code += "<div class='wsectioncontent'></div>";
 	element.innerHTML = code;
 
@@ -10158,6 +10162,13 @@ Inspector.prototype.addSection = function( name, options )
 
 	if(options.collapsed)
 		element.querySelector(".wsectioncontent").style.display = "none";
+
+	if(options.settings)
+		element.querySelector(".section-settings").addEventListener( 'click', function(e) {
+			e.preventDefault();
+			e.stopPropagation();
+			options.settings(e);
+		});
 
 	this.setCurrentSection( element );
 

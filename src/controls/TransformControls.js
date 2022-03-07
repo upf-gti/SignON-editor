@@ -830,7 +830,7 @@ class TransformControlsGizmo extends Object3D {
 
 		const matGrayTransparent = gizmoMaterial.clone();
 		matGrayTransparent.color.setHex( 0x787878 );
-		matGrayTransparent.opacity = 0.5;
+		matGrayTransparent.opacity = 0.38;
 
 		// reusable geometry
 
@@ -949,20 +949,20 @@ class TransformControlsGizmo extends Object3D {
 
 		const gizmoRotate = {
 			XYZE: [
-				[ new Mesh( CircleGeometry( 0.525, 1, 0.009 ), matGray ), null, [ 0, Math.PI / 2, 0 ]],
-				[ new Mesh(new SphereGeometry( 0.5 ), matGrayTransparent ), null, [ 0, Math.PI / 2, 0 ]]
+				[ new Mesh( CircleGeometry( 0.425, 1, 0.009 ), matGray ), null, [ 0, Math.PI / 2, 0 ]],
+				[ new Mesh(new SphereGeometry( 0.4 ), matGrayTransparent ), null, [ 0, Math.PI / 2, 0 ]]
 			],
 			X: [
-				[ new Mesh( CircleGeometry( 0.5, 0.5 ), matRed ) ]
+				[ new Mesh( CircleGeometry( 0.4, 0.5 ), matRed ) ]
 			],
 			Y: [
-				[ new Mesh( CircleGeometry( 0.5, 0.5 ), matGreen ), null, [ 0, 0, - Math.PI / 2 ]]
+				[ new Mesh( CircleGeometry( 0.4, 0.5 ), matGreen ), null, [ 0, 0, - Math.PI / 2 ]]
 			],
 			Z: [
-				[ new Mesh( CircleGeometry( 0.5, 0.5 ), matBlue ), null, [ 0, Math.PI / 2, 0 ]]
+				[ new Mesh( CircleGeometry( 0.4, 0.5 ), matBlue ), null, [ 0, Math.PI / 2, 0 ]]
 			],
 			E: [
-				[ new Mesh( CircleGeometry( 0.65, 1 ), matYellowTransparent ), null, [ 0, Math.PI / 2, 0 ]]
+				[ new Mesh( CircleGeometry( 0.55, 1 ), matYellowTransparent ), null, [ 0, Math.PI / 2, 0 ]]
 			]
 		};
 

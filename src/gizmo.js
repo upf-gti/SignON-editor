@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { ShaderChunk } from "./utils.js";
-import { TransformControls } from './libs/TransformControls.js';
+import { TransformControls } from './controls/TransformControls.js';
 
 class Gizmo {
 
@@ -10,20 +10,24 @@ class Gizmo {
         throw("No editor to attach Gizmo!");
 
         let transform = new TransformControls( editor.camera, editor.renderer.domElement );
+        window.trans = transform;
+        transform.setSpace( 'local' );
         transform.addEventListener( 'change', editor.render );
+
+        this.currentOffset = new THREE.Vector3();
+
+        transform.addEventListener( 'objectChange', (e) => {
+            if(this.selectedBone === undefined)
+            return;
+            this.updateBones();
+        } );
 
         transform.addEventListener( 'dragging-changed', function (event) {
             editor.controls.enabled = !event.value;
         });
 
-        this.initialSize = transform.size;
-
         let scene = editor.scene;
         scene.add( transform );
-
-        this.mesh = new THREE.Mesh();
-        scene.add( this.mesh );
-        transform.attach( this.mesh );
 
         this.camera = editor.camera;
         this.scene = scene;
@@ -117,7 +121,7 @@ class Gizmo {
                 that.selectedBone = intersection.index;
                 that.mustUpdate = true;
                 that.editor.gui.updateSidePanel(null, that.skeletonHelper.bones[that.selectedBone].name);
-                // console.log( that.skeletonHelper.bones[that.selectedBone].name );
+                console.log( that.skeletonHelper.bones[that.selectedBone] );
             }
         });
 
@@ -131,26 +135,16 @@ class Gizmo {
                     break;
 
                 case 16: // Shift
-                    transform.setTranslationSnap( 100 );
-                    transform.setRotationSnap( THREE.MathUtils.degToRad( 15 ) );
+                    transform.setTranslationSnap( that.editor.defaultTranslationSnapValue );
+                    transform.setRotationSnap( THREE.MathUtils.degToRad( that.editor.defaultRotationSnapValue ) );
                     break;
 
-                case 87: // W
+                case 87: // We
                     transform.setMode( 'translate' );
                     break;
 
                 case 69: // E
                     transform.setMode( 'rotate' );
-                    break;
-
-                case 187:
-                case 107: // +, =, num+
-                    transform.setSize( transform.size + 0.1 );
-                    break;
-
-                case 189:
-                case 109: // -, _, num-
-                    transform.setSize( Math.max( transform.size - 0.1, 0.1 ) );
                     break;
 
                 case 88: // X
@@ -187,16 +181,7 @@ class Gizmo {
         if(this.selectedBone == null || !this.mustUpdate)
         return;
 
-        let bone = this.skeletonHelper.bones[this.selectedBone];
-        let tempVec = new THREE.Vector3();
-        bone.getWorldPosition(tempVec);
-
-        let quat = new THREE.Quaternion();
-        bone.getWorldQuaternion(quat);
-
-        this.mesh.position.fromArray(tempVec.toArray());
-        this.mesh.rotation.setFromQuaternion(quat);
-
+        this.transform.attach( this.skeletonHelper.bones[this.selectedBone] );
         this.mustUpdate = false; 
     }
 
@@ -234,6 +219,9 @@ class Gizmo {
         this.transform.setMode( mode );
     }
 
+    setSpace( space ) {
+        this.transform.setSpace( space );
+    }
 };
 
 export { Gizmo };
