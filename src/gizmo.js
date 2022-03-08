@@ -140,10 +140,12 @@ class Gizmo {
 
             if(intersection) {
                 this.selectedBone = intersection.index;
+                let boneName = this.skeletonHelper.bones[this.selectedBone].name;
+
                 this.mustUpdate = true;
-                this.editor.gui.updateSidePanel(null, this.skeletonHelper.bones[this.selectedBone].name);
+                this.editor.gui.updateSidePanel(null, boneName);
+                this.editor.gui.timeline.setSelectedBone( boneName );
                 this.updateBoneColors();
-                console.log( this.skeletonHelper.bones[this.selectedBone] );
             }
         });
 

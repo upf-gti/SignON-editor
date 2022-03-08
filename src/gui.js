@@ -19,9 +19,14 @@ class Gui {
         this.names = project.names;
         this.duration = project.duration;
 
-        this.timeline = new Timeline();
-        this.timeline.setScale(150.0946352969992);
+        let boneName = null;
+        if(this.editor.skeletonHelper.bones.length) {
+            boneName = this.editor.skeletonHelper.bones[0].name;
+        }
+
+        this.timeline = new Timeline( this.editor.animationClip, boneName);
         this.timeline.framerate = project.framerate;
+        this.timeline.setScale(400);
         this.timeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
 
         // Move this to another place
@@ -60,6 +65,17 @@ class Gui {
         timelineCanvas.addEventListener("mousedown", this.onMouse.bind(this));
         timelineCanvas.addEventListener("mousemove", this.onMouse.bind(this));
         timelineCanvas.addEventListener("wheel", this.onMouse.bind(this));
+
+        timelineCanvas.addEventListener( 'keydown', (e) => {
+            switch ( e.key ) {
+                case " ": // Spacebar
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    const stateBtn = document.getElementById("state_btn");
+                    stateBtn.click();
+                    break;
+            }
+        });
     }
 
     createMenubar() {
@@ -98,6 +114,8 @@ class Gui {
         
         docked.content.id = "main-inspector-content";
         docked.content.style.width = "100%";
+
+        this.resize();
     }
 
     updateSidePanel(root, item_selected, options) {
@@ -148,6 +166,7 @@ class Gui {
             throw("No editor attached");
 
             that.editor.setSelectedBone( data.id );
+            that.timeline.setSelectedBone( data.id );
         };
     
         litetree.root.addEventListener("item_dblclicked", function(e){
@@ -218,8 +237,6 @@ class Gui {
         var element = root.content.querySelectorAll(".inspector")[0];
         var maxScroll = element.scrollHeight;
         element.scrollTop = options.maxScroll ? maxScroll : (options.scroll ? options.scroll : 0);
-
-        this.resize();
     }
 
     openSettings( settings ) {
@@ -345,6 +362,10 @@ class Gui {
             s.root.width = s.root.parentElement.offsetWidth + 35;
             s.setValue(null);
         }
+
+        const canvasArea = document.getElementById("canvasarea");
+        let timelineCanvas = document.getElementById("timelineCanvas");
+        timelineCanvas.width = canvasArea.clientWidth;
     }
 
     drawSkeleton() {

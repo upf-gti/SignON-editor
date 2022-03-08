@@ -77,8 +77,7 @@ class Editor {
 
         this.gizmo = new Gizmo(this);
 
-        renderer.domElement.addEventListener( 'keydown', (function (e) {
-
+        renderer.domElement.addEventListener( 'keydown', (e) => {
             switch ( e.key ) {
 
                 case " ": // Spacebar
@@ -88,8 +87,7 @@ class Editor {
                     stateBtn.click();
                     break;
             }
-
-        }).bind(this));
+        });
     }
 
     getApp() {
@@ -114,7 +112,6 @@ class Editor {
         this.scene.add(boneContainer);
         
         this.animationClip = createAnimation(project.clipName, this.landmarksArray);
-        console.log(this.animationClip.duration);
         
         // play animation
         this.mixer = new THREE.AnimationMixer(this.skeletonHelper);
