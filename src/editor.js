@@ -114,7 +114,6 @@ class Editor {
         this.scene.add(boneContainer);
         
         this.animationClip = createAnimation(project.clipName, this.landmarksArray);
-        console.log(this.animationClip.duration);
         
         // play animation
         this.mixer = new THREE.AnimationMixer(this.skeletonHelper);

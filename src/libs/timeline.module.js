@@ -1,9 +1,9 @@
 import { getTime } from '../utils.js';
 
-//Agnostic timeline, do nos impose any timeline content
-//it renders to a canvas
+// Agnostic timeline, do nos impose any timeline content
+// It renders to a canvas
 
-function Timeline() {
+function Timeline( clip, bone_name ) {
 
 	this.current_time = 0;
 	this.framerate = 30;
@@ -30,11 +30,60 @@ function Timeline() {
 	this._last_mouse = [0,0];
 
 	this._tracks_drawn = [];
+	this.clip = clip;
+	this.selected_bone = bone_name;
 
-	this.onDrawContent = null; //onDrawContent( ctx, time_start, time_end, timeline );
+	this.processTracks();
+
+	this.onDrawContent = ( ctx, time_start, time_end, timeline ) => {
+
+		if(this.selected_bone == null)
+		return;
+
+		let i = 15, tracks = this.tracksPerBone[this.selected_bone];
+		for( let track of tracks ) {
+			this.drawTrackWithKeyframes(ctx, i, 15, "FEDERICO", track.name + "(" + track.type + ")", track.data, i/15);
+			i+=15;
+		}
+	};
 }
 
-//project must have .duration in seconds
+Timeline.prototype.setSelectedBone = function ( bone_name ) {
+
+	if(bone_name.constructor !== String)
+	throw("Bone name has to be a string!");
+
+	this.selected_bone = bone_name;
+}
+
+// Creates a map for each bone -> tracks
+Timeline.prototype.processTracks = function () {
+
+	this.tracksPerBone = {};
+
+	for( let track of this.clip.tracks ) {
+
+		const nameIndex = track.name.indexOf('['),
+			trackNameInfo = track.name.substr(nameIndex+1).split("]."),
+			name = trackNameInfo[0],
+			type = trackNameInfo[1];
+
+		let trackInfo = {
+			"name": name, 
+			"data": track,
+			"type": type
+		};
+
+		if(!this.tracksPerBone[name]) {
+			this.tracksPerBone[name] = [trackInfo];
+		}else {
+			this.tracksPerBone[name].push( trackInfo );
+		}
+	}
+
+}
+
+// Project must have .duration in seconds
 Timeline.prototype.draw = function (ctx, project, current_time, rect) {
 	if(!project)
 		return;
@@ -93,9 +142,6 @@ Timeline.prototype.draw = function (ctx, project, current_time, rect) {
 	
 	//calls using as 0,0 the top-left of the tracks area (not the top-left of the timeline but 20 pixels below)
 	this._tracks_drawn.length = 0;
-
-	if(this.onDrawContent)
-		this.onDrawContent( ctx, time_start, time_end, this );
 
 	//scrollbar
 	if( h < this.scrollable_height )
@@ -205,6 +251,9 @@ Timeline.prototype.draw = function (ctx, project, current_time, rect) {
 	ctx.lineTo( x,6);
 	ctx.fill();
 
+	if(this.onDrawContent)
+		this.onDrawContent( ctx, time_start, time_end, this );
+
 	ctx.restore();
 }
 
@@ -254,6 +303,8 @@ Timeline.prototype.drawTrackWithKeyframes = function (ctx, y, track_height, titl
 	if(track.enabled === false)
 		ctx.globalAlpha = 0.4;
 
+	let bullet_callback = null;
+
 	if( bullet_callback )
 	{
 		ctx.fillStyle = "#AAA";
@@ -264,7 +315,7 @@ Timeline.prototype.drawTrackWithKeyframes = function (ctx, y, track_height, titl
 	this._track_bullet_callback = bullet_callback || null;
 	this._tracks_drawn.push([track,y+this.top_margin,track_height]);
 
-	ctx.font = Math.floor( track_height * 0.7) + "px Arial";
+	ctx.font = Math.floor( track_height * 0.8) + "px Arial";
 	ctx.textAlign = "left";
 	ctx.fillStyle = "rgba(255,255,255,0.8)";
 
@@ -274,26 +325,37 @@ Timeline.prototype.drawTrackWithKeyframes = function (ctx, y, track_height, titl
 
 	if(subtitle != null)
 	{
-		var info = ctx.measureText( title );
-		ctx.fillStyle = "rgba(100,180,255,0.8)";
+		var info = ctx.measureText( subtitle );
+		ctx.fillStyle = "rgba(255,255,255,0.9)";
 		ctx.fillText( subtitle, margin_left + 10 + info.width, y + track_height * 0.75 );
 	}
 
-	ctx.fillStyle = "rgba(220,200,150,1)";
-	var keyframes = track.data;
+	ctx.fillStyle = "rgba(120,200,200,1)";
+	var keyframes = track.times;
 
-	if(keyframes)
+	if(keyframes) {
+		
 		for(var j = 0; j < keyframes.length; ++j)
 		{
-			var keyframe = keyframes[j];
-			var time = keyframe[0];
-			var value = keyframe[1];
+			var time = keyframes[j];
 			if( time < this._start_time || time > this._end_time )
 				continue;
 			var keyframe_posx = this.timeToX( time );
-			if( keyframe_posx > this.sidebar_width )
-				ctx.fillRect( keyframe_posx - 4, y + 4, 8, track_height - 8);
+			if( keyframe_posx > this.sidebar_width ){
+				ctx.save();
+
+				let size = track_height * 0.4;
+				
+				ctx.translate(keyframe_posx, y + size * 2)
+				ctx.rotate(45 * Math.PI / 180);		
+				ctx.fillRect( -size, -size, size, size);
+				ctx.restore();
+			}
+				
+				
 		}
+		
+	}
 
 	ctx.globalAlpha = 1;
 }

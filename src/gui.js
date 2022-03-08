@@ -19,9 +19,14 @@ class Gui {
         this.names = project.names;
         this.duration = project.duration;
 
-        this.timeline = new Timeline();
-        this.timeline.setScale(150.0946352969992);
+        let boneName = null;
+        if(this.editor.skeletonHelper.bones.length) {
+            boneName = this.editor.skeletonHelper.bones[0].name;
+        }
+
+        this.timeline = new Timeline( this.editor.animationClip, boneName);
         this.timeline.framerate = project.framerate;
+        this.timeline.setScale(400);
         this.timeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
 
         // Move this to another place
@@ -148,6 +153,7 @@ class Gui {
             throw("No editor attached");
 
             that.editor.setSelectedBone( data.id );
+            that.timeline.setSelectedBone( data.id );
         };
     
         litetree.root.addEventListener("item_dblclicked", function(e){
