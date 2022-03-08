@@ -9,12 +9,13 @@ class Gizmo {
         if(!editor)
         throw("No editor to attach Gizmo!");
 
+        this.raycastEnabled = true;
+        this.undoSteps = [];
+
         let transform = new TransformControls( editor.camera, editor.renderer.domElement );
         window.trans = transform;
         transform.setSpace( 'local' );
         transform.addEventListener( 'change', editor.render );
-
-        this.currentOffset = new THREE.Vector3();
 
         transform.addEventListener( 'objectChange', (e) => {
             if(this.selectedBone === undefined)
@@ -22,8 +23,19 @@ class Gizmo {
             this.updateBones();
         } );
 
-        transform.addEventListener( 'dragging-changed', function (event) {
-            editor.controls.enabled = !event.value;
+        transform.addEventListener( 'dragging-changed', (e) => {
+            const enabled = e.value;
+            editor.controls.enabled = !enabled;
+            this.raycastEnabled = !this.raycastEnabled;
+            
+            if(enabled && this.selectedBone != null) {
+                const bone = this.editor.skeletonHelper.bones[this.selectedBone];
+                this.undoSteps.push( {
+                    boneId: this.selectedBone,
+                    pos: bone.position.toArray(),
+                    quat: bone.quaternion.toArray(),
+                } );
+            }
         });
 
         let scene = editor.scene;
@@ -71,27 +83,27 @@ class Gizmo {
         geometry.setFromPoints(vertices);
         
         const positionAttribute = geometry.getAttribute( 'position' );
-        const colors = [];
         const sizes = [];
-        const color = new THREE.Color(0.9, 0.9, 0.3);
 
         for ( let i = 0, l = positionAttribute.count; i < l; i ++ ) {
-            color.toArray( colors, i * 3 );
             sizes[i] = 0.5;
         }
 
-        geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
         geometry.setAttribute( 'size', new THREE.Float32BufferAttribute( sizes, 1 ) );
+
         this.bonePoints = new THREE.Points( geometry, pointsShaderMaterial );
         this.scene.add( this.bonePoints );
-
+        
         this.raycaster = new THREE.Raycaster();
         this.raycaster.params.Points.threshold = 0.05;
-
+        
         this.bindEvents();
-
+        
         // First update to get bones in place
         this.update(true, 0.0);
+
+        if(this.selectedBone != null) 
+            this.updateBoneColors();
     }
 
     bindEvents() {
@@ -99,64 +111,78 @@ class Gizmo {
         if(!this.skeletonHelper)
             throw("No skeleton");
 
-        let that = this;
         let transform = this.transform;
 
-        const canvasArea = document.getElementById("canvasarea");
+        const canvas = document.getElementById("webgl-canvas");
 
-        canvasArea.addEventListener( 'pointerdown', function(e) {
+        canvas.addEventListener( 'pointerdown', (e) => {
 
-            if(e.button != 0 || !that.bonePoints)
+            if(e.button != 0 || !this.bonePoints || (!this.raycastEnabled && !e.ctrlKey))
             return;
 
-            const pointer = new THREE.Vector2(( e.offsetX / canvasArea.clientWidth ) * 2 - 1, -( e.offsetY / canvasArea.clientHeight ) * 2 + 1);
-            that.raycaster.setFromCamera(pointer, that.camera);
-            const intersections = that.raycaster.intersectObject( that.bonePoints );
+            const pointer = new THREE.Vector2(( e.offsetX / canvas.clientWidth ) * 2 - 1, -( e.offsetY / canvas.clientHeight ) * 2 + 1);
+            this.raycaster.setFromCamera(pointer, this.camera);
+            const intersections = this.raycaster.intersectObject( this.bonePoints );
             if(!intersections.length)
                 return;
 
             const intersection = intersections.length > 0 ? intersections[ 0 ] : null;
 
             if(intersection) {
-                that.selectedBone = intersection.index;
-                that.mustUpdate = true;
-                that.editor.gui.updateSidePanel(null, that.skeletonHelper.bones[that.selectedBone].name);
-                console.log( that.skeletonHelper.bones[that.selectedBone] );
+                this.selectedBone = intersection.index;
+                this.mustUpdate = true;
+                this.editor.gui.updateSidePanel(null, this.skeletonHelper.bones[this.selectedBone].name);
+                this.updateBoneColors();
+                console.log( this.skeletonHelper.bones[this.selectedBone] );
             }
         });
 
-        window.addEventListener( 'keydown', function (e) {
+        canvas.addEventListener( 'keydown', (e) => {
 
-            // TODO: Change this - its depracated -
-            switch ( e.keyCode ) {
+            switch ( e.key ) {
 
-                case 81: // Q
+                case 'q':
                     transform.setSpace( transform.space === 'local' ? 'world' : 'local' );
+                    this.editor.gui.updateSidePanel();
                     break;
 
-                case 16: // Shift
-                    transform.setTranslationSnap( that.editor.defaultTranslationSnapValue );
-                    transform.setRotationSnap( THREE.MathUtils.degToRad( that.editor.defaultRotationSnapValue ) );
+                case 'Shift':
+                    transform.setTranslationSnap( this.editor.defaultTranslationSnapValue );
+                    transform.setRotationSnap( THREE.MathUtils.degToRad( this.editor.defaultRotationSnapValue ) );
                     break;
 
-                case 87: // We
+                case 'w':
                     transform.setMode( 'translate' );
+                    this.editor.gui.updateSidePanel();
                     break;
 
-                case 69: // E
+                case 'e':
                     transform.setMode( 'rotate' );
+                    this.editor.gui.updateSidePanel();
                     break;
 
-                case 88: // X
+                case 'x':
                     transform.showX = ! transform.showX;
                     break;
 
-                case 89: // Y
+                case 'y':
                     transform.showY = ! transform.showY;
                     break;
 
-                case 90: // Z
-                    transform.showZ = ! transform.showZ;
+                case 'z':
+                    if(e.ctrlKey){
+
+                        if(!this.undoSteps.length)
+                        return;
+                        
+                        const step = this.undoSteps.pop();
+                        let bone = this.editor.skeletonHelper.bones[step.boneId];
+                        bone.position.fromArray( step.pos );
+                        bone.quaternion.fromArray( step.quat );
+                        this.updateBones();
+                    }
+                    else
+                        transform.showZ = ! transform.showZ;
                     break;
             }
 
@@ -164,9 +190,9 @@ class Gizmo {
 
         window.addEventListener( 'keyup', function ( event ) {
 
-            switch ( event.keyCode ) {
+            switch ( event.key ) {
 
-                case 16: // Shift
+                case 'Shift': // Shift
                     transform.setTranslationSnap( null );
                     transform.setRotationSnap( null );
                     break;
@@ -202,6 +228,20 @@ class Gizmo {
         this.bonePoints.geometry.computeBoundingSphere();
     }
 
+    updateBoneColors() {
+        const geometry = this.bonePoints.geometry;
+        const positionAttribute = geometry.getAttribute( 'position' );
+        const colors = [];
+        const color = new THREE.Color(0.9, 0.9, 0.3);
+        const colorSelected = new THREE.Color(0.33, 0.8, 0.75);
+
+        for ( let i = 0, l = positionAttribute.count; i < l; i ++ ) {
+            (i != this.selectedBone ? color : colorSelected).toArray( colors, i * 3 );
+        }
+
+        geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
+    }
+
     setBone( name ) {
 
         let bone = this.skeletonHelper.skeleton.getBoneByName(name);
@@ -211,8 +251,10 @@ class Gizmo {
         }
 
         const boneId = this.skeletonHelper.bones.findIndex((bone) => bone.name == name);
-        if(boneId > -1)
+        if(boneId > -1){
             this.selectedBone = boneId;
+            this.updateBoneColors();
+        }
     }
 
     setMode( mode ) {

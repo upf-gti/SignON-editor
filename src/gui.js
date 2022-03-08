@@ -107,8 +107,7 @@ class Gui {
 
     updateSidePanel(root, item_selected, options) {
 
-        if(!item_selected)
-        return;
+        item_selected = item_selected || this.item_selected;
     
         options = options || {};
         this.item_selected = item_selected;
@@ -176,7 +175,7 @@ class Gui {
 
             widgets.clear();
             widgets.addSection("Skeleton", { pretitle: makePretitle('stickman') });
-            widgets.addInfo("Name", this.editor.skeletonHelper.name || "Unnamed");
+            widgets.addString("Name", this.editor.skeletonHelper.name || "Unnamed", { callback: (v) => this.editor.skeletonHelper.name = v });
             widgets.addInfo("Num bones", numBones);
             widgets.widgets_per_row = 1;
             widgets.addSection("Gizmo", { pretitle: makePretitle('gizmo'), settings: (e) => this.openSettings( 'gizmo' ) });
@@ -199,16 +198,22 @@ class Gui {
                 this.editor.skeletonHelper.bones[0];
 
             if(bone_selected) {
+
+                const innerUpdate = (attribute, value) => {
+                    bone_selected[attribute].fromArray( value ); 
+                    this.editor.gizmo.updateBones();
+                };
+
                 widgets.addSection("Bone", { pretitle: makePretitle('circle') });
                 widgets.addInfo("Name", bone_selected.name);
                 widgets.addTitle("Position");
-                widgets.addVector3(null, bone_selected.position.toArray());
+                widgets.addVector3(null, bone_selected.position.toArray(), {callback: (v) => innerUpdate("position", v)});
 
                 widgets.addTitle("Rotation (XYZ)");
-                widgets.addVector3(null, bone_selected.rotation.toArray());
+                widgets.addVector3(null, bone_selected.rotation.toArray(), {callback: (v) => innerUpdate("rotation", v)});
 
                 widgets.addTitle("Quaternion");
-                widgets.addVector4(null, bone_selected.quaternion.toArray());
+                widgets.addVector4(null, bone_selected.quaternion.toArray(), {callback: (v) => innerUpdate("quaternion", v)});
             }
         };
 

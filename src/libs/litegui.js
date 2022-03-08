@@ -934,9 +934,9 @@ var LiteGUI = {
 		var input = dialog.content.querySelector("input,textarea");
 		input.addEventListener("keydown", inner_key, true);
 
-		function inner() {
+		function inner(e, force_close) {
 			var value = input.value;
-			if(this.dataset && this.dataset["value"] == "cancel")
+			if(force_close || (this.dataset && this.dataset["value"] == "cancel"))
 				value = null;
 			dialog.close(); //close before callback
 			if(callback)
@@ -947,13 +947,14 @@ var LiteGUI = {
 		{
 			if (!e)
 				e = window.event;
-			var keyCode = e.keyCode || e.which;
-			if (keyCode == '13'){
-				inner();
-				return false;
-			}		
-			if (keyCode == '29')
-				dialog.close();
+			switch(e.key) {
+				case 'Enter':
+					inner(null);
+					return false;
+				case 'Escape':
+					inner(null, true);
+					return false;
+			}
 		};
 
 		input.focus();
@@ -6293,8 +6294,7 @@ LiteGUI.Console = Console;
 				code += "<button class='litebutton mini-button hide-button'></button>";
 			if(options.detachable)
 				code += "<button class='litebutton mini-button detach-button'></button>";
-			
-			if(options.close || options.closable)
+			if((options.close || options.closable) && !options.noclose)
 				code += "<button class='litebutton mini-button close-button'>"+ LiteGUI.special_codes.close +"</button>";
 			code += "</div>";
 		}

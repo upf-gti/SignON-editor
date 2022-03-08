@@ -56,7 +56,10 @@ class Editor {
         renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT);
         renderer.outputEncoding = THREE.sRGBEncoding;
         canvasArea.appendChild(renderer.domElement);
-        
+
+        renderer.domElement.id = "webgl-canvas";
+        renderer.domElement.setAttribute("tabIndex", 1);
+
         // camera
         let camera = new THREE.PerspectiveCamera(60, pixelRatio, 0.1, 1000);
         window.camera = camera;
@@ -74,7 +77,7 @@ class Editor {
 
         this.gizmo = new Gizmo(this);
 
-        window.addEventListener( 'keydown', (function (e) {
+        renderer.domElement.addEventListener( 'keydown', (function (e) {
 
             switch ( e.key ) {
 

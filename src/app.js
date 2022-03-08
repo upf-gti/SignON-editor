@@ -18,6 +18,8 @@ class App {
 
         // Create the fileSystem and log the user
         this.FS = new FileSystem("signon", "signon", () => console.log("Auto login of guest user"));
+
+        window.app = this;
     }
 
     init() {
@@ -260,12 +262,19 @@ class App {
         // Initially register the callback to be notified about the first frame.
         videoRec.requestVideoFrameCallback(updateFrame);
     
-        let clipName = prompt("Please, enter the name of the sign performed and the language. (Example: Dog in Irish Sign Language --> dog_ISL)");
-        videoRec.name = clipName;
-        this.project.clipName = clipName;
+        LiteGUI.prompt( "Please, enter the name of the sign performed and the language. (Example: Dog in Irish Sign Language --> dog_ISL)", (name) => {
 
-        // Creates the scene and loads the animation
-        this.editor.loadInScene(this.project);
+            if(name !== null) {
+                videoRec.name = name;
+                this.project.clipName = name;
+    
+                // Creates the scene and loads the animation
+                this.editor.loadInScene(this.project);
+            }else {
+                window.location = window.location;
+            }
+
+        }, { title: "Editor", width: 350 } );
     }
 
     async storeAnimation() {
