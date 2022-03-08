@@ -4,18 +4,7 @@ import { firstToUpperCase } from "./utils.js";
 class Gui {
 
     constructor(editor) {
-        // Get the canvas for each GUI element
-        // this.skeletonCTX = document.getElementById("skeleton").getContext("2d");
-
-        // let mouse_control = this.onMouse.bind(this.timeline);
-        // let canvas = this.timelineCTX.canvas;
-        // canvas.addEventListener("mouseup", mouse_control);
-        // canvas.addEventListener("mousedown", mouse_control);
-        // canvas.addEventListener("mousemove", mouse_control);
-        // canvas.addEventListener("mousewheel", mouse_control, false);
-        // canvas.addEventListener("wheel", mouse_control, false);
-        // canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); return true; }, false);
-
+       
         this.showTimeline = true;
         this.current_time = 0;
         this.skeletonScroll = 0;
@@ -33,6 +22,7 @@ class Gui {
         this.timeline = new Timeline();
         this.timeline.setScale(150.0946352969992);
         this.timeline.framerate = project.framerate;
+        this.timeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
 
         // Move this to another place
         // the idea is to create once and reset on load project
@@ -65,6 +55,11 @@ class Gui {
         timelineCanvas.width = canvasArea.clientWidth;
         timelineCanvas.height = 100;
         this.timelineCTX = timelineCanvas.getContext("2d");
+
+        timelineCanvas.addEventListener("mouseup", this.onMouse.bind(this));
+        timelineCanvas.addEventListener("mousedown", this.onMouse.bind(this));
+        timelineCanvas.addEventListener("mousemove", this.onMouse.bind(this));
+        timelineCanvas.addEventListener("wheel", this.onMouse.bind(this));
     }
 
     createMenubar() {
@@ -326,8 +321,30 @@ class Gui {
 
     render() {
 
-        // this.drawSkeleton();
         this.drawTimeline();
+    }
+
+    drawTimeline() {
+        
+        if(!this.project)
+        return;
+
+        const canvas = this.timelineCTX.canvas;
+        this.current_time = this.timeline.current_time = this.project.mixer.time % this.duration;
+        this.timeline.draw(this.timelineCTX, this.project, this.current_time, [0, 0, canvas.width, canvas.height]);
+    }
+
+    onMouse(e) {
+
+        this.timeline.processMouse(e);
+    }
+
+    resize() {
+        for(let s of LiteGUI.SliderList) {
+            // Resize canvas
+            s.root.width = s.root.parentElement.offsetWidth + 35;
+            s.setValue(null);
+        }
     }
 
     drawSkeleton() {
@@ -414,49 +431,6 @@ class Gui {
             }
 
         ctx.restore();
-    }
-
-    drawTimeline() {
-        
-        if(!this.project)
-        return;
-
-        const canvas = this.timelineCTX.canvas;
-        this.current_time = this.timeline.current_time = this.project.mixer.time % this.duration;
-        this.timeline.draw(this.timelineCTX, this.project, this.current_time, [0, 0, canvas.width, canvas.height]);
-    }
-
-    onMouse(e) {
-
-        if (e.type == "mouseup") {
-            let track_height = 20;
-            //get the selected item
-            if (e.offsetX < 200)  //only if we are clicking on the items zone
-            {
-                let y = e.offsetY + this.current_scroll_in_pixels - 10 - track_height - this.position[1];
-                for (let i in project.bones) {
-                    let item = project.bones[i];
-                    y = y - track_height; //if( item.visible ) y = y - track_height;
-                    if (y <= 0 && y > -track_height)
-                        item.selected = item.selected ? false : true;
-                    else
-                        item.selected = false;
-                }
-                project.names = project.bones.map(v => [v.name, v.depth, v.selected, v.childs]);
-            }
-            update_timeline = true;
-        }
-        if (this._grabbing_scroll || this._grabbing || e.type == "wheel") update_timeline = true;
-    
-        this.processMouse(e);
-    }
-
-    resize() {
-        for(let s of LiteGUI.SliderList) {
-            // Resize canvas
-            s.root.width = s.root.parentElement.offsetWidth + 35;
-            s.setValue(null);
-        }
     }
 };
 

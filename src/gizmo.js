@@ -28,13 +28,19 @@ class Gizmo {
             editor.controls.enabled = !enabled;
             this.raycastEnabled = !this.raycastEnabled;
             
-            if(enabled && this.selectedBone != null) {
-                const bone = this.editor.skeletonHelper.bones[this.selectedBone];
+            if(this.selectedBone == null)
+            return;
+
+            const bone = this.editor.skeletonHelper.bones[this.selectedBone];
+
+            if(enabled) {
                 this.undoSteps.push( {
                     boneId: this.selectedBone,
                     pos: bone.position.toArray(),
                     quat: bone.quaternion.toArray(),
                 } );
+            }else {
+                editor.gui.updateSidePanel(null, bone.name);
             }
         });
 
@@ -106,6 +112,10 @@ class Gizmo {
             this.updateBoneColors();
     }
 
+    stop() {
+        this.transform.detach();
+    }
+
     bindEvents() {
 
         if(!this.skeletonHelper)
@@ -117,7 +127,7 @@ class Gizmo {
 
         canvas.addEventListener( 'pointerdown', (e) => {
 
-            if(e.button != 0 || !this.bonePoints || (!this.raycastEnabled && !e.ctrlKey))
+            if(e.button != 0 || !this.bonePoints || this.editor.state || (!this.raycastEnabled && !e.ctrlKey))
             return;
 
             const pointer = new THREE.Vector2(( e.offsetX / canvas.clientWidth ) * 2 - 1, -( e.offsetY / canvas.clientHeight ) * 2 + 1);

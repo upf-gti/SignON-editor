@@ -76,7 +76,7 @@ const BVHExporter = {
         return bvh;
     },
 
-    export: function(skeleton, animation_clip, frames_length) {
+    export: function(skeleton, animationClip, frames_length) {
 
         var bvh = "";
 
@@ -96,7 +96,7 @@ const BVHExporter = {
         for (var frame_idx = 0; frame_idx < frames_length; ++frame_idx) {
 
             var bone_idx = 0;
-            for (var track_idx = 0; track_idx < animation_clip.tracks.length; track_idx++) {
+            for (var track_idx = 0; track_idx < animationClip.tracks.length; track_idx++) {
 
                 // End site nodes do not have channels
                 if (skeleton.bones[bone_idx].children.length == 0) {
@@ -107,7 +107,7 @@ const BVHExporter = {
                 // Only export position for root node
                 if (track_idx == 0) {
                     // Positions
-                    var positions = animation_clip.tracks[track_idx];
+                    var positions = animationClip.tracks[track_idx];
                     var x = positions.values[frame_idx * 3 + 0];
                     var y = positions.values[frame_idx * 3 + 1];
                     var z = positions.values[frame_idx * 3 + 2];
@@ -118,7 +118,7 @@ const BVHExporter = {
                 }
 
                 // Quaternions
-                var quaternions = animation_clip.tracks[track_idx];
+                var quaternions = animationClip.tracks[track_idx];
                 var x = quaternions.values[frame_idx * 4 + 0]
                 var y = quaternions.values[frame_idx * 4 + 1]
                 var z = quaternions.values[frame_idx * 4 + 2]

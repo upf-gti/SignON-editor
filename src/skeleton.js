@@ -67,11 +67,11 @@ function createThreeJsSkeleton() {
     // used to store bone by landmark index, necessary to create hierarchy
     const temp_map = {};
 
-    var lm_info_array = Object.keys(LM_INFO);
+    var lmInfoArray = Object.keys(LM_INFO);
 
-    for (const lm_data in lm_info_array) {
+    for (const lm_data in lmInfoArray) {
 
-        var lm_info = LM_INFO[lm_info_array[lm_data]];
+        var lm_info = LM_INFO[lmInfoArray[lm_data]];
 
         var bone = new THREE.Bone();
         bone.name = lm_info.name;
@@ -152,17 +152,15 @@ function createSkeleton(landmarks) {
     return skeleton;
 }
 
-function createAnimation(landmarks) {
-
-    var rot_accum = new THREE.Quaternion();
+function createAnimation(name, landmarks) {
 
     const tracks = [];
 
-    var lm_info_array = Object.keys(LM_INFO);
+    var lmInfoArray = Object.keys(LM_INFO);
 
     const previous_quats = [];
 
-    for (const lm_data in lm_info_array) {
+    for (const lm_data in lmInfoArray) {
 
         const pos_values = [];
         const quat_values = [];
@@ -170,7 +168,7 @@ function createAnimation(landmarks) {
         const times = [];
         var time_accum = 0.0;
 
-        var lm_info = LM_INFO[lm_info_array[lm_data]];
+        var lm_info = LM_INFO[lmInfoArray[lm_data]];
 
         // Initialize first rotation
         previous_quats[lm_info.idx] = [];
@@ -230,7 +228,7 @@ function createAnimation(landmarks) {
     // the length from the array of tracks
     const length = -1;
 
-    return new THREE.AnimationClip('sign_anim', length, tracks);
+    return new THREE.AnimationClip(name || "sign_anim", length, tracks);
 }
 
 export { createSkeleton, createAnimation };

@@ -399,7 +399,7 @@ Timeline.prototype.processMouse = function (e) {
 	{
 		//console.log(time);
 
-		if( e.dragging && this._grabbing )
+		if( this._grabbing )
 		{
 			var curr = time - this.current_time;
 			var delta = curr - this._grab_time;
@@ -409,14 +409,11 @@ Timeline.prototype.processMouse = function (e) {
 			if( this.onSetTime )
 				this.onSetTime( this.current_time );
 		}
-		else if( e.dragging && this._grabbing_scroll )
+		else if( this._grabbing_scroll )
 		{
 			var scrollh = timeline_height * (timeline_height / this.scrollable_height);
 			this.current_scroll = Math.clamp( this.current_scroll + e.movementY / timeline_height, 0, 1);
 		}
-
-		if( !e.dragging )
-			this._grabbing = false;
 	}
 	else if( e.type == "wheel" )
 	{
@@ -430,12 +427,7 @@ Timeline.prototype.processMouse = function (e) {
 		}
 	}
 
-	if(this._canvas)
-	{
-		var cursor = this._grabbing ? "grabbing" : "pointer" ;//"grab";
-		this._canvas.style.cursor = cursor;
-		//this._canvas.style.cursor = "-webkit-" + cursor;
-	}
+	this._canvas.style.cursor = this._grabbing ? "grabbing" : "pointer" ;
 
 	return true;
 };

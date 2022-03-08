@@ -23,7 +23,7 @@ class Editor {
         this.mixer = null;
         this.skeletonHelper = null;
         
-        this.points_geometry = null;
+        this.pointsGeometry = null;
         this.landmarksArray = [];
         this.prevTime = this.iter = 0;
     	this.onDrawTimeline = null;
@@ -113,25 +113,26 @@ class Editor {
         this.scene.add(this.skeletonHelper);
         this.scene.add(boneContainer);
         
-        var animation_clip = createAnimation(this.landmarksArray);
+        this.animationClip = createAnimation(project.clipName, this.landmarksArray);
+        console.log(this.animationClip.duration);
         
         // play animation
         this.mixer = new THREE.AnimationMixer(this.skeletonHelper);
-        this.mixer.clipAction(animation_clip).setEffectiveWeight(1.0).play();
+        this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
         this.mixer.update(this.clock.getDelta()); //do first iteration to update from T pose
         
-        this.points_geometry = new THREE.BufferGeometry();
+        this.pointsGeometry = new THREE.BufferGeometry();
         
         const material = new THREE.PointsMaterial( { color: 0x880000 } );
         material.size = 0.025;
         
-        const points = new THREE.Points( this.points_geometry, material );
+        const points = new THREE.Points( this.pointsGeometry, material );
         
         this.scene.add( points );
         
-        BVHExporter.export(skeleton, animation_clip, this.landmarksArray.length);
+        BVHExporter.export(skeleton, this.animationClip, this.landmarksArray.length);
         
-        project.prepareData(this.mixer, animation_clip, skeleton);
+        project.prepareData(this.mixer, this.animationClip, skeleton);
         this.gui.loadProject(project);
 
         this.gizmo.begin(this.skeletonHelper);
@@ -142,6 +143,7 @@ class Editor {
             this.state = !this.state;
             stateBtn.innerHTML = this.state ? "❚❚" : "►";
             stateBtn.style.border = "solid #268581";
+            this.state ? this.gizmo.stop() : 0;
         };
 
         let stopBtn = document.getElementById("stop_btn");
@@ -218,6 +220,16 @@ class Editor {
         this.gizmo.transform.setRotationSnap( THREE.MathUtils.degToRad( this.defaultRotationSnapValue ) );
     }
 
+    setTime(t) {
+
+        // Don't change time if playing
+        if(this.state)
+        return;
+
+        this.mixer.setTime(t);
+        this.gizmo.updateBones(0.0);
+    }
+
     stopAnimation() {
         
         this.mixer.setTime(0.0);
@@ -231,7 +243,7 @@ class Editor {
         this.render();
         this.update(this.clock.getDelta());
 
-        // if (this.points_geometry == undefined || this.landmarksArray == undefined) {
+        // if (this.pointsGeometry == undefined || this.landmarksArray == undefined) {
         //     var currLM = this.landmarksArray[this.iter];
         //     var currTime = Date.now();
         //     var et = (currTime - this.prevTime);
@@ -247,7 +259,7 @@ class Editor {
         //             vertices.push( x, y, z );
         //         }
                 
-        //         this.points_geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+        //         this.pointsGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
                 
         //         this.prevTime = currTime + currLM.dt;
         //         this.iter++;
