@@ -268,6 +268,11 @@ class Gizmo {
 
         let [name, trackIndex, keyFrameIndex] = timeline.lastSelected;
         let track = timeline.getTrack(timeline.lastSelected);
+
+        // Don't store info if we are using wrong mode for that track
+        if(Gizmo.ModeToKeyType[ this.editor.getGizmoMode() ] != track.type)
+        return;
+
         let bone = this.skeletonHelper.skeleton.getBoneByName(name);
 
         let start = track.dim * keyFrameIndex;
@@ -281,6 +286,7 @@ class Gizmo {
             track.data.values[ start + i ] = values[i];
         }
 
+        track.edited[ keyFrameIndex ] = true;
         timeline.onSetTime( timeline.current_time );
     }
 
@@ -306,6 +312,11 @@ class Gizmo {
     setSpace( space ) {
         this.transform.setSpace( space );
     }
+};
+
+Gizmo.ModeToKeyType = {
+    'Translate': 'position',
+    'Rotate': 'quaternion'
 };
 
 export { Gizmo };

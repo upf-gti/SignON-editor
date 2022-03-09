@@ -33,6 +33,9 @@ class Gui {
             if(e.button != 2)
             return false;
 
+            // Change gizmo mode and dont handle
+            // return false;
+
             this.showKeyFrameOptions(e, info, index);
             return true; // Handled
         };
@@ -83,7 +86,11 @@ class Gui {
                     const stateBtn = document.getElementById("state_btn");
                     stateBtn.click();
                     break;
+                case "Escape":
+                    this.gui.timeline.unSelect();
+                    break;
             }
+
         });
     }
 

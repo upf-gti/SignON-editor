@@ -86,6 +86,9 @@ class Editor {
                     let stateBtn = document.getElementById("state_btn");
                     stateBtn.click();
                     break;
+                case "Escape":
+                    this.gui.timeline.unSelect();
+                    break;
             }
         });
     }

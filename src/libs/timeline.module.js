@@ -93,6 +93,16 @@ Timeline.prototype.pasteKeyFrame = function ( track, index ) {
 		this.onSetTime(this.current_time);
 }
 
+Timeline.prototype.unSelect = function () {
+
+	if(this.lastSelected) {
+		this.tracksPerBone[ this.lastSelected[0] ][ this.lastSelected[1] ].selectedKeyFrame = null;
+		this.lastSelected = null;
+	}else {
+		this.selected_bone = null;
+	}
+}
+
 Timeline.prototype.setSelectedBone = function ( bone_name ) {
 
 	if(bone_name.constructor !== String)
