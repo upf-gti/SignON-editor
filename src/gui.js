@@ -42,8 +42,8 @@ class Gui {
 
         // Move this to another place
         // the idea is to create once and reset on load project
-        const name = project.clipName.length ? project.clipName : null;
-        this.createSidePanel( name );
+        // const name = project.clipName.length ? project.clipName : null;
+        this.createSidePanel();
 
         let canvasArea = document.getElementById("canvasarea");
         this.editor.resize(canvasArea.clientWidth, canvasArea.clientHeight);
@@ -86,11 +86,7 @@ class Gui {
                     const stateBtn = document.getElementById("state_btn");
                     stateBtn.click();
                     break;
-                case "Escape":
-                    this.gui.timeline.unSelect();
-                    break;
             }
-
         });
     }
 
@@ -162,6 +158,7 @@ class Gui {
             var actions = [
                 {
                     title: "Disable", //text to show
+                    disabled: true,
                     callback: () => console.log("TODO: Disable")
                 },
                 {
@@ -204,9 +201,11 @@ class Gui {
             const numBones = this.editor.skeletonHelper.bones.length;
 
             widgets.clear();
-            widgets.addSection("Skeleton", { pretitle: makePretitle('stickman') });
-            widgets.addString("Name", this.editor.skeletonHelper.name || "Unnamed", { callback: (v) => this.editor.skeletonHelper.name = v });
+            widgets.addSection("Animation Clip", { pretitle: makePretitle('stickman') });
+            widgets.addString("Name", this.project.clipName || "Unnamed", { callback: (v) => this.project.clipName = v });
             widgets.addInfo("Num bones", numBones);
+            widgets.addInfo("Frame rate", this.project.framerate);
+            widgets.addInfo("Duration", this.project.duration);
             widgets.widgets_per_row = 1;
             widgets.addSection("Gizmo", { pretitle: makePretitle('gizmo'), settings: (e) => this.openSettings( 'gizmo' ) });
             widgets.addButtons( "Mode", ["Translate","Rotate"], { selected: this.editor.getGizmoMode(), name_width: "50%", width: "100%", callback: (v) => {
