@@ -33,6 +33,7 @@ function Timeline( clip, bone_name ) {
 	this._tracks_drawn = [];
 	this.clip = clip;
 	this.selected_bone = bone_name;
+	this.snappedKeyFrameIndex = -1;
 
 	this.processTracks();
 
@@ -390,6 +391,16 @@ Timeline.prototype.getCurrentKeyFrame = function (track, time, threshold) {
 	return;
 }
 
+Timeline.prototype.getNearestKeyFrame = function (track, time) {
+
+	if(!track || !track.times.length)
+	return;
+
+	return track.times.reduce((a, b) => {
+		return Math.abs(b - time) < Math.abs(a - time) ? b : a;
+	});
+}
+
 Timeline.prototype.setScale = function (v) {
 	this._seconds_to_pixels = v;
 	if (this._seconds_to_pixels > 3000)
@@ -502,10 +513,24 @@ Timeline.prototype.processMouse = function (e) {
 			var curr = time - this.current_time;
 			var delta = curr - this._grab_time;
 			this._grab_time = curr;
+			console.log( this._grab_time );
 			//console.log( "grab_time",this._grab_time);
 			this.current_time = Math.max(0,this.current_time - delta);
-			if( this.onSetTime )
-				this.onSetTime( this.current_time );
+
+			const inner = (t) => { if( this.onSetTime ) this.onSetTime( t );	 }
+
+			if(e.shiftKey && track) {
+				let keyFrameIndex = this.getNearestKeyFrame( track, this.current_time);
+
+				if(keyFrameIndex != this.snappedKeyFrameIndex){
+					this.snappedKeyFrameIndex = keyFrameIndex;
+					this.current_time = track.times[ keyFrameIndex ];		
+					inner( this.current_time );		
+				}
+				
+			}else{
+				inner( this.current_time );	
+			}
 		}
 		// else if( this._grabbing_scroll )
 		// {
