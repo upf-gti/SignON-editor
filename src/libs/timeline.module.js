@@ -15,14 +15,14 @@ function Timeline( clip, bone_name ) {
 	//do not change, it will be updated when called draw
 	this.duration = 100;
 	this.position = [0,0];
-	this.size = [300,150];
+	this.size = [300, 150];
 
 	this.current_scroll = 0; //in percentage
 	this.current_scroll_in_pixels = 0; //in pixels
 	this.scrollable_height = 0; //true height of the timeline content
 
 	this._seconds_to_pixels = 100;
-	this._pixels_to_seconds = 1/this._seconds_to_pixels;
+	this._pixels_to_seconds = 1 / this._seconds_to_pixels;
 	this._canvas = null;
 	this._grab_time = 0;
 	this._start_time = 0;
@@ -31,6 +31,8 @@ function Timeline( clip, bone_name ) {
 	this._last_mouse = [0,0];
 
 	this._tracks_drawn = [];
+	this._clipboard = [];
+
 	this.clip = clip;
 	this.selected_bone = bone_name;
 	this.snappedKeyFrameIndex = -1;
@@ -49,6 +51,50 @@ function Timeline( clip, bone_name ) {
 			this.drawTrackWithKeyframes(ctx, (i+1) * height, height, track.name + " (" + track.type + ")", track, i);
 		}
 	};
+}
+
+Timeline.prototype.canPasteKeyFrame = function () {
+	return this._clipboard.length > 0;
+}
+
+Timeline.prototype.copyKeyFrame = function ( track, index ) {
+
+	// 1 element clipboard by now
+	this._clipboard.length = 0;
+
+	// keyframe dim 
+	const dim = track.data.values.length / track.data.times.length;
+	
+	let values = [];
+	let start = index * dim;
+	for(let i = start; i < start + dim; ++i)
+		values.push( track.data.values[i] );
+
+	this._clipboard.push( {
+		type: track.type,
+		dim: dim,
+		values: values
+	} );
+}
+
+Timeline.prototype.pasteKeyFrame = function ( track, index ) {
+
+	let data = this._clipboard.pop();
+	if(data.type != track.type){
+		// reset state
+		this._clipboard.push(data);
+		return;
+	}
+
+	let start = index * data.dim;
+	let j = 0;
+	for(let i = start; i < start + data.dim; ++i) {
+		track.data.values[i] = data.values[j];
+		++j;
+	}
+
+	if(this.onSetTime)
+		this.onSetTime(this.current_time);
 }
 
 Timeline.prototype.setSelectedBone = function ( bone_name ) {
@@ -217,6 +263,8 @@ Timeline.prototype.draw = function (ctx, project, current_time, rect) {
 		if( t % delta_seconds != 0 )
 			continue;
 		ctx.globalAlpha = t % 10 == 0 ? 1 : Math.clamp( (this._seconds_to_pixels - 50) * 0.01,0,0.7);
+		if(Math.abs(t - current_time) < 0.05)
+			ctx.globalAlpha = 0.25;
 		var x = ((this.timeToX(t))|0) + 0.5;
 		if( x > sidebar-10 && x < (w + 10))
 			ctx.fillText(String(t),x,-5);
@@ -242,6 +290,9 @@ Timeline.prototype.draw = function (ctx, project, current_time, rect) {
 	ctx.lineTo( x + 4,1);
 	ctx.lineTo( x,6);
 	ctx.fill();
+
+	// Current time text
+	ctx.fillText(String(current_time.toFixed(3)), x, -5);
 
 	if(this.onDrawContent)
 		this.onDrawContent( ctx, time_start, time_end, this );
@@ -358,6 +409,11 @@ Timeline.prototype.getCurrentFrame = function (framerate) {
 	return Math.floor(this.current_time * framerate);
 }
 
+Timeline.prototype.getTrack = function(track_info)  {
+	const [name, trackIndex] = track_info;
+	return this.tracksPerBone[ name ][trackIndex];
+}
+
 Timeline.prototype.getTrackName = function (ugly_name) {
 	const nameIndex = ugly_name.indexOf('['),
 			trackNameInfo = ugly_name.substr(nameIndex+1).split("]."),
@@ -448,8 +504,6 @@ Timeline.prototype.processMouse = function (e) {
 	{
 		this._grabbing = false;
 		this._grabbing_scroll = false;
-		if( this.onMouseUp )
-			this.onMouseUp(e, time);
 
 		const discard = getTime() - this._click_time > 420; // ms
 
@@ -471,16 +525,23 @@ Timeline.prototype.processMouse = function (e) {
 						this.lastSelected = [t.name, i];
 						t.selectedKeyFrame = keyFrameIndex;
 
+						if( this.onSelectKeyFrame && this.onSelectKeyFrame(e, this.lastSelected, keyFrameIndex)) {
+							// Event handled
+							break;
+						}
+
 						// Set time
 						if( this.onSetTime )
 							this.onSetTime( t.data.times[ keyFrameIndex ] );
-
 						break;
 					}
 				}
 
 			}
 		}
+
+		if( this.onMouseUp )
+			this.onMouseUp(e, time);
 	}
 
 	if ( !is_inside && !this._grabbing && !(e.metaKey || e.altKey ) )
@@ -508,18 +569,17 @@ Timeline.prototype.processMouse = function (e) {
 	}
 	else if( e.type == "mousemove" )
 	{
-		if( this._grabbing )
+		if( this._grabbing && e.button != 2)
 		{
 			var curr = time - this.current_time;
 			var delta = curr - this._grab_time;
 			this._grab_time = curr;
-			console.log( this._grab_time );
-			//console.log( "grab_time",this._grab_time);
 			this.current_time = Math.max(0,this.current_time - delta);
 
 			const inner = (t) => { if( this.onSetTime ) this.onSetTime( t );	 }
 
-			if(e.shiftKey && track) {
+			// fix this
+			if(0 && e.shiftKey && track) {
 				let keyFrameIndex = this.getNearestKeyFrame( track, this.current_time);
 
 				if(keyFrameIndex != this.snappedKeyFrameIndex){
@@ -532,11 +592,6 @@ Timeline.prototype.processMouse = function (e) {
 				inner( this.current_time );	
 			}
 		}
-		// else if( this._grabbing_scroll )
-		// {
-		// 	var scrollh = timeline_height * (timeline_height / this.scrollable_height);
-		// 	this.current_scroll = Math.clamp( this.current_scroll + e.movementY / timeline_height, 0, 1);
-		// }
 	}
 	else if( e.type == "wheel" )
 	{

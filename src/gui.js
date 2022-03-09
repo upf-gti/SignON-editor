@@ -1,3 +1,4 @@
+import { TransformControls } from "./controls/TransformControls.js";
 import { Timeline } from "./libs/timeline.module.js";
 import { firstToUpperCase } from "./utils.js";
 
@@ -28,6 +29,13 @@ class Gui {
         this.timeline.framerate = project.framerate;
         this.timeline.setScale(400);
         this.timeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
+        this.timeline.onSelectKeyFrame = (e, info, index) => {
+            if(e.button != 2)
+            return false;
+
+            this.showKeyFrameOptions(e, info, index);
+            return true; // Handled
+        };
 
         // Move this to another place
         // the idea is to create once and reset on load project
@@ -65,6 +73,7 @@ class Gui {
         timelineCanvas.addEventListener("mousedown", this.onMouse.bind(this));
         timelineCanvas.addEventListener("mousemove", this.onMouse.bind(this));
         timelineCanvas.addEventListener("wheel", this.onMouse.bind(this));
+        timelineCanvas.addEventListener('contextmenu', (e) => e.preventDefault(), false);
 
         timelineCanvas.addEventListener( 'keydown', (e) => {
             switch ( e.key ) {
@@ -351,8 +360,41 @@ class Gui {
         this.timeline.draw(this.timelineCTX, this.project, this.current_time, [0, 0, canvas.width, canvas.height]);
     }
 
+    showKeyFrameOptions(e, info, index) {
+
+        let track = this.timeline.getTrack(info, index);
+        if(!track)
+        return;
+
+        var actions = [
+            {
+                title: "[" + index + "] " + track.name,
+                disabled: true
+            },
+            null,
+            {
+                title: "Copy",
+                callback: () => this.timeline.copyKeyFrame( track, index )
+            },
+            {
+                title: "Paste",
+                disabled: !this.timeline.canPasteKeyFrame(),
+                callback: () => {
+                    this.timeline.pasteKeyFrame( track, index );
+                },
+            },
+            {
+                title: "Delete",
+                callback: () => console.log("TODO: Delete")
+            }
+        ];
+        
+        new LiteGUI.ContextMenu( actions, { event: e });
+    }
+
     onMouse(e) {
 
+        e.preventDefault();
         this.timeline.processMouse(e);
     }
 
