@@ -20,7 +20,7 @@ class Gizmo {
         transform.addEventListener( 'objectChange', (e) => {
             if(this.selectedBone === undefined)
             return;
-            this.updateBones();
+            this.updateTracks(true);
         } );
 
         transform.addEventListener( 'dragging-changed', (e) => {
@@ -252,6 +252,36 @@ class Gizmo {
         }
 
         geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
+    }
+
+    updateTracks(force) {
+
+        this.updateBones();
+
+        if(!force)
+        return;
+
+        let timeline = this.editor.gui.timeline;
+
+        if(!timeline.lastSelected)
+        return;
+
+        let [name, trackIndex, keyFrameIndex] = timeline.lastSelected;
+        let track = timeline.getTrack(timeline.lastSelected);
+        let bone = this.skeletonHelper.skeleton.getBoneByName(name);
+
+        let start = track.dim * keyFrameIndex;
+        let values = bone[ track.type ].toArray();
+
+        if(!values)
+            return;
+
+        // supports position and quaternion types
+        for( let i = 0; i < values.length; ++i ) {
+            track.data.values[ start + i ] = values[i];
+        }
+
+        timeline.onSetTime( timeline.current_time );
     }
 
     setBone( name ) {

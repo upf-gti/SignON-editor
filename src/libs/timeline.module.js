@@ -62,17 +62,13 @@ Timeline.prototype.copyKeyFrame = function ( track, index ) {
 	// 1 element clipboard by now
 	this._clipboard.length = 0;
 
-	// keyframe dim 
-	const dim = track.data.values.length / track.data.times.length;
-	
 	let values = [];
-	let start = index * dim;
-	for(let i = start; i < start + dim; ++i)
+	let start = index * track.dim;
+	for(let i = start; i < start + track.dim; ++i)
 		values.push( track.data.values[i] );
 
 	this._clipboard.push( {
 		type: track.type,
-		dim: dim,
 		values: values
 	} );
 }
@@ -86,9 +82,9 @@ Timeline.prototype.pasteKeyFrame = function ( track, index ) {
 		return;
 	}
 
-	let start = index * data.dim;
+	let start = index * track.dim;
 	let j = 0;
-	for(let i = start; i < start + data.dim; ++i) {
+	for(let i = start; i < start + track.dim; ++i) {
 		track.data.values[i] = data.values[j];
 		++j;
 	}
@@ -103,6 +99,11 @@ Timeline.prototype.setSelectedBone = function ( bone_name ) {
 	throw("Bone name has to be a string!");
 
 	this.selected_bone = bone_name;
+
+	if(this.lastSelected) {
+		this.tracksPerBone[ this.lastSelected[0] ][ this.lastSelected[1] ].selectedKeyFrame = null;
+		this.lastSelected = null;
+	}
 }
 
 // Creates a map for each bone -> tracks
@@ -114,6 +115,8 @@ Timeline.prototype.processTracks = function () {
 
 		let trackInfo = this.getTrackName(track.name);
 		trackInfo.data = track;
+		trackInfo.dim = track.values.length / track.times.length;
+		trackInfo.edited = [];
 
 		let name = trackInfo.name;
 
@@ -367,7 +370,7 @@ Timeline.prototype.drawTrackWithKeyframes = function (ctx, y, track_height, titl
 				ctx.save();
 
 				let size = track_height * 0.4;
-				if(0) // edited: purple
+				if(track.edited[j])
 					ctx.fillStyle = "rgba(200,20,200,1)";
 				if(selected)
 					ctx.fillStyle = "rgba(200,200,10,1)";
@@ -522,7 +525,7 @@ Timeline.prototype.processMouse = function (e) {
 						}
 						
 						// Store selection to remove later
-						this.lastSelected = [t.name, i];
+						this.lastSelected = [t.name, i, keyFrameIndex];
 						t.selectedKeyFrame = keyFrameIndex;
 
 						if( this.onSelectKeyFrame && this.onSelectKeyFrame(e, this.lastSelected, keyFrameIndex)) {
