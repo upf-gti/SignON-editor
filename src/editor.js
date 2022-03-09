@@ -3,6 +3,7 @@ import { OrbitControls } from "./controls/OrbitControls.js";
 import { BVHLoader } from "./loaders/BVHLoader.js";
 import { createSkeleton, createAnimation } from "./skeleton.js";
 import { BVHExporter } from "./bvh_exporter.js";
+import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { Gui } from "./gui.js";
 
 class Editor {
@@ -18,6 +19,7 @@ class Editor {
         this.state = false;  // defines how the animation starts (moving/static)
 
         this.mixer = null;
+        this.mixerHelper = null;
         this.skeletonHelper = null;
         
         this.points_geometry = null;
@@ -64,8 +66,10 @@ class Editor {
         this.renderer = renderer;
         this.controls = controls;
     }
-
+    
     loadInScene(project) {
+        
+        let that = this;
 
         this.landmarks_array = project.landmarks;
         
@@ -81,35 +85,26 @@ class Editor {
         
         this.scene.add(this.skeletonHelper);
         this.scene.add(boneContainer);
-        
-        var animation_clip = createAnimation(this.landmarks_array);
-        
-        // play animation
-        this.mixer = new THREE.AnimationMixer(this.skeletonHelper);
-        this.mixer.clipAction(animation_clip).setEffectiveWeight(1.0).play();
-        this.mixer.update(this.clock.getDelta()); //do first iteration to update from T pose
-        
+              
+        //landmark points
         this.points_geometry = new THREE.BufferGeometry();
         
         const material = new THREE.PointsMaterial( { color: 0x880000 } );
         material.size = 0.025;
         
         const points = new THREE.Points( this.points_geometry, material );
-        
         this.scene.add( points );
-        
-        BVHExporter.export(skeleton, animation_clip, this.landmarks_array.length);
+
         
         // play animation
-        // mixer = new THREE.AnimationMixer(skeletonHelper);
-        // mixer.clipAction(result.clip).setEffectiveWeight(1.0).play();
-        // mixer.update(clock.getDelta()); //do first iteration to update from T pose
-        
-        project.prepareData(this.mixer, animation_clip, skeleton);
-        this.gui.loadProject(project);
+        var animation_clip = createAnimation(this.landmarks_array);
+       
+         this.mixerHelper = new THREE.AnimationMixer(this.skeletonHelper);
+         this.mixerHelper.clipAction(animation_clip).setEffectiveWeight(1.0).play();
+         this.mixerHelper.update(this.clock.getDelta()); //do first iteration to update from T pose
+ 
 
         // set onlcick function to play button
-        let that = this;
         let stateBtn = document.getElementById("state_btn");
         stateBtn.onclick = function(e) {
 
@@ -121,8 +116,75 @@ class Editor {
             else
                 stateBtn.style.removeProperty("border");
         }
-        
-        this.animate();
+
+        // Load the model (Eva)
+        this.loadGLTF("models/Taunt.glb", function(gltf) {
+           
+            let model = gltf.scene;
+            model.castShadow = true;
+
+            model.traverse( function ( object ) {
+                if ( object.isMesh ) {
+                    object.castShadow = true;
+                    object.receiveShadow = true;
+                }
+            } );
+            //model.skeleton = skeleton; // allow animation mixer to bind to THREE.SkeletonHelper directly
+            var arm = model.getChildByName("Armature");
+           // that.group_bind_skeleton(arm, that.skeletonHelper.skeleton)
+            that.scene.add( model );
+            var animationGroup = new THREE.AnimationObjectGroup();
+            for(var i=0; i< arm.children.length; i++){
+                if(!arm.children[i].isSkinnedMesh)
+                    continue;
+                animationGroup.add(arm.children[i]);
+            }
+            that.mixer = new THREE.AnimationMixer( animationGroup );
+            //const action = that.mixer.clipAction( gltf.animations[0] ).play();
+
+            // play animation
+            var animation_clip = createAnimation(that.landmarks_array);
+            //this.mixer = new THREE.AnimationMixer(this.skeletonHelper);
+            that.mixer.clipAction(animation_clip).setEffectiveWeight(1.0).play();
+            that.mixer.update(that.clock.getDelta()); //do first iteration to update from T pose
+                
+            //BVHExporter.export(skeleton, animation_clip, that.landmarks_array.length);
+       
+            project.prepareData(that.mixer, animation_clip, skeleton);
+            that.gui.loadProject(project);
+            
+            that.animate();
+        });
+    }
+    group_bind_skeleton( grp, skeleton ){
+        let c, i, len = grp.children.length, root_bind=false;
+
+        grp.updateMatrixWorld( true ); // MUST DO THIS, Else things gets effed up
+        for( i=0; i < len; i++ ){
+            c = grp.children[ i ];
+            if( !c.isSkinnedMesh ) continue;
+
+            // Need to child the root bone to a SkinnedMesh else no works
+            // Can only do this once, so do it on the first possible one.
+            if( !root_bind ){ c.add( skeleton.bones[0] ); root_bind = true; }
+
+            c.bind( skeleton );			// Bind Skeleton to SkinnedMesh
+            c.bindMode = "detached";	// Not sure if it does anything but just incase.
+        }
+    }
+    loadGLTF(animationFile, onLoaded) {
+            
+        const loader = new GLTFLoader();
+        loader.load(
+            animationFile,
+            onLoaded,
+            (xhr) => {
+                if (xhr.loaded == xhr.total) console.log('GLTF loaded correctly.');
+            },
+            (error) => {
+                console.log(error);
+            }
+        );
     }
         
     animate() {
@@ -134,6 +196,10 @@ class Editor {
         if (this.mixer && this.state) {
             //console.log("Scene!");
             this.mixer.update(dt);
+        }
+        if (this.mixerHelper && this.state) {
+            //console.log("Scene!");
+            this.mixerHelper.update(dt);
         }
         if (this.gui)
             this.gui.render();
