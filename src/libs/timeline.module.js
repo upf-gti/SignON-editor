@@ -31,7 +31,7 @@ function Timeline( clip, bone_name ) {
 	this._last_mouse = [0,0];
 
 	this._tracks_drawn = [];
-	this._clipboard = [];
+	this._clipboard = null;
 
 	this.clip = clip;
 	this.selected_bone = bone_name;
@@ -54,31 +54,28 @@ function Timeline( clip, bone_name ) {
 }
 
 Timeline.prototype.canPasteKeyFrame = function () {
-	return this._clipboard.length > 0;
+	return this._clipboard != null;
 }
 
 Timeline.prototype.copyKeyFrame = function ( track, index ) {
 
 	// 1 element clipboard by now
-	this._clipboard.length = 0;
 
 	let values = [];
 	let start = index * track.dim;
 	for(let i = start; i < start + track.dim; ++i)
 		values.push( track.data.values[i] );
 
-	this._clipboard.push( {
+	this._clipboard = {
 		type: track.type,
 		values: values
-	} );
+	};
 }
 
 Timeline.prototype.pasteKeyFrame = function ( track, index ) {
 
-	let data = this._clipboard.pop();
+	let data = this._clipboard;
 	if(data.type != track.type){
-		// reset state
-		this._clipboard.push(data);
 		return;
 	}
 
@@ -91,6 +88,8 @@ Timeline.prototype.pasteKeyFrame = function ( track, index ) {
 
 	if(this.onSetTime)
 		this.onSetTime(this.current_time);
+
+	track.edited[ index ] = true;
 }
 
 Timeline.prototype.unSelect = function () {
@@ -127,6 +126,7 @@ Timeline.prototype.processTracks = function () {
 		trackInfo.data = track;
 		trackInfo.dim = track.values.length / track.times.length;
 		trackInfo.edited = [];
+		trackInfo.hovered = [];
 
 		let name = trackInfo.name;
 
@@ -379,16 +379,25 @@ Timeline.prototype.drawTrackWithKeyframes = function (ctx, y, track_height, titl
 			if( keyframe_posx > this.sidebar_width ){
 				ctx.save();
 
+				let margin = 0;
 				let size = track_height * 0.4;
 				if(track.edited[j])
-					ctx.fillStyle = "rgba(200,20,200,1)";
-				if(selected)
+					ctx.fillStyle = "rgba(255,0,255,1)";
+				if(selected) {
 					ctx.fillStyle = "rgba(200,200,10,1)";
-				ctx.translate(keyframe_posx, y + size * 2)
+					size = track_height * 0.45;
+					margin = -1;
+				}
+				if(track.hovered[j]) {
+					size = track_height * 0.5;
+					ctx.fillStyle = "rgba(250,250,250,0.7)";
+					margin = -2;
+				}
+				ctx.translate(keyframe_posx, y + size * 2 + margin);
 				ctx.rotate(45 * Math.PI / 180);		
 				ctx.fillRect( -size, -size, size, size);
-				if(selected){
-					ctx.globalAlpha = 0.3;
+				if(selected) {
+					ctx.globalAlpha = 0.25;
 					ctx.fillRect( -size*1.5, -size*1.5, size*2, size*2);
 				}
 					
@@ -523,31 +532,34 @@ Timeline.prototype.processMouse = function (e) {
 		if(!discard && track) {
 			let keyFrameIndex = this.getCurrentKeyFrame( track, this.xToTime( local_x ), this._pixels_to_seconds * 5 );
 			if(keyFrameIndex != undefined) {
+				
 				let trackInfo = this.getTrackName(track.name);
 				let tracks = this.tracksPerBone[ trackInfo.name ];
 
 				for(let i = 0; i < tracks.length; ++i) {
+
 					let t = tracks[i];
-					if(t.type == trackInfo.type) {
 
-						if(this.lastSelected) {
-							this.tracksPerBone[ this.lastSelected[0] ][ this.lastSelected[1] ].selectedKeyFrame = null;
-						}
-						
-						// Store selection to remove later
-						this.lastSelected = [t.name, i, keyFrameIndex];
-						t.selectedKeyFrame = keyFrameIndex;
+					if(t.type != trackInfo.type)
+						continue;
 
-						if( this.onSelectKeyFrame && this.onSelectKeyFrame(e, this.lastSelected, keyFrameIndex)) {
-							// Event handled
-							break;
-						}
+					if(this.lastSelected) {
+						this.tracksPerBone[ this.lastSelected[0] ][ this.lastSelected[1] ].selectedKeyFrame = null;
+					}
+					
+					// Store selection to remove later
+					this.lastSelected = [t.name, i, keyFrameIndex];
+					t.selectedKeyFrame = keyFrameIndex;
 
-						// Set time
-						if( this.onSetTime )
-							this.onSetTime( t.data.times[ keyFrameIndex ] );
+					if( this.onSelectKeyFrame && this.onSelectKeyFrame(e, this.lastSelected, keyFrameIndex)) {
+						// Event handled
 						break;
 					}
+
+					// Set time
+					if( this.onSetTime )
+						this.onSetTime( t.data.times[ keyFrameIndex ] );
+					break;
 				}
 
 			}
@@ -582,6 +594,11 @@ Timeline.prototype.processMouse = function (e) {
 	}
 	else if( e.type == "mousemove" )
 	{
+		const removeHover = () => {
+			if(this.lastHovered)
+				this.tracksPerBone[ this.lastHovered[0] ][ this.lastHovered[1] ].hovered[ this.lastHovered[2] ] = undefined;
+		};
+
 		if( this._grabbing && e.button != 2)
 		{
 			var curr = time - this.current_time;
@@ -604,6 +621,35 @@ Timeline.prototype.processMouse = function (e) {
 			}else{
 				inner( this.current_time );	
 			}
+		}else if(track) {
+
+			let keyFrameIndex = this.getCurrentKeyFrame( track, this.xToTime( local_x ), this._pixels_to_seconds * 5 );
+			if(keyFrameIndex != undefined) {
+				
+				let trackInfo = this.getTrackName(track.name);
+				let tracks = this.tracksPerBone[ trackInfo.name ];
+
+				for(let i = 0; i < tracks.length; ++i) {
+
+					let t = tracks[i];
+
+					if(t.type != trackInfo.type)
+						continue;
+
+					removeHover();
+					
+					// Store selection to remove later
+					this.lastHovered = [t.name, i, keyFrameIndex];
+
+					t.hovered[keyFrameIndex] = true;
+					break;
+				}
+
+			}else {
+				removeHover();
+			}
+		}else {
+			removeHover();
 		}
 	}
 	else if( e.type == "wheel" )
