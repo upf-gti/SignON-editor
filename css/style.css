@@ -14,6 +14,12 @@
 
 html, body { width: 100%; height: 100%; margin: 0; padding: 0; background-color: var(--global-color-primary); overflow: hidden;}
 
+video {
+	transform: rotateY(180deg);
+	-webkit-transform:rotateY(180deg); /* Safari and Chrome */
+	-moz-transform:rotateY(180deg); /* Firefox */
+}
+
 /* ---------- Classes ---------- */
 .modal {
 	background-color: rgba(51, 51, 51, 0.85);
