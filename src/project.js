@@ -48,10 +48,15 @@ class Project {
             //aaa.push(vec.applyQuaternion());
         }
     
-        //compute framerate
-        var frames_list = clip.tracks.map(v => v.times.length);
-        var max_keyframes = Math.max.apply(Math, frames_list);
-        this.framerate = Math.floor(max_keyframes / this.duration);
+        this.framerate = 60;
+        
+        // Compute framerate manually
+        if(0) {
+            var frames_list = clip.tracks.map(v => v.times.length);
+            var max_keyframes = Math.max.apply(Math, frames_list);
+            this.framerate = Math.floor(max_keyframes / this.duration);
+        }
+
         this.names = this.bones.map(v => [v.name, v.depth, v.selected, v.childs]);
         this.times = clip.tracks.map(v => v.times);
     }

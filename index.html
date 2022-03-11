@@ -13,6 +13,7 @@
 		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/v4-shims.css"> <!-- Icon library -->
 
 		<link rel="stylesheet" href="css/litegui.css">
+		<link rel="stylesheet" href="css/jquery-ui.css">
 
 		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
 		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
@@ -20,6 +21,7 @@
 		<script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
 
 		<script type="text/javascript" src="src/libs/jquery-3.5.0.min.js"></script>
+		<script type="text/javascript" src="src/libs/jquery-ui.min.js"></script>
 	</head>
 	<body>
 
@@ -42,12 +44,21 @@
 		</div>
 
 		<div id="timeline" class="hidden" style="opacity: 0.5;">
-			<canvas id="timelineCanvas"></canvas>
+			<canvas id="timelineCanvas" tabindex="1"></canvas>
 		</div>
 
 	</body>
 
+	<script type="importmap">
+		{
+			"imports": {
+				"three": "./src/libs/three.module.js"
+			}
+		}
+	</script>
+
 	<script type="text/javascript" src="src/libs/litegui.js"></script>
+	<script type="text/javascript" src="src/libs/customLibs.js"></script>
 	<script type="module" src="src/app.js"></script>
 
 </html>

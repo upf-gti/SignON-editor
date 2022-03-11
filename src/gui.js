@@ -1,25 +1,15 @@
-import { ObjectLoader } from "./libs/three.module.js";
+import { TransformControls } from "./controls/TransformControls.js";
 import { Timeline } from "./libs/timeline.module.js";
+import { firstToUpperCase } from "./utils.js";
 
 class Gui {
 
-    constructor() {
-        // Get the canvas for each GUI element
-        // this.skeletonCTX = document.getElementById("skeleton").getContext("2d");
-        // this.settingsCTX = document.getElementById("settings").getContext("2d");
-
-        // let mouse_control = this.onMouse.bind(this.timeline);
-        // let canvas = this.timelineCTX.canvas;
-        // canvas.addEventListener("mouseup", mouse_control);
-        // canvas.addEventListener("mousedown", mouse_control);
-        // canvas.addEventListener("mousemove", mouse_control);
-        // canvas.addEventListener("mousewheel", mouse_control, false);
-        // canvas.addEventListener("wheel", mouse_control, false);
-        // canvas.addEventListener("contextmenu", function (e) { e.preventDefault(); return true; }, false);
-
-        // ...
+    constructor(editor) {
+       
+        this.showTimeline = true;
         this.current_time = 0;
         this.skeletonScroll = 0;
+        this.editor = editor;
 
         this.create();
     }
@@ -30,9 +20,35 @@ class Gui {
         this.names = project.names;
         this.duration = project.duration;
 
-        this.timeline = new Timeline();
-        this.timeline.setScale(150.0946352969992);
-        this.timeline.framerate = project.framerate;
+        let boneName = null;
+        if(this.editor.skeletonHelper.bones.length) {
+            boneName = this.editor.skeletonHelper.bones[0].name;
+        }
+        if(this.editor.animationClip) {
+            this.timeline = new Timeline( this.editor.animationClip, boneName);
+            this.timeline.framerate = project.framerate;
+            this.timeline.setScale(400);
+            this.timeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
+            this.timeline.onSelectKeyFrame = (e, info, index) => {
+                if(e.button != 2)
+                    return false;
+
+                // Change gizmo mode and dont handle
+                // return false;
+
+                this.showKeyFrameOptions(e, info, index);
+                return true; // Handled
+            };
+        }
+        
+
+        // Move this to another place
+        // the idea is to create once and reset on load project
+        // const name = project.clipName.length ? project.clipName : null;
+        this.createSidePanel();
+
+        let canvasArea = document.getElementById("canvasarea");
+        this.editor.resize(canvasArea.clientWidth, canvasArea.clientHeight);
 
         this.render();
     }
@@ -51,15 +67,35 @@ class Gui {
         const canvasArea = document.getElementById("canvasarea");
         canvasarea.appendChild( document.getElementById("timeline") );
 
-        // this.mainArea.onresize = resize;
+        this.mainArea.onresize = window.onresize;
 
         let timelineCanvas = document.getElementById("timelineCanvas");
         timelineCanvas.width = canvasArea.clientWidth;
         timelineCanvas.height = 100;
         this.timelineCTX = timelineCanvas.getContext("2d");
+
+        timelineCanvas.addEventListener("mouseup", this.onMouse.bind(this));
+        timelineCanvas.addEventListener("mousedown", this.onMouse.bind(this));
+        timelineCanvas.addEventListener("mousemove", this.onMouse.bind(this));
+        timelineCanvas.addEventListener("wheel", this.onMouse.bind(this));
+        timelineCanvas.addEventListener('contextmenu', (e) => e.preventDefault(), false);
+
+        timelineCanvas.addEventListener( 'keydown', (e) => {
+            switch ( e.key ) {
+                case " ": // Spacebar
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    const stateBtn = document.getElementById("state_btn");
+                    stateBtn.click();
+                    break;
+            }
+        });
     }
 
     createMenubar() {
+
+        var that = this;
+
         var menubar = new LiteGUI.Menubar("mainmenubar");
         LiteGUI.add( menubar );
 
@@ -67,15 +103,218 @@ class Gui {
 
         const logo = document.createElement("img");
         logo.id = "signOn-logo"
-        logo.src = "img/logo_SignON.png";
+        logo.src = "data/imgs/logo_SignON.png";
         logo.alt = "SignON"
         logo.addEventListener('click', () => window.open('https://signon-project.eu/'));
         menubar.root.prepend(logo);
 
-        menubar.add("Project/Any option", { callback: () => console.log() });
-        menubar.add("View/Any option", { callback: () => console.log() });
+        menubar.add("Project/Upload animation", { callback: () => this.editor.getApp().storeAnimation() });
+        menubar.add("View/Show Timeline", { type: "checkbox", instance: this, property: "showTimeline", callback: () => {
+            const tl = document.getElementById("timeline");
+            tl.style.display = that.showTimeline ? "block": "none";
+        }});
 
         this.appendButtons( menubar );
+    }
+
+    createSidePanel( anim_name ) {
+
+        this.mainArea.split("horizontal", [null,"300px"], true);
+        var docked = new LiteGUI.Panel("sidePanel", {title: anim_name || 'Inspector', scroll: true});
+        this.mainArea.getSection(1).add( docked );
+        $(docked).bind("closed", function() { this.mainArea.merge(); });
+        this.sidePanel = docked;
+        this.updateSidePanel( docked, 'root', {firstBone: true} );
+        
+        docked.content.id = "main-inspector-content";
+        docked.content.style.width = "100%";
+
+        this.resize();
+    }
+
+    updateSidePanel(root, item_selected, options) {
+
+        item_selected = item_selected || this.item_selected;
+    
+        options = options || {};
+        this.item_selected = item_selected;
+        root = root || this.sidePanel;
+        $(root.content).empty();
+        
+        var mytree = this.updateNodeTree();
+    
+        var litetree = new LiteGUI.Tree(mytree, {id: "tree"});
+        litetree.setSelectedItem(item_selected);
+        var that = this;
+    
+        // Click right mouse
+        litetree.onItemContextMenu = (e, el) => { 
+    
+            e.preventDefault();
+            var bone_id = el.data.id;
+    
+            const bone = this.editor.skeletonHelper.skeleton.getBoneByName(bone_id);
+            if(!bone)
+            return;
+    
+            var actions = [
+                {
+                    title: "Disable", //text to show
+                    disabled: true,
+                    callback: () => console.log("TODO: Disable")
+                },
+                {
+                    title: "Copy",
+                    callback: () => LiteGUI.toClipboard( bone )
+                }
+            ];
+            
+            new LiteGUI.ContextMenu( actions, { event: e });
+        };
+    
+        litetree.onItemSelected = function(data){
+            this.expandItem(data.id);
+            item_selected = data.id;
+            widgets.on_refresh();
+
+            if(!that.editor)
+            throw("No editor attached");
+
+            that.editor.setSelectedBone( data.id );
+            that.timeline.setSelectedBone( data.id );
+        };
+    
+        litetree.root.addEventListener("item_dblclicked", function(e){
+            e.preventDefault();
+        });
+    
+        this.tree = litetree;
+    
+        $(root.content).append( litetree.root );
+    
+        // Editor widgets 
+        var widgets = new LiteGUI.Inspector();
+        $(root.content).append(widgets.root);
+    
+        const makePretitle = (src) => { return "<img src='data/imgs/mini-icon-"+src+".png' style='margin-right: 4px;margin-top: 6px;'>"; }
+
+        widgets.on_refresh = () => {
+
+            const numBones = this.editor.skeletonHelper.bones.length;
+
+            widgets.clear();
+            widgets.addSection("Animation Clip", { pretitle: makePretitle('stickman') });
+            widgets.addString("Name", this.project.clipName || "Unnamed", { callback: (v) => this.project.clipName = v });
+            widgets.addInfo("Num bones", numBones);
+            widgets.addInfo("Frame rate", this.project.framerate);
+            widgets.addInfo("Duration", this.project.duration);
+            widgets.widgets_per_row = 1;
+            widgets.addSection("Gizmo", { pretitle: makePretitle('gizmo'), settings: (e) => this.openSettings( 'gizmo' ) });
+            widgets.addButtons( "Mode", ["Translate","Rotate"], { selected: this.editor.getGizmoMode(), name_width: "50%", width: "100%", callback: (v) => {
+                this.editor.setGizmoMode(v);
+                widgets.on_refresh();
+            }});
+
+            widgets.addButtons( "Space", ["Local","World"], { selected: this.editor.getGizmoSpace(), name_width: "50%", width: "100%", callback: (v) => {
+                this.editor.setGizmoSpace(v);
+                widgets.on_refresh();
+            }});
+
+            widgets.addCheckbox( "Snap", this.editor.isGizmoSnapActive(), {callback: () => this.editor.toggleGizmoSnap() } );
+
+            widgets.addSeparator();
+
+            const bone_selected = !(options.firstBone && numBones) ? 
+                this.editor.skeletonHelper.skeleton.getBoneByName(item_selected) : 
+                this.editor.skeletonHelper.bones[0];
+
+            if(bone_selected) {
+
+                const innerUpdate = (attribute, value) => {
+                    bone_selected[attribute].fromArray( value ); 
+                    this.editor.gizmo.updateBones();
+                };
+
+                widgets.addSection("Bone", { pretitle: makePretitle('circle') });
+                widgets.addInfo("Name", bone_selected.name);
+                widgets.addTitle("Position");
+                widgets.addVector3(null, bone_selected.position.toArray(), {callback: (v) => innerUpdate("position", v)});
+
+                widgets.addTitle("Rotation (XYZ)");
+                widgets.addVector3(null, bone_selected.rotation.toArray(), {callback: (v) => innerUpdate("rotation", v)});
+
+                widgets.addTitle("Quaternion");
+                widgets.addVector4(null, bone_selected.quaternion.toArray(), {callback: (v) => innerUpdate("quaternion", v)});
+            }
+        };
+
+        widgets.on_refresh();
+
+        // update scroll position
+        var element = root.content.querySelectorAll(".inspector")[0];
+        var maxScroll = element.scrollHeight;
+        element.scrollTop = options.maxScroll ? maxScroll : (options.scroll ? options.scroll : 0);
+    }
+
+    openSettings( settings ) {
+
+        let prevDialog = document.getElementById("settings-dialog");
+        if(prevDialog) prevDialog.remove();
+
+        const dialog = new LiteGUI.Dialog({ id: 'settings-dialog', title: firstToUpperCase(settings), close: true, width: 380, height: 128, scroll: false, draggable: true});
+		dialog.show();
+
+        const inspector = new LiteGUI.Inspector();
+
+        switch( settings ) {
+            case 'gizmo': 
+
+            inspector.addNumber( "Translation snap", this.editor.defaultTranslationSnapValue, { min: 0.5, max: 5, step: 0.5, callback: (v) => {
+                this.editor.defaultTranslationSnapValue = v;
+                this.editor.updateGizmoSnap();
+            }});
+
+            inspector.addNumber( "Rotation snap", this.editor.defaultRotationSnapValue, { min: 15, max: 180, step: 15, callback: (v) => {
+                this.editor.defaultRotationSnapValue = v;
+                this.editor.updateGizmoSnap();
+            }});
+
+            inspector.addSlider( "Size", this.editor.getGizmoSize(), { min: 0.2, max: 2, step: 0.1, callback: (v) => {
+                this.editor.setGizmoSize(v);
+            }});
+
+            break;
+        };
+
+        dialog.add( inspector );
+    }
+
+    updateNodeTree() {
+        
+        const rootBone = this.editor.skeletonHelper.bones[0];
+
+        let mytree = { 'id': rootBone.name };
+        let children = [];
+
+        const addChildren = (bone, array) => {
+
+            for( let b of bone.children ) {
+
+                let child = {
+                    id: b.name,
+                    children: []
+                }
+
+                array.push( child );
+
+                addChildren(b, child.children);
+            }
+        };
+
+        addChildren(rootBone, children);
+
+        mytree['children'] = children;
+        return mytree;
     }
 
     appendButtons(menubar) {
@@ -92,14 +331,13 @@ class Gui {
                 display: "none"
             },
             {
-                id: "capture_btn",
-                text: "Capture"
+                id: "stop_btn",
+                text: "∎",
+                display: "none"
             },
             {
-                id: "upload_btn",
-                text: "Upload animation",
-                display: "none",
-                styles: { position: "absolute", right: "20px", marginTop: "5px !important"}
+                id: "capture_btn",
+                text: "Capture"
             }
         ];
 
@@ -117,9 +355,67 @@ class Gui {
 
     render() {
 
-        // this.drawSkeleton();
-        // this.drawSettings();
         this.drawTimeline();
+    }
+
+    drawTimeline() {
+        
+        if(!this.project || !this.project.mixer)
+        return;
+
+        const canvas = this.timelineCTX.canvas;
+        this.current_time = this.timeline.current_time = this.project.mixer.time % this.duration;
+        this.timeline.draw(this.timelineCTX, this.project, this.current_time, [0, 0, canvas.width, canvas.height]);
+    }
+
+    showKeyFrameOptions(e, info, index) {
+
+        let track = this.timeline.getTrack(info, index);
+        if(!track)
+        return;
+
+        var actions = [
+            {
+                title: "[" + index + "] " + track.name,
+                disabled: true
+            },
+            null,
+            {
+                title: "Copy",
+                callback: () => this.timeline.copyKeyFrame( track, index )
+            },
+            {
+                title: "Paste",
+                disabled: !this.timeline.canPasteKeyFrame(),
+                callback: () => {
+                    this.timeline.pasteKeyFrame( track, index );
+                },
+            },
+            {
+                title: "Delete",
+                callback: () => console.log("TODO: Delete")
+            }
+        ];
+        
+        new LiteGUI.ContextMenu( actions, { event: e });
+    }
+
+    onMouse(e) {
+
+        e.preventDefault();
+        this.timeline.processMouse(e);
+    }
+
+    resize() {
+        for(let s of LiteGUI.SliderList) {
+            // Resize canvas
+            s.root.width = s.root.parentElement.offsetWidth + 35;
+            s.setValue(null);
+        }
+
+        const canvasArea = document.getElementById("canvasarea");
+        let timelineCanvas = document.getElementById("timelineCanvas");
+        timelineCanvas.width = canvasArea.clientWidth;
     }
 
     drawSkeleton() {
@@ -207,43 +503,6 @@ class Gui {
 
         ctx.restore();
     }
-
-    drawSettings() {
-
-    }
-
-    drawTimeline() {
-        
-        const canvas = this.timelineCTX.canvas;
-        this.current_time = this.timeline.current_time = this.project.mixer.time % this.duration;
-        this.timeline.draw(this.timelineCTX, this.project, this.current_time, [0, 0, canvas.width, canvas.height]);
-    }
-
-    onMouse(e) {
-
-        if (e.type == "mouseup") {
-            let track_height = 20;
-            //get the selected item
-            if (e.offsetX < 200)  //only if we are clicking on the items zone
-            {
-                let y = e.offsetY + this.current_scroll_in_pixels - 10 - track_height - this.position[1];
-                for (let i in project.bones) {
-                    let item = project.bones[i];
-                    y = y - track_height; //if( item.visible ) y = y - track_height;
-                    if (y <= 0 && y > -track_height)
-                        item.selected = item.selected ? false : true;
-                    else
-                        item.selected = false;
-                }
-                project.names = project.bones.map(v => [v.name, v.depth, v.selected, v.childs]);
-            }
-            update_timeline = true;
-        }
-        if (this._grabbing_scroll || this._grabbing || e.type == "wheel") update_timeline = true;
-    
-        this.processMouse(e);
-    }
-
 };
 
 export { Gui };
