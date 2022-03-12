@@ -7,6 +7,7 @@ class Gui {
     constructor(editor) {
        
         this.showTimeline = true;
+        this.showVideo = true;
         this.current_time = 0;
         this.skeletonScroll = 0;
         this.editor = editor;
@@ -107,7 +108,12 @@ class Gui {
         menubar.root.prepend(logo);
 
         menubar.add("Project/Upload animation", { callback: () => this.editor.getApp().storeAnimation() });
-        menubar.add("View/Show Timeline", { type: "checkbox", instance: this, property: "showTimeline", callback: () => {
+        menubar.add("Project/Export BVH", { callback: () => this.editor.export() });
+        menubar.add("View/Video", { type: "checkbox", instance: this, property: "showVideo", callback: () => {
+            const tl = document.getElementById("capture");
+            tl.style.display = that.showVideo ? "flex": "none";
+        }});
+        menubar.add("View/Timeline", { type: "checkbox", instance: this, property: "showTimeline", callback: () => {
             const tl = document.getElementById("timeline");
             tl.style.display = that.showTimeline ? "block": "none";
         }});
@@ -155,14 +161,16 @@ class Gui {
             if(!bone)
             return;
     
+            const boneEnabled = true;
+
             var actions = [
                 {
-                    title: "Disable", //text to show
+                    title: (boneEnabled?"Disable":"Enable") + "<i class='bi bi-" + (boneEnabled?"dash":"check") + "-circle float-right'></i>",
                     disabled: true,
                     callback: () => console.log("TODO: Disable")
                 },
                 {
-                    title: "Copy",
+                    title: "Copy" + "<i class='bi bi-clipboard float-right'></i>",
                     callback: () => LiteGUI.toClipboard( bone )
                 }
             ];
@@ -207,7 +215,7 @@ class Gui {
             widgets.addInfo("Frame rate", this.project.framerate);
             widgets.addInfo("Duration", this.project.duration);
             widgets.widgets_per_row = 1;
-            widgets.addSection("Gizmo", { pretitle: makePretitle('gizmo'), settings: (e) => this.openSettings( 'gizmo' ) });
+            widgets.addSection("Gizmo", { pretitle: makePretitle('gizmo'), settings: (e) => this.openSettings( 'gizmo' ), settings_title: "<i class='bi bi-gear-fill section-settings'></i>" });
             widgets.addButtons( "Mode", ["Translate","Rotate"], { selected: this.editor.getGizmoMode(), name_width: "50%", width: "100%", callback: (v) => {
                 this.editor.setGizmoMode(v);
                 widgets.on_refresh();
@@ -325,17 +333,17 @@ class Gui {
         const buttons = [
             {
                 id: "state_btn",
-                text: "►",
+                text: "<i class='bi bi-play-fill'></i>",
                 display: "none"
             },
             {
                 id: "stop_btn",
-                text: "∎",
+                text: "<i class='bi bi-skip-start-fill'></i>",
                 display: "none"
             },
             {
                 id: "capture_btn",
-                text: "Capture"
+                text: "Capture" + " <i class='bi bi-record2'></i>"
             }
         ];
 
@@ -372,25 +380,25 @@ class Gui {
         if(!track)
         return;
 
+        e.multipleSelection &= this.timeline.isKeyFrameSelected(track, index);
+
         var actions = [
             {
-                title: "[" + index + "] " + track.name,
+                title: (e.multipleSelection ? "Multiple selection" : "[" + index + "] " + track.name),
                 disabled: true
             },
             null,
             {
-                title: "Copy",
+                title: "Copy" + " <i class='bi bi-clipboard float-right'></i>",
                 callback: () => this.timeline.copyKeyFrame( track, index )
             },
             {
-                title: "Paste",
+                title: "Paste" + (e.multipleSelection ? " (" + this.timeline.getNumKeyFramesSelected() + ")" : "") +  " <i class='bi bi-clipboard-check float-right'></i>",
                 disabled: !this.timeline.canPasteKeyFrame(),
-                callback: () => {
-                    this.timeline.pasteKeyFrame( track, index );
-                },
+                callback: () => this.timeline.pasteKeyFrame( e, track, index )
             },
             {
-                title: "Delete",
+                title: "Delete" +  " <i class='bi bi-trash float-right'></i>",
                 callback: () => console.log("TODO: Delete")
             }
         ];

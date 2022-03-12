@@ -207,7 +207,7 @@ function createAnimation(name, landmarks) {
             }
 
             times.push(time_accum);
-            time_accum += 1.0 / 60.0;
+            time_accum += landmarks[i].dt / 1000.0;
         }
         
         if (times.length > 0) {

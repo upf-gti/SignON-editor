@@ -44,29 +44,10 @@ class App {
 
                         let video = document.getElementById("recording");
                         video.addEventListener("play", function() {
-                            let icon = w2ui.sidebar.get("play").icon;
-                            if (icon == "fa fa-play") {
-                                icon = "fa fa-pause";
-                                that.editor.setState(true);
-                                //this.currentTime = 2; //check later
-                            }
-                            else {
-                                icon = "fa fa-play";
-                                that.editor.setState(false);
-                            }
-                            w2ui.sidebar.update("play", {"icon": icon});
+                           
                         });
                         video.addEventListener("pause", function() {
-                            let icon = w2ui.sidebar.get("play").icon;
-                            if (icon == "fa fa-play") {
-                                icon = "fa fa-pause";
-                                that.editor.setState(true);
-                            }
-                            else {
-                                icon = "fa fa-play";
-                                that.editor.setState(false);
-                            }
-                            w2ui.sidebar.update("play", {"icon": icon});
+                            
                         });
                         video.setAttribute('controls', 'name');
                         video.controls = false;
@@ -124,7 +105,7 @@ class App {
             
             if (!that.recording) {
                 
-                capture.innerText = "Stop";
+                capture.innerHTML = "Stop" + " <i class='bi bi-stop-fill'></i>"
                 capture.style.backgroundColor = "lightcoral";
                 capture.style.border = "solid #924242";
 
@@ -155,7 +136,7 @@ class App {
                 that.project.landmarks[0].dt = 0;
 
                 // Back to initial values
-                capture.innerText = "Capture";
+                capture.innerHTML = "Capture" + " <i class='bi bi-record2'></i>"
                 capture.style.removeProperty("background-color");
                 capture.style.removeProperty("border");
                 videoCanvas.style.removeProperty("border");

@@ -10133,7 +10133,7 @@ Inspector.prototype.addSection = function( name, options )
 		element.instance = options.instance;
 
 	
-    const makeSettings = () => { return "<img class='section-settings' src='data/imgs/mini-icon-gear.png' style='cursor:pointer;margin-right: 4px;margin-top: 4px; float:right;'>"; }
+    const makeSettings = () => { return options.settings_title?options.settings_title:"<img class='section-settings' src='data/imgs/mini-icon-gear.png'>"; }
 
 	var code = "";
 	if(name)
