@@ -50,7 +50,7 @@ class Editor {
 
         let scene = new THREE.Scene();
         scene.background = new THREE.Color(0xeeeeee);
-        scene.add(new THREE.GridHelper(400, 10));
+        scene.add(new THREE.GridHelper(300, 20));
         
         const pixelRatio = CANVAS_WIDTH / CANVAS_HEIGHT;
         let renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -61,6 +61,8 @@ class Editor {
 
         renderer.domElement.id = "webgl-canvas";
         renderer.domElement.setAttribute("tabIndex", 1);
+
+        this.video = document.getElementById("recording");
 
         // camera
         let camera = new THREE.PerspectiveCamera(60, pixelRatio, 0.1, 1000);
@@ -106,6 +108,7 @@ class Editor {
         project.path = project.path || "models/bvh/victor.bvh";
         
         /*let skeleton = createSkeleton(this.landmarksArray);
+        this.skeleton = skeleton;
         
         this.skeletonHelper = new THREE.SkeletonHelper(skeleton.bones[0]);
         this.skeletonHelper.skeleton = skeleton; // allow animation mixer to bind to THREE.SkeletonHelper directly
@@ -132,8 +135,6 @@ class Editor {
         
         this.scene.add( points );*/
         
-       // BVHExporter.export(skeleton, this.animationClip, this.landmarksArray.length);
-        
         /*project.prepareData(this.mixer, this.animationClip, skeleton);
         this.gui.loadProject(project);
 
@@ -141,19 +142,23 @@ class Editor {
 */
         // set onclick function to play button
         let stateBtn = document.getElementById("state_btn");
+        let video = document.getElementById("recording");
         stateBtn.onclick = (e) => {
             this.state = !this.state;
-            stateBtn.innerHTML = this.state ? "❚❚" : "►";
+            stateBtn.innerHTML = "<i class='bi bi-" + (this.state ? "pause" : "play") + "-fill'></i>";
             stateBtn.style.border = "solid #268581";
             this.state ? this.gizmo.stop() : 0;
+            video.paused ? video.play() : video.pause();
         };
 
         let stopBtn = document.getElementById("stop_btn");
         stopBtn.onclick = (e) => {
             this.state = false;
-            stateBtn.innerHTML = "►";
+            stateBtn.innerHTML = "<i class='bi bi-play-fill'></i>";
             stateBtn.style.removeProperty("border");
             this.stopAnimation();
+            video.pause();
+            video.currentTime = 0;
         }
       
         //this.animate();
@@ -456,6 +461,9 @@ class Editor {
 
         //this.mixer.setTime(t);
         this.gizmo.updateBones(0.0);
+
+        // Update video
+        this.video.currentTime = t;
     }
 
     stopAnimation() {
@@ -524,6 +532,11 @@ class Editor {
         this.renderer.setPixelRatio(aspect);
         this.renderer.setSize(width, height);
         this.gui.resize();
+    }
+
+    export() {
+        
+        BVHExporter.export(this.skeleton, this.animationClip, this.landmarksArray.length);
     }
 };
 

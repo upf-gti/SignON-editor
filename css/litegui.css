@@ -1458,7 +1458,7 @@ a:hover {
 }
 
 .litemenubar li {
-	font-size: 1.7em;
+	font-size: 1.6em;
 	color: #999;
 	display: inline-block;
 	min-width: 50px;
@@ -2473,4 +2473,17 @@ canvas.slider :hover{
     border-radius: 0px;
     text-align: left;
     margin-left: -4px;
+}
+
+.section-settings {
+
+	cursor:pointer;
+	margin-right: 4px;
+	margin-top: 4px; 
+	float:right;
+}
+
+.section-settings:hover {
+
+	color: #fff;
 }
