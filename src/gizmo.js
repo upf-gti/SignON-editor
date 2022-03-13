@@ -125,6 +125,17 @@ class Gizmo {
 
         const canvas = document.getElementById("webgl-canvas");
 
+        canvas.addEventListener( 'mousemove', (e) => {
+
+            if(!this.bonePoints || this.editor.state)
+            return;
+
+            const pointer = new THREE.Vector2(( e.offsetX / canvas.clientWidth ) * 2 - 1, -( e.offsetY / canvas.clientHeight ) * 2 + 1);
+            this.raycaster.setFromCamera(pointer, this.camera);
+            const intersections = this.raycaster.intersectObject( this.bonePoints );
+            canvas.style.cursor = intersections.length ? "crosshair" : "default";
+        });
+
         canvas.addEventListener( 'pointerdown', (e) => {
 
             if(e.button != 0 || !this.bonePoints || this.editor.state || (!this.raycastEnabled && !e.ctrlKey))

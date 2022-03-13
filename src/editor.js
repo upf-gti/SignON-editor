@@ -6,6 +6,7 @@ import { BVHExporter } from "./bvh_exporter.js";
 import { Gui } from "./gui.js";
 import { Gizmo } from "./gizmo.js";
 import { firstToUpperCase } from "./utils.js"
+import { OrientationHelper } from "./libs/OrientationHelper.js";
 
 class Editor {
 
@@ -47,7 +48,7 @@ class Editor {
         const CANVAS_HEIGHT = canvasArea.clientHeight;
 
         let scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xeeeeee);
+        scene.background = new THREE.Color(0x777777);
         scene.add(new THREE.GridHelper(300, 20));
         
         const pixelRatio = CANVAS_WIDTH / CANVAS_HEIGHT;
@@ -71,6 +72,22 @@ class Editor {
         camera.position.set(0.5, 2, -3);
         controls.target.set(1.2, 1.5, 0);
         controls.update();  
+
+        // orientation helper
+        const ohOptions = {
+            className: 'orientation-helper-dom'
+            }, 
+            ohLabels = {
+                px: '+X',
+                nx: '-X',
+                pz: '+Z',
+                nz: '-Z',
+                py: '+Y',
+                ny: '-Y'
+            };
+
+        const orientationHelper = new OrientationHelper( camera, controls, ohOptions, ohLabels );
+        canvasArea.prepend(orientationHelper.domElement);
 
         this.scene = scene;
         this.camera = camera;
