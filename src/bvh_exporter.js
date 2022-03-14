@@ -135,7 +135,7 @@ const BVHExporter = {
             bvh += "\n";
         }
 
-        //download(bvh, 'sign.bvh', 'text/plain');
+        this.download(bvh, 'sign.bvh', 'text/plain');
     }
 };
 

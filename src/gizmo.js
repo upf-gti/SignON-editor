@@ -263,11 +263,12 @@ class Gizmo {
 
         let timeline = this.editor.gui.timeline;
 
-        if(!timeline.lastSelected)
+        if(!timeline._lastKeyFramesSelected.length)
         return;
 
-        let [name, trackIndex, keyFrameIndex] = timeline.lastSelected;
-        let track = timeline.getTrack(timeline.lastSelected);
+        // TODO: Apply all the same action
+        let [name, trackIndex, keyFrameIndex] = timeline._lastKeyFramesSelected[0];
+        let track = timeline.getTrack(timeline._lastKeyFramesSelected[0]);
 
         // Don't store info if we are using wrong mode for that track
         if(Gizmo.ModeToKeyType[ this.editor.getGizmoMode() ] != track.type)
@@ -316,7 +317,8 @@ class Gizmo {
 
 Gizmo.ModeToKeyType = {
     'Translate': 'position',
-    'Rotate': 'quaternion'
+    'Rotate': 'quaternion',
+    'Scale': 'scale'
 };
 
 export { Gizmo };
