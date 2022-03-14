@@ -500,7 +500,7 @@ function createAnimation(name, landmarks) {
         for (let i = 0; i < landmarks.length; ++i) {
 
             if (lm_info.prev_idx == -1) {
-                /*pos_values.push(landmarks[i].PLM[lm_info.idx].x);
+                pos_values.push(landmarks[i].PLM[lm_info.idx].x);
                 pos_values.push(landmarks[i].PLM[lm_info.idx].y);
                 pos_values.push(landmarks[i].PLM[lm_info.idx].z);
 
@@ -512,8 +512,8 @@ function createAnimation(name, landmarks) {
                 quat_values.push(quat.x);
                 quat_values.push(quat.y);
                 quat_values.push(quat.z);
-                quat_values.push(quat.w);*/
-                let obj = new THREE.Object3D();
+                quat_values.push(quat.w);
+                /*let obj = new THREE.Object3D();
                 obj.position = new THREE.Vector3(landmarks[i].PLM[lm_info.idx].x, landmarks[i].PLM[lm_info.idx].y, landmarks[i].PLM[lm_info.idx].z);
 
                 pos_values.push(landmarks[i].PLM[lm_info.idx].x);
@@ -526,7 +526,7 @@ function createAnimation(name, landmarks) {
                 quat_values.push(quat.x);
                 quat_values.push(quat.y);
                 quat_values.push(quat.z);
-                quat_values.push(quat.w);
+                quat_values.push(quat.w);*/
                 
             } else {
 

@@ -179,7 +179,7 @@ class Editor {
       
         //this.animate();
         let skeleton = createSkeleton(this.landmarksArray);
-        
+       
         // Load the model (Eva)
         this.loadGLTF("models/Taunt.glb", (gltf) => {
            
