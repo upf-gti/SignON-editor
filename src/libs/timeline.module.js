@@ -127,9 +127,14 @@ Timeline.prototype.processTracks = function () {
 		trackInfo.data = track;
 		trackInfo.dim = track.values.length / track.times.length;
 		trackInfo.edited = [];
-
 		let name = trackInfo.name;
-
+		let trackType = trackInfo.name.split(".");
+		
+		if(trackType.length>1){
+			name = trackType[0];
+			trackInfo.type = trackType[1];
+		}
+		
 		if(!this.tracksPerBone[name]) {
 			this.tracksPerBone[name] = [trackInfo];
 		}else {
