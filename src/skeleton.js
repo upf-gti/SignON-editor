@@ -8,16 +8,16 @@ let LM_INFO = class LandmarksInfo {
 
     // The order is important! It's necessary later to keep track of previous quaternions
     static HIPS =                   new LandmarksInfo(33, "mixamorigHips",            -1,   0.0, 0.0, 0.0);                              //-1,  0.0, 0.0, 0.0);                                 
-    static RIGHT_UP_LEG =           new LandmarksInfo(24, "mixamorigRightUpLeg",        33,  base_size * 0.18, -base_size * 0.1, 0.0 );   // 33,  base_size * 0.1, -base_size * 0.1, 0.0 );    
+    static RIGHT_UP_LEG =           new LandmarksInfo(24, "mixamorigRightUpLeg",       33,  base_size * 0.18, -base_size * 0.1, 0.0 );   // 33,  base_size * 0.1, -base_size * 0.1, 0.0 );    
     static RIGHT_LEG =              new LandmarksInfo(26, "mixamorigRightLeg",         24,  0.0, -base_size * 0.5, 0.0 ); // 24,  base_size * 0.18, -base_size * 0.18, 0.0 );
     static RIGHT_HEEL =             new LandmarksInfo(28, "mixamorigRightFoot",        26,  0.0, -base_size * 0.8, 0.0 ); /// 26,  0.0, -base_size * 0.18, base_size * 0.8 ); 
     static RIGHT_FOOT_INDEX =       new LandmarksInfo(32, "mixamorigRightToeBase",     28,  0.0, -base_size * 0.18, -base_size * 0.1 ); /// 28,  0.0, -base_size * 0.18, base_size * 0.1 ); 
-    static RIGHT_FOOT_INDEX_END =       new LandmarksInfo(76, "mixamorigRightToeEnd",      32,  0.0, -base_size * 0.18, -base_size * 0.1 );
+    static RIGHT_FOOT_INDEX_END =   new LandmarksInfo(76, "mixamorigRightToeEnd",      32,  0.0, -base_size * 0.18, -base_size * 0.1 );
     static LEFT_UP_LEG =            new LandmarksInfo(23, "mixamorigLeftUpLeg",        33,  -base_size * 0.18, -base_size * 0.1, 0.0 ); //// 33, -base_size * 0.1, -base_size * 0.1, 0.0 ); 
     static LEFT_LEG =               new LandmarksInfo(25, "mixamorigLeftLeg",          23,  0, -base_size * 0.5, 0.0 ); // 23, -base_size * 0.18, -base_size * 0.18, 0.0 );
     static LEFT_HEEL =              new LandmarksInfo(27, "mixamorigLeftFoot",         25,  0.0, -base_size * 0.8, 0.0); //// 25,  0.0, -base_size * 0.18, base_size * 0.8); 
     static LEFT_FOOT_INDEX =        new LandmarksInfo(31, "mixamorigLeftToeBase",      27,  0.0, -base_size * 0.18, -base_size * 0.1 ); /// 27,  0.0, -base_size * 0.18, base_size * 0.1 ); 
-    static LEFT_FOOT_INDEX_END =       new LandmarksInfo(75, "mixamorigLeftToeEnd",      31,  0.0, -base_size * 0.18, -base_size * 0.1 );
+    static LEFT_FOOT_INDEX_END =    new LandmarksInfo(75, "mixamorigLeftToeEnd",       31,  0.0, -base_size * 0.18, -base_size * 0.1 );
     static SPINE =                  new LandmarksInfo(35, "mixamorigSpine",            33,  0.0, base_size * 0.18, 0.0 ); //            // 33,  0.0, base_size * 0.18, 0.0 ); //              
     static SPINE1 =                 new LandmarksInfo(36, "mixamorigSpine1",           35,  0.0, base_size * 0.18, 0.0 ); //            // 35,  0.0, 0.0, base_size * 0.18 ); //             
     static SPINE2 =                 new LandmarksInfo(37, "mixamorigSpine2",           36,  0.0, base_size * 0.18, 0.0 ); //            // 36,  0.0, 0.0, base_size * 0.18 ); //             
@@ -500,8 +500,7 @@ function createAnimation(name, landmarks) {
         for (let i = 0; i < landmarks.length; ++i) {
 
             if (lm_info.prev_idx == -1) {
-
-                pos_values.push(landmarks[i].PLM[lm_info.idx].x);
+                /*pos_values.push(landmarks[i].PLM[lm_info.idx].x);
                 pos_values.push(landmarks[i].PLM[lm_info.idx].y);
                 pos_values.push(landmarks[i].PLM[lm_info.idx].z);
 
@@ -513,13 +512,28 @@ function createAnimation(name, landmarks) {
                 quat_values.push(quat.x);
                 quat_values.push(quat.y);
                 quat_values.push(quat.z);
+                quat_values.push(quat.w);*/
+                let obj = new THREE.Object3D();
+                obj.position = new THREE.Vector3(landmarks[i].PLM[lm_info.idx].x, landmarks[i].PLM[lm_info.idx].y, landmarks[i].PLM[lm_info.idx].z);
+
+                pos_values.push(landmarks[i].PLM[lm_info.idx].x);
+                pos_values.push(landmarks[i].PLM[lm_info.idx].y);
+                pos_values.push(landmarks[i].PLM[lm_info.idx].z);
+
+                var quat = obj.quaternion;
+                previous_quats[lm_info.idx].push(quat);
+
+                quat_values.push(quat.x);
+                quat_values.push(quat.y);
+                quat_values.push(quat.z);
                 quat_values.push(quat.w);
+                
             } else {
 
                 // pos_values.push(lm_info.x);
                 // pos_values.push(lm_info.y);
                 // pos_values.push(lm_info.z);
-
+                
                 var quat_info = MATH_UTILS.calc_rotation( landmarks[i].PLM[lm_info.prev_idx], landmarks[i].PLM[lm_info.idx], previous_quats[lm_info.prev_idx][i])
 
                 previous_quats[lm_info.idx].push(quat_info.rotation);
@@ -537,12 +551,12 @@ function createAnimation(name, landmarks) {
         if (times.length > 0) {
 
             if (pos_values.length > 0) {
-                const positions = new THREE.VectorKeyframeTrack('.bones[' + lm_info.name + '].position', times, pos_values);
+                const positions = new THREE.VectorKeyframeTrack( lm_info.name + '.position', times, pos_values);
                 tracks.push(positions);
             }
 
             if (quat_values.length > 0) {
-                const rotations = new THREE.QuaternionKeyframeTrack('.bones[' + lm_info.name + '].quaternion', times, quat_values);
+                const rotations = new THREE.QuaternionKeyframeTrack( lm_info.name + '.quaternion', times, quat_values);
                 tracks.push(rotations);
             }
         }

@@ -215,6 +215,22 @@ Timeline.prototype.getTracksInRange = function (minY, maxY, threshold) {
 		let pos = t[1] - this.top_margin, size = t[2];
 		if( pos + threshold >= minY && (pos + size - threshold) <= maxY ) {
 			tracks.push( t[0] );
+		let trackInfo = this.getTrackName(track.name);
+		trackInfo.data = track;
+		trackInfo.dim = track.values.length / track.times.length;
+		trackInfo.edited = [];
+		let name = trackInfo.name;
+		//let trackType = trackInfo.name.split(".");
+		
+		//if(trackType.length>1){
+		//	name = trackType[0];
+		//	trackInfo.type = trackType[1];
+		//}
+		
+		if(!this.tracksPerBone[name]) {
+			this.tracksPerBone[name] = [trackInfo];
+		}else {
+			this.tracksPerBone[name].push( trackInfo );
 		}
 	}
 

@@ -52,11 +52,27 @@ class Editor {
         scene.background = new THREE.Color(0xeeeeee);
         scene.add(new THREE.GridHelper(300, 20));
         
+        const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
+        hemiLight.position.set( 0, 20, 0 );
+        scene.add( hemiLight );
+
+        const dirLight = new THREE.DirectionalLight( 0xffffff );
+        dirLight.position.set( - 3, 10, - 10 );
+        dirLight.castShadow = true;
+        dirLight.shadow.camera.top = 2;
+        dirLight.shadow.camera.bottom = - 2;
+        dirLight.shadow.camera.left = - 2;
+        dirLight.shadow.camera.right = 2;
+        dirLight.shadow.camera.near = 0.1;
+        dirLight.shadow.camera.far = 40;
+        scene.add( dirLight );
+
         const pixelRatio = CANVAS_WIDTH / CANVAS_HEIGHT;
         let renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setPixelRatio(pixelRatio);
         renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT);
         renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.shadowMap.enabled = true;
         canvasArea.appendChild(renderer.domElement);
 
         renderer.domElement.id = "webgl-canvas";
@@ -214,8 +230,8 @@ class Editor {
             // play animation
             
             this.animationClip = createAnimation("Eva",this.landmarksArray);
-            this.animationClip = gltf.animations[0];
-            this.mixer = new THREE.AnimationMixer(this.skeletonHelper);
+           // this.animationClip = gltf.animations[0];
+            this.mixer = new THREE.AnimationMixer(model);
             this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
             this.mixer.update(this.clock.getDelta()); //do first iteration to update from T pose
             this.pointsGeometry = new THREE.BufferGeometry();

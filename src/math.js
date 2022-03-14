@@ -3,7 +3,7 @@ import * as THREE from "./libs/three.module.js";
 Math.clamp = function (v, a, b) {
 	return a > v ? a : b < v ? b : v;
 };
-
+let FLT_EPSILON =  1.192092896e-07;
 // Returns the shortest-path rotational difference between two quaternions
 // from: https://github.com/blender/blender-addons/blob/master/rigify/rig_ui_template.py
 function rotation_difference(quat1, quat2) {
@@ -111,19 +111,46 @@ function rotation_difference_vec(v1, v2) {
 }
 
 function calc_rotation(landmark1, landmark2, prev_rot) {
-
+    
     var lm1 = new THREE.Vector3(landmark1.x, landmark1.y, landmark1.z)
     var lm2 = new THREE.Vector3(landmark2.x, landmark2.y, landmark2.z)
 
     var pt_ini = new THREE.Vector3(lm1.x, lm1.y, lm1.z);
     
     // translate to landmark1 space
-    lm1.x = lm1.x - pt_ini.x;
+    var up = new THREE.Vector3(0,-1,0);
+    var vec = lm2 - lm1;
+    /*lm1.x = lm1.x - pt_ini.x;
     lm1.y = lm1.y - pt_ini.y;
+    lm1.z = lm1.z - pt_ini.z;
+
+    lm2.x = lm2.x - pt_ini.x;
+    lm2.y = -(lm2.y - pt_ini.y);
+    lm2.z = lm2.z - pt_ini.z;*/
+
+    var rot_quat;
+
+    if (lm1.z >= 0) {
+        rot_quat = rotation_difference_vec(up, new THREE.Vector3().subVectors(lm2, lm1));
+    } else {
+        rot_quat = rotation_difference_vec(up, new THREE.Vector3().subVectors(lm1, lm2));
+    }
+
+    // 
+    var rot_quat_ajust = rotation_difference_quat(prev_rot, rot_quat)
+
+    /*var lm1 = new THREE.Vector3(landmark1.x, landmark1.y, landmark1.z)
+    var lm2 = new THREE.Vector3(landmark2.x, landmark2.y, landmark2.z)
+
+    var pt_ini = new THREE.Vector3(lm1.x, lm1.y, lm1.z);
+    
+    // translate to landmark1 space
+    lm1.x = lm1.x - pt_ini.x;
+    lm1.y = -(lm1.y - pt_ini.y);
     //lm1.z = lm1.z - pt_ini.z;
 
     lm2.x = lm2.x - pt_ini.x;
-    lm2.y = lm2.y - pt_ini.y;
+    lm2.y = -(lm2.y - pt_ini.y);
     //lm2.z = lm2.z - pt_ini.z;
 
     var rot_quat;
@@ -135,7 +162,7 @@ function calc_rotation(landmark1, landmark2, prev_rot) {
     }
 
     // 
-    var rot_quat_ajust = rotation_difference_quat(prev_rot, rot_quat)
+    var rot_quat_ajust = rotation_difference_quat(prev_rot, rot_quat)*/
 
     return { "rotation" : rot_quat, "rotation_diff" : rot_quat_ajust };
 }
