@@ -50,7 +50,7 @@ class Editor {
         const CANVAS_HEIGHT = canvasArea.clientHeight;
 
         let scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xeeeeee);
+        scene.background = new THREE.Color(0x777777);
         scene.add(new THREE.GridHelper(300, 20));
         
         const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );

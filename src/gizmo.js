@@ -15,6 +15,7 @@ class Gizmo {
         let transform = new TransformControls( editor.camera, editor.renderer.domElement );
         window.trans = transform;
         transform.setSpace( 'local' );
+        transform.setMode( 'rotate' );
         transform.addEventListener( 'change', editor.render );
 
         transform.addEventListener( 'objectChange', (e) => {
@@ -124,6 +125,17 @@ class Gizmo {
         let transform = this.transform;
 
         const canvas = document.getElementById("webgl-canvas");
+
+        canvas.addEventListener( 'mousemove', (e) => {
+
+            if(!this.bonePoints || this.editor.state)
+            return;
+
+            const pointer = new THREE.Vector2(( e.offsetX / canvas.clientWidth ) * 2 - 1, -( e.offsetY / canvas.clientHeight ) * 2 + 1);
+            this.raycaster.setFromCamera(pointer, this.camera);
+            const intersections = this.raycaster.intersectObject( this.bonePoints );
+            canvas.style.cursor = intersections.length ? "crosshair" : "default";
+        });
 
         canvas.addEventListener( 'pointerdown', (e) => {
 

@@ -3838,6 +3838,13 @@ LiteGUI.Console = Console;
 				//item.innerHTML = "<span class='separator'></span>";
 			}
 
+			if(menu_item.data.icon) {
+				var icon = document.createElement('i');
+				item.appendChild( icon );
+				icon.outerHTML = menu_item.data.icon;
+			}
+			
+			
 			item.data = menu_item;
 
 			//check if it has to show the item being 'checked'

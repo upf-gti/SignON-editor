@@ -32,7 +32,7 @@ class Gui {
             this.timeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
             this.timeline.onSelectKeyFrame = (e, info, index) => {
                 if(e.button != 2)
-                    return false;
+                return false;
 
                 // Change gizmo mode and dont handle
                 // return false;
@@ -40,6 +40,7 @@ class Gui {
                 this.showKeyFrameOptions(e, info, index);
                 return true; // Handled
             };
+            this.timeline.onBoneUnselected = () => this.editor.gizmo.stop() ;
         }
         
 
@@ -72,7 +73,7 @@ class Gui {
 
         let timelineCanvas = document.getElementById("timelineCanvas");
         timelineCanvas.width = canvasArea.clientWidth;
-        timelineCanvas.height = 100;
+        timelineCanvas.height = 115;
         this.timelineCTX = timelineCanvas.getContext("2d");
 
         timelineCanvas.addEventListener("mouseup", this.onMouse.bind(this));
@@ -109,8 +110,8 @@ class Gui {
         logo.addEventListener('click', () => window.open('https://signon-project.eu/'));
         menubar.root.prepend(logo);
 
-        menubar.add("Project/Upload animation", { callback: () => this.editor.getApp().storeAnimation() });
-        menubar.add("Project/Export BVH", { callback: () => this.editor.export() });
+        menubar.add("Project/Upload animation", {icon: "<i class='bi bi-upload float-right'></i>", callback: () => this.editor.getApp().storeAnimation() });
+        menubar.add("Project/Export BVH", {icon: "<i class='bi bi-file-text float-right'></i>",  callback: () => this.editor.export() });
         menubar.add("View/Video", { type: "checkbox", instance: this, property: "showVideo", callback: () => {
             const tl = document.getElementById("capture");
             tl.style.display = that.showVideo ? "flex": "none";
@@ -123,10 +124,10 @@ class Gui {
         this.appendButtons( menubar );
     }
 
-    createSidePanel( anim_name ) {
+    createSidePanel() {
 
         this.mainArea.split("horizontal", [null,"300px"], true);
-        var docked = new LiteGUI.Panel("sidePanel", {title: anim_name || 'Inspector', scroll: true});
+        var docked = new LiteGUI.Panel("sidePanel", {title: 'Skeleton', scroll: true});
         this.mainArea.getSection(1).add( docked );
         $(docked).bind("closed", function() { this.mainArea.merge(); });
         this.sidePanel = docked;
@@ -401,7 +402,7 @@ class Gui {
             },
             {
                 title: "Delete" +  " <i class='bi bi-trash float-right'></i>",
-                callback: () => console.log("TODO: Delete")
+                callback: () => this.timeline.deleteKeyFrame( e, track, index )
             }
         ];
         

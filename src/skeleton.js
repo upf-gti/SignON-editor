@@ -547,8 +547,8 @@ function createAnimation(name, landmarks) {
                 quat_values.push(quat_info.rotation_diff.w);
             }
 
-            times.push(time_accum);
             time_accum += landmarks[i].dt / 1000.0;
+            times.push(time_accum);
         }
         
         if (times.length > 0) {
