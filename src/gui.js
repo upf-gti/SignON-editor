@@ -40,6 +40,7 @@ class Gui {
             this.showKeyFrameOptions(e, info, index);
             return true; // Handled
         };
+        this.timeline.onBoneUnselected = () => this.editor.gizmo.stop() ;
 
         // Move this to another place
         // the idea is to create once and reset on load project
@@ -399,7 +400,7 @@ class Gui {
             },
             {
                 title: "Delete" +  " <i class='bi bi-trash float-right'></i>",
-                callback: () => console.log("TODO: Delete")
+                callback: () => this.timeline.deleteKeyFrame( e, track, index )
             }
         ];
         

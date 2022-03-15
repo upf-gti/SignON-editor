@@ -77,6 +77,7 @@ Timeline.prototype.processTracks = function () {
 		}
 
 		track.idx = this.tracksPerBone[name].length - 1; // Last element
+		track.clip_idx = i;
 	}
 }
 
@@ -152,6 +153,29 @@ Timeline.prototype.pasteKeyFrame = function ( e, track, index ) {
 	}
 }
 
+Timeline.prototype.deleteKeyFrame = function (e, track, index) {
+	
+	// TODO: delete multiple selection
+	if(e.multipleSelection)
+	return;
+
+	// Delete time key
+	track.data.times = track.data.times.filter( (v, i) => i != index);
+
+	// Delete values
+	track.data.values = track.data.values.filter( (v, i) => {
+		let b = true;
+		for(let k = i; k < i + track.dim; ++k)
+			b &= (k != index);
+		return b;
+	});
+
+	// Update clip information
+	const clip_idx = track.data.clip_idx;
+	this.clip.tracks[clip_idx].times = track.data.times;
+	this.clip.tracks[clip_idx].values = track.data.values;
+}
+
 Timeline.prototype.getNumKeyFramesSelected = function () {
 	return this._lastKeyFramesSelected.length;
 }
@@ -160,6 +184,8 @@ Timeline.prototype.unSelect = function () {
 
 	if(!this.unSelectAllKeyFrames()) {
 		this.selected_bone = null;
+		if(this.onBoneUnselected)
+			this.onBoneUnselected();
 	}
 }
 

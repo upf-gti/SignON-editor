@@ -73,22 +73,6 @@ class Editor {
         controls.target.set(1.2, 1.5, 0);
         controls.update();  
 
-        // orientation helper
-        const ohOptions = {
-            className: 'orientation-helper-dom'
-            }, 
-            ohLabels = {
-                px: '+X',
-                nx: '-X',
-                pz: '+Z',
-                nz: '-Z',
-                py: '+Y',
-                ny: '-Y'
-            };
-
-        const orientationHelper = new OrientationHelper( camera, controls, ohOptions, ohLabels );
-        canvasArea.prepend(orientationHelper.domElement);
-
         this.scene = scene;
         this.camera = camera;
         this.renderer = renderer;
@@ -122,6 +106,22 @@ class Editor {
         
         project.path = project.path || "models/bvh/victor.bvh";
         
+        // Orientation helper
+        const ohOptions = {
+            className: 'orientation-helper-dom'
+            }, 
+            ohLabels = {
+                px: '+X',
+                nx: '-X',
+                pz: '+Z',
+                nz: '-Z',
+                py: '+Y',
+                ny: '-Y'
+            };
+
+        const orientationHelper = new OrientationHelper( this.camera, this.controls, ohOptions, ohLabels );
+        document.getElementById("canvasarea").prepend(orientationHelper.domElement);
+
         let skeleton = createSkeleton(this.landmarksArray);
         this.skeleton = skeleton;
 

@@ -15,6 +15,7 @@ class Gizmo {
         let transform = new TransformControls( editor.camera, editor.renderer.domElement );
         window.trans = transform;
         transform.setSpace( 'local' );
+        transform.setMode( 'rotate' );
         transform.addEventListener( 'change', editor.render );
 
         transform.addEventListener( 'objectChange', (e) => {
