@@ -6,7 +6,8 @@ import { BVHExporter } from "./bvh_exporter.js";
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { Gui } from "./gui.js";
 import { Gizmo } from "./gizmo.js";
-import { firstToUpperCase } from "./utils.js"
+import { firstToUpperCase } from "./utils.js";
+import { OrientationHelper } from "./libs/OrientationHelper.js";
 
 class Editor {
 
@@ -123,9 +124,25 @@ class Editor {
         
         project.path = project.path || "models/bvh/victor.bvh";
         
+        // Orientation helper
+        const ohOptions = {
+            className: 'orientation-helper-dom'
+            }, 
+            ohLabels = {
+                px: '+X',
+                nx: '-X',
+                pz: '+Z',
+                nz: '-Z',
+                py: '+Y',
+                ny: '-Y'
+            };
+
+        const orientationHelper = new OrientationHelper( this.camera, this.controls, ohOptions, ohLabels );
+        document.getElementById("canvasarea").prepend(orientationHelper.domElement);
+
         let skeleton = createSkeleton(this.landmarksArray);
         this.skeleton = skeleton;
-        
+
         this.skeletonHelper = new THREE.SkeletonHelper(skeleton.bones[0]);
         this.skeletonHelper.skeleton = skeleton; // allow animation mixer to bind to THREE.SkeletonHelper directly
 
@@ -151,7 +168,7 @@ class Editor {
         
         this.scene.add( points );
         
-        //project.prepareData(this.mixer, this.animationClip, skeleton);
+        project.prepareData(this.mixer, this.animationClip, skeleton);
         this.gui.loadProject(project);
 
         this.gizmo.begin(this.skeletonHelper);

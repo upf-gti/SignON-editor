@@ -8,16 +8,16 @@ let LM_INFO = class LandmarksInfo {
 
     // The order is important! It's necessary later to keep track of previous quaternions
     static HIPS =                   new LandmarksInfo(33, "mixamorigHips",            -1,   0.0, 0.0, 0.0);                              //-1,  0.0, 0.0, 0.0);                                 
-    static RIGHT_UP_LEG =           new LandmarksInfo(24, "mixamorigRightUpLeg",       33,  -base_size * 0.18, 0.0, base_size * 0.1 );   // 33,  base_size * 0.1, -base_size * 0.1, 0.0 );    
+    static RIGHT_UP_LEG =           new LandmarksInfo(24, "mixamorigRightUpLeg",       33,  base_size * 0.18, 0.0, 0.0 );   // 33,  base_size * 0.1, -base_size * 0.1, 0.0 );    
     static RIGHT_LEG =              new LandmarksInfo(26, "mixamorigRightLeg",         24,  0.0, 0.0, base_size * 0.7 ); // 24,  base_size * 0.18, -base_size * 0.18, 0.0 );
     static RIGHT_HEEL =             new LandmarksInfo(28, "mixamorigRightFoot",        26,  0.0, 0.0, base_size * 0.7 ); /// 26,  0.0, -base_size * 0.18, base_size * 0.8 ); 
-    static RIGHT_FOOT_INDEX =       new LandmarksInfo(32, "mixamorigRightToeBase",     28,  0.0, base_size * 0.1, base_size * 0.1 ); /// 28,  0.0, -base_size * 0.18, base_size * 0.1 ); 
-    static RIGHT_FOOT_INDEX_END =   new LandmarksInfo(76, "mixamorigRightToeEnd",      32,  0.0, base_size * 0.1, base_size * 0.1 );
-    static LEFT_UP_LEG =            new LandmarksInfo(23, "mixamorigLeftUpLeg",        33,  base_size * 0.18, 0.0, base_size * 0.1 ); //// 33, -base_size * 0.1, -base_size * 0.1, 0.0 ); 
+    static RIGHT_FOOT_INDEX =       new LandmarksInfo(32, "mixamorigRightToeBase",     28,  0.0, 0.0, base_size * 0.1 ); /// 28,  0.0, -base_size * 0.18, base_size * 0.1 ); 
+    static RIGHT_FOOT_INDEX_END =   new LandmarksInfo(76, "mixamorigRightToeEnd",      32,  0.0, 0.0, base_size * 0.1 );
+    static LEFT_UP_LEG =            new LandmarksInfo(23, "mixamorigLeftUpLeg",        33,  -base_size * 0.18, 0.0, 0.0 ); //// 33, -base_size * 0.1, -base_size * 0.1, 0.0 ); 
     static LEFT_LEG =               new LandmarksInfo(25, "mixamorigLeftLeg",          23,  0, 0.0, base_size * 0.7 ); // 23, -base_size * 0.18, -base_size * 0.18, 0.0 );
     static LEFT_HEEL =              new LandmarksInfo(27, "mixamorigLeftFoot",         25,  0.0, 0.0, base_size * 0.7); //// 25,  0.0, -base_size * 0.18, base_size * 0.8); 
-    static LEFT_FOOT_INDEX =        new LandmarksInfo(31, "mixamorigLeftToeBase",      27,  0.0, base_size * 0.1, base_size * 0.1 ); /// 27,  0.0, -base_size * 0.18, base_size * 0.1 ); 
-    static LEFT_FOOT_INDEX_END =    new LandmarksInfo(75, "mixamorigLeftToeEnd",       31,  0.0, base_size * 0.1, base_size * 0.1 );
+    static LEFT_FOOT_INDEX =        new LandmarksInfo(31, "mixamorigLeftToeBase",      27,  0.0, 0.0, base_size * 0.1 ); /// 27,  0.0, -base_size * 0.18, base_size * 0.1 ); 
+    static LEFT_FOOT_INDEX_END =    new LandmarksInfo(75, "mixamorigLeftToeEnd",       31,  0.0, 0.0, base_size * 0.1 );
     static SPINE =                  new LandmarksInfo(35, "mixamorigSpine",            33,  0.0, base_size * 0.18, 0.0 ); //            // 33,  0.0, base_size * 0.18, 0.0 ); //              
     static SPINE1 =                 new LandmarksInfo(36, "mixamorigSpine1",           35,  0.0, 0.0, base_size * 0.18 ); //            // 35,  0.0, 0.0, base_size * 0.18 ); //             
     static SPINE2 =                 new LandmarksInfo(37, "mixamorigSpine2",           36,  0.0, 0.0, base_size * 0.18 ); //            // 36,  0.0, 0.0, base_size * 0.18 ); //             
@@ -36,27 +36,27 @@ let LM_INFO = class LandmarksInfo {
     // static RIGHT_EAR =          new LandmarksInfo(8, "right_ear",           0);
     // static LEFT_MOUTH =         new LandmarksInfo(9, "left_mouth",          34);
     // static RIGHT_MOUTH =        new LandmarksInfo(10, "right_mouth",        34);
-    static RIGHT_SHOULDER =        new LandmarksInfo(73, "mixamorigRightShoulder",    37,  -base_size * 0.1, 0.0, base_size * 0.1 );
-    static RIGHT_ARM =             new LandmarksInfo(12, "mixamorigRightArm",         73,  -base_size * 0.18, -base_size * 0.05, base_size * 0.1 );
-    static RIGHT_FORE_ARM =        new LandmarksInfo(14, "mixamorigRightForeArm",     12,  0.0, 0.0, base_size * 0.4 );
+    static RIGHT_SHOULDER =        new LandmarksInfo(73, "mixamorigRightShoulder",    37,  -base_size * 0.05, 0.0, base_size * 0.1 );
+    static RIGHT_ARM =             new LandmarksInfo(12, "mixamorigRightArm",         73,  0.0, 0.0, base_size * 0.1 );
+    static RIGHT_FORE_ARM =        new LandmarksInfo(14, "mixamorigRightForeArm",     12,  0.0, 0.1, base_size * 0.4 );
     static RIGHT_HAND =            new LandmarksInfo(16, "mixamorigRightHand",        14,  0.0, 0.0, base_size * 0.4 );
-    static LEFT_SHOULDER =         new LandmarksInfo(74, "mixamorigLeftShoulder",     37,  base_size * 0.1, 0.0,  base_size * 0.1 );
-    static LEFT_ARM =              new LandmarksInfo(11, "mixamorigLeftArm",          74,  base_size * 0.18, base_size * 0.05, base_size * 0.1 );
-    static LEFT_FORE_ARM =         new LandmarksInfo(13, "mixamorigLeftForeArm",      11,  0.0, 0.0, base_size * 0.4 );
+    static LEFT_SHOULDER =         new LandmarksInfo(74, "mixamorigLeftShoulder",     37,  base_size * 0.05, 0.0,  base_size * 0.1 );
+    static LEFT_ARM =              new LandmarksInfo(11, "mixamorigLeftArm",          74,  0.0, 0.0, base_size * 0.1 );
+    static LEFT_FORE_ARM =         new LandmarksInfo(13, "mixamorigLeftForeArm",      11,  0.0, 0.1, base_size * 0.4 );
     static LEFT_HAND =             new LandmarksInfo(15, "mixamorigLeftHand",         13,  0.0, 0.0, base_size * 0.4 );
-    static LEFT_INDEX1 =            new LandmarksInfo(39, "mixamorigLeftHandIndex1",   15, 0.0, base_size * 0.1, base_size * 0.05);
-    static LEFT_INDEX2 =            new LandmarksInfo(41, "mixamorigLeftHandIndex2",   39, 0.0, base_size * 0.1, base_size * 0.05);
+    static LEFT_INDEX1 =            new LandmarksInfo(39, "mixamorigLeftHandIndex1",   15, 0.0, 0.0, base_size * 0.05);
+    static LEFT_INDEX2 =            new LandmarksInfo(41, "mixamorigLeftHandIndex2",   39, 0.0, 0.0, base_size * 0.05);
     static LEFT_INDEX3 =            new LandmarksInfo(43, "mixamorigLeftHandIndex3",   41, 0.0, 0.0, base_size * 0.05);
     static LEFT_INDEX4 =            new LandmarksInfo(21, "mixamorigLeftHandIndex4",   43, 0.0, 0.0, base_size * 0.05);
-    static RIGHT_INDEX1 =           new LandmarksInfo(40, "mixamorigRightHandIndex1",  16, 0.0, base_size * 0.1, base_size * 0.05);
-    static RIGHT_INDEX2 =           new LandmarksInfo(42, "mixamorigRightHandIndex2",  40, 0.0, base_size * 0.1, base_size * 0.05);
+    static RIGHT_INDEX1 =           new LandmarksInfo(40, "mixamorigRightHandIndex1",  16, 0.0, 0.0, base_size * 0.05);
+    static RIGHT_INDEX2 =           new LandmarksInfo(42, "mixamorigRightHandIndex2",  40, 0.0, 0.0, base_size * 0.05);
     static RIGHT_INDEX3 =           new LandmarksInfo(44, "mixamorigRightHandIndex3",  42, 0.0, 0.0, base_size * 0.05);
-    static RIGHT_INDEX4 =           new LandmarksInfo(22, "mixamorigRightHandIndex2",  44, 0.0, 0.0, base_size * 0.05);
-    static LEFT_THUMB1 =            new LandmarksInfo(45, "mixamorigLeftHandThumb1",   15, 0.0, 0.05, base_size * 0.1);
+    static RIGHT_INDEX4 =           new LandmarksInfo(22, "mixamorigRightHandIndex4",  44, 0.0, 0.0, base_size * 0.05);
+    static LEFT_THUMB1 =            new LandmarksInfo(45, "mixamorigLeftHandThumb1",   15, 0.0, 0.0, base_size * 0.1);
     static LEFT_THUMB2 =            new LandmarksInfo(47, "mixamorigLeftHandThumb2",   45, 0.0, 0.0, base_size * 0.05);
     static LEFT_THUMB3 =            new LandmarksInfo(49, "mixamorigLeftHandThumb3",   47, 0.0, 0.0, base_size * 0.05);
     static LEFT_THUMB4 =            new LandmarksInfo(19, "mixamorigLeftHandThumb4",   49, 0.0, 0.0, base_size * 0.05);
-    static RIGHT_THUMB1 =           new LandmarksInfo(46, "mixamorigRightHandThumb1",  16, 0.0, 0.05, base_size * 0.1);
+    static RIGHT_THUMB1 =           new LandmarksInfo(46, "mixamorigRightHandThumb1",  16, 0.0, 0.0, base_size * 0.1);
     static RIGHT_THUMB2 =           new LandmarksInfo(48, "mixamorigRightHandThumb2",  46, 0.0, 0.0, base_size * 0.05);
     static RIGHT_THUMB3 =           new LandmarksInfo(50, "mixamorigRightHandThumb3",  48, 0.0, 0.0, base_size * 0.05);
     static RIGHT_THUMB4 =           new LandmarksInfo(20, "mixamorigRightHandThumb4",  50, 0.0, 0.0, base_size * 0.05);
@@ -68,19 +68,19 @@ let LM_INFO = class LandmarksInfo {
     static RIGHT_MIDDLE2 =          new LandmarksInfo(54, "mixamorigRightHandMiddle2", 52, 0.0, 0.0, base_size * 0.05);
     static RIGHT_MIDDLE3 =          new LandmarksInfo(56, "mixamorigRightHandMiddle3", 54, 0.0, 0.0, base_size * 0.05);
     static RIGHT_MIDDLE4 =          new LandmarksInfo(58, "mixamorigRightHandMiddle4", 56, 0.0, 0.0, base_size * 0.05);
-    static LEFT_RING1 =             new LandmarksInfo(59, "mixamorigLeftHandRing1",    15, 0.0, -0.05, base_size * 0.1);
+    static LEFT_RING1 =             new LandmarksInfo(59, "mixamorigLeftHandRing1",    15, 0.0, 0.0, base_size * 0.1);
     static LEFT_RING2 =             new LandmarksInfo(61, "mixamorigLeftHandRing2",    59, 0.0, 0.0, base_size * 0.05);
     static LEFT_RING3 =             new LandmarksInfo(63, "mixamorigLeftHandRing3",    61, 0.0, 0.0, base_size * 0.05);
     static LEFT_RING4 =             new LandmarksInfo(65, "mixamorigLeftHandRing4",    63, 0.0, 0.0, base_size * 0.05);
-    static RIGHT_RING1 =            new LandmarksInfo(60, "mixamorigRightHandRing1",   16, 0.0, -0.05, base_size * 0.1);
+    static RIGHT_RING1 =            new LandmarksInfo(60, "mixamorigRightHandRing1",   16, 0.0, 0.0, base_size * 0.1);
     static RIGHT_RING2 =            new LandmarksInfo(62, "mixamorigRightHandRing2",   60, 0.0, 0.0, base_size * 0.05);
     static RIGHT_RING3 =            new LandmarksInfo(64, "mixamorigRightHandRing3",   62, 0.0, 0.0, base_size * 0.05);
     static RIGHT_RING4 =            new LandmarksInfo(66, "mixamorigRightHandRing4",   64, 0.0, 0.0, base_size * 0.05);
-    static LEFT_PINKY1 =            new LandmarksInfo(67, "mixamorigLeftHandPinky1",   15, 0.0, -0.1, base_size * 0.18);
+    static LEFT_PINKY1 =            new LandmarksInfo(67, "mixamorigLeftHandPinky1",   15, 0.0, 0.0, base_size * 0.18);
     static LEFT_PINKY2 =            new LandmarksInfo(69, "mixamorigLeftHandPinky2",   67, 0.0, 0.0, base_size * 0.05);
     static LEFT_PINKY3 =            new LandmarksInfo(71, "mixamorigLeftHandPinky3",   69, 0.0, 0.0, base_size * 0.05);
     static LEFT_PINKY4 =            new LandmarksInfo(17, "mixamorigLeftHandPinky4",   71, 0.0, 0.0, base_size * 0.05);
-    static RIGHT_PINKY1 =           new LandmarksInfo(68, "mixamorigRightHandPinky1",  16, 0.0, -0.1, base_size * 0.1);
+    static RIGHT_PINKY1 =           new LandmarksInfo(68, "mixamorigRightHandPinky1",  16, 0.0, 0.0, base_size * 0.1);
     static RIGHT_PINKY2 =           new LandmarksInfo(70, "mixamorigRightHandPinky2",  68, 0.0, 0.0, base_size * 0.05);
     static RIGHT_PINKY3 =           new LandmarksInfo(72, "mixamorigRightHandPinky3",  70, 0.0, 0.0, base_size * 0.05);
     static RIGHT_PINKY4 =           new LandmarksInfo(16, "mixamorigRightHandPinky4",  72, 0.0, 0.0, base_size * 0.05);
@@ -219,7 +219,7 @@ function injectNewLandmarks(landmarks) {
         var pelvis_r = landmarks[i].PLM[23];
         var pelvis_l = landmarks[i].PLM[24];
         var hips = midLandmark(pelvis_r, pelvis_l, 0.5);
-        hips.y -= 0.18;
+        //hips.z -= 0.18;
         
         landmarks[i].PLM.push(hips);
 
@@ -233,13 +233,13 @@ function injectNewLandmarks(landmarks) {
         var arm_r = landmarks[i].PLM[11];
         var arm_l = landmarks[i].PLM[12];
         var spine2 =  midLandmark(arm_r, arm_l, 0.5);
-        spine2.y +=0.18;
+        //spine2.y +=0.18;
 
         // shoulders landmark - 73 74
         var shoulder_r =  midLandmark(arm_r, spine2, 0.5);
-        shoulder_r.y = arm_r.y;
+        shoulder_r.z = arm_r.z;
         var shoulder_l =  midLandmark(arm_l, spine2, 0.5);
-        shoulder_l.y = arm_l.y;
+        shoulder_l.z = arm_l.z;
 
         // Hips and neck landmarks
         var hips = landmarks[i].PLM[33];
@@ -458,12 +458,12 @@ function injectNewLandmarks(landmarks) {
         landmarks[i].PLM.push(shoulder_l);
 
         // Insert right toe end - 75
-        var toebase_r = landmarks[i].PLM[32];
+        var toebase_r = Object.assign({}, landmarks[i].PLM[32]);
         toebase_r.z-=0.5;
         //toebase_r.y-=1;
         landmarks[i].PLM.push(toebase_r);
         // Insert left toe end - 76
-        var toebase_l = landmarks[i].PLM[31];
+        var toebase_l = Object.assign({},landmarks[i].PLM[31]);
         toebase_l.z-=0.5;
 
         landmarks[i].PLM.push(toebase_l);
