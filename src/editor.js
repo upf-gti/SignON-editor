@@ -260,6 +260,18 @@ class Editor {
         this.mixer.setTime(0.0);
         this.gizmo.updateBones(0.0);
     }
+
+    updateClipInterpolants(track) {
+
+        if(!this.mixer._actions.length) 
+        return;
+
+        const settings = this.mixer._actions[0]._interpolantSettings,
+              idx = track.data.clip_idx;
+
+        this.mixer._actions[0]._interpolants[ idx ] = this.mixer._actions[0]._clip.tracks[ idx ].createInterpolant();
+        this.mixer._actions[0]._interpolants[ idx ].settings = settings;
+    }
     
     animate() {
         

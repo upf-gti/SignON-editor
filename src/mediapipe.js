@@ -12,10 +12,6 @@ const MediaPipe = {
         const canvasElement = document.getElementById("outputVideo");
         const canvasCtx = canvasElement.getContext("2d");
 
-        // mirror canvas video
-        canvasCtx.translate(canvasElement.width, 0);
-        canvasCtx.scale(-1, 1);
-
         const holistic = new Holistic({locateFile: (file) => {
             return `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`;
         }});

@@ -40,7 +40,8 @@ class Gui {
             this.showKeyFrameOptions(e, info, index);
             return true; // Handled
         };
-        this.timeline.onBoneUnselected = () => this.editor.gizmo.stop() ;
+        this.timeline.onBoneUnselected = () => this.editor.gizmo.stop();
+        this.timeline.onDeleteKeyFrame = (track) => this.editor.updateClipInterpolants(track);
 
         // Move this to another place
         // the idea is to create once and reset on load project

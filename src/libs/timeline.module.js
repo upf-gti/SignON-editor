@@ -153,27 +153,48 @@ Timeline.prototype.pasteKeyFrame = function ( e, track, index ) {
 	}
 }
 
-Timeline.prototype.deleteKeyFrame = function (e, track, index) {
-	
-	// TODO: delete multiple selection
-	if(e.multipleSelection)
-	return;
+Timeline.prototype._delete = function( track, index ) {
 
-	// Delete time key
-	track.data.times = track.data.times.filter( (v, i) => i != index);
-
-	// Delete values
-	track.data.values = track.data.values.filter( (v, i) => {
-		let b = true;
-		for(let k = i; k < i + track.dim; ++k)
-			b &= (k != index);
-		return b;
-	});
+	// Don't remove by now the first key
+	if(index == 0)
+		return;
 
 	// Update clip information
 	const clip_idx = track.data.clip_idx;
-	this.clip.tracks[clip_idx].times = track.data.times;
-	this.clip.tracks[clip_idx].values = track.data.values;
+
+	// Delete time key
+	this.clip.tracks[clip_idx].times = this.clip.tracks[clip_idx].times.filter( (v, i) => i != index);
+
+	// Delete values
+	this.clip.tracks[clip_idx].values = this.clip.tracks[clip_idx].values.filter( (v, i) => {
+		let b = true;
+		for(let k = 0; k < track.dim; ++k)
+			b &= (i != index + k);
+		return b;
+	});
+
+	// Reset interpolants
+	if(this.onDeleteKeyFrame)
+		this.onDeleteKeyFrame( track );
+}
+
+Timeline.prototype.deleteKeyFrame = function (e, track, index) {
+	
+	if(e.multipleSelection) {
+
+		// TODO: Fix this
+		return;
+
+		// Delete every selected key
+		for(let [name, idx, keyIndex] of this._lastKeyFramesSelected) {
+			this._delete( this.tracksPerBone[name][idx], keyIndex );
+		}
+
+		this.unSelectAllKeyFrames();
+	}
+	else{
+		this._delete( track, index );
+	}
 }
 
 Timeline.prototype.getNumKeyFramesSelected = function () {
