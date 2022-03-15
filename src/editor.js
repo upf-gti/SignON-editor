@@ -123,39 +123,39 @@ class Editor {
         
         project.path = project.path || "models/bvh/victor.bvh";
         
-        /*let skeleton = createSkeleton(this.landmarksArray);
+        let skeleton = createSkeleton(this.landmarksArray);
         this.skeleton = skeleton;
         
         this.skeletonHelper = new THREE.SkeletonHelper(skeleton.bones[0]);
         this.skeletonHelper.skeleton = skeleton; // allow animation mixer to bind to THREE.SkeletonHelper directly
 
         const boneContainer = new THREE.Group();
-        boneContainer.add(skeleton.bones[0]);*/
+        boneContainer.add(skeleton.bones[0]);
         
-        //this.scene.add(this.skeletonHelper);
-       // this.scene.add(boneContainer);
+        this.scene.add(this.skeletonHelper);
+        this.scene.add(boneContainer);
         
-        //this.animationClip = createAnimation(project.clipName, this.landmarksArray);
+        this.animationClip = createAnimation(project.clipName, this.landmarksArray);
         
         // play animation
-      //  this.mixer = new THREE.AnimationMixer(this.skeletonHelper);
-        //this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
-      //  this.mixer.update(this.clock.getDelta()); //do first iteration to update from T pose
+        this.mixer = new THREE.AnimationMixer(this.skeletonHelper);
+        this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
+        this.mixer.update(this.clock.getDelta()); //do first iteration to update from T pose
         
-        /*this.pointsGeometry = new THREE.BufferGeometry();
+        this.pointsGeometry = new THREE.BufferGeometry();
         
         const material = new THREE.PointsMaterial( { color: 0x880000 } );
         material.size = 0.025;
         
         const points = new THREE.Points( this.pointsGeometry, material );
         
-        this.scene.add( points );*/
+        this.scene.add( points );
         
-        /*project.prepareData(this.mixer, this.animationClip, skeleton);
+        //project.prepareData(this.mixer, this.animationClip, skeleton);
         this.gui.loadProject(project);
 
         this.gizmo.begin(this.skeletonHelper);
-*/
+
         // set onclick function to play button
         let stateBtn = document.getElementById("state_btn");
         let video = document.getElementById("recording");
@@ -177,8 +177,8 @@ class Editor {
             video.currentTime = 0;
         }
       
-        //this.animate();
-        let skeleton = createSkeleton(this.landmarksArray);
+        this.animate();
+     /*   let skeleton = createSkeleton(this.landmarksArray);
        
         // Load the model (Eva)
         this.loadGLTF("models/Taunt.glb", (gltf) => {
@@ -229,7 +229,7 @@ class Editor {
 
             // play animation
             
-            this.animationClip = createAnimation("Eva",this.landmarksArray);
+        /*    this.animationClip = createAnimation("Eva",this.landmarksArray);
            // this.animationClip = gltf.animations[0];
             this.mixer = new THREE.AnimationMixer(model);
             this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
@@ -250,7 +250,7 @@ class Editor {
             this.gizmo.begin(this.skeletonHelper);
             
             this.animate();
-        });
+        });*/
     }
 
     group_bind_skeleton( mesh, jointNodes ){

@@ -123,7 +123,7 @@ function calc_rotation(landmark1, landmark2, prev_rot) {
     //lm1.z = lm1.z - pt_ini.z;
 
     lm2.x = lm2.x - pt_ini.x;
-    lm2.y = -(lm2.y - pt_ini.y);
+    lm2.y = lm2.y - pt_ini.y;
     //lm2.z = lm2.z - pt_ini.z;
 
     var rot_quat;
