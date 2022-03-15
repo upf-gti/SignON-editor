@@ -64,7 +64,7 @@ class Editor {
         dirLight.shadow.camera.bottom = - 2;
         dirLight.shadow.camera.left = - 2;
         dirLight.shadow.camera.right = 2;
-        dirLight.shadow.camera.near = 0.1;
+        dirLight.shadow.camera.near = 0.01;
         dirLight.shadow.camera.far = 40;
         scene.add( dirLight );
 
@@ -140,38 +140,38 @@ class Editor {
         const orientationHelper = new OrientationHelper( this.camera, this.controls, ohOptions, ohLabels );
         document.getElementById("canvasarea").prepend(orientationHelper.domElement);
 
-        let skeleton = createSkeleton(this.landmarksArray);
-        this.skeleton = skeleton;
+        // let skeleton = createSkeleton(this.landmarksArray);
+        // this.skeleton = skeleton;
 
-        this.skeletonHelper = new THREE.SkeletonHelper(skeleton.bones[0]);
-        this.skeletonHelper.skeleton = skeleton; // allow animation mixer to bind to THREE.SkeletonHelper directly
+        // this.skeletonHelper = new THREE.SkeletonHelper(skeleton.bones[0]);
+        // this.skeletonHelper.skeleton = skeleton; // allow animation mixer to bind to THREE.SkeletonHelper directly
 
-        const boneContainer = new THREE.Group();
-        boneContainer.add(skeleton.bones[0]);
+        // const boneContainer = new THREE.Group();
+        // boneContainer.add(skeleton.bones[0]);
         
-        this.scene.add(this.skeletonHelper);
-        this.scene.add(boneContainer);
+        // this.scene.add(this.skeletonHelper);
+        // this.scene.add(boneContainer);
         
-        this.animationClip = createAnimation(project.clipName, this.landmarksArray);
+        // this.animationClip = createAnimation(project.clipName, this.landmarksArray);
         
-        // play animation
-        this.mixer = new THREE.AnimationMixer(this.skeletonHelper);
-        this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
-        this.mixer.update(this.clock.getDelta()); //do first iteration to update from T pose
+        // // play animation
+        // this.mixer = new THREE.AnimationMixer(this.skeletonHelper);
+        // this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
+        // this.mixer.update(this.clock.getDelta()); //do first iteration to update from T pose
         
-        this.pointsGeometry = new THREE.BufferGeometry();
+        // this.pointsGeometry = new THREE.BufferGeometry();
         
-        const material = new THREE.PointsMaterial( { color: 0x880000 } );
-        material.size = 0.025;
+        // const material = new THREE.PointsMaterial( { color: 0x880000 } );
+        // material.size = 0.025;
         
-        const points = new THREE.Points( this.pointsGeometry, material );
+        // const points = new THREE.Points( this.pointsGeometry, material );
         
-        this.scene.add( points );
+        // this.scene.add( points );
         
-        project.prepareData(this.mixer, this.animationClip, skeleton);
-        this.gui.loadProject(project);
+        // project.prepareData(this.mixer, this.animationClip, skeleton);
+        // this.gui.loadProject(project);
 
-        this.gizmo.begin(this.skeletonHelper);
+        // this.gizmo.begin(this.skeletonHelper);
 
         // set onclick function to play button
         let stateBtn = document.getElementById("state_btn");
@@ -195,23 +195,12 @@ class Editor {
         }
       
         this.animate();
-     /*   let skeleton = createSkeleton(this.landmarksArray);
        
         // Load the model (Eva)
-        this.loadGLTF("models/Taunt.glb", (gltf) => {
+        this.loadGLTF("models/t_pose.glb", (gltf) => {
            
             let model = gltf.scene;
             model.castShadow = true;
-
-           
-            //model.skeleton = skeleton; // allow animation mixer to bind to THREE.SkeletonHelper directly
-            var arm = model.getChildByName("Armature");
-            //var bones = this.get_skin(gltf.parser.json, null,arm)
-            //skeleton = updateThreeJSSkeleton(this.skeletonHelper.skeleton, bones);
-            //skeleton = createThreeJSSkeleton( bones);
-           // this.skeletonHelper = new THREE.SkeletonHelper(skeleton.bones[0]);
-           // this.skeletonHelper.skeleton = skeleton; // allow animation mixer to bind to THREE.SkeletonHelper directly
-          
             
             model.traverse(  ( object ) => {
                 if ( object.isMesh ||object.isSkinnedMesh ) {
@@ -224,9 +213,10 @@ class Editor {
             		object.scale.set(1.0, 1.0, 1.0);
                 }
             } );
+
             this.skeletonHelper = new THREE.SkeletonHelper(model);
-            skeleton = createSkeleton(this.landmarksArray);
             updateThreeJSSkeleton(this.skeletonHelper.bones);
+            let skeleton = createSkeleton(this.landmarksArray);
             this.skeletonHelper.skeleton = skeleton;
              const boneContainer = new THREE.Group();
              boneContainer.add(skeleton.bones[0]);
@@ -246,11 +236,11 @@ class Editor {
 
             // play animation
             
-        /*    this.animationClip = createAnimation("Eva",this.landmarksArray);
+            this.animationClip = createAnimation("Eva", this.landmarksArray);
            // this.animationClip = gltf.animations[0];
             this.mixer = new THREE.AnimationMixer(model);
-            this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
-            this.mixer.update(this.clock.getDelta()); //do first iteration to update from T pose
+            // this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
+            // this.mixer.update(this.clock.getDelta()); //do first iteration to update from T pose
             this.pointsGeometry = new THREE.BufferGeometry();
         
             const material = new THREE.PointsMaterial( { color: 0x880000 } );
@@ -267,7 +257,7 @@ class Editor {
             this.gizmo.begin(this.skeletonHelper);
             
             this.animate();
-        });*/
+        });
     }
 
     group_bind_skeleton( mesh, jointNodes ){
