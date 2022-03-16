@@ -120,7 +120,7 @@ class Editor {
     
     loadInScene(project) {
         
-        this.landmarksArray = project.landmarks;
+        //this.landmarksArray = project.landmarks;
         
         project.path = project.path || "models/bvh/victor.bvh";
         
@@ -175,13 +175,13 @@ class Editor {
 
         // set onclick function to play button
         let stateBtn = document.getElementById("state_btn");
-        let video = document.getElementById("recording");
+        //let video = document.getElementById("recording");
         stateBtn.onclick = (e) => {
             this.state = !this.state;
             stateBtn.innerHTML = "<i class='bi bi-" + (this.state ? "pause" : "play") + "-fill'></i>";
             stateBtn.style.border = "solid #268581";
             this.state ? this.gizmo.stop() : 0;
-            video.paused ? video.play() : video.pause();
+            //video.paused ? video.play() : video.pause();
         };
 
         let stopBtn = document.getElementById("stop_btn");
@@ -190,74 +190,87 @@ class Editor {
             stateBtn.innerHTML = "<i class='bi bi-play-fill'></i>";
             stateBtn.style.removeProperty("border");
             this.stopAnimation();
-            video.pause();
-            video.currentTime = 0;
-        }
+            // video.pause();
+            // video.currentTime = 0;
+        }    
+
+        stateBtn.style.display = "block";
+        stopBtn.style.display = "block";
       
         this.animate();
-       
-        // Load the model (Eva)
-        this.loadGLTF("models/t_pose.glb", (gltf) => {
-           
-            let model = gltf.scene;
-            model.castShadow = true;
-            
-            model.traverse(  ( object ) => {
-                if ( object.isMesh ||object.isSkinnedMesh ) {
-                    object.castShadow = true;
-                    object.receiveShadow = true;
+
+        var that = this;
+
+        $.getJSON( "data/landmarks.json", function( data ) {
+
+            that.landmarksArray = data;
+            project.landmarks = that.landmarksArray;
                     
-                    //this.group_bind_skeleton(object, this.skeletonHelper.skeleton)
-                }
-                if (object.isBone) {
-            		object.scale.set(1.0, 1.0, 1.0);
-                }
-            } );
-
-            this.skeletonHelper = new THREE.SkeletonHelper(model);
-            updateThreeJSSkeleton(this.skeletonHelper.bones);
-            let skeleton = createSkeleton(this.landmarksArray);
-            this.skeletonHelper.skeleton = skeleton;
-             const boneContainer = new THREE.Group();
-             boneContainer.add(skeleton.bones[0]);
-            this.scene.add(this.skeletonHelper);
-            this.scene.add(boneContainer);
+            // Load the model (Eva)
+            that.loadGLTF("models/t_pose.glb", (gltf) => {
             
-           // this.group_bind_skeleton(gltf.scene, this.skeletonHelper.skeleton)
-            this.scene.add( model );
-            /*var animationGroup = new THREE.AnimationObjectGroup();
-            for(var i=0; i< arm.children.length; i++){
-                if(!arm.children[i].isSkinnedMesh)
-                    continue;
-                animationGroup.add(arm.children[i]);
-            }
-            this.mixer = new THREE.AnimationMixer( animationGroup );*/
-            //const action = this.mixer.clipAction( gltf.animations[0] ).play();
+                let model = gltf.scene;
+                model.castShadow = true;
+                
+                model.traverse(  ( object ) => {
+                    if ( object.isMesh ||object.isSkinnedMesh ) {
+                        object.castShadow = true;
+                        object.receiveShadow = true;
+                        
+                        //this.group_bind_skeleton(object, this.skeletonHelper.skeleton)
+                    }
+                    if (object.isBone) {
+                        object.scale.set(1.0, 1.0, 1.0);
+                    }
+                } );
 
-            // play animation
+                that.skeletonHelper = new THREE.SkeletonHelper(model);
+                updateThreeJSSkeleton(that.skeletonHelper.bones);
+                let skeleton = createSkeleton(that.landmarksArray);
+                that.skeletonHelper.skeleton = skeleton;
+                const boneContainer = new THREE.Group();
+                boneContainer.add(skeleton.bones[0]);
+                that.scene.add(that.skeletonHelper);
+                that.scene.add(boneContainer);
+                
+            // that.group_bind_skeleton(gltf.scene, that.skeletonHelper.skeleton)
+                that.scene.add( model );
+                /*var animationGroup = new THREE.AnimationObjectGroup();
+                for(var i=0; i< arm.children.length; i++){
+                    if(!arm.children[i].isSkinnedMesh)
+                        continue;
+                    animationGroup.add(arm.children[i]);
+                }
+                that.mixer = new THREE.AnimationMixer( animationGroup );*/
+                //const action = that.mixer.clipAction( gltf.animations[0] ).play();
+
+                // play animation
+                
+                that.animationClip = createAnimation("Eva", that.landmarksArray);
+            // that.animationClip = gltf.animations[0];
+                that.mixer = new THREE.AnimationMixer(model);
+                that.mixer.clipAction(that.animationClip).setEffectiveWeight(1.0).play();
+                that.mixer.update(that.clock.getDelta()); //do first iteration to update from T pose
+                that.pointsGeometry = new THREE.BufferGeometry();
             
-            this.animationClip = createAnimation("Eva", this.landmarksArray);
-           // this.animationClip = gltf.animations[0];
-            this.mixer = new THREE.AnimationMixer(model);
-            // this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
-            // this.mixer.update(this.clock.getDelta()); //do first iteration to update from T pose
-            this.pointsGeometry = new THREE.BufferGeometry();
+                const material = new THREE.PointsMaterial( { color: 0x880000 } );
+                material.size = 0.025;
+                
+                const points = new THREE.Points( that.pointsGeometry, material );
+                
+                that.scene.add( points );
+                //BVHExporter.export(skeleton, animation_clip, that.landmarksArray.length);
         
-            const material = new THREE.PointsMaterial( { color: 0x880000 } );
-            material.size = 0.025;
-            
-            const points = new THREE.Points( this.pointsGeometry, material );
-            
-            this.scene.add( points );
-            //BVHExporter.export(skeleton, animation_clip, this.landmarksArray.length);
-       
-            project.prepareData(this.mixer, this.animationClip, skeleton);
-            this.gui.loadProject(project);
-    
-            this.gizmo.begin(this.skeletonHelper);
-            
-            this.animate();
+                project.prepareData(that.mixer, that.animationClip, skeleton);
+                that.gui.loadProject(project);
+        
+                that.gizmo.begin(that.skeletonHelper);
+                
+                that.animate();
+            });
+
         });
+
     }
 
     group_bind_skeleton( mesh, jointNodes ){

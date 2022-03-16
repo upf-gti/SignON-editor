@@ -118,21 +118,23 @@ function calc_rotation(landmark1, landmark2, prev_rot) {
     var pt_ini = new THREE.Vector3(lm1.x, lm1.y, lm1.z);
     
     // translate to landmark1 space
-    lm1.x = lm1.x - pt_ini.x;
-    lm1.y = lm1.y - pt_ini.y;
-    //lm1.z = lm1.z - pt_ini.z;
+    // lm1.x = lm1.x - pt_ini.x;
+    // lm1.y = lm1.y - pt_ini.y;
+    // lm1.z = lm1.z - pt_ini.z;
 
-    lm2.x = lm2.x - pt_ini.x;
-    lm2.y = lm2.y - pt_ini.y;
-    //lm2.z = lm2.z - pt_ini.z;
+    // lm2.x = lm2.x - pt_ini.x;
+    // lm2.y = lm2.y - pt_ini.y;
+    // lm2.z = lm2.z - pt_ini.z;
+
+    var z = new THREE.Vector3(0,1,0);
 
     var rot_quat;
 
-    if (lm1.z >= 0) {
-        rot_quat = rotation_difference_vec(lm1, new THREE.Vector3().subVectors(lm2, lm1));
-    } else {
-        rot_quat = rotation_difference_vec(lm1, new THREE.Vector3().subVectors(lm1, lm2));
-    }
+    //if (lm1.z >= 0) {
+        rot_quat = rotation_difference_vec(z, new THREE.Vector3().subVectors(lm1, lm2));
+    //} else {
+        //rot_quat = rotation_difference_vec(z, new THREE.Vector3().subVectors(lm1, lm2));
+    //}
 
     // 
     var rot_quat_ajust = rotation_difference_quat(prev_rot, rot_quat)

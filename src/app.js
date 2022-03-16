@@ -26,53 +26,55 @@ class App {
 
         let that = this;
 
-        MediaPipe.start();
+        //MediaPipe.start();
+
+        this.editor.loadInScene(this.project);
 
         // prepare the device to capture the video
-        if (navigator.mediaDevices) {
-            console.log("getUserMedia supported.");
+        // if (navigator.mediaDevices) {
+        //     console.log("getUserMedia supported.");
 
-            let constraints = { video: true, audio: false };
-            let chunks = [];
+        //     let constraints = { video: true, audio: false };
+        //     let chunks = [];
 
-            navigator.mediaDevices.getUserMedia(constraints)
-                .then(function (stream) {
-                    let videoElement = document.getElementById("inputVideo");
-                    that.mediaRecorder = new MediaRecorder(videoElement.srcObject);
+        //     navigator.mediaDevices.getUserMedia(constraints)
+        //         .then(function (stream) {
+        //             let videoElement = document.getElementById("inputVideo");
+        //             that.mediaRecorder = new MediaRecorder(videoElement.srcObject);
 
-                    that.mediaRecorder.onstop = function (e) {
+        //             that.mediaRecorder.onstop = function (e) {
 
-                        let video = document.getElementById("recording");
-                        video.addEventListener("play", function() {
+        //                 let video = document.getElementById("recording");
+        //                 video.addEventListener("play", function() {
                            
-                        });
-                        video.addEventListener("pause", function() {
+        //                 });
+        //                 video.addEventListener("pause", function() {
                             
-                        });
-                        video.setAttribute('controls', 'name');
-                        video.controls = false;
-                        video.loop = true;
+        //                 });
+        //                 video.setAttribute('controls', 'name');
+        //                 video.controls = false;
+        //                 video.loop = true;
                         
-                        let blob = new Blob(chunks, { "type": "video/mp4; codecs=avc1" });
-                        chunks = [];
-                        let videoURL = URL.createObjectURL(blob);
-                        video.src = videoURL;
-                        console.log("Recording correctly saved");
-                    }
+        //                 let blob = new Blob(chunks, { "type": "video/mp4; codecs=avc1" });
+        //                 chunks = [];
+        //                 let videoURL = URL.createObjectURL(blob);
+        //                 video.src = videoURL;
+        //                 console.log("Recording correctly saved");
+        //             }
 
-                    that.mediaRecorder.ondataavailable = function (e) {
-                        chunks.push(e.data);
-                    }
-                })
-                .catch(function (err) {
-                    console.error("The following error occurred: " + err);
-                })
-        }
-        else {
-            console.log("This app is not supported in your browser anymore");
-        }
+        //             that.mediaRecorder.ondataavailable = function (e) {
+        //                 chunks.push(e.data);
+        //             }
+        //         })
+        //         .catch(function (err) {
+        //             console.error("The following error occurred: " + err);
+        //         })
+        // }
+        // else {
+        //     console.log("This app is not supported in your browser anymore");
+        // }
 
-        this.setEvents();
+        //this.setEvents();
 
         window.addEventListener("resize", this.onResize);
     }
