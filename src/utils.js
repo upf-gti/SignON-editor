@@ -9,6 +9,10 @@ function firstToUpperCase(string) {
 	return string.charAt(0).toUpperCase() + string.slice(1);
 }
 
+function concatTypedArray (Arrays, ArrayType){
+	return Arrays.reduce((acc, arr) => new ArrayType([...acc, ...arr]), []);
+}
+
 const ShaderChunk = {
 
 	Point: {
@@ -56,4 +60,4 @@ const ShaderChunk = {
 
 };
 
-export { getTime, firstToUpperCase, ShaderChunk }
+export { getTime, firstToUpperCase, concatTypedArray, ShaderChunk }

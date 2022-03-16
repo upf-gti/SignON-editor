@@ -294,10 +294,14 @@ class Gizmo {
         if(!values)
             return;
 
+        const idx = track.clip_idx;
+
         // supports position and quaternion types
         for( let i = 0; i < values.length; ++i ) {
-            track.data.values[ start + i ] = values[i];
+            this.editor.animationClip.tracks[ idx ].values[ start + i ] = values[i];
         }
+
+        // this.editor.mixer._actions[0].updateInterpolants();
 
         track.edited[ keyFrameIndex ] = true;
         timeline.onSetTime( timeline.current_time );

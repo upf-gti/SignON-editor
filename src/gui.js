@@ -41,7 +41,7 @@ class Gui {
             return true; // Handled
         };
         this.timeline.onBoneUnselected = () => this.editor.gizmo.stop();
-        this.timeline.onDeleteKeyFrame = (track) => this.editor.updateClipInterpolants(track);
+        this.timeline.onDeleteKeyFrame = (track) => this.editor.updateAnimationAction(track);
 
         // Move this to another place
         // the idea is to create once and reset on load project
@@ -206,8 +206,9 @@ class Gui {
     
         const makePretitle = (src) => { return "<img src='data/imgs/mini-icon-"+src+".png' style='margin-right: 4px;margin-top: 6px;'>"; }
 
-        widgets.on_refresh = () => {
+        widgets.on_refresh = (o) => {
 
+            o = o || {};
             const numBones = this.editor.skeletonHelper.bones.length;
 
             widgets.clear();
@@ -232,7 +233,7 @@ class Gui {
 
             widgets.addSeparator();
 
-            const bone_selected = !(options.firstBone && numBones) ? 
+            const bone_selected = !(o.firstBone && numBones) ? 
                 this.editor.skeletonHelper.skeleton.getBoneByName(item_selected) : 
                 this.editor.skeletonHelper.bones[0];
 
@@ -245,6 +246,7 @@ class Gui {
 
                 widgets.addSection("Bone", { pretitle: makePretitle('circle') });
                 widgets.addInfo("Name", bone_selected.name);
+                widgets.addInfo("Num tracks", "" + this.timeline.getNumTracks(bone_selected));
                 widgets.addTitle("Position");
                 widgets.addVector3(null, bone_selected.position.toArray(), {callback: (v) => innerUpdate("position", v)});
 
@@ -256,7 +258,7 @@ class Gui {
             }
         };
 
-        widgets.on_refresh();
+        widgets.on_refresh(options);
 
         // update scroll position
         var element = root.content.querySelectorAll(".inspector")[0];
@@ -400,7 +402,7 @@ class Gui {
                 callback: () => this.timeline.pasteKeyFrame( e, track, index )
             },
             {
-                title: "Delete" +  " <i class='bi bi-trash float-right'></i>",
+                title: "Delete" + (e.multipleSelection ? " (" + this.timeline.getNumKeyFramesSelected() + ")" : "") +  " <i class='bi bi-trash float-right'></i>",
                 callback: () => this.timeline.deleteKeyFrame( e, track, index )
             }
         ];

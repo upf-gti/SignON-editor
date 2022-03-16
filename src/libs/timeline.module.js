@@ -1,4 +1,4 @@
-import { getTime } from '../utils.js';
+import { getTime, concatTypedArray } from '../utils.js';
 
 // Agnostic timeline, do nos impose any timeline content
 // It renders to a canvas
@@ -64,8 +64,9 @@ Timeline.prototype.processTracks = function () {
 		let track = this.clip.tracks[i];
 
 		const [name, type] = this.getTrackName(track.name);
+
 		let trackInfo = {
-			name: name, type: type, data: track,
+			name: name, type: type,
 			dim: track.values.length/track.times.length,
 			selected: [], edited: [], hovered: []
 		};
@@ -76,9 +77,17 @@ Timeline.prototype.processTracks = function () {
 			this.tracksPerBone[name].push( trackInfo );
 		}
 
-		track.idx = this.tracksPerBone[name].length - 1; // Last element
-		track.clip_idx = i;
+		const trackIndex = this.tracksPerBone[name].length - 1;
+		this.tracksPerBone[name][trackIndex].idx = trackIndex;
+		this.tracksPerBone[name][trackIndex].clip_idx = i;
+
+		// Save index also in original track
+		track.idx = trackIndex;
 	}
+}
+
+Timeline.prototype.getNumTracks = function(bone) {
+	return bone ? this.tracksPerBone[bone.name].length : null;
 }
 
 Timeline.prototype.isKeyFrameSelected = function ( track, index ) {
@@ -96,7 +105,7 @@ Timeline.prototype.selectKeyFrame = function ( track, selection_info, index ) {
 	track.selected[index] = true;
 
 	if( this.onSetTime )
-		this.onSetTime( track.data.times[ index ] );
+		this.onSetTime( this.clip.tracks[track.clip_idx].times[ index ] );
 }
 
 Timeline.prototype.canPasteKeyFrame = function () {
@@ -110,7 +119,7 @@ Timeline.prototype.copyKeyFrame = function ( track, index ) {
 	let values = [];
 	let start = index * track.dim;
 	for(let i = start; i < start + track.dim; ++i)
-		values.push( track.data.values[i] );
+		values.push( this.clip.tracks[ track.clip_idx ].values[i] );
 
 	this._clipboard = {
 		type: track.type,
@@ -120,16 +129,16 @@ Timeline.prototype.copyKeyFrame = function ( track, index ) {
 
 Timeline.prototype._paste = function( track, index ) {
 
-	let data = this._clipboard;
+	let clipboardInfo = this._clipboard;
 
-	if(data.type != track.type){
+	if(clipboardInfo.type != track.type){
 		return;
 	}
 
 	let start = index * track.dim;
 	let j = 0;
 	for(let i = start; i < start + track.dim; ++i) {
-		track.data.values[i] = data.values[j];
+		this.clip.tracks[ track.clip_idx ].values[i] = clipboardInfo.values[j];
 		++j;
 	}
 
@@ -156,24 +165,35 @@ Timeline.prototype.pasteKeyFrame = function ( e, track, index ) {
 Timeline.prototype._delete = function( track, index ) {
 
 	// Don't remove by now the first key
-	if(index == 0)
+	if(index == 0) {
+		console.warn("Operation not supported! [remove first keyframe track]");
 		return;
+	}
+
+	// Reset this key's properties
+	track.hovered[index] = undefined;
+	track.selected[index] = undefined;
+	track.edited[index] = undefined;
 
 	// Update clip information
-	const clip_idx = track.data.clip_idx;
+	const clip_idx = track.clip_idx;
 
 	// Delete time key
 	this.clip.tracks[clip_idx].times = this.clip.tracks[clip_idx].times.filter( (v, i) => i != index);
 
 	// Delete values
-	this.clip.tracks[clip_idx].values = this.clip.tracks[clip_idx].values.filter( (v, i) => {
-		let b = true;
-		for(let k = 0; k < track.dim; ++k)
-			b &= (i != index + k);
-		return b;
-	});
+	const indexDim = track.dim * index;
+	const slice1 = this.clip.tracks[clip_idx].values.slice(0, indexDim);
+	const slice2 = this.clip.tracks[clip_idx].values.slice(indexDim + track.dim);
 
-	// Reset interpolants
+	this.clip.tracks[clip_idx].values = concatTypedArray([slice1, slice2], Float32Array);
+
+	// Move the other's key properties
+	for(let i = index; i < this.clip.tracks[clip_idx].times.length; ++i) {
+		track.edited[i] = track.edited[i + 1];
+	}
+
+	// Update animation action interpolation info
 	if(this.onDeleteKeyFrame)
 		this.onDeleteKeyFrame( track );
 }
@@ -799,7 +819,7 @@ Timeline.prototype.drawTrackWithKeyframes = function (ctx, y, track_height, titl
 	if(track.enabled === false)
 		ctx.globalAlpha = 0.4;
 
-	this._tracks_drawn.push([track.data,y+this.top_margin,track_height]);
+	this._tracks_drawn.push([this.clip.tracks[track.clip_idx],y+this.top_margin,track_height]);
 
 	ctx.font = Math.floor( track_height * 0.8) + "px Arial";
 	ctx.textAlign = "left";
@@ -813,7 +833,7 @@ Timeline.prototype.drawTrackWithKeyframes = function (ctx, y, track_height, titl
 	}
 
 	ctx.fillStyle = "rgba(10,200,200,1)";
-	var keyframes = track.data.times;
+	var keyframes = this.clip.tracks[track.clip_idx].times;
 
 	if(keyframes) {
 		

@@ -261,16 +261,18 @@ class Editor {
         this.gizmo.updateBones(0.0);
     }
 
-    updateClipInterpolants(track) {
+    updateAnimationAction(track) {
 
-        if(!this.mixer._actions.length) 
+        const mixer = this.mixer;
+        const idx = track.clip_idx;
+
+        if(!mixer._actions.length || mixer._actions[0]._clip != this.animationClip) 
         return;
 
-        const settings = this.mixer._actions[0]._interpolantSettings,
-              idx = track.data.clip_idx;
-
-        this.mixer._actions[0]._interpolants[ idx ] = this.mixer._actions[0]._clip.tracks[ idx ].createInterpolant();
-        this.mixer._actions[0]._interpolants[ idx ].settings = settings;
+        // Update times
+        mixer._actions[0]._interpolants[idx].parameterPositions = this.animationClip.tracks[idx].times;
+        // Update values
+        mixer._actions[0]._interpolants[idx].sampleValues = this.animationClip.tracks[idx].values;
     }
     
     animate() {
@@ -340,5 +342,22 @@ class Editor {
         BVHExporter.export(this.skeleton, this.animationClip, this.landmarksArray.length);
     }
 };
+
+// THREE.AnimationAction.prototype.updateInterpolants = function() {
+    
+//     const tracks = this._clip.tracks,
+//         nTracks = tracks.length,
+//         interpolants = new Array( nTracks );
+
+//     for ( let i = 0; i !== nTracks; ++ i ) {
+
+//         const interpolant = tracks[ i ].createInterpolant();
+//         interpolants[ i ] = interpolant;
+//         interpolant.settings = this._interpolantSettings;
+
+//     }
+
+//     this._interpolants = interpolants; // bound by the mixer
+// }
 
 export { Editor };
