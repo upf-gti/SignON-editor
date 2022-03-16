@@ -70,7 +70,6 @@ class Editor {
         controls.minDistance = 1;
         controls.maxDistance = 7;
         camera.position.set(0.5, 2, -3);
-        controls.target.set(1.2, 1.5, 0);
         controls.update();  
 
         this.scene = scene;
@@ -121,6 +120,12 @@ class Editor {
 
         const orientationHelper = new OrientationHelper( this.camera, this.controls, ohOptions, ohLabels );
         document.getElementById("canvasarea").prepend(orientationHelper.domElement);
+        orientationHelper.addEventListener("click", (result) => {
+            const side = result.normal.multiplyScalar(5);
+            if(side.x != 0 || side.z != 0) side.y = this.controls.target.y;
+            this.camera.position.set(side.x, side.y, side.z);
+            this.controls.update();
+        });
 
         let skeleton = createSkeleton(this.landmarksArray);
         this.skeleton = skeleton;
@@ -154,6 +159,13 @@ class Editor {
         this.gui.loadProject(project);
 
         this.gizmo.begin(this.skeletonHelper);
+
+        // Update camera
+        const bone0 = this.skeletonHelper.bones[0];
+        if(bone0) {
+            bone0.getWorldPosition(this.controls.target);
+            this.controls.update();
+        }
 
         // set onclick function to play button
         let stateBtn = document.getElementById("state_btn");

@@ -170,13 +170,19 @@ Timeline.prototype._delete = function( track, index ) {
 		return;
 	}
 
+	// Update clip information
+	const clip_idx = track.clip_idx;
+
+	// Don't remove by now the last key
+	if(index == this.clip.tracks[clip_idx].times.length - 1) {
+		console.warn("Operation not supported! [remove last keyframe track]");
+		return;
+	}
+
 	// Reset this key's properties
 	track.hovered[index] = undefined;
 	track.selected[index] = undefined;
 	track.edited[index] = undefined;
-
-	// Update clip information
-	const clip_idx = track.clip_idx;
 
 	// Delete time key
 	this.clip.tracks[clip_idx].times = this.clip.tracks[clip_idx].times.filter( (v, i) => i != index);
@@ -202,19 +208,27 @@ Timeline.prototype.deleteKeyFrame = function (e, track, index) {
 	
 	if(e.multipleSelection) {
 
-		// TODO: Fix this
-		return;
+		// Split in tracks
+		const perTrack = [];
+		this._lastKeyFramesSelected.forEach( e => perTrack[e[1]] ? perTrack[e[1]].push(e) : perTrack[e[1]] = [e] );
+		
+		for(let pts of perTrack) {
+			pts = pts.sort( (a,b) => a[2] - b[2] );
+			
+			let deletedIndices = 0;
 
-		// Delete every selected key
-		for(let [name, idx, keyIndex] of this._lastKeyFramesSelected) {
-			this._delete( this.tracksPerBone[name][idx], keyIndex );
+			// Delete every selected key
+			for(let [name, idx, keyIndex] of pts) {
+				this._delete( this.tracksPerBone[name][idx], keyIndex - deletedIndices );
+				deletedIndices++;
+			}
 		}
-
-		this.unSelectAllKeyFrames();
 	}
 	else{
 		this._delete( track, index );
 	}
+
+	this.unSelectAllKeyFrames();
 }
 
 Timeline.prototype.getNumKeyFramesSelected = function () {
