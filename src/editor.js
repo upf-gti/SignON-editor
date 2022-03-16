@@ -179,6 +179,13 @@ class Editor {
         this.animate();
     }
 
+    setBoneSize(newSize) {
+        const geometry = this.gizmo.bonePoints.geometry;
+        const positionAttribute = geometry.getAttribute( 'position' );
+        this.gizmo.bonePoints.geometry.setAttribute( 'size', new THREE.Float32BufferAttribute( new Array(positionAttribute.count).fill(newSize), 1 ) );
+        this.gizmo.raycaster.params.Points.threshold = newSize/10;
+    }
+
     setSelectedBone( name ) {
         if(!this.gizmo)
         throw("No gizmo attached to scene");

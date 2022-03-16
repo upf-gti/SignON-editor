@@ -271,29 +271,28 @@ class Gui {
         let prevDialog = document.getElementById("settings-dialog");
         if(prevDialog) prevDialog.remove();
 
-        const dialog = new LiteGUI.Dialog({ id: 'settings-dialog', title: firstToUpperCase(settings), close: true, width: 380, height: 128, scroll: false, draggable: true});
+        const dialog = new LiteGUI.Dialog({ id: 'settings-dialog', title: firstToUpperCase(settings), close: true, width: 380, height: 150, scroll: false, draggable: true});
 		dialog.show();
 
         const inspector = new LiteGUI.Inspector();
 
         switch( settings ) {
             case 'gizmo': 
-
-            inspector.addNumber( "Translation snap", this.editor.defaultTranslationSnapValue, { min: 0.5, max: 5, step: 0.5, callback: (v) => {
-                this.editor.defaultTranslationSnapValue = v;
-                this.editor.updateGizmoSnap();
-            }});
-
-            inspector.addNumber( "Rotation snap", this.editor.defaultRotationSnapValue, { min: 15, max: 180, step: 15, callback: (v) => {
-                this.editor.defaultRotationSnapValue = v;
-                this.editor.updateGizmoSnap();
-            }});
-
-            inspector.addSlider( "Size", this.editor.getGizmoSize(), { min: 0.2, max: 2, step: 0.1, callback: (v) => {
-                this.editor.setGizmoSize(v);
-            }});
-
-            break;
+                inspector.addNumber( "Translation snap", this.editor.defaultTranslationSnapValue, { min: 0.5, max: 5, step: 0.5, callback: (v) => {
+                    this.editor.defaultTranslationSnapValue = v;
+                    this.editor.updateGizmoSnap();
+                }});
+                inspector.addNumber( "Rotation snap", this.editor.defaultRotationSnapValue, { min: 15, max: 180, step: 15, callback: (v) => {
+                    this.editor.defaultRotationSnapValue = v;
+                    this.editor.updateGizmoSnap();
+                }});
+                inspector.addSlider( "Size", this.editor.getGizmoSize(), { min: 0.2, max: 2, step: 0.1, callback: (v) => {
+                    this.editor.setGizmoSize(v);
+                }});
+                inspector.addSlider( "Bone marker size", this.editor.getGizmoSize(), { min: 0.01, max: 1, step: 0.01, callback: (v) => {
+                    this.editor.setBoneSize(v);
+                }});
+                break;
         };
 
         dialog.add( inspector );
