@@ -1,5 +1,7 @@
 import * as THREE from "./libs/three.module.js";
 
+let FLT_EPSILON =  1.192092896e-07;
+
 Math.clamp = function (v, a, b) {
 	return a > v ? a : b < v ? b : v;
 };
@@ -79,45 +81,98 @@ function rotation_difference_quat(quat1, quat2)
     return quat.multiplyQuaternions(tquat, quat2);
 }
 
+function axis_dominant_v3_single(vec)
+{
+  var x = Math.abs(vec[0]);
+  var y = Math.abs(vec[1]);
+  var z = Math.abs(vec[2]);
+  return ((x > y) ? ((x > z) ? 0 : 2) : ((y > z) ? 1 : 2));
+}
+
+function ortho_v3_v3(v)
+{
+  var axis = axis_dominant_v3_single(v);
+
+  var out = new THREE.Vector3();
+
+  switch (axis) {
+    case 0:
+      out.x = -v.y - v.z;
+      out.y = v.x;
+      out.z = v.x;
+      break;
+    case 1:
+      out.x = v.y;
+      out.y = -v.x - v.z;
+      out.z = v.y;
+      break;
+    case 2:
+      out.x = v.z;
+      out.y = v.z;
+      out.z = -v.x - v.y;
+      break;
+  }
+
+  return out;
+}
+
+// https://github.com/wisaac407/blender/blob/326efb431971e668a41d9a331ccc3d11f9fd3e5f/source/blender/blenlib/intern/math_rotation.c#L839
+function axis_angle_to_quat(axis, angle)
+{
+    var axis_length = axis.lengthSq();
+    axis.normalize();
+
+	if (axis_length != 0.0) {
+		return axis_angle_normalized_to_quat(axis, angle);
+	}
+	else {
+        return new THREE.Quaternion();
+	}
+}
+
+// https://github.com/wisaac407/blender/blob/326efb431971e668a41d9a331ccc3d11f9fd3e5f/source/blender/blenlib/intern/math_rotation.c#L474
 function rotation_difference_vec(v1, v2) {
 
     v1.normalize();
     v2.normalize();
 
-    var axis = new THREE.Vector3();
-    axis.crossVectors(v1, v2);
+    var axis = new THREE.Vector3(-1, 0, 0);
+    //axis.crossVectors(v1, v2);
+
+    var axis_length = axis.lengthSq();
+
     axis.normalize();
 
-    //if (normalize_v3(axis) > FLT_EPSILON) {
+    if (axis_length > FLT_EPSILON) {
 
-    var angle = angle_normalized_v3v3(v1, v2);
-    //var angle = v1.angleTo(v2);
+        var angle = angle_normalized_v3v3(v1, v2);
+        //var angle = v1.angleTo(v2);
 
-    return axis_angle_normalized_to_quat(axis, angle);
-    //}
-    //   else {
-    //     /* degenerate case */
+        return axis_angle_normalized_to_quat(axis, angle);
+    }
+      else {
+        /* degenerate case */
 
-    //     if (dot_v3v3(v1, v2) > 0.0f) {
-    //       /* Same vectors, zero rotation... */
-    //       unit_qt(q);
-    //     }
-    //     else {
-    //       /* Colinear but opposed vectors, 180 rotation... */
-    //       ortho_v3_v3(axis, v1);
-    //       axis_angle_to_quat(q, axis, (float)M_PI);
-    //     }
-    //   }
+        if (v1.dot(v2) > 0.0) {
+          /* Same vectors, zero rotation... */
+            return new THREE.Quaternion();
+        }
+        else {
+          /* Colinear but opposed vectors, 180 rotation... */
+          axis = ortho_v3_v3(v1);
+          return axis_angle_to_quat(q, axis, Math.PI);
+        }
+      }
 }
 
-function calc_rotation(landmark1, landmark2, prev_rot) {
+function calc_rotation(original_joint_dir, landmarks_dir, prev_rot) {
 
-    var lm1 = new THREE.Vector3(landmark1.x, landmark1.y, landmark1.z)
-    var lm2 = new THREE.Vector3(landmark2.x, landmark2.y, landmark2.z)
+    // var lm1 = new THREE.Vector3(current_landmark.x, current_landmark.y, current_landmark.z)
+    // var lm2 = new THREE.Vector3(child_landmark.x, child_landmark.y, child_landmark.z)
 
-    var pt_ini = new THREE.Vector3(lm1.x, lm1.y, lm1.z);
+    // var pt_ini = new THREE.Vector3(lm1.x, lm1.y, lm1.z);
     
-    // translate to landmark1 space
+    // translate to current_landmark space
     // lm1.x = lm1.x - pt_ini.x;
     // lm1.y = lm1.y - pt_ini.y;
     // lm1.z = lm1.z - pt_ini.z;
@@ -126,15 +181,20 @@ function calc_rotation(landmark1, landmark2, prev_rot) {
     // lm2.y = lm2.y - pt_ini.y;
     // lm2.z = lm2.z - pt_ini.z;
 
-    var z = new THREE.Vector3(0,1,0);
+    // var y_up = new THREE.Vector3(0, 1, 0);
+    // var y_down = new THREE.Vector3(0, -1, 0);
 
-    var rot_quat;
+    // var direction = new THREE.Vector3().subVectors(child_landmark, current_landmark);
 
-    //if (lm1.z >= 0) {
-        rot_quat = rotation_difference_vec(z, new THREE.Vector3().subVectors(lm1, lm2));
-    //} else {
-        //rot_quat = rotation_difference_vec(z, new THREE.Vector3().subVectors(lm1, lm2));
-    //}
+    // var rot_quat;
+
+    // if (direction.y >= 0) {
+    //     rot_quat = rotation_difference_vec(y_up, direction);
+    // } else {
+    //     rot_quat = rotation_difference_vec(y_down, direction);
+    // }
+
+    var rot_quat = rotation_difference_vec(original_joint_dir, landmarks_dir);
 
     // 
     var rot_quat_ajust = rotation_difference_quat(prev_rot, rot_quat)
