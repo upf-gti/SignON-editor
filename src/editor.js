@@ -203,6 +203,17 @@ class Editor {
 
         $.getJSON( "data/landmarks.json", function( data ) {
 
+
+            for (let i = 0; i < data.length; ++i) {
+
+                for (let j = 0; j < data[i].PLM.length; ++j) {
+                    data[i].PLM[j].x = (data[i].PLM[j].x - 0.5);
+                    data[i].PLM[j].y = (1.0 - data[i].PLM[j].y) + 2;
+                    data[i].PLM[j].z = data[i].PLM[j].z * 0.5;
+                }
+
+            }
+
             that.landmarksArray = data;
             project.landmarks = that.landmarksArray;
                     

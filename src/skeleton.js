@@ -111,11 +111,6 @@ function createThreeJsSkeleton() {
         var bone = new THREE.Bone();
         bone.name = lm_info.name;
 
-        if (lm_info.position == undefined) {
-            var inta = 0;
-            inta++;
-        }
-
         bone.position.x = lm_info.position.x;
         bone.position.y = lm_info.position.y;
         bone.position.z = lm_info.position.z;
@@ -547,7 +542,7 @@ function createAnimation(name, landmarks) {
                 // pos_values.push(lm_info.y);
                 // pos_values.push(lm_info.z);
 
-                if (/*lm_info.name == "mixamorigSpine" || */lm_info.name == "mixamorigRightUpLeg" || lm_info.name == "mixamorigRightLeg") {
+                //if (lm_info.name == "mixamorigSpine" /*|| lm_info.name == "mixamorigRightUpLeg" || lm_info.name == "mixamorigRightLeg"*/) {
 
                     var child_lm_info = LM_INFO[lm_info.children_names[0]];
 
@@ -560,7 +555,8 @@ function createAnimation(name, landmarks) {
 
                     var landmarks_dir = new THREE.Vector3().subVectors(landmarks[i].PLM[child_lm_info.idx], landmarks[i].PLM[lm_info.idx]);
 
-                    var quat_info = MATH_UTILS.calc_rotation( original_joint_dir, landmarks_dir, previous_quats[lm_info.parent_idx][i])
+                    var quat_info = MATH_UTILS.calc_rotation_v1( landmarks[i].PLM[lm_info.idx], landmarks[i].PLM[child_lm_info.idx], previous_quats[lm_info.parent_idx][i])
+                    //var quat_info = MATH_UTILS.calc_rotation( original_joint_dir, landmarks_dir, previous_quats[lm_info.parent_idx][i])
 
                     previous_quats[lm_info.idx].push(quat_info.rotation);
 
@@ -568,7 +564,7 @@ function createAnimation(name, landmarks) {
                     quat_values.push(quat_info.rotation_diff.y);
                     quat_values.push(quat_info.rotation_diff.z);
                     quat_values.push(quat_info.rotation_diff.w);
-                }
+                //}
             }
 
             time_accum += 0.016;//landmarks[i].dt / 1000.0;

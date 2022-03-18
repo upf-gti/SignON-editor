@@ -202,4 +202,35 @@ function calc_rotation(original_joint_dir, landmarks_dir, prev_rot) {
     return { "rotation" : rot_quat, "rotation_diff" : rot_quat_ajust };
 }
 
-export { calc_rotation }
+function calc_rotation_v1(current_landmark, child_landmark, prev_rot) {
+
+  var lm1 = new THREE.Vector3(current_landmark.x, current_landmark.y, current_landmark.z)
+  var lm2 = new THREE.Vector3(child_landmark.x, child_landmark.y, child_landmark.z)
+
+  var pt_ini = new THREE.Vector3(lm1.x, lm1.y, lm1.z);
+  
+  // translate to current_landmark space
+  lm1.x = lm1.x - pt_ini.x;
+  lm1.y = lm1.y - pt_ini.y;
+  // lm1.z = lm1.z - pt_ini.z;
+
+  lm2.x = lm2.x - pt_ini.x;
+  lm2.y = lm2.y - pt_ini.y;
+  // lm2.z = lm2.z - pt_ini.z;
+
+  var rot_quat;
+
+  if (lm1.z >= 0) {
+    rot_quat = rotation_difference_vec(lm1, new THREE.Vector3().subVectors(lm2, lm1));
+  } else {
+    rot_quat = rotation_difference_vec(lm1, new THREE.Vector3().subVectors(lm1, lm2));
+  }
+
+  // 
+  var rot_quat_ajust = rotation_difference_quat(prev_rot, rot_quat)
+
+  return { "rotation" : rot_quat, "rotation_diff" : rot_quat_ajust };
+}
+
+
+export { calc_rotation, calc_rotation_v1 }
