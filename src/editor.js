@@ -22,6 +22,9 @@ class Editor {
         this.renderer = null;
         this.state = false;  // defines how the animation starts (moving/static)
 
+        this.showSkin = true; //defines if the model skin has to be rendered
+        this.character = "";
+
         this.mixer = null;
         this.mixerHelper = null;
         this.skeletonHelper = null;
@@ -144,7 +147,24 @@ class Editor {
             this.camera.position.set(side.x, side.y, side.z);
             this.controls.update();
         });
+        const skinIcon = document.createElement("i");
+        skinIcon.className='fas fa-user-alt-slash';
+        
+        const skinButton = document.createElement('button');
+        skinButton.className = "litebutton";
+        skinButton.style='z-index: 2; position: absolute; right: 50px; margin-top: 100px; width:25px; height: 25px';
+        skinButton.appendChild(skinIcon);
 
+        document.getElementById("canvasarea").prepend(skinButton);
+        skinButton.addEventListener("click", (result) => {
+            this.showSkin=!this.showSkin;
+            const character = this.scene.getChildByName(this.character);
+            character.visible = this.showSkin;
+            if(this.showSkin)              
+                skinIcon.className = 'fas fa-user-alt-slash';
+            else
+                skinIcon.className = 'fas fa-user-alt';
+        });
         /*let skeleton = createSkeleton(this.landmarksArray);
         this.skeleton = skeleton;
 
@@ -230,6 +250,7 @@ class Editor {
             		object.scale.set(1.0, 1.0, 1.0);
                 }
             } );
+            this.character = model.name = model.name != "Scene"? model.name : "Character";
             this.skeletonHelper = new THREE.SkeletonHelper(model);
             skeleton = createSkeleton(this.landmarksArray);
             updateThreeJSSkeleton(this.skeletonHelper.bones);
@@ -242,7 +263,7 @@ class Editor {
             this.scene.add(boneContainer);          
             this.scene.add( model );
 
-                    // Update camera
+            // Update camera
             const bone0 = this.skeletonHelper.bones[0];
             if(bone0) {
                 bone0.getWorldPosition(this.controls.target);
