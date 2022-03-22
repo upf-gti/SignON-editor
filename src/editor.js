@@ -1,7 +1,7 @@
 import * as THREE from "./libs/three.module.js";
 import { OrbitControls } from "./controls/OrbitControls.js";
 import { BVHLoader } from "./loaders/BVHLoader.js";
-import { createSkeleton, createAnimation, createThreeJSSkeleton, updateThreeJSSkeleton } from "./skeleton.js";
+import { createSkeleton, createAnimation, createAnimationFromRotations, createThreeJSSkeleton, updateThreeJSSkeleton } from "./skeleton.js";
 import { BVHExporter } from "./bvh_exporter.js";
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { Gui } from "./gui.js";
@@ -201,21 +201,11 @@ class Editor {
 
         var that = this;
 
-        $.getJSON( "data/landmarks.json", function( data ) {
+        $.getJSON( "data/Taunt.json", function( data ) {
 
 
-            for (let i = 0; i < data.length; ++i) {
-
-                for (let j = 0; j < data[i].PLM.length; ++j) {
-                    data[i].PLM[j].x = (data[i].PLM[j].x - 0.5);
-                    data[i].PLM[j].y = (1.0 - data[i].PLM[j].y) + 2;
-                    data[i].PLM[j].z = data[i].PLM[j].z * 0.5;
-                }
-
-            }
-
-            that.landmarksArray = data;
-            project.landmarks = that.landmarksArray;
+            that.landmarksArray = [];
+            project.landmarks = [];
                     
             // Load the model (Eva)
             that.loadGLTF("models/t_pose.glb", (gltf) => {
@@ -237,28 +227,16 @@ class Editor {
 
                 that.skeletonHelper = new THREE.SkeletonHelper(model);
                 updateThreeJSSkeleton(that.skeletonHelper.bones);
-                let skeleton = createSkeleton(that.landmarksArray);
+                let skeleton = createSkeleton();
                 that.skeletonHelper.skeleton = skeleton;
                 const boneContainer = new THREE.Group();
                 boneContainer.add(skeleton.bones[0]);
                 that.scene.add(that.skeletonHelper);
                 that.scene.add(boneContainer);
-                
-            // that.group_bind_skeleton(gltf.scene, that.skeletonHelper.skeleton)
                 that.scene.add( model );
-                /*var animationGroup = new THREE.AnimationObjectGroup();
-                for(var i=0; i< arm.children.length; i++){
-                    if(!arm.children[i].isSkinnedMesh)
-                        continue;
-                    animationGroup.add(arm.children[i]);
-                }
-                that.mixer = new THREE.AnimationMixer( animationGroup );*/
-                //const action = that.mixer.clipAction( gltf.animations[0] ).play();
 
-                // play animation
-                
-                that.animationClip = createAnimation("Eva", that.landmarksArray);
-            // that.animationClip = gltf.animations[0];
+                that.animationClip = createAnimationFromRotations("Eva", data);
+
                 that.mixer = new THREE.AnimationMixer(model);
                 that.mixer.clipAction(that.animationClip).setEffectiveWeight(1.0).play();
                 that.mixer.update(that.clock.getDelta()); //do first iteration to update from T pose
@@ -270,7 +248,6 @@ class Editor {
                 const points = new THREE.Points( that.pointsGeometry, material );
                 
                 that.scene.add( points );
-                //BVHExporter.export(skeleton, animation_clip, that.landmarksArray.length);
         
                 project.prepareData(that.mixer, that.animationClip, skeleton);
                 that.gui.loadProject(project);

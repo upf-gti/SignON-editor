@@ -467,12 +467,9 @@ function injectNewLandmarks(landmarks) {
     }
 }
 
-function createSkeleton(landmarks) {
+function createSkeleton() {
 
     var skeleton = createThreeJsSkeleton();
-
-    injectNewLandmarks(landmarks);
-
     return skeleton;
 }
 
@@ -542,7 +539,7 @@ function createAnimation(name, landmarks) {
                 // pos_values.push(lm_info.y);
                 // pos_values.push(lm_info.z);
 
-                //if (lm_info.name == "mixamorigSpine" /*|| lm_info.name == "mixamorigRightUpLeg" || lm_info.name == "mixamorigRightLeg"*/) {
+                if (lm_info.name == "mixamorigSpine" /*|| lm_info.name == "mixamorigRightUpLeg" || lm_info.name == "mixamorigRightLeg"*/) {
 
                     var child_lm_info = LM_INFO[lm_info.children_names[0]];
 
@@ -564,7 +561,7 @@ function createAnimation(name, landmarks) {
                     quat_values.push(quat_info.rotation_diff.y);
                     quat_values.push(quat_info.rotation_diff.z);
                     quat_values.push(quat_info.rotation_diff.w);
-                //}
+                }
             }
 
             time_accum += 0.016;//landmarks[i].dt / 1000.0;
@@ -592,4 +589,41 @@ function createAnimation(name, landmarks) {
     return new THREE.AnimationClip(name || "sign_anim", length, tracks);
 }
 
-export { createSkeleton, createAnimation, createThreeJSSkeleton, updateThreeJSSkeleton };
+function createAnimationFromRotations(name, quaternions_data) {
+
+    var names = quaternions_data[quaternions_data.length - 1];
+    var bones_length = names.length;
+
+    var tracks = [];
+    var quat_values = [];
+    var times = [];
+    var time_accum = 0.0;
+
+    for (var quaternion_idx = 0; quaternion_idx < bones_length * 4; quaternion_idx += 4) {
+
+        times = [];
+        time_accum = 0.0;
+
+        for (var frame_idx = 0; frame_idx < quaternions_data.length - 1; ++frame_idx) {
+
+            quat_values.push(quaternions_data[frame_idx][quaternion_idx + 0]);
+            quat_values.push(quaternions_data[frame_idx][quaternion_idx + 1]);
+            quat_values.push(quaternions_data[frame_idx][quaternion_idx + 2]);
+            quat_values.push(quaternions_data[frame_idx][quaternion_idx + 3]);
+
+            time_accum += 0.032;//landmarks[i].dt / 1000.0;
+            times.push(time_accum);
+        }
+
+        const rotations = new THREE.QuaternionKeyframeTrack( names[quaternion_idx / 4], times, quat_values);
+        tracks.push(rotations);
+    }
+
+    // use -1 to automatically calculate
+    // the length from the array of tracks
+    const length = -1;
+
+    return new THREE.AnimationClip(name || "sign_anim", length, tracks);
+}
+
+export { createSkeleton, createAnimation, createAnimationFromRotations, createThreeJSSkeleton, updateThreeJSSkeleton };
