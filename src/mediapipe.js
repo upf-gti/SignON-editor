@@ -12,10 +12,6 @@ const MediaPipe = {
         const canvasElement = document.getElementById("outputVideo");
         const canvasCtx = canvasElement.getContext("2d");
 
-        // mirror canvas video
-        canvasCtx.translate(canvasElement.width, 0);
-        canvasCtx.scale(-1, 1);
-
         const holistic = new Holistic({locateFile: (file) => {
             return `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`;
         }});
@@ -44,8 +40,7 @@ const MediaPipe = {
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
             //canvasCtx.drawImage(results.segmentationMask, 0, 0, canvasElement.width, canvasElement.height); //not needed
-            canvasCtx.translate(canvasElement.width, 0);
-            canvasCtx.scale(-1, 1);
+            
             // Only overwrite existing pixels.
             canvasCtx.globalCompositeOperation = 'source-in';
             canvasCtx.fillStyle = '#00FF00';

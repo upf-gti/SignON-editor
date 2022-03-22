@@ -97,7 +97,7 @@ class Editor {
         this.controls = controls;
 
         this.gizmo = new Gizmo(this);
-
+        this.setGizmoSize( 0.5 )
         renderer.domElement.addEventListener( 'keydown', (e) => {
             switch ( e.key ) {
 
@@ -140,7 +140,7 @@ class Editor {
         const orientationHelper = new OrientationHelper( this.camera, this.controls, ohOptions, ohLabels );
         document.getElementById("canvasarea").prepend(orientationHelper.domElement);
 
-        let skeleton = createSkeleton(this.landmarksArray);
+        /*let skeleton = createSkeleton(this.landmarksArray);
         this.skeleton = skeleton;
 
         this.skeletonHelper = new THREE.SkeletonHelper(skeleton.bones[0]);
@@ -168,10 +168,10 @@ class Editor {
         
         this.scene.add( points );
         
-        project.prepareData(this.mixer, this.animationClip, skeleton);
+       // project.prepareData(this.mixer, this.animationClip, skeleton);
         this.gui.loadProject(project);
 
-        this.gizmo.begin(this.skeletonHelper);
+        this.gizmo.begin(this.skeletonHelper);*/
 
         // set onclick function to play button
         let stateBtn = document.getElementById("state_btn");
@@ -195,7 +195,7 @@ class Editor {
         }
       
         this.animate();
-     /*   let skeleton = createSkeleton(this.landmarksArray);
+        let skeleton = createSkeleton(this.landmarksArray);
        
         // Load the model (Eva)
         this.loadGLTF("models/Taunt.glb", (gltf) => {
@@ -246,7 +246,7 @@ class Editor {
 
             // play animation
             
-        /*    this.animationClip = createAnimation("Eva",this.landmarksArray);
+            this.animationClip = createAnimation("Eva",this.landmarksArray);
            // this.animationClip = gltf.animations[0];
             this.mixer = new THREE.AnimationMixer(model);
             this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
@@ -267,7 +267,7 @@ class Editor {
             this.gizmo.begin(this.skeletonHelper);
             
             this.animate();
-        });*/
+        });
     }
 
     group_bind_skeleton( mesh, jointNodes ){
@@ -491,8 +491,8 @@ class Editor {
         // Don't change time if playing
         if(this.state)
         return;
-
-        //this.mixer.setTime(t);
+        if(this.mixer)
+            this.mixer.setTime(t);
         this.gizmo.updateBones(0.0);
 
         // Update video
@@ -501,7 +501,7 @@ class Editor {
 
     stopAnimation() {
         
-        //this.mixer.setTime(0.0);
+        this.mixer.setTime(0.0);
         this.gizmo.updateBones(0.0);
     }
     

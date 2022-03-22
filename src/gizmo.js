@@ -93,7 +93,7 @@ class Gizmo {
         const sizes = [];
 
         for ( let i = 0, l = positionAttribute.count; i < l; i ++ ) {
-            sizes[i] = 0.5;
+            sizes[i] = 0.2;
         }
 
         geometry.setAttribute( 'size', new THREE.Float32BufferAttribute( sizes, 1 ) );
@@ -102,7 +102,7 @@ class Gizmo {
         this.scene.add( this.bonePoints );
         
         this.raycaster = new THREE.Raycaster();
-        this.raycaster.params.Points.threshold = 0.05;
+        this.raycaster.params.Points.threshold = 0.02;
         
         this.bindEvents();
         
