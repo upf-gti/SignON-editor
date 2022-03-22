@@ -228,8 +228,8 @@ class Editor {
             skeleton = createSkeleton(this.landmarksArray);
             updateThreeJSSkeleton(this.skeletonHelper.bones);
             this.skeletonHelper.skeleton = skeleton;
-             const boneContainer = new THREE.Group();
-             boneContainer.add(skeleton.bones[0]);
+            const boneContainer = new THREE.Group();
+            boneContainer.add(skeleton.bones[0]);
             this.scene.add(this.skeletonHelper);
             this.scene.add(boneContainer);
             
@@ -246,8 +246,8 @@ class Editor {
 
             // play animation
             
-            this.animationClip = createAnimation("Eva",this.landmarksArray);
-           // this.animationClip = gltf.animations[0];
+            //this.animationClip = createAnimation("Eva",this.landmarksArray);
+            this.animationClip = gltf.animations[0];
             this.mixer = new THREE.AnimationMixer(model);
             this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
             this.mixer.update(this.clock.getDelta()); //do first iteration to update from T pose
