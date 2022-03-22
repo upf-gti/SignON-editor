@@ -88,7 +88,6 @@ class Editor {
         controls.minDistance = 1;
         controls.maxDistance = 7;
         camera.position.set(0.5, 2, -3);
-        controls.target.set(1.2, 1.5, 0);
         controls.update();  
 
         this.scene = scene;
@@ -139,6 +138,12 @@ class Editor {
 
         const orientationHelper = new OrientationHelper( this.camera, this.controls, ohOptions, ohLabels );
         document.getElementById("canvasarea").prepend(orientationHelper.domElement);
+        orientationHelper.addEventListener("click", (result) => {
+            const side = result.normal.multiplyScalar(5);
+            if(side.x != 0 || side.z != 0) side.y = this.controls.target.y;
+            this.camera.position.set(side.x, side.y, side.z);
+            this.controls.update();
+        });
 
         /*let skeleton = createSkeleton(this.landmarksArray);
         this.skeleton = skeleton;
@@ -172,6 +177,7 @@ class Editor {
         this.gui.loadProject(project);
 
         this.gizmo.begin(this.skeletonHelper);*/
+
 
         // set onclick function to play button
         let stateBtn = document.getElementById("state_btn");
@@ -228,21 +234,20 @@ class Editor {
             skeleton = createSkeleton(this.landmarksArray);
             updateThreeJSSkeleton(this.skeletonHelper.bones);
             this.skeletonHelper.skeleton = skeleton;
+            
             const boneContainer = new THREE.Group();
             boneContainer.add(skeleton.bones[0]);
-            this.scene.add(this.skeletonHelper);
-            this.scene.add(boneContainer);
             
-           // this.group_bind_skeleton(gltf.scene, this.skeletonHelper.skeleton)
+            this.scene.add(this.skeletonHelper);
+            this.scene.add(boneContainer);          
             this.scene.add( model );
-            /*var animationGroup = new THREE.AnimationObjectGroup();
-            for(var i=0; i< arm.children.length; i++){
-                if(!arm.children[i].isSkinnedMesh)
-                    continue;
-                animationGroup.add(arm.children[i]);
+
+                    // Update camera
+            const bone0 = this.skeletonHelper.bones[0];
+            if(bone0) {
+                bone0.getWorldPosition(this.controls.target);
+                this.controls.update();
             }
-            this.mixer = new THREE.AnimationMixer( animationGroup );*/
-            //const action = this.mixer.clipAction( gltf.animations[0] ).play();
 
             // play animation
             
@@ -423,6 +428,13 @@ class Editor {
         );
     }
 
+    setBoneSize(newSize) {
+        const geometry = this.gizmo.bonePoints.geometry;
+        const positionAttribute = geometry.getAttribute( 'position' );
+        this.gizmo.bonePoints.geometry.setAttribute( 'size', new THREE.Float32BufferAttribute( new Array(positionAttribute.count).fill(newSize), 1 ) );
+        this.gizmo.raycaster.params.Points.threshold = newSize/10;
+    }
+
     setSelectedBone( name ) {
         if(!this.gizmo)
         throw("No gizmo attached to scene");
@@ -504,6 +516,20 @@ class Editor {
         this.mixer.setTime(0.0);
         this.gizmo.updateBones(0.0);
     }
+
+    updateAnimationAction(track) {
+
+        const mixer = this.mixer;
+        const idx = track.clip_idx;
+
+        if(!mixer._actions.length || mixer._actions[0]._clip != this.animationClip) 
+        return;
+
+        // Update times
+        mixer._actions[0]._interpolants[idx].parameterPositions = this.animationClip.tracks[idx].times;
+        // Update values
+        mixer._actions[0]._interpolants[idx].sampleValues = this.animationClip.tracks[idx].values;
+    }
     
     animate() {
         
@@ -572,5 +598,22 @@ class Editor {
         BVHExporter.export(this.skeleton, this.animationClip, this.landmarksArray.length);
     }
 };
+
+// THREE.AnimationAction.prototype.updateInterpolants = function() {
+    
+//     const tracks = this._clip.tracks,
+//         nTracks = tracks.length,
+//         interpolants = new Array( nTracks );
+
+//     for ( let i = 0; i !== nTracks; ++ i ) {
+
+//         const interpolant = tracks[ i ].createInterpolant();
+//         interpolants[ i ] = interpolant;
+//         interpolant.settings = this._interpolantSettings;
+
+//     }
+
+//     this._interpolants = interpolants; // bound by the mixer
+// }
 
 export { Editor };
