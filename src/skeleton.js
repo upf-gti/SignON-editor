@@ -611,19 +611,12 @@ function createAnimationFromRotations(name, quaternions_data) {
 
         for (var frame_idx = 0; frame_idx < quaternions_data.length - 1; ++frame_idx) {
 
-            
-            if(isPosition){
-                quat_values.push(quaternions_data[frame_idx][quaternion_idx + 0]);
-                quat_values.push(quaternions_data[frame_idx][quaternion_idx + 1]);
-                quat_values.push(quaternions_data[frame_idx][quaternion_idx + 2]);
-            }
-            else{
-                quat_values.push(quaternions_data[frame_idx][quaternion_idx + 0]);
-                quat_values.push(quaternions_data[frame_idx][quaternion_idx + 1]);
-                quat_values.push(quaternions_data[frame_idx][quaternion_idx + 2]);
+            quat_values.push(quaternions_data[frame_idx][quaternion_idx + 0]);
+            quat_values.push(quaternions_data[frame_idx][quaternion_idx + 1]);
+            quat_values.push(quaternions_data[frame_idx][quaternion_idx + 2]);
+            if(!isPosition)
                 quat_values.push(quaternions_data[frame_idx][quaternion_idx + 3]);
 
-            }
             time_accum += 0.032;//landmarks[i].dt / 1000.0;
             times.push(time_accum);
         }
