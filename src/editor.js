@@ -25,7 +25,7 @@ class Editor {
         this.mixer = null;
         this.mixerHelper = null;
         this.skeletonHelper = null;
-        
+        this.skeleton = null;
         this.pointsGeometry = null;
         this.landmarksArray = [];
         this.prevTime = this.iter = 0;
@@ -82,7 +82,7 @@ class Editor {
         this.video = document.getElementById("recording");
 
         // camera
-        let camera = new THREE.PerspectiveCamera(60, pixelRatio, 0.1, 1000);
+        let camera = new THREE.PerspectiveCamera(60, pixelRatio, 0.01, 1000);
         window.camera = camera;
         let controls = new OrbitControls(camera, renderer.domElement);
         controls.minDistance = 1;
@@ -208,7 +208,7 @@ class Editor {
             project.landmarks = [];
                     
             // Load the model (Eva)
-            that.loadGLTF("models/t_pose.glb", (gltf) => {
+            that.loadGLTF("models/Kate-tpose.glb", (gltf) => {
             
                 let model = gltf.scene;
                 model.castShadow = true;
@@ -255,150 +255,14 @@ class Editor {
                 that.gizmo.begin(that.skeletonHelper);
                 
                 that.animate();
+
+                that.skeleton = skeleton;
+                //that.export();
             });
 
         });
-
     }
 
-    group_bind_skeleton( mesh, jointNodes ){
-        /*let c, i, len = grp.children.length, root_bind=false;
-
-        grp.updateMatrixWorld( true ); // MUST DO THIS, Else things gets effed up
-        for( i=0; i < len; i++ ){
-            c = grp.children[ i ];
-            if( !c.isSkinnedMesh ) continue;
-
-            // Need to child the root bone to a SkinnedMesh else no works
-            // Can only do this once, so do it on the first possible one.
-            if( !root_bind ){ c.add( skeleton.bones[0] ); root_bind = true; }
-
-            c.bind( skeleton );			// Bind Skeleton to SkinnedMesh
-            c.bindMode = "detached";	// Not sure if it does anything but just incase.
-        }*/
-        if ( ! mesh.isMesh ) return;
-
-            const bones = [];
-            const boneInverses = [];
-
-            for ( let j = 0, jl = jointNodes.bones.length; j < jl; j ++ ) {
-
-                const jointNode = jointNodes.bones[ j ];
-
-                if ( jointNode ) {
-
-                    bones.push( jointNode );
-
-                    const mat = new Matrix4();
-
-                    if ( skinEntry.inverseBindMatrices !== undefined ) {
-
-                        mat.fromArray( skinEntry.inverseBindMatrices.array, j * 16 );
-
-                    }
-
-                    boneInverses.push( mat );
-
-                } else {
-
-                    console.warn( 'THREE.GLTFLoader: Joint "%s" could not be found.', skinEntry.joints[ j ] );
-
-                }
-
-            }
-
-            mesh.bind( new Skeleton( bones, boneInverses ), mesh.matrixWorld );
-    }
-    ////////////////////////////////////////////////////////
-	// SKIN
-	// https://github.com/KhronosGroup/glTF/tree/master/specification/2.0#skins
-	// https://github.com/KhronosGroup/glTF-Tutorials/blob/master/gltfTutorial/gltfTutorial_020_Skins.md
-	////////////////////////////////////////////////////////
-            
-    // This one uses the Inverted Bind Matrices in the bin file then converts
-    // to local space transforms.
-    get_skin( json, name=null, node_info=null ){
-        if( !json.skins ){
-            console.error( "There is no skin in the GLTF file." );
-            return null;
-        }
-
-        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        // Skin Checking
-        let ji, skin = null;
-        if( name != null ){
-            for( ji of json.skins ) if( ji.name == name ){ skin = ji; break; }
-            if( !skin ){ console.error( "skin not found", name ); return null; }
-        }else{
-            // Not requesting one, Use the first one available
-            for( ji of json.skins ){ 
-                skin = ji;
-                name = ji.name; // Need name to fill in node_info
-                break;
-            }
-        }
-
-        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        // Create Bone Items
-        let boneCnt = skin.joints.length,
-            bones 	= new Array(boneCnt),
-            n2j 	= {},			// Lookup table to link Parent-Child (Node Idx to Joint Idx) Key:NodeIdx, Value:JointIdx
-            n, 						// Node
-            ni, 					// Node Index
-            itm;					// Bone Item
-
-        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        // Create Bone Array and Loopup Table.
-        for(ji=0; ji < boneCnt; ji++ ){
-            ni				= skin.joints[ ji ];
-            n2j[ "n"+ni ] 	= ji;
-
-            bones[ ji ] = {
-                idx : ji, prev_idx : null, lvl : 0, name : null,
-                pos : null, rot : null, scl : null };
-        }
-
-        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        // Get Bone's name and set it's parent index value
-        for( ji=0; ji < boneCnt; ji++){
-            n				= json.nodes[ skin.joints[ ji ] ];
-            itm 			= bones[ ji ];
-            bones[ ji ].pos = n.translation;
-            bones[ ji ].rot = n.rotation;
-            bones[ ji ].scl = n.scale;
-            // Each Bone Needs a Name, create one if one does not exist.
-            if( n.name === undefined || n.name == "" )	itm.name = "bone_" + ji;
-            else{
-                itm.fullname = n.name;
-                itm.name = n.name.replace(":", "");
-                itm.name = itm.name.replace("_", "");
-            } 										
-
-            // Set Children who the parent is.
-            if( n.children && n.children.length > 0 ){
-                for( ni of n.children ) bones[ n2j["n"+ni] ].prev_idx = ji;
-            }
-        }
-
-        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        // Set the Hierarchy Level for each bone
-        let lvl;
-        for( ji=0; ji < boneCnt; ji++){
-            // Check for Root Bones
-            itm = bones[ ji ];
-            if( itm.prev_idx == null ){ itm.lvl = 0; continue; }
-
-            // Traverse up the tree to count how far down the bone is
-            lvl = 0;
-            while( itm.prev_idx != null ){ lvl++; itm = bones[ itm.prev_idx ]; }
-
-            bones[ ji ].lvl = lvl;
-        }
-
-        
-        //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        return bones;
-    }
     loadGLTF(animationFile, onLoaded) {
             
         const loader = new GLTFLoader();
