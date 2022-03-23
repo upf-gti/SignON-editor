@@ -4,6 +4,7 @@ import { BVHLoader } from "./loaders/BVHLoader.js";
 import { createSkeleton, createAnimation, createAnimationFromRotations, createThreeJSSkeleton, updateThreeJSSkeleton } from "./skeleton.js";
 import { BVHExporter } from "./bvh_exporter.js";
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
+import { FBXLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/FBXLoader.js';
 import { Gui } from "./gui.js";
 import { Gizmo } from "./gizmo.js";
 import { firstToUpperCase } from "./utils.js";
@@ -202,12 +203,11 @@ class Editor {
         var that = this;
 
         $.getJSON( "data/Taunt.json", function( data ) {
-
-
+          
             that.landmarksArray = [];
             project.landmarks = [];
                     
-            // Load the model (Eva)
+            // Load the model (Eva)  
             that.loadGLTF("models/Kate-tpose.glb", (gltf) => {
             
                 let model = gltf.scene;
@@ -218,13 +218,12 @@ class Editor {
                         object.castShadow = true;
                         object.receiveShadow = true;
                         
-                        //this.group_bind_skeleton(object, this.skeletonHelper.skeleton)
                     }
                     if (object.isBone) {
                         object.scale.set(1.0, 1.0, 1.0);
                     }
                 } );
-
+                //model.rotateX(-Math.PI/4)
                 that.skeletonHelper = new THREE.SkeletonHelper(model);
                 updateThreeJSSkeleton(that.skeletonHelper.bones);
                 let skeleton = createSkeleton();
