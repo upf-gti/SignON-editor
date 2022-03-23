@@ -41,7 +41,8 @@ class Gui {
             return true; // Handled
         };
         this.timeline.onBoneUnselected = () => this.editor.gizmo.stop();
-        this.timeline.onDeleteKeyFrame = (track) => this.editor.updateAnimationAction(track);
+        this.timeline.onUpdateTrack = (track) => this.editor.updateAnimationAction(track);
+        this.timeline.onGetSelectedBone = () => { return this.editor.getSelectedBone(); };
 
         // Move this to another place
         // the idea is to create once and reset on load project
@@ -379,32 +380,47 @@ class Gui {
 
     showKeyFrameOptions(e, info, index) {
 
-        let track = this.timeline.getTrack(info, index);
-        if(!track)
-        return;
+        let actions = [];
 
-        e.multipleSelection &= this.timeline.isKeyFrameSelected(track, index);
+        let track = this.timeline.getTrack(info);
 
-        var actions = [
-            {
-                title: (e.multipleSelection ? "Multiple selection" : "[" + index + "] " + track.name),
-                disabled: true
-            },
-            null,
-            {
-                title: "Copy" + " <i class='bi bi-clipboard float-right'></i>",
-                callback: () => this.timeline.copyKeyFrame( track, index )
-            },
-            {
-                title: "Paste" + (e.multipleSelection ? " (" + this.timeline.getNumKeyFramesSelected() + ")" : "") +  " <i class='bi bi-clipboard-check float-right'></i>",
-                disabled: !this.timeline.canPasteKeyFrame(),
-                callback: () => this.timeline.pasteKeyFrame( e, track, index )
-            },
-            {
-                title: "Delete" + (e.multipleSelection ? " (" + this.timeline.getNumKeyFramesSelected() + ")" : "") +  " <i class='bi bi-trash float-right'></i>",
-                callback: () => this.timeline.deleteKeyFrame( e, track, index )
-            }
-        ];
+        if(index !== undefined) {
+            if(!track)
+            return;
+    
+            e.multipleSelection &= this.timeline.isKeyFrameSelected(track, index);
+    
+            actions.push(
+                {
+                    title: (e.multipleSelection ? "Multiple selection" : "[" + index + "] " + track.name),
+                    disabled: true
+                },
+                null,
+                {
+                    title: "Copy" + " <i class='bi bi-clipboard float-right'></i>",
+                    callback: () => this.timeline.copyKeyFrame( track, index )
+                },
+                {
+                    title: "Paste" + (e.multipleSelection ? " (" + this.timeline.getNumKeyFramesSelected() + ")" : "") +  " <i class='bi bi-clipboard-check float-right'></i>",
+                    disabled: !this.timeline.canPasteKeyFrame(),
+                    callback: () => this.timeline.pasteKeyFrame( e, track, index )
+                },
+                {
+                    title: "Delete" + (e.multipleSelection ? " (" + this.timeline.getNumKeyFramesSelected() + ")" : "") +  " <i class='bi bi-trash float-right'></i>",
+                    callback: () => this.timeline.deleteKeyFrame( e, track, index )
+                }
+            );
+        }else {
+
+            // No keyframe selected
+
+            actions.push(
+                {
+                    title: "Add" + " <i class='bi bi-plus float-right'></i>",
+                    callback: () => this.timeline.addKeyFrame( track )
+                }
+            );
+        }
         
         new LiteGUI.ContextMenu( actions, { event: e });
     }

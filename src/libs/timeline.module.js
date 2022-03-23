@@ -162,6 +162,54 @@ Timeline.prototype.pasteKeyFrame = function ( e, track, index ) {
 	}
 }
 
+Timeline.prototype.addKeyFrame = function( track ) {
+
+	// Update clip information
+	const clip_idx = track.clip_idx;
+
+	// Find new index
+	let newIdx = this.clip.tracks[clip_idx].times.findIndex( (t) => { return t > this.current_time; } );
+
+	// Add time key
+	const timesArray = [];
+	this.clip.tracks[clip_idx].times.forEach( (a, b) => {
+		b == newIdx ? timesArray.push(this.current_time, a) : timesArray.push(a);
+	} );
+	this.clip.tracks[clip_idx].times = new Float32Array( timesArray );
+	
+	// Get mid values
+	const bone = this.onGetSelectedBone();
+	const lerpValue = bone[ track.type ].toArray();
+	
+	// Add values
+	const valuesArray = [];
+	this.clip.tracks[clip_idx].values.forEach( (a, b) => {
+		if(b == newIdx * track.dim) {
+			for( let i = 0; i < track.dim; ++i )
+				valuesArray.push(lerpValue[i]);
+		}
+		valuesArray.push(a);
+	} );
+	this.clip.tracks[clip_idx].values = new Float32Array( valuesArray );
+
+	// Move the other's key properties
+	for(let i = (this.clip.tracks[clip_idx].times.length - 1); i > newIdx; --i) {
+		track.edited[i - 1] ? track.edited[i] = track.edited[i - 1] : 0;
+	}
+	
+	// Reset this key's properties
+	track.hovered[newIdx] = undefined;
+	track.selected[newIdx] = undefined;
+	track.edited[newIdx] = undefined;
+
+	// Update animation action interpolation info
+	if(this.onUpdateTrack)
+		this.onUpdateTrack( track );
+
+	if(this.onSetTime)
+		this.onSetTime(this.current_time);
+}
+
 Timeline.prototype._delete = function( track, index ) {
 
 	// Don't remove by now the first key
@@ -200,8 +248,8 @@ Timeline.prototype._delete = function( track, index ) {
 	}
 
 	// Update animation action interpolation info
-	if(this.onDeleteKeyFrame)
-		this.onDeleteKeyFrame( track );
+	if(this.onUpdateTrack)
+		this.onUpdateTrack( track );
 }
 
 Timeline.prototype.deleteKeyFrame = function (e, track, index) {
@@ -403,9 +451,6 @@ Timeline.prototype.processCurrentKeyFrame = function (e, keyFrameIndex, track, l
 	e.multipleSelection = multiple;
 	keyFrameIndex = keyFrameIndex ?? this.getCurrentKeyFrame( track, this.xToTime( local_x ), this._pixels_to_seconds * 5 );
 
-	if(keyFrameIndex == undefined)
-	return;
-
 	if(!multiple && e.button != 2) {
 		this.unSelectAllKeyFrames();
 	}
@@ -419,6 +464,9 @@ Timeline.prototype.processCurrentKeyFrame = function (e, keyFrameIndex, track, l
 		return;
 	}
 	
+	if(keyFrameIndex == undefined)
+	return;
+
 	// Select if not handled
 	this._lastKeyFramesSelected.push( currentSelection );
 	t.selected[keyFrameIndex] = true;

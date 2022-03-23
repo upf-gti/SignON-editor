@@ -191,6 +191,11 @@ class Editor {
         this.animate();
     }
 
+    getSelectedBone() {
+        const idx = this.gizmo.selectedBone;
+        return idx == undefined ? idx : this.skeleton.bones[ idx ];
+    }
+
     setBoneSize(newSize) {
         const geometry = this.gizmo.bonePoints.geometry;
         const positionAttribute = geometry.getAttribute( 'position' );
