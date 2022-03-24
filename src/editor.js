@@ -124,6 +124,7 @@ class Editor {
             const side = result.normal.multiplyScalar(5);
             if(side.x != 0 || side.z != 0) side.y = this.controls.target.y;
             this.camera.position.set(side.x, side.y, side.z);
+            this.camera.setRotationFromQuaternion( new THREE.Quaternion() );
             this.controls.update();
         });
 

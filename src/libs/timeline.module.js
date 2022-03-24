@@ -511,12 +511,17 @@ Timeline.prototype.processMouse = function (e) {
 
 	e.track = track;
 
+	const innerSetTime = (t) => { if( this.onSetTime ) this.onSetTime( t );	 }
+
 	if( e.type == "mouseup" )
 	{
+		const discard = this._movingKeys || (getTime() - this._click_time) > 420; // ms
+		this._movingKeys ? innerSetTime( this.current_time ) : 0;
+		
 		this._grabbing = false;
 		this._grabbing_scroll = false;
-
-		const discard = getTime() - this._click_time > 420; // ms
+		this._movingKeys = false;
+		this._timeBeforeMove = null;
 
 		if(e.shiftKey) {
 
@@ -584,11 +589,40 @@ Timeline.prototype.processMouse = function (e) {
 			if(e.shiftKey) {
 				this.boxSelection = true;
 				this.boxSelectionStart = [local_x,local_y - 20];
+			}else if(e.ctrlKey && track) {
+				const keyFrameIndex = this.getCurrentKeyFrame( track, this.xToTime( local_x ), this._pixels_to_seconds * 5 );
+				if( keyFrameIndex ) {
+					this.processCurrentKeyFrame( e, keyFrameIndex, track, null, true ); // Settings this as multiple so time is not being set
+					this._movingKeys = true;
+
+					// Set pre-move state
+					for(let selectedKey of this._lastKeyFramesSelected) {
+						let [name, idx, keyIndex] = selectedKey;
+						let track = this.tracksPerBone[name][idx];
+						selectedKey[3] = this.clip.tracks[ track.clip_idx ].times[ keyIndex ];
+					}
+
+					this._timeBeforeMove = track.times[ keyFrameIndex ];
+				}
 			}
 		}
 	}
 	else if( e.type == "mousemove" )
 	{
+		// Manage keyframe movement
+		if(this._movingKeys) {
+
+			const newTime = this.xToTime( local_x );
+			
+			for(let [name, idx, keyIndex, keyTime] of this._lastKeyFramesSelected) {
+				let track = this.tracksPerBone[name][idx];
+				const delta = this._timeBeforeMove - keyTime;
+				this.clip.tracks[ track.clip_idx ].times[ keyIndex ] = Math.min( this.clip.duration, Math.max(0, newTime - delta) );
+			}
+
+			return;
+		}
+
 		if(e.shiftKey) {
 			if(this.boxSelection) {
 				this.boxSelectionEnd = [local_x,local_y - 20];
@@ -608,8 +642,6 @@ Timeline.prototype.processMouse = function (e) {
 			this._grab_time = curr;
 			this.current_time = Math.max(0,this.current_time - delta);
 
-			const inner = (t) => { if( this.onSetTime ) this.onSetTime( t );	 }
-
 			// fix this
 			if(e.shiftKey && track) {
 				let keyFrameIndex = this.getNearestKeyFrame( track, this.current_time);
@@ -617,11 +649,11 @@ Timeline.prototype.processMouse = function (e) {
 				if(keyFrameIndex != this.snappedKeyFrameIndex){
 					this.snappedKeyFrameIndex = keyFrameIndex;
 					this.current_time = track.times[ keyFrameIndex ];		
-					inner( this.current_time );		
+					innerSetTime( this.current_time );		
 				}
 				
 			}else{
-				inner( this.current_time );	
+				innerSetTime( this.current_time );	
 			}
 		}else if(track) {
 

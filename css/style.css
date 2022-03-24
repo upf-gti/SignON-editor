@@ -20,6 +20,10 @@ video {
 	-moz-transform:rotateY(180deg); /* Firefox */
 }
 
+canvas {
+	outline: none !important;
+}
+
 /* ---------- Classes ---------- */
 .modal {
 	background-color: rgba(51, 51, 51, 0.85);
