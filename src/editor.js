@@ -225,8 +225,8 @@ class Editor {
                 } );
                 //model.rotateX(-Math.PI/4)
                 that.skeletonHelper = new THREE.SkeletonHelper(model);
-                updateThreeJSSkeleton(that.skeletonHelper.bones);
-                let skeleton = createSkeleton();
+                //updateThreeJSSkeleton(that.skeletonHelper.bones);
+                let skeleton = new THREE.Skeleton( that.skeletonHelper.bones ); //createSkeleton();
                 that.skeletonHelper.skeleton = skeleton;
                 const boneContainer = new THREE.Group();
                 boneContainer.add(skeleton.bones[0]);
@@ -422,8 +422,9 @@ class Editor {
     }
 
     export() {
-        
-        BVHExporter.export(this.skeleton, this.animationClip, this.landmarksArray.length);
+        var frames_length = this.landmarksArray.length ? this.landmarksArray.length :  this.animationClip.tracks[0].times.length;
+
+        BVHExporter.export(this.skeleton, this.animationClip, frames_length);
     }
 };
 

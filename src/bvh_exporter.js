@@ -43,7 +43,7 @@ const BVHExporter = {
         var bvh = tabs;
 
         var export_pos = false;
-        if (!(bone.parent instanceof THREE.Bone)) {
+        if (!(bone.parent instanceof THREE.Bone) && bone.parent.type != "Bone") {
             bvh += "ROOT " + bone.name + "\n";
             export_pos = true;
         } else 
@@ -91,7 +91,7 @@ const BVHExporter = {
         
         bvh += "MOTION\n";
         bvh += "Frames: " + frames_length + "\n";
-        bvh += "Frame Time: " + (1.0 / 60.0) + "\n";
+        bvh += "Frame Time: " + (1.0 / 30.0) + "\n";
 
         for (var frame_idx = 0; frame_idx < frames_length; ++frame_idx) {
 
@@ -101,7 +101,7 @@ const BVHExporter = {
                 // End site nodes do not have channels
                 if (skeleton.bones[bone_idx].children.length == 0) {
                     bone_idx++;
-                    continue;
+                    //continue;
                 }
 
                 // Only export position for root node
@@ -119,10 +119,10 @@ const BVHExporter = {
 
                 // Quaternions
                 var quaternions = animationClip.tracks[track_idx];
-                var x = quaternions.values[frame_idx * 4 + 0]
-                var y = quaternions.values[frame_idx * 4 + 1]
-                var z = quaternions.values[frame_idx * 4 + 2]
-                var w = quaternions.values[frame_idx * 4 + 3]
+                var x = quaternions.values[frame_idx * 4 + 0];
+                var y = quaternions.values[frame_idx * 4 + 1];
+                var z = quaternions.values[frame_idx * 4 + 2];
+                var w = quaternions.values[frame_idx * 4 + 3];
 
                 var euler = new THREE.Euler();
                 euler.setFromQuaternion(new THREE.Quaternion(x, y, z, w));
