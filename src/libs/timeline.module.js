@@ -261,6 +261,9 @@ Timeline.prototype.deleteKeyFrame = function (e, track, index) {
 		this._lastKeyFramesSelected.forEach( e => perTrack[e[1]] ? perTrack[e[1]].push(e) : perTrack[e[1]] = [e] );
 		
 		for(let pts of perTrack) {
+			
+			if(!pts) continue;
+
 			pts = pts.sort( (a,b) => a[2] - b[2] );
 			
 			let deletedIndices = 0;
