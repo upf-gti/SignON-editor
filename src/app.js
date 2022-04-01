@@ -2,6 +2,7 @@ import { MediaPipe } from "./mediapipe.js";
 import { Project } from "./project.js";
 import { Editor } from "./editor.js";
 import { FileSystem } from "./libs/filesystem.js";
+import * as THREE from "./libs/three.module.js";
 
 class App {
 
@@ -165,10 +166,20 @@ class App {
 
     fillLandmarks(data, _dt) 
     {
+        var point = new THREE.Vector3();
+        var up = new THREE.Vector3(0, 1, 0);
+
         for (let j = 0; j < data.poseLandmarks.length; ++j) {
-            data.poseLandmarks[j].x = (1.0 - data.poseLandmarks[j].x);
-            data.poseLandmarks[j].y = (1.0 - data.poseLandmarks[j].y) + 2;
-            data.poseLandmarks[j].z = data.poseLandmarks[j].z * 0.5;
+            
+            point.x = (1.0 - data.poseLandmarks[j].x);
+            point.y = (1.0 - data.poseLandmarks[j].y) + 2;
+            point.z = data.poseLandmarks[j].z * 0.5;
+
+            point.applyAxisAngle(up, Math.PI);
+            
+            data.poseLandmarks[j].x = point.x;
+            data.poseLandmarks[j].y = point.y;
+            data.poseLandmarks[j].z = point.z;
         }
         /*for (let j = 0; j < data.ea.length; ++j) {
             data.ea[j].y = - data.ea[j].y;

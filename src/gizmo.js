@@ -1,4 +1,4 @@
-import * as THREE from "three";
+import * as THREE from './libs/three.module.js';
 import { ShaderChunk } from "./utils.js";
 import { TransformControls } from './controls/TransformControls.js';
 
@@ -90,14 +90,19 @@ class Gizmo {
         geometry.setFromPoints(vertices);
         
         const positionAttribute = geometry.getAttribute( 'position' );
-        const size = 0.5;
-        geometry.setAttribute( 'size', new THREE.Float32BufferAttribute( new Array(positionAttribute.count).fill(size), 1 ) );
+        const sizes = [];
+
+        for ( let i = 0, l = positionAttribute.count; i < l; i ++ ) {
+            sizes[i] = 0.5;
+        }
+
+        geometry.setAttribute( 'size', new THREE.Float32BufferAttribute( sizes, 1 ) );
 
         this.bonePoints = new THREE.Points( geometry, pointsShaderMaterial );
         this.scene.add( this.bonePoints );
         
         this.raycaster = new THREE.Raycaster();
-        this.raycaster.params.Points.threshold = 0.02;
+        this.raycaster.params.Points.threshold = 0.05;
         
         this.bindEvents();
         
@@ -289,14 +294,10 @@ class Gizmo {
         if(!values)
             return;
 
-        const idx = track.clip_idx;
-
         // supports position and quaternion types
         for( let i = 0; i < values.length; ++i ) {
-            this.editor.animationClip.tracks[ idx ].values[ start + i ] = values[i];
+            track.data.values[ start + i ] = values[i];
         }
-
-        // this.editor.mixer._actions[0].updateInterpolants();
 
         track.edited[ keyFrameIndex ] = true;
         timeline.onSetTime( timeline.current_time );

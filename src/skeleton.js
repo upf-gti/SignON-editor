@@ -574,10 +574,10 @@ function createAnimation(name, landmarks) {
                         var ogd_norm = original_joint_dir.clone().normalize();
                         var lnd_norm = landmarks_dir.clone().normalize();
                     
-                        console.log("--------------------- " + lm_info.name + "------------------------")
-                        console.log("original dir: " + ogd_norm.x + ", " + ogd_norm.y + ", " + ogd_norm.z);
-                        console.log("landmark dir: " + lnd_norm.x + ", " + lnd_norm.y + ", " + lnd_norm.z);
-                        console.log("---------------------------------------------")
+                        // console.log("--------------------- " + lm_info.name + "------------------------")
+                        // console.log("original dir: " + ogd_norm.x + ", " + ogd_norm.y + ", " + ogd_norm.z);
+                        // console.log("landmark dir: " + lnd_norm.x + ", " + lnd_norm.y + ", " + lnd_norm.z);
+                        // console.log("---------------------------------------------")
                         debug_printed = true;
                     }
 
@@ -590,7 +590,7 @@ function createAnimation(name, landmarks) {
                 //}
             }
 
-            time_accum += 0.016;//landmarks[i].dt / 1000.0;
+            time_accum += landmarks[i].dt / 1000.0;
             times.push(time_accum);
         }
 

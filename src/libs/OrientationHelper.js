@@ -15,7 +15,7 @@ import {
 	Vector2,
 	Vector3,
 	WebGLRenderer
-} from 'three';
+} from './three.module.js';
 
 import { OrbitControls } from '../controls/OrbitControls.js';
 
