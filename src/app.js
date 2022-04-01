@@ -166,7 +166,7 @@ class App {
     fillLandmarks(data, _dt) 
     {
         for (let j = 0; j < data.poseLandmarks.length; ++j) {
-            data.poseLandmarks[j].x = (data.poseLandmarks[j].x - 0.5);
+            data.poseLandmarks[j].x = (1.0 - data.poseLandmarks[j].x);
             data.poseLandmarks[j].y = (1.0 - data.poseLandmarks[j].y) + 2;
             data.poseLandmarks[j].z = data.poseLandmarks[j].z * 0.5;
         }

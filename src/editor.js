@@ -221,59 +221,47 @@ class Editor {
         }
       
         this.animate();
-        let skeleton = createSkeleton(this.landmarksArray);
        
         // Load the model (Eva)
-        this.loadGLTF("models/Taunt.glb", (gltf) => {
+        this.loadGLTF("models/t_pose.glb", (gltf) => {
            
             let model = gltf.scene;
             model.castShadow = true;
-
-           
-            //model.skeleton = skeleton; // allow animation mixer to bind to THREE.SkeletonHelper directly
-            var arm = model.getChildByName("Armature");
-            //var bones = this.get_skin(gltf.parser.json, null,arm)
-            //skeleton = updateThreeJSSkeleton(this.skeletonHelper.skeleton, bones);
-            //skeleton = createThreeJSSkeleton( bones);
-           // this.skeletonHelper = new THREE.SkeletonHelper(skeleton.bones[0]);
-           // this.skeletonHelper.skeleton = skeleton; // allow animation mixer to bind to THREE.SkeletonHelper directly
-          
             
-            model.traverse(  ( object ) => {
-                if ( object.isMesh ||object.isSkinnedMesh ) {
-                    object.castShadow = true;
-                    object.receiveShadow = true;
+            // model.traverse(  ( object ) => {
+            //     if ( object.isMesh ||object.isSkinnedMesh ) {
+            //         object.castShadow = true;
+            //         object.receiveShadow = true;
                     
-                    //this.group_bind_skeleton(object, this.skeletonHelper.skeleton)
-                }
-                if (object.isBone) {
-            		object.scale.set(1.0, 1.0, 1.0);
-                }
-            } );
-            this.character = model.name = model.name != "Scene"? model.name : "Character";
-            this.skeletonHelper = new THREE.SkeletonHelper(model);
-            skeleton = createSkeleton(this.landmarksArray);
-            updateThreeJSSkeleton(this.skeletonHelper.bones);
-            this.skeletonHelper.skeleton = skeleton;
-            
-            const boneContainer = new THREE.Group();
-            boneContainer.add(skeleton.bones[0]);
-            
-            this.scene.add(this.skeletonHelper);
-            this.scene.add(boneContainer);          
-            this.scene.add( model );
+            //         //this.group_bind_skeleton(object, this.skeletonHelper.skeleton)
+            //     }
+            //     if (object.isBone) {
+            //         object.scale.set(1.0, 1.0, 1.0);
+            //     }
+            // } );
 
-            // Update camera
-            const bone0 = this.skeletonHelper.bones[0];
-            if(bone0) {
-                bone0.getWorldPosition(this.controls.target);
-                this.controls.update();
+            this.skeletonHelper = new THREE.SkeletonHelper(model);
+            model.children[0].setRotationFromQuaternion(new THREE.Quaternion());
+            
+            for (var bone_id in this.skeletonHelper.bones) {
+                this.skeletonHelper.bones[bone_id].setRotationFromQuaternion(new THREE.Quaternion());
             }
+            
+            updateThreeJSSkeleton(this.skeletonHelper.bones);
+            let skeleton = createSkeleton(this.landmarksArray);
+            this.skeletonHelper.skeleton = skeleton;
+            const boneContainer = new THREE.Group();
+
+            boneContainer.add(skeleton.bones[0]);
+            this.scene.add(this.skeletonHelper);
+            this.scene.add(boneContainer);
+            
+            this.scene.add( model );
 
             // play animation
             
-            //this.animationClip = createAnimation("Eva",this.landmarksArray);
-            this.animationClip = gltf.animations[0];
+            this.animationClip = createAnimation("Eva", this.landmarksArray);
+        // this.animationClip = gltf.animations[0];
             this.mixer = new THREE.AnimationMixer(model);
             this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
             this.mixer.update(this.clock.getDelta()); //do first iteration to update from T pose
@@ -286,11 +274,11 @@ class Editor {
             
             this.scene.add( points );
             //BVHExporter.export(skeleton, animation_clip, this.landmarksArray.length);
-       
-            project.prepareData(this.mixer, this.animationClip, skeleton);
-            this.gui.loadProject(project);
     
-            this.gizmo.begin(this.skeletonHelper);
+            //project.prepareData(this.mixer, this.animationClip, skeleton);
+            //this.gui.loadProject(project);
+    
+            //this.gizmo.begin(this.skeletonHelper);
             
             this.animate();
         });
@@ -559,29 +547,29 @@ class Editor {
         this.render();
         this.update(this.clock.getDelta());
 
-        // if (this.pointsGeometry == undefined || this.landmarksArray == undefined) {
-        //     var currLM = this.landmarksArray[this.iter];
-        //     var currTime = Date.now();
-        //     var et = (currTime - this.prevTime);
-        //     if (et > currLM.dt) {
+        if (this.pointsGeometry != undefined && this.landmarksArray != undefined) {
+            var currLM = this.landmarksArray[this.iter];
+            var currTime = Date.now();
+            var et = (currTime - this.prevTime);
+            if (et > currLM.dt) {
                 
-        //         const vertices = [];
+                const vertices = [];
                 
-        //         for (let i = 0; i < currLM.PLM.length; i++) {
-        //             const x = currLM.PLM[i].x;
-        //             const y = currLM.PLM[i].y;
-        //             const z = currLM.PLM[i].z;
+                for (let i = 0; i < currLM.PLM.length; i++) {
+                    const x = currLM.PLM[i].x;
+                    const y = currLM.PLM[i].y;
+                    const z = currLM.PLM[i].z;
                     
-        //             vertices.push( x, y, z );
-        //         }
+                    vertices.push( x, y, z );
+                }
                 
-        //         this.pointsGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+                this.pointsGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
                 
-        //         this.prevTime = currTime + currLM.dt;
-        //         this.iter++;
-        //         this.iter = this.iter % this.landmarksArray.length;
-        //     }
-        // }
+                this.prevTime = currTime + currLM.dt;
+                this.iter++;
+                this.iter = this.iter % this.landmarksArray.length;
+            }
+        }
     }
 
     render() {
