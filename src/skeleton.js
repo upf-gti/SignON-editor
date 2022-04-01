@@ -3,7 +3,7 @@ import * as MATH_UTILS from "./math.js";
 
 var base_size = 1;
 
-// Mediapipe landmark information (idx, name, prev landmark idx, x, y, z)
+// Mediapipe landmark information (idx, name, parent landmark idx, x, y, z)
 let LM_INFO = class LandmarksInfo {
 
     // The order is important! It's necessary later to keep track of previous quaternions
@@ -12,12 +12,12 @@ let LM_INFO = class LandmarksInfo {
     static RIGHT_LEG =              new LandmarksInfo(26, "mixamorigRightLeg",         24, ["RIGHT_HEEL"]);
     static RIGHT_HEEL =             new LandmarksInfo(28, "mixamorigRightFoot",        26, ["RIGHT_FOOT_INDEX"]);
     static RIGHT_FOOT_INDEX =       new LandmarksInfo(32, "mixamorigRightToeBase",     28, ["RIGHT_FOOT_INDEX_END"]);
-    static RIGHT_FOOT_INDEX_END =   new LandmarksInfo(76, "mixamorigRightToe_End",      32, []);
+    static RIGHT_FOOT_INDEX_END =   new LandmarksInfo(76, "mixamorigRightToe_End",     32, []);
     static LEFT_UP_LEG =            new LandmarksInfo(23, "mixamorigLeftUpLeg",        33, ["LEFT_LEG"]);
     static LEFT_LEG =               new LandmarksInfo(25, "mixamorigLeftLeg",          23, ["LEFT_HEEL"]);
     static LEFT_HEEL =              new LandmarksInfo(27, "mixamorigLeftFoot",         25, ["LEFT_FOOT_INDEX"]);
     static LEFT_FOOT_INDEX =        new LandmarksInfo(31, "mixamorigLeftToeBase",      27, ["LEFT_FOOT_INDEX_END"]);
-    static LEFT_FOOT_INDEX_END =    new LandmarksInfo(75, "mixamorigLeftToe_End",       31, []);
+    static LEFT_FOOT_INDEX_END =    new LandmarksInfo(75, "mixamorigLeftToe_End",      31, []);
     static SPINE =                  new LandmarksInfo(35, "mixamorigSpine",            33, ["SPINE1"]);
     static SPINE1 =                 new LandmarksInfo(36, "mixamorigSpine1",           35, ["SPINE2"]);
     static SPINE2 =                 new LandmarksInfo(37, "mixamorigSpine2",           36, ["NECK"]);
@@ -36,9 +36,9 @@ let LM_INFO = class LandmarksInfo {
     // static RIGHT_EAR =          new LandmarksInfo(8, "right_ear",           0);
     // static LEFT_MOUTH =         new LandmarksInfo(9, "left_mouth",          34);
     // static RIGHT_MOUTH =        new LandmarksInfo(10, "right_mouth",        34);
-    static RIGHT_SHOULDER =        new LandmarksInfo(73, "mixamorigRightShoulder",     37, []);
-    static RIGHT_ARM =             new LandmarksInfo(12, "mixamorigRightArm",          73, []);
-    static RIGHT_FORE_ARM =        new LandmarksInfo(14, "mixamorigRightForeArm",      12, []);
+    static RIGHT_SHOULDER =        new LandmarksInfo(73, "mixamorigRightShoulder",     37, ["RIGHT_ARM"]);
+    static RIGHT_ARM =             new LandmarksInfo(12, "mixamorigRightArm",          73, ["RIGHT_FORE_ARM"]);
+    static RIGHT_FORE_ARM =        new LandmarksInfo(14, "mixamorigRightForeArm",      12, ["RIGHT_HAND"]);
     static RIGHT_HAND =            new LandmarksInfo(16, "mixamorigRightHand",         14, []);
     static LEFT_SHOULDER =         new LandmarksInfo(74, "mixamorigLeftShoulder",      37, []);
     static LEFT_ARM =              new LandmarksInfo(11, "mixamorigLeftArm",           74, []);
@@ -167,6 +167,14 @@ function createThreeJSSkeleton(skeleton) {
 
     return new THREE.Skeleton( bones );
 }
+
+function getGlobalRotation(bone) {
+
+    if (!bone.parent) return bone.quaternion;
+
+    return getGlobalRotation(bone.parent).multiply(bone.quaternion);
+}
+
 function updateThreeJSSkeleton(skeleton) {
 
 
@@ -181,6 +189,10 @@ function updateThreeJSSkeleton(skeleton) {
             {
                 LM_INFO[lmInfoArray[lm_data]].position = skeleton[i].position.clone();
                 LM_INFO[lmInfoArray[lm_data]].rotation = skeleton[i].quaternion.clone();
+
+                var global_rotation = new THREE.Quaternion();
+                skeleton[i].getWorldQuaternion(global_rotation);
+                LM_INFO[lmInfoArray[lm_data]].global_rotation = skeleton[i].quaternion.clone();
 
                 /*temp_map[lm_info.idx] = bone;
 
@@ -226,22 +238,22 @@ function injectNewLandmarks(landmarks) {
         var mouth_mid = midLandmark(mouth_r, mouth_l, 0.5);
         landmarks[i].PLM.push(mouth_mid);
 
-        // spine2 landmark - 37
+        // neck landmark - 37
         var arm_r = landmarks[i].PLM[11];
         var arm_l = landmarks[i].PLM[12];
-        var spine2 =  midLandmark(arm_r, arm_l, 0.5);
+        var neck =  midLandmark(arm_r, arm_l, 0.5);
         //spine2.y +=0.18;
 
         // shoulders landmark - 73 74
-        var shoulder_r =  midLandmark(arm_r, spine2, 0.5);
+        var shoulder_r =  midLandmark(arm_r, neck, 0.5);
         shoulder_r.z = arm_r.z;
-        var shoulder_l =  midLandmark(arm_l, spine2, 0.5);
+        var shoulder_l =  midLandmark(arm_l, neck, 0.5);
         shoulder_l.z = arm_l.z;
 
         // Hips and neck landmarks
         var hips = landmarks[i].PLM[33];
 
-        var spine1 = midLandmark(hips, spine2, 2.0 / 3.0);
+        var spine1 = midLandmark(hips, neck, 0.5);
 
         // Insert spine - 35
         landmarks[i].PLM.push(midLandmark(hips, spine1, 0.5));
@@ -250,10 +262,10 @@ function injectNewLandmarks(landmarks) {
         landmarks[i].PLM.push(spine1);
 
         // Insert spine2 - 37
-        landmarks[i].PLM.push(spine2);
+        landmarks[i].PLM.push(midLandmark(spine1, neck, 3.0 / 4.0));
 
         // Insert neck - 38
-        landmarks[i].PLM.push(midLandmark(mouth_mid, spine2, 0.5));
+        landmarks[i].PLM.push(neck);
 
         //Right hand
         if(landmarks[i].RLM){
@@ -512,10 +524,9 @@ function createAnimation(name, landmarks) {
                 pos_values.push(landmarks[i].PLM[lm_info.idx].z);
 
                 var quat = new THREE.Quaternion();
-                //quat.setFromAxisAngle(new THREE.Vector3(-1, 0, 0), Math.PI / 2.0)
+                quat.setFromAxisAngle(new THREE.Vector3(-1, 0, 0), Math.PI / 2.0)
 
                 previous_quats[lm_info.idx].push(quat);
-
 
                 quat_values.push(quat.x);
                 quat_values.push(quat.y);
@@ -542,29 +553,29 @@ function createAnimation(name, landmarks) {
                 // pos_values.push(lm_info.y);
                 // pos_values.push(lm_info.z);
 
-                //if (lm_info.name == "mixamorigSpine" /*|| lm_info.name == "mixamorigRightUpLeg" || lm_info.name == "mixamorigRightLeg"*/) {
+                if (lm_info.name == "mixamorigNeck" /*|| lm_info.name == "mixamorigRightUpLeg" || lm_info.name == "mixamorigRightLeg"*/) {
 
                     var child_lm_info = LM_INFO[lm_info.children_names[0]];
 
                     var original_joint_dir = new THREE.Vector3().subVectors(child_lm_info.position, lm_info.position);
 
-                    var quat_inv = lm_info.rotation.clone();
+                    var quat_inv = lm_info.global_rotation.clone();
                     //quat_inv.invert();
 
                     original_joint_dir.applyQuaternion(quat_inv);
 
                     var landmarks_dir = new THREE.Vector3().subVectors(landmarks[i].PLM[child_lm_info.idx], landmarks[i].PLM[lm_info.idx]);
 
-                    var quat_info = MATH_UTILS.calc_rotation_v1( landmarks[i].PLM[lm_info.idx], landmarks[i].PLM[child_lm_info.idx], previous_quats[lm_info.parent_idx][i])
-                    //var quat_info = MATH_UTILS.calc_rotation( original_joint_dir, landmarks_dir, previous_quats[lm_info.parent_idx][i])
+                    //var quat_info = MATH_UTILS.calc_rotation_v1( landmarks[i].PLM[lm_info.idx], landmarks[i].PLM[child_lm_info.idx], previous_quats[lm_info.parent_idx][i])
+                    var quat_info = MATH_UTILS.calc_rotation(original_joint_dir, landmarks_dir)
 
                     previous_quats[lm_info.idx].push(quat_info.rotation);
 
-                    quat_values.push(quat_info.rotation_diff.x);
-                    quat_values.push(quat_info.rotation_diff.y);
-                    quat_values.push(quat_info.rotation_diff.z);
-                    quat_values.push(quat_info.rotation_diff.w);
-                //}
+                    quat_values.push(quat_info.rotation.x);
+                    quat_values.push(quat_info.rotation.y);
+                    quat_values.push(quat_info.rotation.z);
+                    quat_values.push(quat_info.rotation.w);
+                }
             }
 
             time_accum += 0.016;//landmarks[i].dt / 1000.0;

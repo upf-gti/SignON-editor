@@ -204,12 +204,22 @@ class Editor {
         $.getJSON( "data/landmarks.json", function( data ) {
 
 
+            var point = new THREE.Vector3();
+            var up = new THREE.Vector3(0, 1, 0);
+
             for (let i = 0; i < data.length; ++i) {
 
                 for (let j = 0; j < data[i].PLM.length; ++j) {
-                    data[i].PLM[j].x = (data[i].PLM[j].x - 0.5);
-                    data[i].PLM[j].y = (1.0 - data[i].PLM[j].y) + 2;
-                    data[i].PLM[j].z = data[i].PLM[j].z * 0.5;
+
+                    point.x = data[i].PLM[j].x - 0.5;
+                    point.y = (1.0 - data[i].PLM[j].y) + 2;
+                    point.z = data[i].PLM[j].z * 0.5;
+
+                    point.applyAxisAngle(up, Math.PI);
+
+                    data[i].PLM[j].x = point.x;
+                    data[i].PLM[j].y = point.y;
+                    data[i].PLM[j].z = point.z;
                 }
 
             }
@@ -526,29 +536,29 @@ class Editor {
         this.render();
         this.update(this.clock.getDelta());
 
-        // if (this.pointsGeometry == undefined || this.landmarksArray == undefined) {
-        //     var currLM = this.landmarksArray[this.iter];
-        //     var currTime = Date.now();
-        //     var et = (currTime - this.prevTime);
-        //     if (et > currLM.dt) {
+        if (this.pointsGeometry != undefined && this.landmarksArray != undefined) {
+            var currLM = this.landmarksArray[this.iter];
+            var currTime = Date.now();
+            var et = (currTime - this.prevTime);
+            if (et > currLM.dt) {
                 
-        //         const vertices = [];
+                const vertices = [];
                 
-        //         for (let i = 0; i < currLM.PLM.length; i++) {
-        //             const x = currLM.PLM[i].x;
-        //             const y = currLM.PLM[i].y;
-        //             const z = currLM.PLM[i].z;
+                for (let i = 0; i < currLM.PLM.length; i++) {
+                    const x = currLM.PLM[i].x;
+                    const y = currLM.PLM[i].y;
+                    const z = currLM.PLM[i].z;
                     
-        //             vertices.push( x, y, z );
-        //         }
+                    vertices.push( x, y, z );
+                }
                 
-        //         this.pointsGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+                this.pointsGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
                 
-        //         this.prevTime = currTime + currLM.dt;
-        //         this.iter++;
-        //         this.iter = this.iter % this.landmarksArray.length;
-        //     }
-        // }
+                this.prevTime = currTime + currLM.dt;
+                this.iter++;
+                this.iter = this.iter % this.landmarksArray.length;
+            }
+        }
     }
 
     render() {

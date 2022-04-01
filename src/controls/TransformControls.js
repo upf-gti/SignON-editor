@@ -18,7 +18,7 @@ import {
 	SphereGeometry,
 	TorusGeometry,
 	Vector3
-} from 'three';
+} from '../libs/three.module.js';
 
 const _raycaster = new Raycaster();
 
