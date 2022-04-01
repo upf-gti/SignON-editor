@@ -149,12 +149,12 @@ function rotation_difference_vec(v1, v2) {
         var angle = angle_normalized_v3v3(v1, v2);
         //var angle = v1.angleTo(v2);
 
-        console.log("---------------------------------------------")
-        console.log("v1: " + v1.x + ", " + v1.y + ", " + v1.z);
-        console.log("v2: " + v2.x + ", " + v2.y + ", " + v2.z);
-        console.log("Axis: " + axis.x + ", " + axis.y + ", " + axis.z);
-        console.log("Angle: " + angle)
-        console.log("---------------------------------------------")
+        // console.log("---------------------------------------------")
+        // console.log("v1: " + v1.x + ", " + v1.y + ", " + v1.z);
+        // console.log("v2: " + v2.x + ", " + v2.y + ", " + v2.z);
+        // console.log("Axis: " + axis.x + ", " + axis.y + ", " + axis.z);
+        // console.log("Angle: " + angle)
+        // console.log("---------------------------------------------")
 
         return axis_angle_normalized_to_quat(axis, angle);
     }
@@ -173,7 +173,7 @@ function rotation_difference_vec(v1, v2) {
       }
 }
 
-function calc_rotation(original_joint_dir, landmarks_dir) {
+function calc_rotation(original_joint_dir, landmarks_dir, prev_rot) {
 
     // var lm1 = new THREE.Vector3(current_landmark.x, current_landmark.y, current_landmark.z)
     // var lm2 = new THREE.Vector3(child_landmark.x, child_landmark.y, child_landmark.z)
@@ -202,12 +202,12 @@ function calc_rotation(original_joint_dir, landmarks_dir) {
     //     rot_quat = rotation_difference_vec(y_down, direction);
     // }
 
-    var rot_quat = rotation_difference_vec(landmarks_dir, original_joint_dir);
+    var rot_quat = rotation_difference_vec(original_joint_dir, landmarks_dir);
 
     // 
-    //var rot_quat_ajust = rotation_difference_quat(prev_rot, rot_quat)
+    var rot_quat_ajust = rotation_difference_quat(prev_rot, rot_quat)
 
-    return { "rotation" : rot_quat };
+    return { "rotation" : rot_quat, "rotation_diff" : rot_quat_ajust };
 }
 
 function calc_rotation_v1(current_landmark, child_landmark, prev_rot) {

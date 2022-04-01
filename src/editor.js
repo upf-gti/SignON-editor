@@ -140,42 +140,9 @@ class Editor {
         const orientationHelper = new OrientationHelper( this.camera, this.controls, ohOptions, ohLabels );
         document.getElementById("canvasarea").prepend(orientationHelper.domElement);
 
-        // let skeleton = createSkeleton(this.landmarksArray);
-        // this.skeleton = skeleton;
-
-        // this.skeletonHelper = new THREE.SkeletonHelper(skeleton.bones[0]);
-        // this.skeletonHelper.skeleton = skeleton; // allow animation mixer to bind to THREE.SkeletonHelper directly
-
-        // const boneContainer = new THREE.Group();
-        // boneContainer.add(skeleton.bones[0]);
-        
-        // this.scene.add(this.skeletonHelper);
-        // this.scene.add(boneContainer);
-        
-        // this.animationClip = createAnimation(project.clipName, this.landmarksArray);
-        
-        // // play animation
-        // this.mixer = new THREE.AnimationMixer(this.skeletonHelper);
-        // this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
-        // this.mixer.update(this.clock.getDelta()); //do first iteration to update from T pose
-        
-        // this.pointsGeometry = new THREE.BufferGeometry();
-        
-        // const material = new THREE.PointsMaterial( { color: 0x880000 } );
-        // material.size = 0.025;
-        
-        // const points = new THREE.Points( this.pointsGeometry, material );
-        
-        // this.scene.add( points );
-        
-        // project.prepareData(this.mixer, this.animationClip, skeleton);
-        // this.gui.loadProject(project);
-
-        // this.gizmo.begin(this.skeletonHelper);
-
         // set onclick function to play button
         let stateBtn = document.getElementById("state_btn");
-        //let video = document.getElementById("recording");
+
         stateBtn.onclick = (e) => {
             this.state = !this.state;
             stateBtn.innerHTML = "<i class='bi bi-" + (this.state ? "pause" : "play") + "-fill'></i>";
@@ -203,7 +170,6 @@ class Editor {
 
         $.getJSON( "data/landmarks.json", function( data ) {
 
-
             var point = new THREE.Vector3();
             var up = new THREE.Vector3(0, 1, 0);
 
@@ -211,7 +177,7 @@ class Editor {
 
                 for (let j = 0; j < data[i].PLM.length; ++j) {
 
-                    point.x = data[i].PLM[j].x - 0.5;
+                    point.x = (1.0 - data[i].PLM[j].x);
                     point.y = (1.0 - data[i].PLM[j].y) + 2;
                     point.z = data[i].PLM[j].z * 0.5;
 
@@ -233,37 +199,35 @@ class Editor {
                 let model = gltf.scene;
                 model.castShadow = true;
                 
-                model.traverse(  ( object ) => {
-                    if ( object.isMesh ||object.isSkinnedMesh ) {
-                        object.castShadow = true;
-                        object.receiveShadow = true;
+                // model.traverse(  ( object ) => {
+                //     if ( object.isMesh ||object.isSkinnedMesh ) {
+                //         object.castShadow = true;
+                //         object.receiveShadow = true;
                         
-                        //this.group_bind_skeleton(object, this.skeletonHelper.skeleton)
-                    }
-                    if (object.isBone) {
-                        object.scale.set(1.0, 1.0, 1.0);
-                    }
-                } );
+                //         //this.group_bind_skeleton(object, this.skeletonHelper.skeleton)
+                //     }
+                //     if (object.isBone) {
+                //         object.scale.set(1.0, 1.0, 1.0);
+                //     }
+                // } );
 
                 that.skeletonHelper = new THREE.SkeletonHelper(model);
+                model.children[0].setRotationFromQuaternion(new THREE.Quaternion());
+                
+                for (var bone_id in that.skeletonHelper.bones) {
+                    that.skeletonHelper.bones[bone_id].setRotationFromQuaternion(new THREE.Quaternion());
+                }
+                
                 updateThreeJSSkeleton(that.skeletonHelper.bones);
                 let skeleton = createSkeleton(that.landmarksArray);
                 that.skeletonHelper.skeleton = skeleton;
                 const boneContainer = new THREE.Group();
+
                 boneContainer.add(skeleton.bones[0]);
                 that.scene.add(that.skeletonHelper);
                 that.scene.add(boneContainer);
                 
-            // that.group_bind_skeleton(gltf.scene, that.skeletonHelper.skeleton)
                 that.scene.add( model );
-                /*var animationGroup = new THREE.AnimationObjectGroup();
-                for(var i=0; i< arm.children.length; i++){
-                    if(!arm.children[i].isSkinnedMesh)
-                        continue;
-                    animationGroup.add(arm.children[i]);
-                }
-                that.mixer = new THREE.AnimationMixer( animationGroup );*/
-                //const action = that.mixer.clipAction( gltf.animations[0] ).play();
 
                 // play animation
                 
@@ -282,10 +246,10 @@ class Editor {
                 that.scene.add( points );
                 //BVHExporter.export(skeleton, animation_clip, that.landmarksArray.length);
         
-                project.prepareData(that.mixer, that.animationClip, skeleton);
-                that.gui.loadProject(project);
+                //project.prepareData(that.mixer, that.animationClip, skeleton);
+                //that.gui.loadProject(project);
         
-                that.gizmo.begin(that.skeletonHelper);
+                //that.gizmo.begin(that.skeletonHelper);
                 
                 that.animate();
             });
