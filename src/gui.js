@@ -111,7 +111,11 @@ class Gui {
         menubar.root.prepend(logo);
 
         menubar.add("Project/Upload animation", {icon: "<i class='bi bi-upload float-right'></i>", callback: () => this.editor.getApp().storeAnimation() });
-        menubar.add("Project/Export BVH", {icon: "<i class='bi bi-file-text float-right'></i>",  callback: () => this.editor.export() });
+        menubar.add("Project/");
+        menubar.add("Project/BVH", {subtitle: true});
+        menubar.add("Project/Export", {icon: "<i class='bi bi-file-text float-right'></i>",  callback: () => this.editor.export() });
+        menubar.add("Project/Open preview", {icon: "<i class='bi bi-file-earmark-play float-right'></i>",  callback: () => this.editor.showPreview() });
+
         menubar.add("View/Video", { type: "checkbox", instance: this, property: "showVideo", callback: () => {
             const tl = document.getElementById("capture");
             tl.style.display = that.showVideo ? "flex": "none";
@@ -348,6 +352,11 @@ class Gui {
             {
                 id: "capture_btn",
                 text: "Capture" + " <i class='bi bi-record2'></i>"
+            },
+            {
+                id: "trim_btn",
+                text: "Trim",
+                display: "none"
             }
         ];
 

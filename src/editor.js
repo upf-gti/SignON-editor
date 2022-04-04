@@ -366,23 +366,10 @@ class Editor {
         
         BVHExporter.export(this.skeleton, this.animationClip, this.landmarksArray.length);
     }
+
+    showPreview() {
+        console.log( "TODO: Open URL preview with data to show BVH" );
+    }
 };
-
-// THREE.AnimationAction.prototype.updateInterpolants = function() {
-    
-//     const tracks = this._clip.tracks,
-//         nTracks = tracks.length,
-//         interpolants = new Array( nTracks );
-
-//     for ( let i = 0; i !== nTracks; ++ i ) {
-
-//         const interpolant = tracks[ i ].createInterpolant();
-//         interpolants[ i ] = interpolant;
-//         interpolant.settings = this._interpolantSettings;
-
-//     }
-
-//     this._interpolants = interpolants; // bound by the mixer
-// }
 
 export { Editor };

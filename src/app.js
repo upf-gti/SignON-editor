@@ -1,6 +1,7 @@
 import { MediaPipe } from "./mediapipe.js";
 import { Project } from "./project.js";
 import { Editor } from "./editor.js";
+import { VideoUtils } from "./video.js";
 import { FileSystem } from "./libs/filesystem.js";
 
 class App {
@@ -28,6 +29,14 @@ class App {
 
         MediaPipe.start();
 
+        let video = document.getElementById("recording");
+        video.addEventListener('loadedmetadata', function () {
+            if (video.duration == Infinity) {
+                video.currentTime = Number.MAX_SAFE_INTEGER;
+                video.currentTime = 0;
+            }
+        });
+
         // prepare the device to capture the video
         if (navigator.mediaDevices) {
             console.log("getUserMedia supported.");
@@ -42,7 +51,6 @@ class App {
 
                     that.mediaRecorder.onstop = function (e) {
 
-                        let video = document.getElementById("recording");
                         video.addEventListener("play", function() {
                            
                         });
@@ -87,8 +95,6 @@ class App {
 
     setEvents() {
 
-        let that = this;
-        
         // adjust video canvas
         let captureDiv = document.getElementById("capture");
         let videoCanvas = document.getElementById("outputVideo");
@@ -101,9 +107,9 @@ class App {
         let elem = document.getElementById("endOfCapture");
     
         let capture = document.getElementById("capture_btn");
-        capture.onclick = function () {
+        capture.onclick = () => {
             
-            if (!that.recording) {
+            if (!this.recording) {
                 
                 capture.innerHTML = "Stop" + " <i class='bi bi-stop-fill'></i>"
                 capture.style.backgroundColor = "lightcoral";
@@ -112,11 +118,11 @@ class App {
                 videoCanvas.style.border = "solid #924242";
                 
                 // Start the capture
-                that.project.landmarks = []; //reset array
-                that.recording = true;
-                that.mediaRecorder.start();
-                that.startTime = Date.now();
-                console.log(that.mediaRecorder.state);
+                this.project.landmarks = []; //reset array
+                this.recording = true;
+                this.mediaRecorder.start();
+                this.startTime = Date.now();
+                console.log(this.mediaRecorder.state);
                 console.log("Start recording");
             }
             else {
@@ -124,16 +130,16 @@ class App {
                 elem.style.display = "flex";
                 
                 // Stop the video recording
-                that.recording = false;
+                this.recording = false;
                 
-                that.mediaRecorder.stop();
+                this.mediaRecorder.stop();
                 let endTime = Date.now();
-                that.duration = endTime - that.startTime;
-                console.log(that.mediaRecorder.state);
+                this.duration = endTime - this.startTime;
+                console.log(this.mediaRecorder.state);
                 console.log("Stop recording");
     
                 // Correct first dt of landmarks
-                that.project.landmarks[0].dt = 0;
+                this.project.landmarks[0].dt = 0;
 
                 // Back to initial values
                 capture.innerHTML = "Capture" + " <i class='bi bi-record2'></i>"
@@ -144,13 +150,10 @@ class App {
         };
     
         let redo = document.getElementById("redo_btn");
-        redo.onclick = function () {
-            
-            elem.style.display = "none";
-        };
+        redo.onclick = () => elem.style.display = "none";
     
         let loadData = document.getElementById("loadData_btn");
-        loadData.onclick = function () {
+        loadData.onclick = () => {
             
             elem.style.display = "none";
     
@@ -159,30 +162,55 @@ class App {
             // Store the data in project, and store a bvh of it
             // TODO
     
-            that.loadAnimation();
+            this.processVideo();
         };
+
+        let continueBtn = document.getElementById("trim_btn");
+        continueBtn.onclick = () => this.loadAnimation();
+    }
+    
+    processVideo() {
+        
+        // const onComplete = () => this.loadAnimation();
+        
+        // Update header
+        let capture = document.getElementById("capture_btn");
+        capture.disabled = true;
+        capture.style.display = "none";
+
+        let continueBtn = document.getElementById("trim_btn");
+        continueBtn.style.display = "block";
+
+        // TRIM VIDEO - be sure that only the sign is recorded
+        let canvas = document.getElementById("outputVideo");
+        let video = document.getElementById("recording");
+        video.classList.remove("hidden");
+        video.style.width = canvas.width + "px";
+        video.style.height = canvas.height + "px";
+
+        VideoUtils.bind(video, canvas);
     }
 
-    fillLandmarks(data, _dt) 
-    {
+    fillLandmarks(data, dt) {
+
         for (let j = 0; j < data.poseLandmarks.length; ++j) {
             data.poseLandmarks[j].x = (data.poseLandmarks[j].x - 0.5);
             data.poseLandmarks[j].y = (1.0 - data.poseLandmarks[j].y) + 2;
             data.poseLandmarks[j].z = data.poseLandmarks[j].z * 0.5;
         }
 
-        this.project.landmarks.push({RLM: data.rightHandLandmarks, LLM: data.leftHandLandmarks, FLM: data.faceLandmarks, PLM: data.poseLandmarks, dt: _dt});
+        this.project.landmarks.push({"RLM": data.rightHandLandmarks, "LLM": data.leftHandLandmarks, "FLM": data.faceLandmarks, "PLM": data.poseLandmarks, "dt": dt});
     }
 
     loadAnimation() {
     
         let that = this;
-
-        // Update header
-        let capture = document.getElementById("capture_btn");
-        capture.disabled = true;
-        capture.style.display = "none";
         
+        // Update header
+        let continueBtn = document.getElementById("trim_btn");
+        continueBtn.disabled = true;
+        continueBtn.style.display = "none";
+
         let stateBtn = document.getElementById("state_btn");
         stateBtn.style.display = "block";
         let stopBtn = document.getElementById("stop_btn");
@@ -193,6 +221,8 @@ class App {
         videoDiv.classList.remove("expanded");
         let videoRec = document.getElementById("recording");
         videoRec.classList.remove("hidden");
+        videoRec.style.width = "100%";
+        videoRec.style.height = "100%";
 
         let timelineDiv = document.getElementById("timeline");
         timelineDiv.classList.remove("hidden");
