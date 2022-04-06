@@ -128,6 +128,7 @@ class Editor {
             this.controls.update();
         });
 
+        this.processLandmarks(project);
         let skeleton = createSkeleton(this.landmarksArray);
         this.skeleton = skeleton;
 
@@ -190,6 +191,31 @@ class Editor {
         }
         
         this.animate();
+    }
+
+    processLandmarks(project) {
+        
+        const [startTime, endTime] = project.trimTimes;
+
+        let totalDt = 0;
+        let i = 1;
+
+        // remove starting frames
+        while( totalDt < startTime ) {
+            const lm = this.landmarksArray[i];
+            totalDt += lm.dt * 0.001;
+            i++;
+        }
+
+        if(totalDt > 0)
+            i--;
+
+        this.landmarksArray.slice(i);
+
+        // remove ending frames
+        // while( totalDt < startTime ) {
+
+        // }
     }
 
     getSelectedBone() {

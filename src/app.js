@@ -13,7 +13,9 @@ class App {
         this.startTime = 0;
         this.duration = 0;
 
+        this.mediaSource = new MediaSource();
         this.mediaRecorder = null
+        this.chunks = [];
         this.project = new Project();
         this.editor = new Editor(this);
 
@@ -30,19 +32,30 @@ class App {
         MediaPipe.start();
 
         let video = document.getElementById("recording");
+
+        const resetDuration = () => {
+            video.currentTime = 0;
+            video.removeEventListener('timeupdate', resetDuration);
+            video.pause();
+        }
+
         video.addEventListener('loadedmetadata', function () {
             if (video.duration == Infinity) {
                 video.currentTime = Number.MAX_SAFE_INTEGER;
-                video.currentTime = 0;
+                video.addEventListener('timeupdate', resetDuration);
+                video.play();
             }
         });
+
+        this.mediaSource.addEventListener('sourceopen', (event) => {
+            console.log(event);
+        }, false);
 
         // prepare the device to capture the video
         if (navigator.mediaDevices) {
             console.log("getUserMedia supported.");
 
             let constraints = { video: true, audio: false };
-            let chunks = [];
 
             navigator.mediaDevices.getUserMedia(constraints)
                 .then(function (stream) {
@@ -61,15 +74,15 @@ class App {
                         video.controls = false;
                         video.loop = true;
                         
-                        let blob = new Blob(chunks, { "type": "video/mp4; codecs=avc1" });
-                        chunks = [];
+                        let blob = new Blob(that.chunks, { "type": "video/mp4; codecs=avc1" });
                         let videoURL = URL.createObjectURL(blob);
                         video.src = videoURL;
                         console.log("Recording correctly saved");
                     }
 
                     that.mediaRecorder.ondataavailable = function (e) {
-                        chunks.push(e.data);
+                        console.log(e.data);
+                        that.chunks.push(e.data);
                     }
                 })
                 .catch(function (err) {
@@ -165,8 +178,10 @@ class App {
             this.processVideo();
         };
 
-        let continueBtn = document.getElementById("trim_btn");
-        continueBtn.onclick = () => this.loadAnimation();
+        let trimBtn = document.getElementById("trim_btn");
+        trimBtn.onclick = () => {
+            VideoUtils.trim( (start, end) => this.loadAnimation(start, end) );
+        };
     }
     
     processVideo() {
@@ -178,8 +193,8 @@ class App {
         capture.disabled = true;
         capture.style.display = "none";
 
-        let continueBtn = document.getElementById("trim_btn");
-        continueBtn.style.display = "block";
+        let trimBtn = document.getElementById("trim_btn");
+        trimBtn.style.display = "block";
 
         // TRIM VIDEO - be sure that only the sign is recorded
         let canvas = document.getElementById("outputVideo");
@@ -202,14 +217,14 @@ class App {
         this.project.landmarks.push({"RLM": data.rightHandLandmarks, "LLM": data.leftHandLandmarks, "FLM": data.faceLandmarks, "PLM": data.poseLandmarks, "dt": dt});
     }
 
-    loadAnimation() {
+    loadAnimation(startTime, endTime) {
     
         let that = this;
         
         // Update header
-        let continueBtn = document.getElementById("trim_btn");
-        continueBtn.disabled = true;
-        continueBtn.style.display = "none";
+        let trimBtn = document.getElementById("trim_btn");
+        trimBtn.disabled = true;
+        trimBtn.style.display = "none";
 
         let stateBtn = document.getElementById("state_btn");
         stateBtn.style.display = "block";
@@ -278,6 +293,7 @@ class App {
             if(name !== null) {
                 videoRec.name = name;
                 this.project.clipName = name;
+                this.project.trimTimes = [startTime, endTime];
     
                 // Creates the scene and loads the animation
                 this.editor.loadInScene(this.project);

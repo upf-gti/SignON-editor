@@ -355,7 +355,7 @@ class Gui {
             },
             {
                 id: "trim_btn",
-                text: "Trim",
+                text: "Trim and convert data to 3D animation",
                 display: "none"
             }
         ];

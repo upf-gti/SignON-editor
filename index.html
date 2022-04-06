@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta charset="utf-8">
-		<meta name="author" content="Víctor Ubieto">
+		<meta name="author" content="UPF-GTI">
 		<title>Animations Editor (Dev)</title>
 
 		<link rel="stylesheet" href="css/w2ui.css">
@@ -37,13 +37,13 @@
 
 		<div id="endOfCapture" class="modal" style="display: none">
 			<button id="redo_btn" class="btn" style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Redo the video</span></button>
-			<button id="loadData_btn" class="btn" style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Convert captured data into a 3D Animation</span></button>
+			<button id="loadData_btn" class="btn" style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Process video</span></button>
 		</div>
 
 		<!---->
 		<div id="capture" class="expanded" draggable="false">
 			<video id="inputVideo" class="hidden"></video>
-			<canvas id="outputVideo" width="1280px" height="720px" style="z-index: 1"></canvas>
+			<canvas id="outputVideo" width="1280px" height="720px" style="z-index: 1; margin-top: 1px;" tabindex="1"></canvas>
 			<video id="recording" class="hidden"></video>
 		</div>
 
