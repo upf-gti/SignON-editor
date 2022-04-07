@@ -383,8 +383,18 @@ class Gui {
         return;
 
         const canvas = this.timelineCTX.canvas;
-        this.current_time = this.timeline.current_time = this.project.mixer.time % this.duration;
+        this.current_time = this.project.mixer.time;
+
+        if(this.current_time > this.duration) {
+            this.onAnimationEnded();
+        }
+
         this.timeline.draw(this.timelineCTX, this.project, this.current_time, [0, 0, canvas.width, canvas.height]);
+    }
+
+    onAnimationEnded() {
+        this.current_time = 0.0;
+        this.editor.setTime(0.0, true);
     }
 
     showKeyFrameOptions(e, info, index) {

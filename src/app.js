@@ -13,7 +13,6 @@ class App {
         this.startTime = 0;
         this.duration = 0;
 
-        this.mediaSource = new MediaSource();
         this.mediaRecorder = null
         this.chunks = [];
         this.project = new Project();
@@ -33,23 +32,13 @@ class App {
 
         let video = document.getElementById("recording");
 
-        const resetDuration = () => {
-            video.currentTime = 0;
-            video.removeEventListener('timeupdate', resetDuration);
-            video.pause();
-        }
-
-        video.addEventListener('loadedmetadata', function () {
-            if (video.duration == Infinity) {
-                video.currentTime = Number.MAX_SAFE_INTEGER;
-                video.addEventListener('timeupdate', resetDuration);
-                video.play();
+        video.addEventListener('loadedmetadata', async function () {
+            while(video.duration === Infinity) {
+                await new Promise(r => setTimeout(r, 1000));
+                video.currentTime = 10000000*Math.random();
             }
+            video.currentTime = 0;
         });
-
-        this.mediaSource.addEventListener('sourceopen', (event) => {
-            console.log(event);
-        }, false);
 
         // prepare the device to capture the video
         if (navigator.mediaDevices) {
@@ -180,11 +169,11 @@ class App {
 
         let trimBtn = document.getElementById("trim_btn");
         trimBtn.onclick = () => {
-            VideoUtils.trim( (start, end) => this.loadAnimation(start, end) );
+            VideoUtils.unbind( (start, end) => this.loadAnimation(start, end) );
         };
     }
     
-    processVideo() {
+    async processVideo() {
         
         // const onComplete = () => this.loadAnimation();
         
@@ -203,10 +192,15 @@ class App {
         video.style.width = canvas.width + "px";
         video.style.height = canvas.height + "px";
 
-        VideoUtils.bind(video, canvas);
+        await VideoUtils.bind(video, canvas);
     }
 
     fillLandmarks(data, dt) {
+
+        if(!data || data.poseLandmarks == undefined) {
+            console.warn( "no landmark data at time " + dt/1000.0 );
+            return;
+        }
 
         for (let j = 0; j < data.poseLandmarks.length; ++j) {
             data.poseLandmarks[j].x = (data.poseLandmarks[j].x - 0.5);

@@ -2,18 +2,18 @@ const VideoUtils = {
 
     startTime: 0,
     endTime: null,
-    markerHeight: 40,
+    markerHeight: 30,
 
-    bind: function(video, canvas) {
+    bind: async function(video, canvas) {
 
         canvas.addEventListener("mouseup", this.onMouse.bind(this));
         canvas.addEventListener("mousedown", this.onMouse.bind(this));
         canvas.addEventListener("mousemove", this.onMouse.bind(this));
         canvas.addEventListener("mouseleave", this.onMouse.bind(this));
         
-        document.body.addEventListener('keydown', this.onKey.bind(this));
+        document.body.onkeydown = this.onKey.bind(this);
 
-        video.addEventListener('ended', this.onVideoEnded.bind(this), false);
+        video.onended = this.onVideoEnded.bind(this);
         video.loop = false; // Control loops manually
 
         this.video = video;
@@ -22,14 +22,14 @@ const VideoUtils = {
         this.ctx = canvas.getContext('2d');
 
         // Hacky fix: Duration is infinity if not setting a time..
-        if(video.duration == Infinity) {
-            video.currentTime = Number.MAX_SAFE_INTEGER;
-            // video.play();
-            // video.currentTime = 0;
-            // video.pause();
+        // MediaElement bug
+        while(video.duration === Infinity) {
+            await new Promise(r => setTimeout(r, 1000));
+            video.currentTime = 10000000 * Math.random();
         }
 
         this.ratio = (video.duration/this.width) * 15;
+        this.startTime = video.currentTime = 0;
         this.endTime = video.duration;    
         this.render();
         
@@ -40,12 +40,8 @@ const VideoUtils = {
 
     onVideoEnded: function() {
 
-        if(this.trimming){
-            this.onTrimRecordEnds();
-        }else{
-            this.video.currentTime = this.startTime;
-            this.video.play();
-        }
+        this.video.currentTime = this.startTime;
+        this.video.play();
     },
 
     animate: function() {
@@ -60,22 +56,11 @@ const VideoUtils = {
 
     update: function() {
 
-        // MediaElement bug
-        if(this.video.duration == Infinity){
-            this.video.currentTime = Number.MAX_SAFE_INTEGER;
-            this.endTime = this.video.duration;
-        }
-
         if(this.video.paused)
         return;
 
-        if(this.video.currentTime >= this.endTime) {
-            if(this.trimming){
-                this.onTrimRecordEnds();
-            }
-
+        if(this.video.currentTime >= this.endTime)
             this.video.currentTime = this.startTime;
-        }
     },
 
     render: function() {
@@ -88,31 +73,32 @@ const VideoUtils = {
         ctx.save();
         ctx.clearRect(0, 0, this.width, this.height);
 
-        ctx.globalAlpha = 0.3;
+        ctx.globalAlpha = 0.25;
         ctx.fillStyle = "#444";
         ctx.fillRect(0, this.height - this.markerHeight, this.width, this.height+2);
 
-        ctx.globalAlpha = 0.5;
+        ctx.globalAlpha = 0.85;
         ctx.fillStyle = "#222";
         ctx.fillRect(this.timeToX(this.startTime), this.height - this.markerHeight, this.timeToX(this.endTime - this.startTime), this.height+2);
 
         // Min-Max time markers
-        this.renderTimeMarker('start', this.startTime);
-        this.renderTimeMarker('end', this.endTime);
-        this.renderTimeMarker('current', this.video.currentTime);
+        this.renderTimeMarker('start', this.startTime, { color: '#1E1', fillColor: null });
+        this.renderTimeMarker('end', this.endTime, { color: '#E11', fillColor: null });
+        this.renderTimeMarker('current', this.video.currentTime, { color: '#111', fillColor: '#AFD' });
 
         ctx.restore();
     },
 
-    renderTimeMarker: function(name, time) {
+    renderTimeMarker: function(name, time, options) {
 
+        options = options || {};
         const ctx = this.ctx;
         const x = this.timeToX(time);
         const h0 = this.height - this.markerHeight - 5;
         const h = this.markerHeight;
 
         let mWidth = this.dragging == name ? 6 : 4;
-        let markerColor = name == 'current' ? "#AFD" : "#333";
+        let markerColor = options.fillColor || '#333';
 
         ctx.strokeStyle = markerColor;
         ctx.globalAlpha = 0.5;
@@ -129,7 +115,7 @@ const VideoUtils = {
         ctx.lineTo(x, h0 + h);
         ctx.stroke();
 
-        ctx.fillStyle = "#111";
+        ctx.fillStyle = options.color || '#111';
         ctx.beginPath();
         ctx.moveTo(x - 8, h0 - 1);
         ctx.lineTo(x + 8, h0 - 1);
@@ -236,46 +222,93 @@ const VideoUtils = {
         return (time / this.video.duration) *  this.width;
     },
 
-    onTrimRecordEnds: function() {
-        this.recorder.stop();
-        this.trimming = false;
-    },
-
-    trim: function(callback) {
+    unbind: function(callback) {
 
         // Reset some stuff
-        document.body.removeEventListener('keydown', this.onKey.bind(this));
-        this.video.removeEventListener('ended', this.onVideoEnded.bind(this));
+        document.body.onkeydown = null;
+        
+        this.video.startTime = this.startTime;
+        this.video.onended = function() {
+            this.currentTime = this.startTime;
+            this.play();
+        };
+            
+        // this.video.onended = null;
+        // this.video.loop = true;
+        this.video.pause();    
+        this.video.currentTime = this.startTime;
 
-        // Use start and end time to trim the video and return a new blob/video
+        if(callback)
+            callback( this.startTime, this.endTime );
+
+        this.video = null;
+        this.width = null;
+        this.height = null;
+        this.ctx = null;
+
+        this.ratio = null;
+        this.startTime = null;
+        this.endTime = null;   
+    },
+
+    // This is a version for trimming the video using
+    // MediaRecorder: the video is not synced with the original trim
+    // so by now don't trim and play only the right slice of video
+    unbindAndTrim: function(callback) {
+
+        // Reset some stuff
+        document.body.onkeydown = null;
+        this.video.onended = null;
+
         let durationInMs = (this.endTime - this.startTime) * 1000;
         let chunks = [];
-        let recorder = new MediaRecorder(this.video.captureStream());
+        let recorder = new MediaRecorder(this.video.captureStream(), { mimeType: 'video/webm;codecs=vp8' });
 
         recorder.ondataavailable = (e) => {
-            // We only want the first chunk
             if(chunks.length)
             return;
-            console.log("data available");
+            console.log("Data available");
             chunks.push( e.data );
+            recorder.stop();
         };
 
         recorder.onstop = (e) => {
 
-            let blob = new Blob(chunks, { "type": "video/mp4; codecs=avc1" });
+            let blob = new Blob(chunks, { "type": 'video/webm;codecs=vp8' });
             const url = URL.createObjectURL( blob );
-            this.video.loop = true;
-            this.video.pause();    
-            this.video.currentTime = 0;
             this.video.src = url;
 
-            if(callback)
-                callback( this.startTime, this.endTime );
+            let video = this.video;
+
+            video.addEventListener('loadeddata', async () => {
+                while(video.duration === Infinity) {
+                    await new Promise(r => setTimeout(r, 1000));
+                    video.currentTime = 10000000*Math.random();
+                }
+
+                console.log( "Trimmed duration: " + video.duration );
+
+                this.video.loop = true;
+                this.video.pause();    
+                this.video.currentTime = 0;
+
+                if(callback)
+                    callback( this.startTime, this.endTime );
+
+                this.video = null;
+                this.width = null;
+                this.height = null;
+                this.ctx = null;
+
+                this.ratio = null;
+                this.startTime = null;
+                this.endTime = null;   
+            });
         };
 
-        console.log(durationInMs/1000);
+        console.log("Original duration: " + durationInMs/1000);
         this.video.currentTime = this.startTime;
-        recorder.start();
+        recorder.start( durationInMs + 0.06 );
         this.video.play();
         this.trimming = true;
         this.recorder = recorder;
