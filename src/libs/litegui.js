@@ -3616,6 +3616,9 @@ LiteGUI.Console = Console;
 		if( typeof(data) == "function" )
 			data = { callback: data };
 
+		// Subtitles
+		data.disabled = data.subtitle;
+
 		var prev_length = this.menu.length;
 
 		var tokens = path.split("/");
@@ -3843,7 +3846,10 @@ LiteGUI.Console = Console;
 				item.appendChild( icon );
 				icon.outerHTML = menu_item.data.icon;
 			}
-			
+
+			if(menu_item.data.subtitle) {
+				item.className += " subtitle";
+			}
 			
 			item.data = menu_item;
 

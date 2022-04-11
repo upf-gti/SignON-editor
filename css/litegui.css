@@ -1580,6 +1580,10 @@ a:hover {
 	padding: 4px;
 }
 
+.litemenu-entry.subtitle {
+	font-size: 0.9em !important;
+}
+
 button.litebutton {
     color: #DDD;
     display: inline-block;

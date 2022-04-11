@@ -121,7 +121,8 @@ class Editor {
     }
     
     loadInScene(project) {
-        
+
+        this.project = project;
         this.landmarksArray = project.landmarks;
         
         project.path = project.path || "models/bvh/victor.bvh";
@@ -145,6 +146,7 @@ class Editor {
             const side = result.normal.multiplyScalar(5);
             if(side.x != 0 || side.z != 0) side.y = this.controls.target.y;
             this.camera.position.set(side.x, side.y, side.z);
+            this.camera.setRotationFromQuaternion( new THREE.Quaternion() );
             this.controls.update();
         });
         const skinIcon = document.createElement("i");
@@ -217,7 +219,7 @@ class Editor {
             stateBtn.style.removeProperty("border");
             this.stopAnimation();
             video.pause();
-            video.currentTime = 0;
+            video.currentTime = video.startTime;
         }
       
         this.animate();
@@ -275,10 +277,11 @@ class Editor {
             this.scene.add( points );
             //BVHExporter.export(skeleton, animation_clip, this.landmarksArray.length);
     
-            //project.prepareData(this.mixer, this.animationClip, skeleton);
-            //this.gui.loadProject(project);
+            project.prepareData(this.mixer, this.animationClip, skeleton);
+            this.gui.loadProject(project);
     
-            //this.gizmo.begin(this.skeletonHelper);
+            this.gizmo.begin(this.skeletonHelper);
+            this.setBoneSize(0.2);
             
             this.animate();
         });
@@ -437,6 +440,40 @@ class Editor {
         );
     }
 
+    processLandmarks(project) {
+        
+        const [startTime, endTime] = project.trimTimes;
+
+        let totalDt = 0;
+        let index = 1;
+
+        // remove starting frames
+        while( totalDt < startTime ) {
+            const lm = this.landmarksArray[index];
+            totalDt += lm.dt * 0.001;
+            index++;
+        }
+
+        if(totalDt > 0) {
+            this.landmarksArray = this.landmarksArray.slice(index - 1);
+        }
+
+        // remove ending frames
+        index = 1;
+        while( totalDt < endTime && index < this.landmarksArray.length ) {
+            const lm = this.landmarksArray[index];
+            totalDt += lm.dt * 0.001;
+            index++;
+        }
+
+        this.landmarksArray = this.landmarksArray.slice(0, index - 1);
+    }
+
+    getSelectedBone() {
+        const idx = this.gizmo.selectedBone;
+        return idx == undefined ? idx : this.skeleton.bones[ idx ];
+    }
+
     setBoneSize(newSize) {
         const geometry = this.gizmo.bonePoints.geometry;
         const positionAttribute = geometry.getAttribute( 'position' );
@@ -507,17 +544,17 @@ class Editor {
         this.gizmo.transform.setRotationSnap( THREE.MathUtils.degToRad( this.defaultRotationSnapValue ) );
     }
 
-    setTime(t) {
+    setTime(t, force) {
 
         // Don't change time if playing
-        if(this.state)
+        if(this.state && !force)
         return;
         if(this.mixer)
             this.mixer.setTime(t);
         this.gizmo.updateBones(0.0);
 
         // Update video
-        this.video.currentTime = t;
+        this.video.currentTime = this.video.startTime + t;
     }
 
     stopAnimation() {
@@ -547,29 +584,29 @@ class Editor {
         this.render();
         this.update(this.clock.getDelta());
 
-        if (this.pointsGeometry != undefined && this.landmarksArray != undefined) {
-            var currLM = this.landmarksArray[this.iter];
-            var currTime = Date.now();
-            var et = (currTime - this.prevTime);
-            if (et > currLM.dt) {
+        // if (this.pointsGeometry != undefined && this.landmarksArray != undefined) {
+        //     var currLM = this.landmarksArray[this.iter];
+        //     var currTime = Date.now();
+        //     var et = (currTime - this.prevTime);
+        //     if (et > currLM.dt) {
                 
-                const vertices = [];
+        //         const vertices = [];
                 
-                for (let i = 0; i < currLM.PLM.length; i++) {
-                    const x = currLM.PLM[i].x;
-                    const y = currLM.PLM[i].y;
-                    const z = currLM.PLM[i].z;
+        //         for (let i = 0; i < currLM.PLM.length; i++) {
+        //             const x = currLM.PLM[i].x;
+        //             const y = currLM.PLM[i].y;
+        //             const z = currLM.PLM[i].z;
                     
-                    vertices.push( x, y, z );
-                }
+        //             vertices.push( x, y, z );
+        //         }
                 
-                this.pointsGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
+        //         this.pointsGeometry.setAttribute( 'position', new THREE.Float32BufferAttribute( vertices, 3 ) );
                 
-                this.prevTime = currTime + currLM.dt;
-                this.iter++;
-                this.iter = this.iter % this.landmarksArray.length;
-            }
-        }
+        //         this.prevTime = currTime + currLM.dt;
+        //         this.iter++;
+        //         this.iter = this.iter % this.landmarksArray.length;
+        //     }
+        // }
     }
 
     render() {
@@ -606,23 +643,10 @@ class Editor {
         
         BVHExporter.export(this.skeleton, this.animationClip, this.landmarksArray.length);
     }
+
+    showPreview() {
+        console.log( "TODO: Open URL preview with data to show BVH" );
+    }
 };
-
-// THREE.AnimationAction.prototype.updateInterpolants = function() {
-    
-//     const tracks = this._clip.tracks,
-//         nTracks = tracks.length,
-//         interpolants = new Array( nTracks );
-
-//     for ( let i = 0; i !== nTracks; ++ i ) {
-
-//         const interpolant = tracks[ i ].createInterpolant();
-//         interpolants[ i ] = interpolant;
-//         interpolant.settings = this._interpolantSettings;
-
-//     }
-
-//     this._interpolants = interpolants; // bound by the mixer
-// }
 
 export { Editor };
