@@ -251,6 +251,7 @@ class Editor {
             
             updateThreeJSSkeleton(this.skeletonHelper.bones);
             let skeleton = createSkeleton(this.landmarksArray);
+            this.skeleton = skeleton;
             this.skeletonHelper.skeleton = skeleton;
             const boneContainer = new THREE.Group();
 
