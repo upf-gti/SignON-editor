@@ -46,6 +46,8 @@ function Timeline( clip, bone_name ) {
 		return;
 
 		let tracks = this.tracksPerBone[this.selected_bone];
+		if(!tracks) return;
+
 		const height = 15;
 		for(let i = 0; i < tracks.length; i++) {
 			let track = tracks[i];
@@ -87,7 +89,10 @@ Timeline.prototype.processTracks = function () {
 }
 
 Timeline.prototype.getNumTracks = function(bone) {
-	return bone ? this.tracksPerBone[bone.name].length : null;
+	if(!bone)
+	return;
+	const tracks = this.tracksPerBone[bone.name];
+	return tracks ? tracks.length : null;
 }
 
 Timeline.prototype.isKeyFrameSelected = function ( track, index ) {
