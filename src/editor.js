@@ -202,7 +202,7 @@ class Editor {
 
         var that = this;
 
-        $.getJSON( "data/Taunt.json", function( data ) {
+        $.getJSON( "data/results.json", function( data ) {
           
             that.landmarksArray = [];
             project.landmarks = [];

@@ -46,6 +46,11 @@ function Timeline( clip, bone_name ) {
 		return;
 
 		let tracks = this.tracksPerBone[this.selected_bone];
+		if(!tracks){
+			var bones = Object.keys(this.tracksPerBone);
+			this.selected_bone = bones[0];
+			tracks = this.tracksPerBone[this.selected_bone];
+		}
 		const height = 15;
 		for(let i = 0; i < tracks.length; i++) {
 			let track = tracks[i];

@@ -177,11 +177,13 @@ function updateThreeJSSkeleton(skeleton) {
         var lm_info = LM_INFO[lmInfoArray[lm_data]];
 
         for(var i = 0; i<skeleton.length;i++){
-            if(lm_info.name == skeleton[i].name)
+            var name = skeleton[i].name.replaceAll(/[-_.:]/g,"").toUpperCase();
+            if(lm_info.name.replaceAll(/[-_.:]/g,"").toUpperCase() == name)
             {
+                LM_INFO[lmInfoArray[lm_data]].name = skeleton[i].name;
                 LM_INFO[lmInfoArray[lm_data]].position = skeleton[i].position.clone();
                 LM_INFO[lmInfoArray[lm_data]].rotation = skeleton[i].quaternion.clone();
-
+     
                 /*temp_map[lm_info.idx] = bone;
 
                 if (lm_info.parent_idx != -1) {
@@ -592,6 +594,9 @@ function createAnimation(name, landmarks) {
 function createAnimationFromRotations(name, quaternions_data) {
 
     var names = quaternions_data[quaternions_data.length - 1];
+    if(typeof(names[0]) != "string")
+        names = ["mixamorigHips.quaternion","mixamorigHips.quaternion","mixamorigSpine.quaternion","mixamorigSpine1.quaternion","mixamorigSpine2.quaternion","mixamorigNeck.quaternion","mixamorigHead.quaternion","mixamorigLeftShoulder.quaternion","mixamorigLeftArm.quaternion","mixamorigLeftForeArm.quaternion","mixamorigLeftHand.quaternion","mixamorigLeftHandThumb1.quaternion","mixamorigLeftHandThumb2.quaternion","mixamorigLeftHandThumb3.quaternion","mixamorigLeftHandIndex1.quaternion","mixamorigLeftHandIndex2.quaternion","mixamorigLeftHandIndex3.quaternion","mixamorigLeftHandMiddle1.quaternion","mixamorigLeftHandMiddle2.quaternion","mixamorigLeftHandMiddle3.quaternion","mixamorigLeftHandRing1.quaternion","mixamorigLeftHandRing2.quaternion","mixamorigLeftHandRing3.quaternion","mixamorigLeftHandPinky1.quaternion","mixamorigLeftHandPinky2.quaternion","mixamorigLeftHandPinky3.quaternion","mixamorigRightShoulder.quaternion","mixamorigRightArm.quaternion","mixamorigRightForeArm.quaternion","mixamorigRightHand.quaternion","mixamorigRightHandThumb1.quaternion","mixamorigRightHandThumb2.quaternion","mixamorigRightHandThumb3.quaternion","mixamorigRightHandIndex1.quaternion","mixamorigRightHandIndex2.quaternion","mixamorigRightHandIndex3.quaternion","mixamorigRightHandMiddle1.quaternion","mixamorigRightHandMiddle2.quaternion","mixamorigRightHandMiddle3.quaternion","mixamorigRightHandRing1.quaternion","mixamorigRightHandRing2.quaternion","mixamorigRightHandRing3.quaternion","mixamorigRightHandPinky1.quaternion","mixamorigRightHandPinky2.quaternion","mixamorigRightHandPinky3.quaternion","mixamorigLeftUpLeg.quaternion","mixamorigLeftLeg.quaternion","mixamorigLeftFoot.quaternion","mixamorigLeftToeBase.quaternion","mixamorigRightUpLeg.quaternion","mixamorigRightLeg.quaternion","mixamorigRightFoot.quaternion","mixamorigRightToeBase.quaternion"];
+    names = retargetNames(names);
     var bones_length = quaternions_data[0].length;//names.length;
 
     var tracks = [];
@@ -643,4 +648,23 @@ function createAnimationFromRotations(name, quaternions_data) {
     return new THREE.AnimationClip(name || "sign_anim", length, tracks);
 }
 
+function retargetNames(names) {
+    
+    var lmInfoArray = Object.keys(LM_INFO);
+
+    for(var i = 0; i < names.length; i++){
+        for (const lm_data in lmInfoArray) {
+            var lm_info = LM_INFO[lmInfoArray[lm_data]];
+            var n = names[i].split(".");
+            var root = n[0].replaceAll(/[-_.:]/g,"").toUpperCase();
+            if(lm_info.name.replaceAll(/[-_.:]/g,"").toUpperCase() == root)
+            {
+                names[i] = lm_info.name+"."+n[1];
+                continue;
+            }
+               
+        }
+    }
+    return names;
+}
 export { createSkeleton, createAnimation, createAnimationFromRotations, createThreeJSSkeleton, updateThreeJSSkeleton };
