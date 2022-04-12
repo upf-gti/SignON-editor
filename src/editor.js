@@ -2,7 +2,7 @@ import * as THREE from "./libs/three.module.js";
 import { OrbitControls } from "./controls/OrbitControls.js";
 import { BVHLoader } from "./loaders/BVHLoader.js";
 import { BVHExporter } from "./bvh_exporter.js";
-import { createSkeleton, createAnimation, createAnimationFromRotations, updateThreeJSSkeleton } from "./skeleton.js";
+import { createSkeleton, createAnimation, createAnimationFromRotations, updateThreeJSSkeleton, injectNewLandmarks } from "./skeleton.js";
 import { Gui } from "./gui.js";
 import { Gizmo } from "./gizmo.js";
 import { firstToUpperCase } from "./utils.js"
@@ -216,7 +216,7 @@ class Editor {
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
 
-        if( urlParams.get('load') == 'skin' ) {
+        if( urlParams.get('load') == 'skin' || urlParams.get('load') == undefined ) {
 
             this.loadGLTF("models/t_pose.glb", gltf => {
             
@@ -231,7 +231,8 @@ class Editor {
                 }
                 
                 updateThreeJSSkeleton(this.skeletonHelper.bones);
-                let skeleton = createSkeleton(this.landmarksArray);
+                let skeleton = createSkeleton();
+                injectNewLandmarks(this.landmarksArray);
                 this.skeleton = skeleton;
                 this.skeletonHelper.skeleton = skeleton;
                 const boneContainer = new THREE.Group();
@@ -267,10 +268,18 @@ class Editor {
                 project.landmarks = [];
                         
                 // Load the model (Eva)  
-                that.loadGLTF("models/Kate-tpose.glb", (gltf) => {
+                that.loadGLTF("models/t_pose.glb", (gltf) => {
                 
                     let model = gltf.scene;
                     model.castShadow = true;
+
+                    model.children[0].setRotationFromQuaternion(new THREE.Quaternion());
+                
+                    that.skeletonHelper = new THREE.SkeletonHelper(model);
+
+                    for (var bone_id in that.skeletonHelper.bones) {
+                        that.skeletonHelper.bones[bone_id].setRotationFromQuaternion(new THREE.Quaternion());
+                    }
                     
                     model.traverse(  ( object ) => {
                         if ( object.isMesh ||object.isSkinnedMesh ) {
@@ -283,7 +292,6 @@ class Editor {
                         }
                     } );
                     
-                    that.skeletonHelper = new THREE.SkeletonHelper(model);
                     updateThreeJSSkeleton(that.skeletonHelper.bones);
                     let skeleton = createSkeleton();
                     that.skeleton = skeleton;
@@ -311,37 +319,42 @@ class Editor {
         }
         else {
 
-            let skeleton = createSkeleton(this.landmarksArray);
-            this.skeleton = skeleton;
+            // 3D model is always needed to extract the skeleton, commenteds for now 
 
-            this.skeletonHelper = new THREE.SkeletonHelper(skeleton.bones[0]);
-            this.skeletonHelper.skeleton = skeleton; // Allow animation mixer to bind to THREE.SkeletonHelper directly
+            {
+                // let skeleton = createSkeleton(this.landmarksArray);
+                // this.skeleton = skeleton;
 
-            const boneContainer = new THREE.Group();
-            boneContainer.add(skeleton.bones[0]);
-            
-            this.scene.add(this.skeletonHelper);
-            this.scene.add(boneContainer);
-            
-            this.animationClip = createAnimation(project.clipName, this.landmarksArray);
-            
-            // play animation
-            this.mixer = new THREE.AnimationMixer(this.skeletonHelper);
-            this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
-            this.mixer.update(this.clock.getDelta()); // Do first iteration to update from T pose
-            
-            project.prepareData(this.mixer, this.animationClip, skeleton);
-            this.gui.loadProject(project);
-            this.gizmo.begin(this.skeletonHelper);
+                // this.skeletonHelper = new THREE.SkeletonHelper(skeleton.bones[0]);
+                // this.skeletonHelper.skeleton = skeleton; // Allow animation mixer to bind to THREE.SkeletonHelper directly
 
-            // Update camera
-            const bone0 = this.skeletonHelper.bones[0];
-            if(bone0) {
-                bone0.getWorldPosition(this.controls.target);
-                this.controls.update();
+                // const boneContainer = new THREE.Group();
+                // boneContainer.add(skeleton.bones[0]);
+                
+                // this.scene.add(this.skeletonHelper);
+                // this.scene.add(boneContainer);
+                
+                // this.animationClip = createAnimation(project.clipName, this.landmarksArray);
+                
+                // // play animation
+                // this.mixer = new THREE.AnimationMixer(this.skeletonHelper);
+                // this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
+                // this.mixer.update(this.clock.getDelta()); // Do first iteration to update from T pose
+                
+                // project.prepareData(this.mixer, this.animationClip, skeleton);
+                // this.gui.loadProject(project);
+                // this.gizmo.begin(this.skeletonHelper);
+
+                // // Update camera
+                // const bone0 = this.skeletonHelper.bones[0];
+                // if(bone0) {
+                //     bone0.getWorldPosition(this.controls.target);
+                //     this.controls.update();
+                // }
+                
+                // this.animate();
             }
-            
-            this.animate();
+v
         }
     }
 
