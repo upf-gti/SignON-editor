@@ -1,5 +1,6 @@
 import * as THREE from "./libs/three.module.js";
 import { OrbitControls } from "./controls/OrbitControls.js";
+import { MiniGLTFLoader } from "./loaders/GLTFLoader.js";
 import { BVHLoader } from "./loaders/BVHLoader.js";
 import { BVHExporter } from "./bvh_exporter.js";
 import { createSkeleton, createAnimation, createAnimationFromRotations, updateThreeJSSkeleton, injectNewLandmarks } from "./skeleton.js";
@@ -7,7 +8,6 @@ import { Gui } from "./gui.js";
 import { Gizmo } from "./gizmo.js";
 import { firstToUpperCase } from "./utils.js"
 import { OrientationHelper } from "./libs/OrientationHelper.js";
-import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 
 class Editor {
 
@@ -117,40 +117,22 @@ class Editor {
     getApp() {
         return this.__app;
     }
-
-    wkr_loadGLTF(animationFile, onLoaded) {
+    
+    loadGLTF(animationFile, onLoaded) {
         
+        const gltfLoader = new MiniGLTFLoader();
+
         if(typeof(Worker) !== 'undefined') {
             const worker = new Worker("src/workers/loader.js?filename=" + animationFile, { type: "module" });
             worker.onmessage = function (event) {
-
-                const loader = new GLTFLoader();
-                loader.parse(event.data, animationFile, function(gltf) {
-                    onLoaded(gltf);
-                }, (e) => console.error(e, "Can't parse file [" + animationFile + "]"));
-
+                gltfLoader.parse(event.data, animationFile, onLoaded);
                 worker.terminate();
             };
         } else {
             // browser does not support Web Workers
             // call regular load function
-            this.loadGLTF( animationFile, onLoaded );
+            gltfLoader.load( animationFile, onLoaded );
         }
-    }
-
-    loadGLTF(animationFile, onLoaded) {
-        
-        const loader = new GLTFLoader();
-        loader.load(
-            animationFile,
-            onLoaded,
-            (xhr) => {
-                if (xhr.loaded == xhr.total) console.log('GLTF loaded correctly.');
-            },
-            (error) => {
-                console.log(error);
-            }
-        );
     }
 
     loadInScene(project) {
@@ -163,11 +145,9 @@ class Editor {
         this.processLandmarks(project);
 
         // Orientation helper
-        const orientationHelper = new OrientationHelper( this.camera, this.controls, {className: 'orientation-helper-dom'}, 
-            ohLabels = {
-                px: '+X', nx: '-X', pz: '+Z', nz: '-Z', py: '+Y', ny: '-Y'
-            }, ohLabels 
-        );
+        const orientationHelper = new OrientationHelper( this.camera, this.controls, { className: 'orientation-helper-dom' }, {
+            px: '+X', nx: '-X', pz: '+Z', nz: '-Z', py: '+Y', ny: '-Y'
+        });
         document.getElementById("canvasarea").prepend(orientationHelper.domElement);
         orientationHelper.addEventListener("click", (result) => {
             const side = result.normal.multiplyScalar(5);
@@ -226,7 +206,7 @@ class Editor {
 
         if( urlParams.get('load') == 'skin' || urlParams.get('load') == undefined ) {
 
-            this.wkr_loadGLTF("models/t_pose.glb", gltf => {
+            this.loadGLTF("models/t_pose.glb", gltf => {
             
                 let model = gltf.scene;
                 model.castShadow = true;
@@ -325,43 +305,41 @@ class Editor {
     
             });
         }
-        else {
+        else if( urlParams.get('load') == 'simple' ) {
 
             // 3D model is always needed to extract the skeleton, commenteds for now 
 
-            {
-                // let skeleton = createSkeleton(this.landmarksArray);
-                // this.skeleton = skeleton;
+            let skeleton = createSkeleton(this.landmarksArray);
+            this.skeleton = skeleton;
 
-                // this.skeletonHelper = new THREE.SkeletonHelper(skeleton.bones[0]);
-                // this.skeletonHelper.skeleton = skeleton; // Allow animation mixer to bind to THREE.SkeletonHelper directly
+            this.skeletonHelper = new THREE.SkeletonHelper(skeleton.bones[0]);
+            this.skeletonHelper.skeleton = skeleton; // Allow animation mixer to bind to THREE.SkeletonHelper directly
 
-                // const boneContainer = new THREE.Group();
-                // boneContainer.add(skeleton.bones[0]);
-                
-                // this.scene.add(this.skeletonHelper);
-                // this.scene.add(boneContainer);
-                
-                // this.animationClip = createAnimation(project.clipName, this.landmarksArray);
-                
-                // // play animation
-                // this.mixer = new THREE.AnimationMixer(this.skeletonHelper);
-                // this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
-                // this.mixer.update(this.clock.getDelta()); // Do first iteration to update from T pose
-                
-                // project.prepareData(this.mixer, this.animationClip, skeleton);
-                // this.gui.loadProject(project);
-                // this.gizmo.begin(this.skeletonHelper);
+            const boneContainer = new THREE.Group();
+            boneContainer.add(skeleton.bones[0]);
+            
+            this.scene.add(this.skeletonHelper);
+            this.scene.add(boneContainer);
+            
+            this.animationClip = createAnimation(project.clipName, this.landmarksArray);
+            
+            // play animation
+            this.mixer = new THREE.AnimationMixer(this.skeletonHelper);
+            this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
+            this.mixer.update(this.clock.getDelta()); // Do first iteration to update from T pose
+            
+            project.prepareData(this.mixer, this.animationClip, skeleton);
+            this.gui.loadProject(project);
+            this.gizmo.begin(this.skeletonHelper);
 
-                // // Update camera
-                // const bone0 = this.skeletonHelper.bones[0];
-                // if(bone0) {
-                //     bone0.getWorldPosition(this.controls.target);
-                //     this.controls.update();
-                // }
-                
-                // this.animate();
+            // Update camera
+            const bone0 = this.skeletonHelper.bones[0];
+            if(bone0) {
+                bone0.getWorldPosition(this.controls.target);
+                this.controls.update();
             }
+            
+            this.animate();
         }
     }
 

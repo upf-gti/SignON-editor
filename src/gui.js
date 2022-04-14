@@ -145,6 +145,9 @@ class Gui {
 
     updateSidePanel(root, item_selected, options) {
 
+        if(!this.sidePanel)
+        return;
+
         item_selected = item_selected || this.item_selected;
     
         options = options || {};

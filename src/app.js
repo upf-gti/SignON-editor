@@ -38,6 +38,7 @@ class App {
                 video.currentTime = 10000000*Math.random();
             }
             video.currentTime = 0;
+            video.startTime = 0;
         });
 
         // prepare the device to capture the video
@@ -215,6 +216,10 @@ class App {
         let that = this;
         
         // Update header
+        let capture = document.getElementById("capture_btn");
+        capture.disabled = true;
+        capture.style.display = "none";
+
         let trimBtn = document.getElementById("trim_btn");
         trimBtn.disabled = true;
         trimBtn.style.display = "none";
@@ -331,17 +336,6 @@ class App {
     onResize() {
 
         let canvasArea = document.getElementById("canvasarea");
-
-        // let headerDiv = document.getElementById("header");
-        // let videoDiv = document.getElementById("capture");
-        // let videoCanvas = document.getElementById("outputVideo");
-        
-        // let relation = bodyDiv.width / WIDTH;                           // resize proportion
-        // let AR = videoCanvas.clientWidth / videoCanvas.clientHeight;    // aspect ratio
-        
-        // bodyDiv.width = WIDTH;
-        // videoCanvas.width  = videoDiv.width  = videoDiv.width / relation;
-        // videoCanvas.height = videoDiv.height = videoDiv.width / AR;
 
         const CANVAS_WIDTH = canvasArea.clientWidth;
         const CANVAS_HEIGHT = canvasArea.clientHeight;
