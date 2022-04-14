@@ -154,17 +154,18 @@ class App {
         let redo = document.getElementById("redo_btn");
         redo.onclick = () => elem.style.display = "none";
     
+        let trimData = document.getElementById("trimData_btn");
+        trimData.onclick = () => {
+            elem.style.display = "none";
+            MediaPipe.stop();
+            this.processVideo();
+        };
+
         let loadData = document.getElementById("loadData_btn");
         loadData.onclick = () => {
-            
             elem.style.display = "none";
-    
             MediaPipe.stop();
-            
-            // Store the data in project, and store a bvh of it
-            // TODO
-    
-            this.processVideo();
+            this.loadAnimation(0, null);
         };
 
         let trimBtn = document.getElementById("trim_btn");
@@ -174,9 +175,7 @@ class App {
     }
     
     async processVideo() {
-        
-        // const onComplete = () => this.loadAnimation();
-        
+                
         // Update header
         let capture = document.getElementById("capture_btn");
         capture.disabled = true;
@@ -281,21 +280,21 @@ class App {
         };
         // Initially register the callback to be notified about the first frame.
         videoRec.requestVideoFrameCallback(updateFrame);
-    
+
+        // Make a prompt but since we have to load the model, do it meanwhile 
+        // and set the name later 
         LiteGUI.prompt( "Please, enter the name of the sign performed and the language. (Example: Dog in Irish Sign Language --> dog_ISL)", (name) => {
 
-            if(name !== null) {
-                videoRec.name = name;
-                this.project.clipName = name;
-                this.project.trimTimes = [startTime, endTime];
-    
-                // Creates the scene and loads the animation
-                this.editor.loadInScene(this.project);
-            }else {
-                window.location = window.location;
-            }
+            name = name || "Unnamed";
+            videoRec.name = name;
+            this.project.clipName = name;
+            this.editor.updateGUI();
 
         }, { title: "Editor", width: 350 } );
+
+        // Creates the scene and loads the animation
+        this.project.trimTimes = [startTime, endTime];
+        this.editor.loadInScene(this.project);
     }
 
     async storeAnimation() {

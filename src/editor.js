@@ -8,10 +8,6 @@ import { Gizmo } from "./gizmo.js";
 import { firstToUpperCase } from "./utils.js"
 import { OrientationHelper } from "./libs/OrientationHelper.js";
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
-import { FBXLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/FBXLoader.js';
-
-const LOAD_SKINNED_GLTF = false;
-const LOAD_JSON = false;
 
 class Editor {
 
@@ -122,8 +118,28 @@ class Editor {
         return this.__app;
     }
 
+    wkr_loadGLTF(animationFile, onLoaded) {
+        
+        if(typeof(Worker) !== 'undefined') {
+            const worker = new Worker("src/workers/loader.js?filename=" + animationFile, { type: "module" });
+            worker.onmessage = function (event) {
+
+                const loader = new GLTFLoader();
+                loader.parse(event.data, animationFile, function(gltf) {
+                    onLoaded(gltf);
+                }, (e) => console.error(e, "Can't parse file [" + animationFile + "]"));
+
+                worker.terminate();
+            };
+        } else {
+            // browser does not support Web Workers
+            // call regular load function
+            this.loadGLTF( animationFile, onLoaded );
+        }
+    }
+
     loadGLTF(animationFile, onLoaded) {
-            
+        
         const loader = new GLTFLoader();
         loader.load(
             animationFile,
@@ -147,19 +163,11 @@ class Editor {
         this.processLandmarks(project);
 
         // Orientation helper
-        const ohOptions = {
-            className: 'orientation-helper-dom'
-            }, 
+        const orientationHelper = new OrientationHelper( this.camera, this.controls, {className: 'orientation-helper-dom'}, 
             ohLabels = {
-                px: '+X',
-                nx: '-X',
-                pz: '+Z',
-                nz: '-Z',
-                py: '+Y',
-                ny: '-Y'
-            };
-
-        const orientationHelper = new OrientationHelper( this.camera, this.controls, ohOptions, ohLabels );
+                px: '+X', nx: '-X', pz: '+Z', nz: '-Z', py: '+Y', ny: '-Y'
+            }, ohLabels 
+        );
         document.getElementById("canvasarea").prepend(orientationHelper.domElement);
         orientationHelper.addEventListener("click", (result) => {
             const side = result.normal.multiplyScalar(5);
@@ -218,7 +226,7 @@ class Editor {
 
         if( urlParams.get('load') == 'skin' || urlParams.get('load') == undefined ) {
 
-            this.loadGLTF("models/t_pose.glb", gltf => {
+            this.wkr_loadGLTF("models/t_pose.glb", gltf => {
             
                 let model = gltf.scene;
                 model.castShadow = true;
@@ -354,13 +362,20 @@ class Editor {
                 
                 // this.animate();
             }
-v
         }
+    }
+
+    updateGUI() {
+        this.gui.updateSidePanel();
     }
 
     processLandmarks(project) {
         
         const [startTime, endTime] = project.trimTimes;
+
+        // Video is duration-complete
+        if(!endTime)
+        return;
 
         let totalDt = 0;
         let index = 1;
