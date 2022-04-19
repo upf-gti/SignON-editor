@@ -1,4 +1,4 @@
-import { getTime } from '../utils.js';
+import { getTime, concatTypedArray } from '../utils.js';
 
 // Agnostic timeline, do nos impose any timeline content
 // It renders to a canvas
@@ -46,6 +46,8 @@ function Timeline( clip, bone_name ) {
 		return;
 
 		let tracks = this.tracksPerBone[this.selected_bone];
+		if(!tracks) return;
+
 		const height = 15;
 		for(let i = 0; i < tracks.length; i++) {
 			let track = tracks[i];
@@ -64,8 +66,9 @@ Timeline.prototype.processTracks = function () {
 		let track = this.clip.tracks[i];
 
 		const [name, type] = this.getTrackName(track.name);
+
 		let trackInfo = {
-			name: name, type: type, data: track,
+			name: name, type: type,
 			dim: track.values.length/track.times.length,
 			selected: [], edited: [], hovered: []
 		};
@@ -76,9 +79,20 @@ Timeline.prototype.processTracks = function () {
 			this.tracksPerBone[name].push( trackInfo );
 		}
 
-		track.idx = this.tracksPerBone[name].length - 1; // Last element
-		track.clip_idx = i;
+		const trackIndex = this.tracksPerBone[name].length - 1;
+		this.tracksPerBone[name][trackIndex].idx = trackIndex;
+		this.tracksPerBone[name][trackIndex].clip_idx = i;
+
+		// Save index also in original track
+		track.idx = trackIndex;
 	}
+}
+
+Timeline.prototype.getNumTracks = function(bone) {
+	if(!bone)
+	return;
+	const tracks = this.tracksPerBone[bone.name];
+	return tracks ? tracks.length : null;
 }
 
 Timeline.prototype.isKeyFrameSelected = function ( track, index ) {
@@ -96,7 +110,7 @@ Timeline.prototype.selectKeyFrame = function ( track, selection_info, index ) {
 	track.selected[index] = true;
 
 	if( this.onSetTime )
-		this.onSetTime( track.data.times[ index ] );
+		this.onSetTime( this.clip.tracks[track.clip_idx].times[ index ] );
 }
 
 Timeline.prototype.canPasteKeyFrame = function () {
@@ -110,7 +124,7 @@ Timeline.prototype.copyKeyFrame = function ( track, index ) {
 	let values = [];
 	let start = index * track.dim;
 	for(let i = start; i < start + track.dim; ++i)
-		values.push( track.data.values[i] );
+		values.push( this.clip.tracks[ track.clip_idx ].values[i] );
 
 	this._clipboard = {
 		type: track.type,
@@ -120,16 +134,16 @@ Timeline.prototype.copyKeyFrame = function ( track, index ) {
 
 Timeline.prototype._paste = function( track, index ) {
 
-	let data = this._clipboard;
+	let clipboardInfo = this._clipboard;
 
-	if(data.type != track.type){
+	if(clipboardInfo.type != track.type){
 		return;
 	}
 
 	let start = index * track.dim;
 	let j = 0;
 	for(let i = start; i < start + track.dim; ++i) {
-		track.data.values[i] = data.values[j];
+		this.clip.tracks[ track.clip_idx ].values[i] = clipboardInfo.values[j];
 		++j;
 	}
 
@@ -153,27 +167,124 @@ Timeline.prototype.pasteKeyFrame = function ( e, track, index ) {
 	}
 }
 
-Timeline.prototype.deleteKeyFrame = function (e, track, index) {
-	
-	// TODO: delete multiple selection
-	if(e.multipleSelection)
-	return;
-
-	// Delete time key
-	track.data.times = track.data.times.filter( (v, i) => i != index);
-
-	// Delete values
-	track.data.values = track.data.values.filter( (v, i) => {
-		let b = true;
-		for(let k = i; k < i + track.dim; ++k)
-			b &= (k != index);
-		return b;
-	});
+Timeline.prototype.addKeyFrame = function( track ) {
 
 	// Update clip information
-	const clip_idx = track.data.clip_idx;
-	this.clip.tracks[clip_idx].times = track.data.times;
-	this.clip.tracks[clip_idx].values = track.data.values;
+	const clip_idx = track.clip_idx;
+
+	// Find new index
+	let newIdx = this.clip.tracks[clip_idx].times.findIndex( (t) => { return t > this.current_time; } );
+
+	// Add time key
+	const timesArray = [];
+	this.clip.tracks[clip_idx].times.forEach( (a, b) => {
+		b == newIdx ? timesArray.push(this.current_time, a) : timesArray.push(a);
+	} );
+	this.clip.tracks[clip_idx].times = new Float32Array( timesArray );
+	
+	// Get mid values
+	const bone = this.onGetSelectedBone();
+	const lerpValue = bone[ track.type ].toArray();
+	
+	// Add values
+	const valuesArray = [];
+	this.clip.tracks[clip_idx].values.forEach( (a, b) => {
+		if(b == newIdx * track.dim) {
+			for( let i = 0; i < track.dim; ++i )
+				valuesArray.push(lerpValue[i]);
+		}
+		valuesArray.push(a);
+	} );
+	this.clip.tracks[clip_idx].values = new Float32Array( valuesArray );
+
+	// Move the other's key properties
+	for(let i = (this.clip.tracks[clip_idx].times.length - 1); i > newIdx; --i) {
+		track.edited[i - 1] ? track.edited[i] = track.edited[i - 1] : 0;
+	}
+	
+	// Reset this key's properties
+	track.hovered[newIdx] = undefined;
+	track.selected[newIdx] = undefined;
+	track.edited[newIdx] = undefined;
+
+	// Update animation action interpolation info
+	if(this.onUpdateTrack)
+		this.onUpdateTrack( track );
+
+	if(this.onSetTime)
+		this.onSetTime(this.current_time);
+}
+
+Timeline.prototype._delete = function( track, index ) {
+
+	// Don't remove by now the first key
+	if(index == 0) {
+		console.warn("Operation not supported! [remove first keyframe track]");
+		return;
+	}
+
+	// Update clip information
+	const clip_idx = track.clip_idx;
+
+	// Don't remove by now the last key
+	if(index == this.clip.tracks[clip_idx].times.length - 1) {
+		console.warn("Operation not supported! [remove last keyframe track]");
+		return;
+	}
+
+	// Reset this key's properties
+	track.hovered[index] = undefined;
+	track.selected[index] = undefined;
+	track.edited[index] = undefined;
+
+	// Delete time key
+	this.clip.tracks[clip_idx].times = this.clip.tracks[clip_idx].times.filter( (v, i) => i != index);
+
+	// Delete values
+	const indexDim = track.dim * index;
+	const slice1 = this.clip.tracks[clip_idx].values.slice(0, indexDim);
+	const slice2 = this.clip.tracks[clip_idx].values.slice(indexDim + track.dim);
+
+	this.clip.tracks[clip_idx].values = concatTypedArray([slice1, slice2], Float32Array);
+
+	// Move the other's key properties
+	for(let i = index; i < this.clip.tracks[clip_idx].times.length; ++i) {
+		track.edited[i] = track.edited[i + 1];
+	}
+
+	// Update animation action interpolation info
+	if(this.onUpdateTrack)
+		this.onUpdateTrack( track );
+}
+
+Timeline.prototype.deleteKeyFrame = function (e, track, index) {
+	
+	if(e.multipleSelection) {
+
+		// Split in tracks
+		const perTrack = [];
+		this._lastKeyFramesSelected.forEach( e => perTrack[e[1]] ? perTrack[e[1]].push(e) : perTrack[e[1]] = [e] );
+		
+		for(let pts of perTrack) {
+			
+			if(!pts) continue;
+
+			pts = pts.sort( (a,b) => a[2] - b[2] );
+			
+			let deletedIndices = 0;
+
+			// Delete every selected key
+			for(let [name, idx, keyIndex] of pts) {
+				this._delete( this.tracksPerBone[name][idx], keyIndex - deletedIndices );
+				deletedIndices++;
+			}
+		}
+	}
+	else{
+		this._delete( track, index );
+	}
+
+	this.unSelectAllKeyFrames();
 }
 
 Timeline.prototype.getNumKeyFramesSelected = function () {
@@ -354,9 +465,6 @@ Timeline.prototype.processCurrentKeyFrame = function (e, keyFrameIndex, track, l
 	e.multipleSelection = multiple;
 	keyFrameIndex = keyFrameIndex ?? this.getCurrentKeyFrame( track, this.xToTime( local_x ), this._pixels_to_seconds * 5 );
 
-	if(keyFrameIndex == undefined)
-	return;
-
 	if(!multiple && e.button != 2) {
 		this.unSelectAllKeyFrames();
 	}
@@ -370,6 +478,9 @@ Timeline.prototype.processCurrentKeyFrame = function (e, keyFrameIndex, track, l
 		return;
 	}
 	
+	if(keyFrameIndex == undefined)
+	return;
+
 	// Select if not handled
 	this._lastKeyFramesSelected.push( currentSelection );
 	t.selected[keyFrameIndex] = true;
@@ -414,12 +525,17 @@ Timeline.prototype.processMouse = function (e) {
 
 	e.track = track;
 
+	const innerSetTime = (t) => { if( this.onSetTime ) this.onSetTime( t );	 }
+
 	if( e.type == "mouseup" )
 	{
+		const discard = this._movingKeys || (getTime() - this._click_time) > 420; // ms
+		this._movingKeys ? innerSetTime( this.current_time ) : 0;
+		
 		this._grabbing = false;
 		this._grabbing_scroll = false;
-
-		const discard = getTime() - this._click_time > 420; // ms
+		this._movingKeys = false;
+		this._timeBeforeMove = null;
 
 		if(e.shiftKey) {
 
@@ -487,11 +603,40 @@ Timeline.prototype.processMouse = function (e) {
 			if(e.shiftKey) {
 				this.boxSelection = true;
 				this.boxSelectionStart = [local_x,local_y - 20];
+			}else if(e.ctrlKey && track) {
+				const keyFrameIndex = this.getCurrentKeyFrame( track, this.xToTime( local_x ), this._pixels_to_seconds * 5 );
+				if( keyFrameIndex ) {
+					this.processCurrentKeyFrame( e, keyFrameIndex, track, null, true ); // Settings this as multiple so time is not being set
+					this._movingKeys = true;
+
+					// Set pre-move state
+					for(let selectedKey of this._lastKeyFramesSelected) {
+						let [name, idx, keyIndex] = selectedKey;
+						let track = this.tracksPerBone[name][idx];
+						selectedKey[3] = this.clip.tracks[ track.clip_idx ].times[ keyIndex ];
+					}
+
+					this._timeBeforeMove = track.times[ keyFrameIndex ];
+				}
 			}
 		}
 	}
 	else if( e.type == "mousemove" )
 	{
+		// Manage keyframe movement
+		if(this._movingKeys) {
+
+			const newTime = this.xToTime( local_x );
+			
+			for(let [name, idx, keyIndex, keyTime] of this._lastKeyFramesSelected) {
+				let track = this.tracksPerBone[name][idx];
+				const delta = this._timeBeforeMove - keyTime;
+				this.clip.tracks[ track.clip_idx ].times[ keyIndex ] = Math.min( this.clip.duration, Math.max(0, newTime - delta) );
+			}
+
+			return;
+		}
+
 		if(e.shiftKey) {
 			if(this.boxSelection) {
 				this.boxSelectionEnd = [local_x,local_y - 20];
@@ -511,8 +656,6 @@ Timeline.prototype.processMouse = function (e) {
 			this._grab_time = curr;
 			this.current_time = Math.max(0,this.current_time - delta);
 
-			const inner = (t) => { if( this.onSetTime ) this.onSetTime( t );	 }
-
 			// fix this
 			if(e.shiftKey && track) {
 				let keyFrameIndex = this.getNearestKeyFrame( track, this.current_time);
@@ -520,11 +663,11 @@ Timeline.prototype.processMouse = function (e) {
 				if(keyFrameIndex != this.snappedKeyFrameIndex){
 					this.snappedKeyFrameIndex = keyFrameIndex;
 					this.current_time = track.times[ keyFrameIndex ];		
-					inner( this.current_time );		
+					innerSetTime( this.current_time );		
 				}
 				
 			}else{
-				inner( this.current_time );	
+				innerSetTime( this.current_time );	
 			}
 		}else if(track) {
 
@@ -784,7 +927,7 @@ Timeline.prototype.drawTrackWithKeyframes = function (ctx, y, track_height, titl
 	if(track.enabled === false)
 		ctx.globalAlpha = 0.4;
 
-	this._tracks_drawn.push([track.data,y+this.top_margin,track_height]);
+	this._tracks_drawn.push([this.clip.tracks[track.clip_idx],y+this.top_margin,track_height]);
 
 	ctx.font = Math.floor( track_height * 0.8) + "px Arial";
 	ctx.textAlign = "left";
@@ -798,7 +941,7 @@ Timeline.prototype.drawTrackWithKeyframes = function (ctx, y, track_height, titl
 	}
 
 	ctx.fillStyle = "rgba(10,200,200,1)";
-	var keyframes = track.data.times;
+	var keyframes = this.clip.tracks[track.clip_idx].times;
 
 	if(keyframes) {
 		
