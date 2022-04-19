@@ -8,6 +8,7 @@ import { Gui } from "./gui.js";
 import { Gizmo } from "./gizmo.js";
 import { firstToUpperCase } from "./utils.js"
 import { OrientationHelper } from "./libs/OrientationHelper.js";
+import { CanvasButtons } from "./ui.config.js";
 
 class Editor {
 
@@ -22,6 +23,7 @@ class Editor {
         this.renderer = null;
         this.state = false;  // defines how the animation starts (moving/static)
 
+        this.showHUD = true;
         this.showSkin = true; // defines if the model skin has to be rendered
         this.character = "";
 
@@ -53,7 +55,9 @@ class Editor {
 
         let scene = new THREE.Scene();
         scene.background = new THREE.Color(0x777777);
-        scene.add(new THREE.GridHelper(300, 20));
+        const grid = new THREE.GridHelper(300, 50);
+        grid.name = "Grid";
+        scene.add(grid);
 
         const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
         hemiLight.position.set( 0, 20, 0 );
@@ -120,6 +124,7 @@ class Editor {
     
     loadGLTF(animationFile, onLoaded) {
         
+        $('#loading').fadeIn();
         const gltfLoader = new MiniGLTFLoader();
 
         if(typeof(Worker) !== 'undefined') {
@@ -141,7 +146,7 @@ class Editor {
         this.landmarksArray = project.landmarks;
         
         project.path = project.path || "models/bvh/victor.bvh";
-        
+
         this.processLandmarks(project);
 
         // Orientation helper
@@ -160,6 +165,7 @@ class Editor {
         // set onclick function to play button
         let stateBtn = document.getElementById("state_btn");
         let video = document.getElementById("recording");
+        video.loop = false;
         stateBtn.onclick = (e) => {
             this.state = !this.state;
             stateBtn.innerHTML = "<i class='bi bi-" + (this.state ? "pause" : "play") + "-fill'></i>";
@@ -178,21 +184,7 @@ class Editor {
             video.currentTime = video.startTime;
         }
 
-        const skinIcon = document.createElement("i");
-        skinIcon.className='fas fa-user-alt-slash';
-        
-        const skinButton = document.createElement('button');
-        skinButton.className = "litebutton";
-        skinButton.style='z-index: 2; position: absolute; right: 50px; margin-top: 100px; width:25px; height: 25px';
-        skinButton.appendChild(skinIcon);
-
-        document.getElementById("canvasarea").prepend(skinButton);
-        skinButton.addEventListener("click", (result) => {
-            this.showSkin = !this.showSkin;
-            let character = this.scene.getChildByName(this.character);
-            character.visible = this.showSkin;
-            skinIcon.className = this.showSkin ? 'fas fa-user-alt-slash' : 'fas fa-user-alt';
-        });
+        this.appendCanvasButtons();
 
         // To debug landmarks (Not the gizmo ones)
         this.pointsGeometry = new THREE.BufferGeometry();
@@ -213,6 +205,7 @@ class Editor {
                 model.castShadow = true;
                 
                 this.skeletonHelper = new THREE.SkeletonHelper(model);
+                this.skeletonHelper.name = "SkeletonHelper";
                 model.children[0].setRotationFromQuaternion(new THREE.Quaternion());
                 
                 for (var bone_id in this.skeletonHelper.bones) {
@@ -239,12 +232,13 @@ class Editor {
                 this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
                 this.mixer.update(this.clock.getDelta()); // Do first iteration to update from T pose
         
-                project.prepareData(this.mixer, this.animationClip, skeleton);
+                project.prepareData(this.mixer, this.animationClip, skeleton, this.video);
                 this.gui.loadProject(project);
                 this.gizmo.begin(this.skeletonHelper);
                 this.setBoneSize(0.2);
                 
                 this.animate();
+                $('#loading').fadeOut();
             });
 
         } else if( urlParams.get('load') == 'ai' ) {
@@ -344,10 +338,6 @@ class Editor {
         }
     }
 
-    updateGUI() {
-        this.gui.updateSidePanel();
-    }
-
     processLandmarks(project) {
         
         const [startTime, endTime] = project.trimTimes;
@@ -379,6 +369,45 @@ class Editor {
         }
 
         this.landmarksArray = this.landmarksArray.slice(0, index - 1);
+    }
+
+    appendCanvasButtons() {
+
+        let canvasArea = document.getElementById("canvasarea");
+        let timelineCanvas = document.getElementById("timelineCanvas");
+        const HEIGHT = canvasArea.clientHeight / 2
+                        - timelineCanvas.clientHeight
+                        - (CanvasButtons.items.length / 2) * 30;
+
+        for( let i = 0; i < CanvasButtons.items.length; ++i ) {
+
+            const b = CanvasButtons.items[i];
+            let content = null;
+
+            if(b.icon) {
+                content = document.createElement("i");
+                content.className = 'bi bi-' + b.icon;
+            }
+
+            const btn = document.createElement('button');
+            btn.title = b.name;
+            btn.className = "litebutton";
+            btn.style = 'z-index: 2; position: absolute; right: 15px; font-size: 1.25em; width:25px; height: 25px';
+            btn.style.marginTop = (HEIGHT + i * 30) + "px";
+            btn.appendChild(content);
+            document.getElementById("canvasarea").prepend(btn);
+
+            CanvasButtons.onCreate.bind(this, b, content)();
+
+            btn.addEventListener("click", CanvasButtons.onChange.bind(this, b, content) );
+
+            if(b.callback)
+                btn.addEventListener("click", b.callback.bind(this) );
+        }
+    }
+
+    updateGUI() {
+        this.gui.updateSidePanel();
     }
 
     getSelectedBone() {
@@ -467,6 +496,8 @@ class Editor {
 
         // Update video
         this.video.currentTime = this.video.startTime + t;
+        if(this.state && force)
+            this.video.play();
     }
 
     stopAnimation() {

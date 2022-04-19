@@ -95,6 +95,7 @@ class Gizmo {
         geometry.setAttribute( 'size', new THREE.Float32BufferAttribute( new Array(positionAttribute.count).fill(size), 1 ) );
 
         this.bonePoints = new THREE.Points( geometry, pointsShaderMaterial );
+        this.bonePoints.name = "GizmoPoints";
         this.scene.add( this.bonePoints );
         
         this.raycaster = new THREE.Raycaster();

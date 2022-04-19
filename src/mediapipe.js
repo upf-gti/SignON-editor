@@ -82,8 +82,7 @@ const MediaPipe = {
         const webcamera = new Camera(videoElement, {
             onFrame: async () => {
                 await holistic.send({image: videoElement});
-                var elem = document.getElementById("loading");
-                elem.style.display = "none";
+                $('#loading').fadeOut();
             },
             width: 1280,
             height: 720

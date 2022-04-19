@@ -72,6 +72,10 @@ canvas {
 	font-size: 1.6em  !important;
 }
 
+.selected {
+	background: var(--global-color-selected);
+}
+
 .float-right {
 	float: right;
 }
@@ -90,7 +94,7 @@ canvas {
 }
 
 #capture {
-	width: 30%;
+	width: 20%;
 	left: 40px;
 	top: 90px;
 	position: absolute;
