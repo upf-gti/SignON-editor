@@ -1,4 +1,8 @@
 import { app } from "./app.js";
+import "https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js";
+import "https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js";
+import "https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js";
+import "https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js";
 
 const MediaPipe = {
 
@@ -11,10 +15,6 @@ const MediaPipe = {
         const videoElement = document.getElementById("inputVideo");
         const canvasElement = document.getElementById("outputVideo");
         const canvasCtx = canvasElement.getContext("2d");
-
-        // mirror canvas video
-        canvasCtx.translate(canvasElement.width, 0);
-        canvasCtx.scale(-1, 1);
 
         const holistic = new Holistic({locateFile: (file) => {
             return `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`;

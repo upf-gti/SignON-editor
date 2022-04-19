@@ -25,24 +25,24 @@ class Gui {
         if(this.editor.skeletonHelper.bones.length) {
             boneName = this.editor.skeletonHelper.bones[0].name;
         }
-        if(this.editor.animationClip) {
-            this.timeline = new Timeline( this.editor.animationClip, boneName);
-            this.timeline.framerate = project.framerate;
-            this.timeline.setScale(400);
-            this.timeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
-            this.timeline.onSelectKeyFrame = (e, info, index) => {
-                if(e.button != 2)
-                return false;
 
-                // Change gizmo mode and dont handle
-                // return false;
+        this.timeline = new Timeline( this.editor.animationClip, boneName);
+        this.timeline.framerate = project.framerate;
+        this.timeline.setScale(400);
+        this.timeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
+        this.timeline.onSelectKeyFrame = (e, info, index) => {
+            if(e.button != 2)
+            return false;
 
-                this.showKeyFrameOptions(e, info, index);
-                return true; // Handled
-            };
-            this.timeline.onBoneUnselected = () => this.editor.gizmo.stop() ;
-        }
-        
+            // Change gizmo mode and dont handle
+            // return false;
+
+            this.showKeyFrameOptions(e, info, index);
+            return true; // Handled
+        };
+        this.timeline.onBoneUnselected = () => this.editor.gizmo.stop();
+        this.timeline.onUpdateTrack = (track) => this.editor.updateAnimationAction(track);
+        this.timeline.onGetSelectedBone = () => { return this.editor.getSelectedBone(); };
 
         // Move this to another place
         // the idea is to create once and reset on load project
@@ -111,7 +111,11 @@ class Gui {
         menubar.root.prepend(logo);
 
         menubar.add("Project/Upload animation", {icon: "<i class='bi bi-upload float-right'></i>", callback: () => this.editor.getApp().storeAnimation() });
-        menubar.add("Project/Export BVH", {icon: "<i class='bi bi-file-text float-right'></i>",  callback: () => this.editor.export() });
+        menubar.add("Project/");
+        menubar.add("Project/BVH", {subtitle: true});
+        menubar.add("Project/Export", {icon: "<i class='bi bi-file-text float-right'></i>",  callback: () => this.editor.export() });
+        menubar.add("Project/Open preview", {icon: "<i class='bi bi-file-earmark-play float-right'></i>",  callback: () => this.editor.showPreview() });
+
         menubar.add("View/Video", { type: "checkbox", instance: this, property: "showVideo", callback: () => {
             const tl = document.getElementById("capture");
             tl.style.display = that.showVideo ? "flex": "none";
@@ -140,6 +144,9 @@ class Gui {
     }
 
     updateSidePanel(root, item_selected, options) {
+
+        if(!this.sidePanel)
+        return;
 
         item_selected = item_selected || this.item_selected;
     
@@ -207,8 +214,9 @@ class Gui {
     
         const makePretitle = (src) => { return "<img src='data/imgs/mini-icon-"+src+".png' style='margin-right: 4px;margin-top: 6px;'>"; }
 
-        widgets.on_refresh = () => {
+        widgets.on_refresh = (o) => {
 
+            o = o || {};
             const numBones = this.editor.skeletonHelper.bones.length;
 
             widgets.clear();
@@ -233,7 +241,7 @@ class Gui {
 
             widgets.addSeparator();
 
-            const bone_selected = !(options.firstBone && numBones) ? 
+            const bone_selected = !(o.firstBone && numBones) ? 
                 this.editor.skeletonHelper.skeleton.getBoneByName(item_selected) : 
                 this.editor.skeletonHelper.bones[0];
 
@@ -246,6 +254,7 @@ class Gui {
 
                 widgets.addSection("Bone", { pretitle: makePretitle('circle') });
                 widgets.addInfo("Name", bone_selected.name);
+                widgets.addInfo("Num tracks", "" + this.timeline.getNumTracks(bone_selected));
                 widgets.addTitle("Position");
                 widgets.addVector3(null, bone_selected.position.toArray(), {callback: (v) => innerUpdate("position", v)});
 
@@ -257,7 +266,7 @@ class Gui {
             }
         };
 
-        widgets.on_refresh();
+        widgets.on_refresh(options);
 
         // update scroll position
         var element = root.content.querySelectorAll(".inspector")[0];
@@ -270,29 +279,28 @@ class Gui {
         let prevDialog = document.getElementById("settings-dialog");
         if(prevDialog) prevDialog.remove();
 
-        const dialog = new LiteGUI.Dialog({ id: 'settings-dialog', title: firstToUpperCase(settings), close: true, width: 380, height: 128, scroll: false, draggable: true});
+        const dialog = new LiteGUI.Dialog({ id: 'settings-dialog', title: firstToUpperCase(settings), close: true, width: 380, height: 150, scroll: false, draggable: true});
 		dialog.show();
 
         const inspector = new LiteGUI.Inspector();
 
         switch( settings ) {
             case 'gizmo': 
-
-            inspector.addNumber( "Translation snap", this.editor.defaultTranslationSnapValue, { min: 0.5, max: 5, step: 0.5, callback: (v) => {
-                this.editor.defaultTranslationSnapValue = v;
-                this.editor.updateGizmoSnap();
-            }});
-
-            inspector.addNumber( "Rotation snap", this.editor.defaultRotationSnapValue, { min: 15, max: 180, step: 15, callback: (v) => {
-                this.editor.defaultRotationSnapValue = v;
-                this.editor.updateGizmoSnap();
-            }});
-
-            inspector.addSlider( "Size", this.editor.getGizmoSize(), { min: 0.2, max: 2, step: 0.1, callback: (v) => {
-                this.editor.setGizmoSize(v);
-            }});
-
-            break;
+                inspector.addNumber( "Translation snap", this.editor.defaultTranslationSnapValue, { min: 0.5, max: 5, step: 0.5, callback: (v) => {
+                    this.editor.defaultTranslationSnapValue = v;
+                    this.editor.updateGizmoSnap();
+                }});
+                inspector.addNumber( "Rotation snap", this.editor.defaultRotationSnapValue, { min: 15, max: 180, step: 15, callback: (v) => {
+                    this.editor.defaultRotationSnapValue = v;
+                    this.editor.updateGizmoSnap();
+                }});
+                inspector.addSlider( "Size", this.editor.getGizmoSize(), { min: 0.2, max: 2, step: 0.1, callback: (v) => {
+                    this.editor.setGizmoSize(v);
+                }});
+                inspector.addSlider( "Bone marker size", this.editor.getGizmoSize(), { min: 0.01, max: 1, step: 0.01, callback: (v) => {
+                    this.editor.setBoneSize(v);
+                }});
+                break;
         };
 
         dialog.add( inspector );
@@ -347,6 +355,11 @@ class Gui {
             {
                 id: "capture_btn",
                 text: "Capture" + " <i class='bi bi-record2'></i>"
+            },
+            {
+                id: "trim_btn",
+                text: "Convert data to 3D animation",
+                display: "none"
             }
         ];
 
@@ -369,42 +382,67 @@ class Gui {
 
     drawTimeline() {
         
-        if(!this.project || !this.project.mixer)
+        if(!this.project)
         return;
 
         const canvas = this.timelineCTX.canvas;
-        this.current_time = this.timeline.current_time = this.project.mixer.time % this.duration;
+        this.current_time = this.project.mixer.time;
+
+        if(this.current_time > this.duration) {
+            this.onAnimationEnded();
+        }
+
         this.timeline.draw(this.timelineCTX, this.project, this.current_time, [0, 0, canvas.width, canvas.height]);
+    }
+
+    onAnimationEnded() {
+        this.current_time = 0.0;
+        this.editor.setTime(0.0, true);
     }
 
     showKeyFrameOptions(e, info, index) {
 
-        let track = this.timeline.getTrack(info, index);
-        if(!track)
-        return;
+        let actions = [];
 
-        e.multipleSelection &= this.timeline.isKeyFrameSelected(track, index);
+        let track = this.timeline.getTrack(info);
 
-        var actions = [
-            {
-                title: (e.multipleSelection ? "Multiple selection" : "[" + index + "] " + track.name),
-                disabled: true
-            },
-            null,
-            {
-                title: "Copy" + " <i class='bi bi-clipboard float-right'></i>",
-                callback: () => this.timeline.copyKeyFrame( track, index )
-            },
-            {
-                title: "Paste" + (e.multipleSelection ? " (" + this.timeline.getNumKeyFramesSelected() + ")" : "") +  " <i class='bi bi-clipboard-check float-right'></i>",
-                disabled: !this.timeline.canPasteKeyFrame(),
-                callback: () => this.timeline.pasteKeyFrame( e, track, index )
-            },
-            {
-                title: "Delete" +  " <i class='bi bi-trash float-right'></i>",
-                callback: () => this.timeline.deleteKeyFrame( e, track, index )
-            }
-        ];
+        if(index !== undefined) {
+            if(!track)
+            return;
+    
+            e.multipleSelection &= this.timeline.isKeyFrameSelected(track, index);
+    
+            actions.push(
+                {
+                    title: (e.multipleSelection ? "Multiple selection" : "[" + index + "] " + track.name),
+                    disabled: true
+                },
+                null,
+                {
+                    title: "Copy" + " <i class='bi bi-clipboard float-right'></i>",
+                    callback: () => this.timeline.copyKeyFrame( track, index )
+                },
+                {
+                    title: "Paste" + (e.multipleSelection ? " (" + this.timeline.getNumKeyFramesSelected() + ")" : "") +  " <i class='bi bi-clipboard-check float-right'></i>",
+                    disabled: !this.timeline.canPasteKeyFrame(),
+                    callback: () => this.timeline.pasteKeyFrame( e, track, index )
+                },
+                {
+                    title: "Delete" + (e.multipleSelection ? " (" + this.timeline.getNumKeyFramesSelected() + ")" : "") +  " <i class='bi bi-trash float-right'></i>",
+                    callback: () => this.timeline.deleteKeyFrame( e, track, index )
+                }
+            );
+        }else {
+
+            // No keyframe selected
+
+            actions.push(
+                {
+                    title: "Add" + " <i class='bi bi-plus float-right'></i>",
+                    callback: () => this.timeline.addKeyFrame( track )
+                }
+            );
+        }
         
         new LiteGUI.ContextMenu( actions, { event: e });
     }

@@ -1,6 +1,7 @@
 import { MediaPipe } from "./mediapipe.js";
 import { Project } from "./project.js";
 import { Editor } from "./editor.js";
+import { VideoUtils } from "./video.js";
 import { FileSystem } from "./libs/filesystem.js";
 
 class App {
@@ -13,6 +14,7 @@ class App {
         this.duration = 0;
 
         this.mediaRecorder = null
+        this.chunks = [];
         this.project = new Project();
         this.editor = new Editor(this);
 
@@ -26,55 +28,62 @@ class App {
 
         let that = this;
 
-        //MediaPipe.start();
+        MediaPipe.start();
 
-        this.editor.loadInScene(this.project);
+        let video = document.getElementById("recording");
+
+        video.addEventListener('loadedmetadata', async function () {
+            while(video.duration === Infinity) {
+                await new Promise(r => setTimeout(r, 1000));
+                video.currentTime = 10000000*Math.random();
+            }
+            video.currentTime = 0;
+            video.startTime = 0;
+        });
 
         // prepare the device to capture the video
-        // if (navigator.mediaDevices) {
-        //     console.log("getUserMedia supported.");
+        if (navigator.mediaDevices) {
+            console.log("getUserMedia supported.");
 
-        //     let constraints = { video: true, audio: false };
-        //     let chunks = [];
+            let constraints = { video: true, audio: false };
 
-        //     navigator.mediaDevices.getUserMedia(constraints)
-        //         .then(function (stream) {
-        //             let videoElement = document.getElementById("inputVideo");
-        //             that.mediaRecorder = new MediaRecorder(videoElement.srcObject);
+            navigator.mediaDevices.getUserMedia(constraints)
+                .then(function (stream) {
+                    let videoElement = document.getElementById("inputVideo");
+                    that.mediaRecorder = new MediaRecorder(videoElement.srcObject);
 
-        //             that.mediaRecorder.onstop = function (e) {
+                    that.mediaRecorder.onstop = function (e) {
 
-        //                 let video = document.getElementById("recording");
-        //                 video.addEventListener("play", function() {
+                        video.addEventListener("play", function() {
                            
-        //                 });
-        //                 video.addEventListener("pause", function() {
+                        });
+                        video.addEventListener("pause", function() {
                             
-        //                 });
-        //                 video.setAttribute('controls', 'name');
-        //                 video.controls = false;
-        //                 video.loop = true;
+                        });
+                        video.setAttribute('controls', 'name');
+                        video.controls = false;
+                        video.loop = true;
                         
-        //                 let blob = new Blob(chunks, { "type": "video/mp4; codecs=avc1" });
-        //                 chunks = [];
-        //                 let videoURL = URL.createObjectURL(blob);
-        //                 video.src = videoURL;
-        //                 console.log("Recording correctly saved");
-        //             }
+                        let blob = new Blob(that.chunks, { "type": "video/mp4; codecs=avc1" });
+                        let videoURL = URL.createObjectURL(blob);
+                        video.src = videoURL;
+                        console.log("Recording correctly saved");
+                    }
 
-        //             that.mediaRecorder.ondataavailable = function (e) {
-        //                 chunks.push(e.data);
-        //             }
-        //         })
-        //         .catch(function (err) {
-        //             console.error("The following error occurred: " + err);
-        //         })
-        // }
-        // else {
-        //     console.log("This app is not supported in your browser anymore");
-        // }
+                    that.mediaRecorder.ondataavailable = function (e) {
+                        console.log(e.data);
+                        that.chunks.push(e.data);
+                    }
+                })
+                .catch(function (err) {
+                    console.error("The following error occurred: " + err);
+                })
+        }
+        else {
+            console.log("This app is not supported in your browser anymore");
+        }
 
-        //this.setEvents();
+        this.setEvents();
 
         window.addEventListener("resize", this.onResize);
     }
@@ -89,8 +98,6 @@ class App {
 
     setEvents() {
 
-        let that = this;
-        
         // adjust video canvas
         let captureDiv = document.getElementById("capture");
         let videoCanvas = document.getElementById("outputVideo");
@@ -103,9 +110,9 @@ class App {
         let elem = document.getElementById("endOfCapture");
     
         let capture = document.getElementById("capture_btn");
-        capture.onclick = function () {
+        capture.onclick = () => {
             
-            if (!that.recording) {
+            if (!this.recording) {
                 
                 capture.innerHTML = "Stop" + " <i class='bi bi-stop-fill'></i>"
                 capture.style.backgroundColor = "lightcoral";
@@ -114,11 +121,11 @@ class App {
                 videoCanvas.style.border = "solid #924242";
                 
                 // Start the capture
-                that.project.landmarks = []; //reset array
-                that.recording = true;
-                that.mediaRecorder.start();
-                that.startTime = Date.now();
-                console.log(that.mediaRecorder.state);
+                this.project.landmarks = []; //reset array
+                this.recording = true;
+                this.mediaRecorder.start();
+                this.startTime = Date.now();
+                console.log(this.mediaRecorder.state);
                 console.log("Start recording");
             }
             else {
@@ -126,16 +133,16 @@ class App {
                 elem.style.display = "flex";
                 
                 // Stop the video recording
-                that.recording = false;
+                this.recording = false;
                 
-                that.mediaRecorder.stop();
+                this.mediaRecorder.stop();
                 let endTime = Date.now();
-                that.duration = endTime - that.startTime;
-                console.log(that.mediaRecorder.state);
+                this.duration = endTime - this.startTime;
+                console.log(this.mediaRecorder.state);
                 console.log("Stop recording");
     
                 // Correct first dt of landmarks
-                that.project.landmarks[0].dt = 0;
+                this.project.landmarks[0].dt = 0;
 
                 // Back to initial values
                 capture.innerHTML = "Capture" + " <i class='bi bi-record2'></i>"
@@ -146,47 +153,77 @@ class App {
         };
     
         let redo = document.getElementById("redo_btn");
-        redo.onclick = function () {
-            
-            elem.style.display = "none";
-        };
+        redo.onclick = () => elem.style.display = "none";
     
-        let loadData = document.getElementById("loadData_btn");
-        loadData.onclick = function () {
-            
+        let trimData = document.getElementById("trimData_btn");
+        trimData.onclick = () => {
             elem.style.display = "none";
-    
             MediaPipe.stop();
-            
-            // Store the data in project, and store a bvh of it
-            // TODO
-    
-            that.loadAnimation();
+            this.processVideo();
+        };
+
+        let loadData = document.getElementById("loadData_btn");
+        loadData.onclick = () => {
+            elem.style.display = "none";
+            MediaPipe.stop();
+            this.loadAnimation(0, null);
+        };
+
+        let trimBtn = document.getElementById("trim_btn");
+        trimBtn.onclick = () => {
+            VideoUtils.unbind( (start, end) => this.loadAnimation(start, end) );
         };
     }
+    
+    async processVideo() {
+                
+        // Update header
+        let capture = document.getElementById("capture_btn");
+        capture.disabled = true;
+        capture.style.display = "none";
 
-    fillLandmarks(data, _dt) 
-    {
+        let trimBtn = document.getElementById("trim_btn");
+        trimBtn.style.display = "block";
+
+        // TRIM VIDEO - be sure that only the sign is recorded
+        let canvas = document.getElementById("outputVideo");
+        let video = document.getElementById("recording");
+        video.classList.remove("hidden");
+        video.style.width = canvas.width + "px";
+        video.style.height = canvas.height + "px";
+
+        await VideoUtils.bind(video, canvas);
+    }
+
+    fillLandmarks(data, dt) {
+
+        if(!data || data.poseLandmarks == undefined) {
+            console.warn( "no landmark data at time " + dt/1000.0 );
+            return;
+        }
+
         for (let j = 0; j < data.poseLandmarks.length; ++j) {
             data.poseLandmarks[j].x = (data.poseLandmarks[j].x - 0.5);
             data.poseLandmarks[j].y = (1.0 - data.poseLandmarks[j].y) + 2;
             data.poseLandmarks[j].z = data.poseLandmarks[j].z * 0.5;
         }
-        /*for (let j = 0; j < data.ea.length; ++j) {
-            data.ea[j].y = - data.ea[j].y;
-        }*/
-        this.project.landmarks.push({RLM: data.rightHandLandmarks, LLM: data.leftHandLandmarks, FLM: data.faceLandmarks, PLM: data.poseLandmarks, dt: _dt});
+
+        this.project.landmarks.push({"RLM": data.rightHandLandmarks, "LLM": data.leftHandLandmarks, "FLM": data.faceLandmarks, "PLM": data.poseLandmarks, "dt": dt});
     }
 
-    loadAnimation() {
+    loadAnimation(startTime, endTime) {
     
         let that = this;
-
+        
         // Update header
         let capture = document.getElementById("capture_btn");
         capture.disabled = true;
         capture.style.display = "none";
-        
+
+        let trimBtn = document.getElementById("trim_btn");
+        trimBtn.disabled = true;
+        trimBtn.style.display = "none";
+
         let stateBtn = document.getElementById("state_btn");
         stateBtn.style.display = "block";
         let stopBtn = document.getElementById("stop_btn");
@@ -197,6 +234,8 @@ class App {
         videoDiv.classList.remove("expanded");
         let videoRec = document.getElementById("recording");
         videoRec.classList.remove("hidden");
+        videoRec.style.width = "100%";
+        videoRec.style.height = "100%";
 
         let timelineDiv = document.getElementById("timeline");
         timelineDiv.classList.remove("hidden");
@@ -246,20 +285,21 @@ class App {
         };
         // Initially register the callback to be notified about the first frame.
         videoRec.requestVideoFrameCallback(updateFrame);
-    
+
+        // Make a prompt but since we have to load the model, do it meanwhile 
+        // and set the name later 
         LiteGUI.prompt( "Please, enter the name of the sign performed and the language. (Example: Dog in Irish Sign Language --> dog_ISL)", (name) => {
 
-            if(name !== null) {
-                videoRec.name = name;
-                this.project.clipName = name;
-    
-                // Creates the scene and loads the animation
-                this.editor.loadInScene(this.project);
-            }else {
-                window.location = window.location;
-            }
+            name = name || "Unnamed";
+            videoRec.name = name;
+            this.project.clipName = name;
+            this.editor.updateGUI();
 
         }, { title: "Editor", width: 350 } );
+
+        // Creates the scene and loads the animation
+        this.project.trimTimes = [startTime, endTime];
+        this.editor.loadInScene(this.project);
     }
 
     async storeAnimation() {
@@ -296,17 +336,6 @@ class App {
     onResize() {
 
         let canvasArea = document.getElementById("canvasarea");
-
-        // let headerDiv = document.getElementById("header");
-        // let videoDiv = document.getElementById("capture");
-        // let videoCanvas = document.getElementById("outputVideo");
-        
-        // let relation = bodyDiv.width / WIDTH;                           // resize proportion
-        // let AR = videoCanvas.clientWidth / videoCanvas.clientHeight;    // aspect ratio
-        
-        // bodyDiv.width = WIDTH;
-        // videoCanvas.width  = videoDiv.width  = videoDiv.width / relation;
-        // videoCanvas.height = videoDiv.height = videoDiv.width / AR;
 
         const CANVAS_WIDTH = canvasArea.clientWidth;
         const CANVAS_HEIGHT = canvasArea.clientHeight;
