@@ -71,6 +71,7 @@ class Gizmo {
                 pointTexture: { value: new THREE.TextureLoader().load( 'data/imgs/disc.png' ) },
                 alphaTest: { value: 0.9 }
             },
+            depthTest: false,
             vertexShader: ShaderChunk["Point"].vertexshader,
             fragmentShader: ShaderChunk["Point"].fragmentshader
         });
@@ -324,6 +325,29 @@ class Gizmo {
     setSpace( space ) {
         this.transform.setSpace( space );
     }
+
+    showOptions( inspector ) {
+        inspector.addNumber( "Translation snap", this.editor.defaultTranslationSnapValue, { min: 0.5, max: 5, step: 0.5, callback: (v) => {
+            this.editor.defaultTranslationSnapValue = v;
+            this.editor.updateGizmoSnap();
+        }});
+        inspector.addNumber( "Rotation snap", this.editor.defaultRotationSnapValue, { min: 15, max: 180, step: 15, callback: (v) => {
+            this.editor.defaultRotationSnapValue = v;
+            this.editor.updateGizmoSnap();
+        }});
+        inspector.addSlider( "Size", this.editor.getGizmoSize(), { min: 0.2, max: 2, step: 0.1, callback: (v) => {
+            this.editor.setGizmoSize(v);
+        }});
+        inspector.addTitle("Bone markers")
+        inspector.addSlider( "Size", this.editor.getGizmoSize(), { min: 0.01, max: 1, step: 0.01, callback: (v) => {
+            this.editor.setBoneSize(v);
+        }});
+
+        const depthTestEnabled = this.bonePoints.material.depthTest;
+        inspector.addCheckbox( "Depth test", depthTestEnabled, (v) => { this.bonePoints.material.depthTest = v; })
+
+    }
+    
 };
 
 Gizmo.ModeToKeyType = {

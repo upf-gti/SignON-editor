@@ -209,6 +209,7 @@ class Editor {
             this.loadGLTF("models/t_pose.glb", gltf => {
             
                 let model = gltf.scene;
+                this.character = model.name;
                 model.castShadow = true;
                 
                 this.skeletonHelper = new THREE.SkeletonHelper(model);
