@@ -248,8 +248,6 @@ class App {
 
         $(videoDiv).draggable({containment: "#canvasarea"}).resizable({ aspectRatio: true, containment: "#canvasarea"});
 
-        // videoRec.src = "models/bvh/victor.mp4";
-
         const updateFrame = (now, metadata) => {
             
             // Do something with the frame.

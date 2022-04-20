@@ -27,14 +27,15 @@ class Project {
         this.listNames(mixer._root.bones, 0, []);
     
         //get the root 3D positions
-        var main3Dpos = clip.tracks[0].values;
-        var offset_array = skeleton.bones.map(v => v.position);
-        for (var i = 1; i < this.bones.length; i++) {
-            var aux_list = [];
-            for (var j = 3; j < main3Dpos.length - 3; j = j + 3)
-                aux_list.push([main3Dpos[j] + offset_array[i].x, main3Dpos[j + 1] + offset_array[i].y, main3Dpos[j + 2] + offset_array[i].z]);
-            this.pos.push(aux_list);
-        }
+        // var main3Dpos = clip.tracks[0].values;
+        // var offset_array = skeleton.bones.map(v => v.position);
+        // for (var i = 1; i < this.bones.length; i++) {
+        //     var aux_list = [];
+        //     for (var j = 3; j < main3Dpos.length - 3; j = j + 3)
+        //     aux_list.push([main3Dpos[j] + offset_array[i].x, main3Dpos[j + 1] + offset_array[i].y, main3Dpos[j + 2] + offset_array[i].z]);
+        //     this.pos.push(aux_list);
+        // }
+        this.pos = new Array(); // check this
     
         //ONWORK
         var example = clip.tracks[4].values; //positions of chest
