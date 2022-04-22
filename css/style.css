@@ -72,8 +72,20 @@ canvas {
 	font-size: 1.6em  !important;
 }
 
+.selected {
+	background: var(--global-color-selected);
+}
+
 .float-right {
 	float: right;
+}
+
+/* Litegui menubar */
+.mb-shortcut{
+    float: right;
+    font-size: 0.8em;
+    padding-top: 3px;
+    color: #999;
 }
 
 #signOn-logo {
@@ -90,7 +102,7 @@ canvas {
 }
 
 #capture {
-	width: 30%;
+	width: 20%;
 	left: 40px;
 	top: 90px;
 	position: absolute;

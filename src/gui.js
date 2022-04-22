@@ -41,7 +41,7 @@ class Gui {
             return true; // Handled
         };
         this.timeline.onBoneUnselected = () => this.editor.gizmo.stop();
-        this.timeline.onUpdateTrack = (track) => this.editor.updateAnimationAction(track);
+        this.timeline.onUpdateTrack = (idx) => this.editor.updateAnimationAction(idx);
         this.timeline.onGetSelectedBone = () => { return this.editor.getSelectedBone(); };
 
         // Move this to another place
@@ -111,19 +111,33 @@ class Gui {
         menubar.root.prepend(logo);
 
         menubar.add("Project/Upload animation", {icon: "<i class='bi bi-upload float-right'></i>", callback: () => this.editor.getApp().storeAnimation() });
+        menubar.add("Project/Show video", { type: "checkbox", instance: this, property: "showVideo", callback: () => {
+            const tl = document.getElementById("capture");
+            tl.style.display = that.showVideo ? "flex": "none";
+        }});
         menubar.add("Project/");
         menubar.add("Project/BVH", {subtitle: true});
         menubar.add("Project/Export", {icon: "<i class='bi bi-file-text float-right'></i>",  callback: () => this.editor.export() });
         menubar.add("Project/Open preview", {icon: "<i class='bi bi-file-earmark-play float-right'></i>",  callback: () => this.editor.showPreview() });
 
-        menubar.add("View/Video", { type: "checkbox", instance: this, property: "showVideo", callback: () => {
-            const tl = document.getElementById("capture");
-            tl.style.display = that.showVideo ? "flex": "none";
-        }});
-        menubar.add("View/Timeline", { type: "checkbox", instance: this, property: "showTimeline", callback: () => {
+        menubar.add("Timeline/Show", { type: "checkbox", instance: this, property: "showTimeline", callback: () => {
             const tl = document.getElementById("timeline");
             tl.style.display = that.showTimeline ? "block": "none";
         }});
+
+        menubar.add("Timeline/Shortcuts", { disabled: true });
+        menubar.add("Timeline/Shortcuts/Play-Pause", { short: "SPACE" });
+        menubar.add("Timeline/Shortcuts/Zoom", { short: "Wheel" });
+        menubar.add("Timeline/Shortcuts/Change time", { short: "Left Click+Drag" });
+        menubar.add("Timeline/Shortcuts/Move keys", { short: "Hold CTRL" });
+        menubar.add("Timeline/Shortcuts/Add keys", { short: "Right Click" });
+        menubar.add("Timeline/Shortcuts/Delete keys");
+        menubar.add("Timeline/Shortcuts/Delete keys/Single", { short: "DEL" });
+        menubar.add("Timeline/Shortcuts/Delete keys/Multiple", { short: "Hold LSHIFT" });
+        menubar.add("Timeline/Shortcuts/Key Selection");
+        menubar.add("Timeline/Shortcuts/Key Selection/Single", { short: "Left Click" });
+        menubar.add("Timeline/Shortcuts/Key Selection/Multiple", { short: "Hold LSHIFT" });
+        menubar.add("Timeline/Shortcuts/Key Selection/Box", { short: "Hold LSHIFT+Drag" });
 
         this.appendButtons( menubar );
     }
