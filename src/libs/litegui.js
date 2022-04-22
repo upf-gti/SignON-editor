@@ -3847,6 +3847,14 @@ LiteGUI.Console = Console;
 				icon.outerHTML = menu_item.data.icon;
 			}
 
+			if(menu_item.data.short) {
+				var short = document.createElement('span');
+				short.innerHTML = menu_item.data.short;
+				short.className += " mb-shortcut";
+				item.appendChild( short );
+				// menu_item.data.disabled = true;
+			}
+
 			if(menu_item.data.subtitle) {
 				item.className += " subtitle";
 			}

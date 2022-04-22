@@ -111,8 +111,18 @@ class Editor {
                     let stateBtn = document.getElementById("state_btn");
                     stateBtn.click();
                     break;
+                case "Delete":
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    this.gui.timeline.deleteKeyFrame(e, null);
+                    break;
                 case "Escape":
                     this.gui.timeline.unSelect();
+                    break;
+                case 'z':
+                    if(e.ctrlKey) {
+                        this.gui.timeline.restoreState();
+                    }
                     break;
             }
         });
@@ -506,10 +516,9 @@ class Editor {
         this.gizmo.updateBones(0.0);
     }
 
-    updateAnimationAction(track) {
+    updateAnimationAction(idx) {
 
         const mixer = this.mixer;
-        const idx = track.clip_idx;
 
         if(!mixer._actions.length || mixer._actions[0]._clip != this.animationClip) 
         return;

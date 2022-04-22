@@ -80,6 +80,14 @@ canvas {
 	float: right;
 }
 
+/* Litegui menubar */
+.mb-shortcut{
+    float: right;
+    font-size: 0.8em;
+    padding-top: 3px;
+    color: #999;
+}
+
 #signOn-logo {
 	width: 40px;
 	padding: 3px;

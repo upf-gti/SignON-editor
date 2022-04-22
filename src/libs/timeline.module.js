@@ -31,6 +31,7 @@ function Timeline( clip, bone_name ) {
 	this._last_mouse = [0,0];
 	this._lastKeyFramesSelected = [];
 
+	this._trackState = [];
 	this._tracks_drawn = [];
 	this._clipboard = null;
 
@@ -99,6 +100,42 @@ Timeline.prototype.isKeyFrameSelected = function ( track, index ) {
 	return track.selected[ index ];
 }
 
+Timeline.prototype.saveState = function(clip_idx) {
+
+	const localIdx = this.clip.tracks[clip_idx].idx;
+	const name = this.getTrackName(this.clip.tracks[clip_idx].name)[0];
+	const trackInfo = this.tracksPerBone[name][localIdx];
+
+	this._trackState.push({
+		idx: clip_idx,
+		t: this.clip.tracks[clip_idx].times.slice(),
+		v: this.clip.tracks[clip_idx].values.slice(),
+		editedTracks: [].concat(trackInfo.edited)
+	});
+}
+
+Timeline.prototype.restoreState = function() {
+	
+	if(!this._trackState.length)
+	return;
+
+	const state = this._trackState.pop();
+	this.clip.tracks[state.idx].times = state.t;
+	this.clip.tracks[state.idx].values = state.v;
+
+	const localIdx = this.clip.tracks[state.idx].idx;
+	const name = this.getTrackName(this.clip.tracks[state.idx].name)[0];
+	this.tracksPerBone[name][localIdx].edited = state.editedTracks;
+
+	// Update animation action interpolation info
+	if(this.onUpdateTrack)
+		this.onUpdateTrack( state.idx );
+}
+
+Timeline.prototype.clearState = function() {
+	this._trackState = [];
+}
+
 Timeline.prototype.selectKeyFrame = function ( track, selection_info, index ) {
 	
 	if(index == undefined || !track)
@@ -155,12 +192,17 @@ Timeline.prototype._paste = function( track, index ) {
 
 Timeline.prototype.pasteKeyFrame = function ( e, track, index ) {
 
+	this.saveState(track.clip_idx);
+
 	// Copy to current key
 	this._paste( track, index );
 	
 	if(!e.multipleSelection)
 	return;
 	
+	// Don't want anything after this
+	this.clearState();
+
 	// Copy to every selected key
 	for(let [name, idx, keyIndex] of this._lastKeyFramesSelected) {
 		this._paste( this.tracksPerBone[name][idx], keyIndex );
@@ -171,6 +213,8 @@ Timeline.prototype.addKeyFrame = function( track ) {
 
 	// Update clip information
 	const clip_idx = track.clip_idx;
+
+	this.saveState(clip_idx);
 
 	// Find new index
 	let newIdx = this.clip.tracks[clip_idx].times.findIndex( (t) => { return t > this.current_time; } );
@@ -209,7 +253,7 @@ Timeline.prototype.addKeyFrame = function( track ) {
 
 	// Update animation action interpolation info
 	if(this.onUpdateTrack)
-		this.onUpdateTrack( track );
+		this.onUpdateTrack( clip_idx );
 
 	if(this.onSetTime)
 		this.onSetTime(this.current_time);
@@ -254,7 +298,7 @@ Timeline.prototype._delete = function( track, index ) {
 
 	// Update animation action interpolation info
 	if(this.onUpdateTrack)
-		this.onUpdateTrack( track );
+		this.onUpdateTrack( clip_idx );
 }
 
 Timeline.prototype.deleteKeyFrame = function (e, track, index) {
@@ -281,6 +325,15 @@ Timeline.prototype.deleteKeyFrame = function (e, track, index) {
 		}
 	}
 	else{
+
+		// Key pressed
+		if(!track) {
+			const [boneName, trackIndex, keyIndex] = this._lastKeyFramesSelected[0];
+			track = this.tracksPerBone[boneName][trackIndex];
+			index = keyIndex;
+		}
+
+		this.saveState(track.clip_idx);
 		this._delete( track, index );
 	}
 
@@ -620,6 +673,7 @@ Timeline.prototype.processMouse = function (e) {
 		// Manage keyframe movement
 		if(this._movingKeys) {
 
+			this.clearState();
 			const newTime = this.xToTime( local_x );
 			
 			for(let [name, idx, keyIndex, keyTime] of this._lastKeyFramesSelected) {
