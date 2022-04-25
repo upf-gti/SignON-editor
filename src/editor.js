@@ -180,8 +180,17 @@ class Editor {
             this.state = !this.state;
             stateBtn.innerHTML = "<i class='bi bi-" + (this.state ? "pause" : "play") + "-fill'></i>";
             stateBtn.style.border = "solid #268581";
-            this.state ? this.gizmo.stop() : 0;
-            video.paused ? video.play() : video.pause();
+            if(this.state) {
+                this.gizmo.stop()
+                video.paused ? video.play() : 0;    
+            } else{
+                try{
+                    video.paused ? 0 : video.pause();    
+                }catch(ex) {
+                    console.error("video warning");
+                }
+            }
+            stateBtn.blur();
         };
 
         let stopBtn = document.getElementById("stop_btn");
@@ -506,8 +515,13 @@ class Editor {
 
         // Update video
         this.video.currentTime = this.video.startTime + t;
-        if(this.state && force)
-            this.video.play();
+        if(this.state && force) {
+            try{
+                this.video.play();
+            }catch(ex) {
+                console.error("video warning");
+            }
+        }
     }
 
     stopAnimation() {
