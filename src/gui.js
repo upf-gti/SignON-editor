@@ -181,7 +181,7 @@ class Gui {
             e.preventDefault();
             var bone_id = el.data.id;
     
-            const bone = this.editor.skeletonHelper.skeleton.getBoneByName(bone_id);
+            const bone = this.editor.skeletonHelper.getBoneByName(bone_id);
             if(!bone)
             return;
     
@@ -256,7 +256,7 @@ class Gui {
             widgets.addSeparator();
 
             const bone_selected = !(o.firstBone && numBones) ? 
-                this.editor.skeletonHelper.skeleton.getBoneByName(item_selected) : 
+                this.editor.skeletonHelper.getBoneByName(item_selected) : 
                 this.editor.skeletonHelper.bones[0];
 
             if(bone_selected) {
@@ -268,9 +268,13 @@ class Gui {
 
                 widgets.addSection("Bone", { pretitle: makePretitle('circle') });
                 widgets.addInfo("Name", bone_selected.name);
-                widgets.addInfo("Num tracks", "" + this.timeline.getNumTracks(bone_selected));
-                widgets.addTitle("Position");
-                widgets.addVector3(null, bone_selected.position.toArray(), {callback: (v) => innerUpdate("position", v)});
+                const numTracks = this.timeline.getNumTracks(bone_selected);
+                widgets.addInfo("Num tracks", "" + numTracks);
+
+                if(numTracks != 1) {
+                    widgets.addTitle("Position");
+                    widgets.addVector3(null, bone_selected.position.toArray(), {callback: (v) => innerUpdate("position", v)});
+                }
 
                 widgets.addTitle("Rotation (XYZ)");
                 widgets.addVector3(null, bone_selected.rotation.toArray(), {callback: (v) => innerUpdate("rotation", v)});

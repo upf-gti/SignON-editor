@@ -18,13 +18,15 @@ class Gizmo {
         transform.setMode( 'rotate' );
         transform.addEventListener( 'change', editor.render );
 
-        transform.addEventListener( 'objectChange', (e) => {
+        transform.addEventListener( 'objectChange', e => this.updateBones());
+
+        transform.addEventListener( 'mouseUp', e => {
             if(this.selectedBone === undefined)
             return;
             this.updateTracks(true);
         } );
 
-        transform.addEventListener( 'dragging-changed', (e) => {
+        transform.addEventListener( 'dragging-changed', e => {
             const enabled = e.value;
             editor.controls.enabled = !enabled;
             this.raycastEnabled = !this.raycastEnabled;
@@ -123,7 +125,7 @@ class Gizmo {
 
         const canvas = document.getElementById("webgl-canvas");
 
-        canvas.addEventListener( 'mousemove', (e) => {
+        canvas.addEventListener( 'mousemove', e => {
 
             if(!this.bonePoints || this.editor.state)
             return;
@@ -134,7 +136,7 @@ class Gizmo {
             canvas.style.cursor = intersections.length ? "crosshair" : "default";
         });
 
-        canvas.addEventListener( 'pointerdown', (e) => {
+        canvas.addEventListener( 'pointerdown', e => {
 
             if(e.button != 0 || !this.bonePoints || this.editor.state || (!this.raycastEnabled && !e.ctrlKey))
             return;
@@ -158,7 +160,7 @@ class Gizmo {
             }
         });
 
-        canvas.addEventListener( 'keydown', (e) => {
+        canvas.addEventListener( 'keydown', e => {
 
             switch ( e.key ) {
 
@@ -265,8 +267,6 @@ class Gizmo {
 
     updateTracks(force) {
 
-        this.updateBones();
-
         if(!force)
         return;
 
@@ -283,7 +283,7 @@ class Gizmo {
         if(Gizmo.ModeToKeyType[ this.editor.getGizmoMode() ] != track.type)
         return;
 
-        let bone = this.skeletonHelper.skeleton.getBoneByName(name);
+        let bone = this.skeletonHelper.getBoneByName(name);
 
         let start = track.dim * keyFrameIndex;
         let values = bone[ track.type ].toArray();
@@ -292,15 +292,15 @@ class Gizmo {
             return;
 
         const idx = track.clip_idx;
+        track.edited[ keyFrameIndex ] = true;
 
         // supports position and quaternion types
         for( let i = 0; i < values.length; ++i ) {
             this.editor.animationClip.tracks[ idx ].values[ start + i ] = values[i];
         }
 
-        // this.editor.mixer._actions[0].updateInterpolants();
-
-        track.edited[ keyFrameIndex ] = true;
+        // Update animation interpolants
+        this.editor.updateAnimationAction( idx );
         timeline.onSetTime( timeline.current_time );
     }
 

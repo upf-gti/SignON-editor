@@ -278,6 +278,7 @@ class Editor {
                     model.children[0].setRotationFromQuaternion(new THREE.Quaternion());
                 
                     that.skeletonHelper = new THREE.SkeletonHelper(model);
+                    that.skeletonHelper.name = "SkeletonHelper";
 
                     for (var bone_id in that.skeletonHelper.bones) {
                         that.skeletonHelper.bones[bone_id].setRotationFromQuaternion(new THREE.Quaternion());
@@ -314,6 +315,7 @@ class Editor {
                     that.gui.loadProject(project);
                     that.gizmo.begin(that.skeletonHelper);
                     
+                    $('#loading').fadeOut();
                     that.animate();
                 });
     
@@ -590,5 +592,22 @@ class Editor {
         console.log( "TODO: Open URL preview with data to show BVH" );
     }
 };
+
+THREE.SkeletonHelper.prototype.getBoneByName = function( name ) {
+
+    for ( let i = 0, il = this.bones.length; i < il; i ++ ) {
+
+        const bone = this.bones[ i ];
+
+        if ( bone.name === name ) {
+
+            return bone;
+
+        }
+
+    }
+
+    return undefined;
+}
 
 export { Editor };
