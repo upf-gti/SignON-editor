@@ -222,8 +222,9 @@ class Editor {
         this.scene.add( points );
 
         // Convert landmarks into an animation
-        let quatData = [];
+        let quatData = [ new THREE.Vector3() ];
         let test = new TFModel("data/ML/model.json");
+
         test.onLoad = () => {
             for (let i = 0; i < this.landmarksNN.length; i++) {
                 let outputNN = test.predictSampleSync( this.landmarksNN[i] );
