@@ -9,6 +9,7 @@ import { Gui } from "./gui.js";
 import { Gizmo } from "./gizmo.js";
 import { firstToUpperCase } from "./utils.js";
 import { OrientationHelper } from "./libs/OrientationHelper.js";
+import {AnimationRetargeting, PlayAnimation} from "./retargeting.js";
 
 class Editor {
 
@@ -25,8 +26,14 @@ class Editor {
 
         this.mixer = null;
         this.mixerHelper = null;
+        
         this.skeletonHelper = null;
         this.skeleton = null;
+        
+        this.animSkeleton = null;
+        this.srcBindPose = null;
+        this.tgtBindPose = null;
+
         this.pointsGeometry = null;
         this.landmarksArray = [];
         this.prevTime = this.iter = 0;
@@ -40,6 +47,10 @@ class Editor {
         // Keep "private"
         this.__app = app;
 
+        this.character = null;
+
+        this.playAnimation = null;
+        this.retargeting = new AnimationRetargeting();
         this.init();
     }
     
@@ -201,64 +212,115 @@ class Editor {
         this.animate();
 
         var that = this;
-
-        $.getJSON( "data/results.json", function( data ) {
+        function loadModel(){
+            
+        }
+        $.getJSON( "data/Taunt.json", function( data ) {
           
             that.landmarksArray = [];
             project.landmarks = [];
-                    
-            // Load the model (Eva)  
-            that.loadGLTF("models/Kate-tpose.glb", (gltf) => {
-            
-                let model = gltf.scene;
-                model.castShadow = true;
-                
-                model.traverse(  ( object ) => {
-                    if ( object.isMesh ||object.isSkinnedMesh ) {
-                        object.castShadow = true;
-                        object.receiveShadow = true;
-                        
+
+            //that.retargeting.createSkeletonFromJSON("data/defaultSkeleton.json", function(bindPose){
+            that.loadGLTF("models/Kate_Y.glb", function(gltf){
+                let anim = gltf.animations;
+                var srcpose = [];
+                gltf.scene.visible = false;
+                gltf.scene.traverse( function ( object ) {
+
+                    if ( object.isSkinnedMesh ){
+                        srcpose = object.skeleton;
+                        return;
                     }
-                    if (object.isBone) {
-                        object.scale.set(1.0, 1.0, 1.0);
-                    }
+
                 } );
-                //model.rotateX(-Math.PI/4)
-                that.skeletonHelper = new THREE.SkeletonHelper(model);
-                updateThreeJSSkeleton(that.skeletonHelper.bones);
-                let skeleton = createSkeleton();
-                that.skeletonHelper.skeleton = skeleton;
-                const boneContainer = new THREE.Group();
-                boneContainer.add(skeleton.bones[0]);
-                that.scene.add(that.skeletonHelper);
-                that.scene.add(boneContainer);
-                that.scene.add( model );
-
-                that.animationClip = createAnimationFromRotations("Eva", data);
-
-                that.mixer = new THREE.AnimationMixer(model);
+                that.srcBindPose = that.retargeting.getBindPose(srcpose, true);
+                    
+                for(var i = 0; i < that.srcBindPose.length; i++)
+                {
+                    var bone = that.srcBindPose[i];
+                    var o = gltf.scene.getObjectByName(bone.name);
+                    o.position.copy(bone.position);
+                    //o.scale.copy(bone.scale);
+                    bone.scale.copy( o.scale );
+                    o.quaternion.copy(bone.quaternion);
+                    o.updateWorldMatrix()
+                }
+                that.animSkeleton = new THREE.SkeletonHelper( gltf.scene );			
+                that.animSkeleton.visible = false;
+                that.scene.add(that.animSkeleton)
+                that.scene.add(gltf.scene)
+               
+                updateThreeJSSkeleton(that.srcBindPose);
+                that.animationClip = createAnimationFromRotations("Taunt", data);
+              
+                that.mixer = new THREE.AnimationMixer(gltf.scene);
                 that.mixer.clipAction(that.animationClip).setEffectiveWeight(1.0).play();
-                that.mixer.update(that.clock.getDelta()); //do first iteration to update from T pose
-                that.pointsGeometry = new THREE.BufferGeometry();
+                
+
+                // Load the model (Eva)  
+                that.loadGLTF("models/Eva_Y.glb", (gltf) => {
+                
+                    that.character = gltf.scene;
+                    
+                    that.character.rotateX(-Math.PI);
+                    that.character.rotateY(-Math.PI);
+                    that.character.position.set(0,0.8,0);
+
+                    that.character.castShadow = true;
+                    
+                    that.character.traverse(  ( object ) => {
+                        if ( object.isMesh || object.isSkinnedMesh ) {
+                            object.castShadow = true;
+                            object.receiveShadow = true;
+                            if(object.material.map) object.material.map.anisotropy = 16; 
+                            that.tgtBindPose = object.skeleton;
+                            
+                        }
+                        else if (object.isBone) {
+                            object.scale.set(1.0, 1.0, 1.0);
+                        }
+                        if(!that.tgtBindPose){
+                            object.traverse(function(o){
+                                if(o.isSkinnedMesh){
+                                    that.tgtBindPose = o.skeleton;
+                                }
+                            })
+                        }
+                    } );
+                    that.tgtBindPose = that.retargeting.getBindPose(that.tgtBindPose);
+                    that.skeletonHelper = new THREE.SkeletonHelper(that.character);
+
+                    const boneContainer = new THREE.Group();
+                    boneContainer.add(that.tgtBindPose[0]);
+                    that.scene.add(that.skeletonHelper);
+                    that.scene.add(boneContainer);
+                    that.scene.add( that.character );
+
+                    that.pointsGeometry = new THREE.BufferGeometry();
+                
+                    const material = new THREE.PointsMaterial( { color: 0x880000 } );
+                    material.size = 0.025;
+                    
+                    const points = new THREE.Points( that.pointsGeometry, material );
+                    
+                    that.scene.add( points );
             
-                const material = new THREE.PointsMaterial( { color: 0x880000 } );
-                material.size = 0.025;
-                
-                const points = new THREE.Points( that.pointsGeometry, material );
-                
-                that.scene.add( points );
-        
-                project.prepareData(that.mixer, that.animationClip, skeleton);
-                that.gui.loadProject(project);
-        
-                that.gizmo.begin(that.skeletonHelper);
-                
-                that.animate();
+                    //project.prepareData(that.mixer, that.animationClip, skeleton);
+                    that.gui.loadProject(project);
+            
+                    
+                    
+                    that.retargeting.updateSkeleton(that.srcBindPose);
+                    that.retargeting.automap(that.skeletonHelper.bones);
+                    that.mixer.update(0);
+                    that.retargeting.retargetAnimation(that.srcBindPose, that.tgtBindPose, that.animSkeleton, that.skeletonHelper, true);
+                    that.gizmo.begin(that.skeletonHelper);
+                    that.animate();
 
-                that.skeleton = skeleton;
-                //that.export();
-            });
-
+                    //that.skeleton = skeleton;
+                    //that.export();
+                });
+            })
         });
     }
 
@@ -405,9 +467,20 @@ class Editor {
     update(dt) {
 
         if (this.mixer && this.state)
+        {
             this.mixer.update(dt);
-
-     
+           // this.animSkeleton = this.playAnimation.animateSkeleton(this.animSkeleton,dt)
+            this.retargeting.retargetAnimation(this.srcBindPose, this.tgtBindPose, this.animSkeleton, this.skeletonHelper, true);
+            for(var i = 0; i < this.skeletonHelper.bones.length; i++)
+            {
+                var bone = this.skeletonHelper.bones[i];
+                var o = this.character.getObjectByName(bone.name);
+                o.position.copy(bone.position);
+                o.scale.copy(bone.scale);
+                o.quaternion.copy(bone.quaternion);
+                o.matrixWorldNeedsUpdate = true;
+            }
+        }
         this.gizmo.update(this.state, dt);
     }
 
