@@ -18,7 +18,16 @@ class Gizmo {
         transform.setMode( 'rotate' );
         transform.addEventListener( 'change', editor.render );
 
-        transform.addEventListener( 'objectChange', e => this.updateBones());
+        transform.addEventListener( 'objectChange', e => {
+            this.updateBones();
+
+            if(this.selectedBone != null) {
+                const bone = this.editor.skeletonHelper.bones[this.selectedBone];
+                if($(".bone-position")) $(".bone-position")[0].setValue(bone.position.toArray());
+                if($(".bone-euler")) $(".bone-euler")[0].setValue(bone.rotation.toArray());
+                if($(".bone-quaternion")) $(".bone-quaternion")[0].setValue(bone.quaternion.toArray());
+            }
+        });
 
         transform.addEventListener( 'mouseUp', e => {
             if(this.selectedBone === undefined)
@@ -42,8 +51,6 @@ class Gizmo {
                     pos: bone.position.toArray(),
                     quat: bone.quaternion.toArray(),
                 } );
-            }else {
-                editor.gui.updateSidePanel(null, bone.name);
             }
         });
 

@@ -78,7 +78,7 @@ const BVHExporter = {
 
     export: function(skeleton, animationClip, frames_length) {
 
-        this.exportData(skeleton, animationClip, frames_length);
+        this.exportData( skeleton, animationClip );
         return;
 
         var bvh = "";
@@ -170,6 +170,8 @@ const BVHExporter = {
 
             const frameTime = frameIdx * framerate;
 
+            bvh += "(" + frameIdx + ") ";
+
             for( const track of clip.tracks ) {
 
                 const [boneName, trackType] = track.name.split(".");
@@ -204,7 +206,7 @@ const BVHExporter = {
                         x = track.values[0]; y = track.values[1]; z = track.values[2];
                     }
                     
-                    bvh += x.toFixed(6) + " " + y.toFixed(6) + " " + z.toFixed(6) + " ";
+                    bvh += "[" + boneName + "] " + x.toFixed(6) + " " + y.toFixed(6) + " " + z.toFixed(6) + " ";
                 } 
 
                 // Quaternions
@@ -227,10 +229,9 @@ const BVHExporter = {
                     
                     var euler = new THREE.Euler();
                     euler.setFromQuaternion(new THREE.Quaternion(x, y, z, w));
-                    bvh += this.rad2deg(euler.x).toFixed(6) + " " + this.rad2deg(euler.y).toFixed(6) + " " + this.rad2deg(euler.z).toFixed(6) + " ";
+                    bvh += "[" + boneName + "] " + this.rad2deg(euler.x).toFixed(6) + " " + this.rad2deg(euler.y).toFixed(6) + " " + this.rad2deg(euler.z).toFixed(6) + " ";
                 }
             }
-
 
             // Next frame
             bvh += "\n";

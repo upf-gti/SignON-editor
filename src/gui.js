@@ -271,16 +271,17 @@ class Gui {
                 const numTracks = this.timeline.getNumTracks(bone_selected);
                 widgets.addInfo("Num tracks", "" + numTracks);
 
-                if(numTracks != 1) {
+                // Only edit position for root bone
+                if(bone_selected.children.length && bone_selected.parent.constructor !== bone_selected.children[0].constructor) {
                     widgets.addTitle("Position");
-                    widgets.addVector3(null, bone_selected.position.toArray(), {callback: (v) => innerUpdate("position", v)});
+                    widgets.addVector3(null, bone_selected.position.toArray(), {className: 'bone-position', callback: (v) => innerUpdate("position", v)});
                 }
 
                 widgets.addTitle("Rotation (XYZ)");
-                widgets.addVector3(null, bone_selected.rotation.toArray(), {callback: (v) => innerUpdate("rotation", v)});
+                widgets.addVector3(null, bone_selected.rotation.toArray(), {className: 'bone-euler', callback: (v) => innerUpdate("rotation", v)});
 
                 widgets.addTitle("Quaternion");
-                widgets.addVector4(null, bone_selected.quaternion.toArray(), {callback: (v) => innerUpdate("quaternion", v)});
+                widgets.addVector4(null, bone_selected.quaternion.toArray(), {className: 'bone-quaternion', callback: (v) => innerUpdate("quaternion", v)});
             }
         };
 
