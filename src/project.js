@@ -45,7 +45,7 @@ class Project {
             this.pos.push(aux_list);
         }
     
-        this.framerate = 60;
+        this.framerate = 30;
         
         // Compute framerate manually
         if(0) {

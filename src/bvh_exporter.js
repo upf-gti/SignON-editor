@@ -78,6 +78,9 @@ const BVHExporter = {
 
     export: function(skeleton, animationClip, frames_length) {
 
+        this.exportData(skeleton, animationClip, frames_length);
+        return;
+
         var bvh = "";
 
         bvh += "HIERARCHY\n";
@@ -136,6 +139,104 @@ const BVHExporter = {
         }
 
         this.download(bvh, 'sign.bvh', 'text/plain');
+    },
+
+    exportData: function(skeleton, clip) {
+
+        var bvh = "";
+        const framerate = 1 / 30;
+        const numFrames = 1 + Math.floor(clip.duration / framerate);
+
+        bvh += "HIERARCHY\n";
+
+        if (skeleton.bones[0] == undefined) {
+            console.error("Can not export skeleton with no bones");
+            return;
+        }
+
+        bvh += this.exportBone(skeleton.bones[0], 0);
+        
+        bvh += "MOTION\n";
+        bvh += "Frames: " + numFrames + "\n";
+        bvh += "Frame Time: " + framerate + "\n";
+
+        function getInterpolationIndex(time, frameTimes) {
+            for(var i = 0; i < frameTimes.length; ++i) {
+                if(frameTimes[i] > time) return i;
+            }
+        }
+
+        for( var frameIdx = 0; frameIdx < numFrames; ++frameIdx ) {
+
+            const frameTime = frameIdx * framerate;
+
+            for( const track of clip.tracks ) {
+
+                const [boneName, trackType] = track.name.split(".");
+                const bone = skeleton.getBoneByName(boneName);
+                const GET = (idx) => { return track.values[idx] };
+                
+                // End site nodes do not have channels
+                if (!bone.children.length || track.times.length < 2)
+                    continue;
+
+                let itpIdx = getInterpolationIndex(frameTime, track.times);
+                let timeWeight = THREE.MathUtils.mapLinear(frameTime, track.times[itpIdx - 1], track.times[itpIdx], 0, 1);
+
+                // Positions
+                if (trackType === 'position') {
+
+                    /*times = [0, 2.3, 5, 6.1]
+                    nTimes = [0, 1, 2, 3, 4, 5, 6]
+                    */
+
+                    var x, y, z;
+
+                    // Interpolate to find correct values
+                    if(frameIdx != 0) {
+                        x = THREE.MathUtils.lerp(GET((itpIdx - 1) * 3),     GET(itpIdx * 3), timeWeight);
+                        y = THREE.MathUtils.lerp(GET((itpIdx - 1) * 3 + 1), GET(itpIdx * 3 + 1), timeWeight);
+                        z = THREE.MathUtils.lerp(GET((itpIdx - 1) * 3 + 2), GET(itpIdx * 3 + 2), timeWeight);
+                    } 
+
+                    // Don't need to interpolate, get first values
+                    else {
+                        x = track.values[0]; y = track.values[1]; z = track.values[2];
+                    }
+                    
+                    bvh += x.toFixed(6) + " " + y.toFixed(6) + " " + z.toFixed(6) + " ";
+                } 
+
+                // Quaternions
+                else if (trackType === 'quaternion') {
+                   
+                    var x, y, z, w;
+
+                    // Interpolate to find correct values
+                    if(frameIdx != 0) {
+                        x = THREE.MathUtils.lerp(GET((itpIdx - 1) * 4),         GET(itpIdx * 4), timeWeight);
+                        y = THREE.MathUtils.lerp(GET((itpIdx - 1) * 4 + 1),     GET(itpIdx * 4 + 1), timeWeight);
+                        z = THREE.MathUtils.lerp(GET((itpIdx - 1) * 4 + 2),     GET(itpIdx * 4 + 2), timeWeight);
+                        w = THREE.MathUtils.lerp(GET((itpIdx - 1) * 4 + 3),     GET(itpIdx * 4 + 3), timeWeight);
+                    } 
+
+                    // Don't need to interpolate, get first values
+                    else {
+                        x = track.values[0]; y = track.values[1]; z = track.values[2]; w = track.values[3];
+                    }
+                    
+                    var euler = new THREE.Euler();
+                    euler.setFromQuaternion(new THREE.Quaternion(x, y, z, w));
+                    bvh += this.rad2deg(euler.x).toFixed(6) + " " + this.rad2deg(euler.y).toFixed(6) + " " + this.rad2deg(euler.z).toFixed(6) + " ";
+                }
+            }
+
+
+            // Next frame
+            bvh += "\n";
+        }
+
+        console.log(bvh);//this.download(bvh, 'sign.bvh', 'text/plain');
     }
 };
 
