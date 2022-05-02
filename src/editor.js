@@ -24,6 +24,8 @@ class Editor {
         this.renderer = null;
         this.state = false;  // defines how the animation starts (moving/static)
 
+        this.spotLight = null;
+
         this.mixer = null;
         this.mixerHelper = null;
         
@@ -62,23 +64,41 @@ class Editor {
         const CANVAS_HEIGHT = canvasArea.clientHeight;
 
         let scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x777777);
+        scene.background = new THREE.Color( 0xa0a0a0 );
+               
+        // ground
+        const ground = new THREE.Mesh( new THREE.PlaneGeometry( 100, 100 ), new THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } ) );
+        ground.rotation.x = - Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add( ground );
+
+        //gridhelper
         scene.add(new THREE.GridHelper(300, 20));
+        
+        scene.fog = new THREE.Fog( 0xa0a0a0, 10, 50 );
         
         const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
         hemiLight.position.set( 0, 20, 0 );
         scene.add( hemiLight );
 
-        const dirLight = new THREE.DirectionalLight( 0xffffff );
-        dirLight.position.set( - 3, 10, - 10 );
-        dirLight.castShadow = true;
+        const dirLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
+        dirLight.position.set( 3, 30, 50 );
+        dirLight.castShadow = false;
         dirLight.shadow.camera.top = 2;
         dirLight.shadow.camera.bottom = - 2;
         dirLight.shadow.camera.left = - 2;
         dirLight.shadow.camera.right = 2;
-        dirLight.shadow.camera.near = 0.01;
-        dirLight.shadow.camera.far = 40;
+        dirLight.shadow.camera.near = 1;
+        dirLight.shadow.camera.far = 200;
         scene.add( dirLight );
+
+        this.spotLight = new THREE.SpotLight(0xffa95c,1);
+        this.spotLight.position.set(-50,50,50);
+        this.spotLight.castShadow = true;
+        this.spotLight.shadow.bias = -0.0001;
+        this.spotLight.shadow.mapSize.width = 1024*4;
+        this.spotLight.shadow.mapSize.height = 1024*4;
+        scene.add( this.spotLight );
 
         const pixelRatio = CANVAS_WIDTH / CANVAS_HEIGHT;
         let renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -272,6 +292,8 @@ class Editor {
                         if ( object.isMesh || object.isSkinnedMesh ) {
                             object.castShadow = true;
                             object.receiveShadow = true;
+                            object.frustumCulled = false;
+
                             if(object.material.map) object.material.map.anisotropy = 16; 
                             that.tgtBindPose = object.skeleton;
                             
@@ -428,6 +450,11 @@ class Editor {
         this.render();
         this.update(this.clock.getDelta());
 
+        this.spotLight.position.set( 
+            this.camera.position.x + 10,
+            this.camera.position.y + 10,
+            this.camera.position.z + 10,
+        );
         // if (this.pointsGeometry == undefined || this.landmarksArray == undefined) {
         //     var currLM = this.landmarksArray[this.iter];
         //     var currTime = Date.now();
