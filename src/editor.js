@@ -82,7 +82,7 @@ class Editor {
         scene.add( hemiLight );
 
         const dirLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
-        dirLight.position.set( 3, 30, 50 );
+        dirLight.position.set( 3, 30, -50 );
         dirLight.castShadow = false;
         dirLight.shadow.camera.top = 2;
         dirLight.shadow.camera.bottom = - 2;
@@ -119,8 +119,8 @@ class Editor {
         let controls = new OrbitControls(camera, renderer.domElement);
         controls.minDistance = 1;
         controls.maxDistance = 7;
-        camera.position.set(0.5, 2, -3);
-        controls.target.set(1.2, 1.5, 0);
+        camera.position.set(0, 1, 3);
+        controls.target.set(0, 1, 0);
         controls.update();  
 
         this.scene = scene;
@@ -282,9 +282,10 @@ class Editor {
                 
                     that.character = gltf.scene;
                     
-                    that.character.rotateX(-Math.PI);
-                    that.character.rotateY(-Math.PI);
-                    that.character.position.set(0,0.8,0);
+                    /*that.character.rotateX(-Math.PI);
+                    that.character.rotateY(-Math.PI);*/
+                    that.character.rotateOnAxis (new THREE.Vector3(1,0,0), Math.PI);
+                    that.character.position.set(0,0.75,0);
 
                     that.character.castShadow = true;
                     
@@ -310,6 +311,7 @@ class Editor {
                         }
                     } );
                     that.tgtBindPose = that.retargeting.getBindPose(that.tgtBindPose);
+                    that.tgtBindPose[0].position.copy(that.srcBindPose[0].position)
                     that.skeletonHelper = new THREE.SkeletonHelper(that.character);
 
                     const boneContainer = new THREE.Group();
@@ -338,7 +340,7 @@ class Editor {
                     that.retargeting.retargetAnimation(that.srcBindPose, that.tgtBindPose, that.animSkeleton, that.skeletonHelper, true);
                     that.gizmo.begin(that.skeletonHelper);
                     that.animate();
-
+                
                     //that.skeleton = skeleton;
                     //that.export();
                 });
