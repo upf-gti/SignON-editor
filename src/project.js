@@ -20,13 +20,22 @@ class Project {
         this.times = [];
     }
 
-    prepareData(mixer, clip, skeleton) {
-        
+    prepareData(mixer, clip, skeleton, video) {
+        console.log()
         this.mixer = mixer;
         this.duration = clip.duration;
         this.listNames(mixer._root.bones, 0, []);
+
+        // Trim tracks
+        if(0) {
+            const startTime = this.trimTimes[0];
+            const endTime = this.trimTimes[1] || video.duration;
+            for( let track of clip.tracks )
+                track.trim( startTime, endTime );
+            clip.resetDuration();
+        }
     
-        //get the root 3D positions
+        // Get the root 3D positions
         var main3Dpos = clip.tracks[0].values;
         var offset_array = skeleton.bones.map(v => v.position);
         for (var i = 1; i < this.bones.length; i++) {
@@ -36,19 +45,7 @@ class Project {
             this.pos.push(aux_list);
         }
     
-        //ONWORK
-        var example = clip.tracks[4].values; //positions of chest
-        var aaa = [];
-        for (var i = 0, j = 0; i < example.length-3; i=i+3, j=j+4)
-        {
-            var x = example[i];
-            var y = example[i+1];
-            var z = example[i+2];
-            var vec = new Vector3(x, y, z);
-            //aaa.push(vec.applyQuaternion());
-        }
-    
-        this.framerate = 60;
+        this.framerate = 30;
         
         // Compute framerate manually
         if(0) {

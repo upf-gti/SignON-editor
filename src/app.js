@@ -39,6 +39,7 @@ class App {
                 video.currentTime = 10000000*Math.random();
             }
             video.currentTime = 0;
+            video.startTime = 0;
         });
 
         // prepare the device to capture the video
@@ -155,17 +156,18 @@ class App {
         let redo = document.getElementById("redo_btn");
         redo.onclick = () => elem.style.display = "none";
     
+        let trimData = document.getElementById("trimData_btn");
+        trimData.onclick = () => {
+            elem.style.display = "none";
+            MediaPipe.stop();
+            this.processVideo();
+        };
+
         let loadData = document.getElementById("loadData_btn");
         loadData.onclick = () => {
-            
             elem.style.display = "none";
-    
             MediaPipe.stop();
-            
-            // Store the data in project, and store a bvh of it
-            // TODO
-    
-            this.processVideo();
+            this.loadAnimation(0, null);
         };
 
         let trimBtn = document.getElementById("trim_btn");
@@ -175,9 +177,7 @@ class App {
     }
     
     async processVideo() {
-        
-        // const onComplete = () => this.loadAnimation();
-        
+                
         // Update header
         let capture = document.getElementById("capture_btn");
         capture.disabled = true;
@@ -207,17 +207,25 @@ class App {
         var up = new THREE.Vector3(0, 1, 0);
 
         for (let j = 0; j < data.poseLandmarks.length; ++j) {
-            
-            point.x = (1.0 - data.poseLandmarks[j].x);
-            point.y = (1.0 - data.poseLandmarks[j].y) + 2;
-            point.z = data.poseLandmarks[j].z * 0.5;
-
-            point.applyAxisAngle(up, Math.PI);
-            
-            data.poseLandmarks[j].x = point.x;
-            data.poseLandmarks[j].y = point.y;
-            data.poseLandmarks[j].z = point.z;
+            data.poseLandmarks[j].x = (data.poseLandmarks[j].x - 0.5);
+            data.poseLandmarks[j].y = (1.0 - data.poseLandmarks[j].y) + 2;
+            data.poseLandmarks[j].z = -data.poseLandmarks[j].z * 0.5;
         }
+        if(data.rightHandLandmarks)
+            for (let j = 0; j < data.rightHandLandmarks.length; ++j) {
+                data.rightHandLandmarks[j].z = -data.rightHandLandmarks[j].z * 0.5;
+            }
+        if(data.leftHandLandmarks)
+            for (let j = 0; j < data.leftHandLandmarks.length; ++j) {
+                data.leftHandLandmarks[j].z = -data.leftHandLandmarks[j].z * 0.5;
+            }
+
+        point.applyAxisAngle(up, Math.PI);
+        
+        data.poseLandmarks[j].x = point.x;
+        data.poseLandmarks[j].y = point.y;
+        data.poseLandmarks[j].z = point.z;
+        
         /*for (let j = 0; j < data.ea.length; ++j) {
             data.ea[j].y = - data.ea[j].y;
         }*/
@@ -230,6 +238,10 @@ class App {
         let that = this;
         
         // Update header
+        let capture = document.getElementById("capture_btn");
+        capture.disabled = true;
+        capture.style.display = "none";
+
         let trimBtn = document.getElementById("trim_btn");
         trimBtn.disabled = true;
         trimBtn.style.display = "none";
@@ -295,21 +307,21 @@ class App {
         };
         // Initially register the callback to be notified about the first frame.
         videoRec.requestVideoFrameCallback(updateFrame);
-    
+
+        // Make a prompt but since we have to load the model, do it meanwhile 
+        // and set the name later 
         LiteGUI.prompt( "Please, enter the name of the sign performed and the language. (Example: Dog in Irish Sign Language --> dog_ISL)", (name) => {
 
-            if(name !== null) {
-                videoRec.name = name;
-                this.project.clipName = name;
-                this.project.trimTimes = [startTime, endTime];
-    
-                // Creates the scene and loads the animation
-                this.editor.loadInScene(this.project);
-            }else {
-                window.location = window.location;
-            }
+            name = name || "Unnamed";
+            videoRec.name = name;
+            this.project.clipName = name;
+            this.editor.updateGUI();
 
         }, { title: "Editor", width: 350 } );
+
+        // Creates the scene and loads the animation
+        this.project.trimTimes = [startTime, endTime];
+        this.editor.loadInScene(this.project);
     }
 
     async storeAnimation() {
@@ -346,17 +358,6 @@ class App {
     onResize() {
 
         let canvasArea = document.getElementById("canvasarea");
-
-        // let headerDiv = document.getElementById("header");
-        // let videoDiv = document.getElementById("capture");
-        // let videoCanvas = document.getElementById("outputVideo");
-        
-        // let relation = bodyDiv.width / WIDTH;                           // resize proportion
-        // let AR = videoCanvas.clientWidth / videoCanvas.clientHeight;    // aspect ratio
-        
-        // bodyDiv.width = WIDTH;
-        // videoCanvas.width  = videoDiv.width  = videoDiv.width / relation;
-        // videoCanvas.height = videoDiv.height = videoDiv.width / AR;
 
         const CANVAS_WIDTH = canvasArea.clientWidth;
         const CANVAS_HEIGHT = canvasArea.clientHeight;

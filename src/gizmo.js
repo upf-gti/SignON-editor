@@ -18,13 +18,24 @@ class Gizmo {
         transform.setMode( 'rotate' );
         transform.addEventListener( 'change', editor.render );
 
-        transform.addEventListener( 'objectChange', (e) => {
+        transform.addEventListener( 'objectChange', e => {
+            this.updateBones();
+
+            if(this.selectedBone != null) {
+                const bone = this.editor.skeletonHelper.bones[this.selectedBone];
+                if($(".bone-position")) $(".bone-position")[0].setValue(bone.position.toArray());
+                if($(".bone-euler")) $(".bone-euler")[0].setValue(bone.rotation.toArray());
+                if($(".bone-quaternion")) $(".bone-quaternion")[0].setValue(bone.quaternion.toArray());
+            }
+        });
+
+        transform.addEventListener( 'mouseUp', e => {
             if(this.selectedBone === undefined)
             return;
             this.updateTracks(true);
         } );
 
-        transform.addEventListener( 'dragging-changed', (e) => {
+        transform.addEventListener( 'dragging-changed', e => {
             const enabled = e.value;
             editor.controls.enabled = !enabled;
             this.raycastEnabled = !this.raycastEnabled;
@@ -40,8 +51,6 @@ class Gizmo {
                     pos: bone.position.toArray(),
                     quat: bone.quaternion.toArray(),
                 } );
-            }else {
-                editor.gui.updateSidePanel(null, bone.name);
             }
         });
 
@@ -71,6 +80,7 @@ class Gizmo {
                 pointTexture: { value: new THREE.TextureLoader().load( 'data/imgs/disc.png' ) },
                 alphaTest: { value: 0.9 }
             },
+            depthTest: false,
             vertexShader: ShaderChunk["Point"].vertexshader,
             fragmentShader: ShaderChunk["Point"].fragmentshader
         });
@@ -94,6 +104,7 @@ class Gizmo {
         geometry.setAttribute( 'size', new THREE.Float32BufferAttribute( new Array(positionAttribute.count).fill(size), 1 ) );
 
         this.bonePoints = new THREE.Points( geometry, pointsShaderMaterial );
+        this.bonePoints.name = "GizmoPoints";
         this.scene.add( this.bonePoints );
         
         this.raycaster = new THREE.Raycaster();
@@ -121,7 +132,7 @@ class Gizmo {
 
         const canvas = document.getElementById("webgl-canvas");
 
-        canvas.addEventListener( 'mousemove', (e) => {
+        canvas.addEventListener( 'mousemove', e => {
 
             if(!this.bonePoints || this.editor.state)
             return;
@@ -132,7 +143,7 @@ class Gizmo {
             canvas.style.cursor = intersections.length ? "crosshair" : "default";
         });
 
-        canvas.addEventListener( 'pointerdown', (e) => {
+        canvas.addEventListener( 'pointerdown', e => {
 
             if(e.button != 0 || !this.bonePoints || this.editor.state || (!this.raycastEnabled && !e.ctrlKey))
             return;
@@ -156,7 +167,7 @@ class Gizmo {
             }
         });
 
-        canvas.addEventListener( 'keydown', (e) => {
+        canvas.addEventListener( 'keydown', e => {
 
             switch ( e.key ) {
 
@@ -263,8 +274,6 @@ class Gizmo {
 
     updateTracks(force) {
 
-        this.updateBones();
-
         if(!force)
         return;
 
@@ -281,7 +290,7 @@ class Gizmo {
         if(Gizmo.ModeToKeyType[ this.editor.getGizmoMode() ] != track.type)
         return;
 
-        let bone = this.skeletonHelper.skeleton.getBoneByName(name);
+        let bone = this.skeletonHelper.getBoneByName(name);
 
         let start = track.dim * keyFrameIndex;
         let values = bone[ track.type ].toArray();
@@ -290,15 +299,15 @@ class Gizmo {
             return;
 
         const idx = track.clip_idx;
+        track.edited[ keyFrameIndex ] = true;
 
         // supports position and quaternion types
         for( let i = 0; i < values.length; ++i ) {
             this.editor.animationClip.tracks[ idx ].values[ start + i ] = values[i];
         }
 
-        // this.editor.mixer._actions[0].updateInterpolants();
-
-        track.edited[ keyFrameIndex ] = true;
+        // Update animation interpolants
+        this.editor.updateAnimationAction( idx );
         timeline.onSetTime( timeline.current_time );
     }
 
@@ -324,6 +333,29 @@ class Gizmo {
     setSpace( space ) {
         this.transform.setSpace( space );
     }
+
+    showOptions( inspector ) {
+        inspector.addNumber( "Translation snap", this.editor.defaultTranslationSnapValue, { min: 0.5, max: 5, step: 0.5, callback: (v) => {
+            this.editor.defaultTranslationSnapValue = v;
+            this.editor.updateGizmoSnap();
+        }});
+        inspector.addNumber( "Rotation snap", this.editor.defaultRotationSnapValue, { min: 15, max: 180, step: 15, callback: (v) => {
+            this.editor.defaultRotationSnapValue = v;
+            this.editor.updateGizmoSnap();
+        }});
+        inspector.addSlider( "Size", this.editor.getGizmoSize(), { min: 0.2, max: 2, step: 0.1, callback: (v) => {
+            this.editor.setGizmoSize(v);
+        }});
+        inspector.addTitle("Bone markers")
+        inspector.addSlider( "Size", this.editor.getGizmoSize(), { min: 0.01, max: 1, step: 0.01, callback: (v) => {
+            this.editor.setBoneSize(v);
+        }});
+
+        const depthTestEnabled = this.bonePoints.material.depthTest;
+        inspector.addCheckbox( "Depth test", depthTestEnabled, (v) => { this.bonePoints.material.depthTest = v; })
+
+    }
+    
 };
 
 Gizmo.ModeToKeyType = {

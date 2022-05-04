@@ -203,14 +203,11 @@ function updateThreeJSSkeleton(skeleton) {
                 skeleton[i].getWorldPosition(global_position);
                 LM_INFO[lmInfoArray[lm_data]].global_position = global_position;
                 /*temp_map[lm_info.idx] = bone;
-
                 if (lm_info.parent_idx != -1) {
-
                     if (temp_map[lm_info.parent_idx] != undefined) {
                         temp_map[lm_info.parent_idx].add(bone);
                     }
                 }
-
                 bones.push( bone );*/
             }
         }
@@ -487,13 +484,9 @@ function injectNewLandmarks(landmarks) {
     }
 }
 
-function createSkeleton(landmarks) {
+function createSkeleton() {
 
-    var skeleton = createThreeJsSkeleton();
-
-    injectNewLandmarks(landmarks);
-
-    return skeleton;
+    return createThreeJsSkeleton();
 }
 
 function createAnimation(name, landmarks) {
@@ -523,7 +516,7 @@ function createAnimation(name, landmarks) {
         for (let i = 0; i < landmarks.length; ++i) {
 
             if (lm_info.children_names.length == 0) continue;            
-
+            
             if (lm_info.parent_idx == -1 || lm_info.children_names.length > 1) {
                 pos_values.push(landmarks[i].PLM[lm_info.idx].x);
                 pos_values.push(landmarks[i].PLM[lm_info.idx].y);
@@ -615,4 +608,59 @@ function createAnimation(name, landmarks) {
     return new THREE.AnimationClip(name || "sign_anim", length, tracks);
 }
 
-export { createSkeleton, createAnimation, createThreeJSSkeleton, updateThreeJSSkeleton };
+function createAnimationFromRotations(name, quaternions_data) {
+
+    var names = quaternions_data[quaternions_data.length - 1];
+    var bones_length = quaternions_data[0].length;//names.length;
+
+    var tracks = [];
+    var quat_values = [];
+    var times = [];
+    var time_accum = 0.0;
+
+    //for (var quaternion_idx = 0; quaternion_idx < bones_length * 4; quaternion_idx += 4) {
+    var quaternion_idx = 0;
+    var amount = 4;
+    var isPosition = false;
+    while(quaternion_idx < bones_length){
+        quat_values = [];
+        times = [];
+        time_accum = 0.0;
+        isPosition = names[Math.ceil(quaternion_idx/amount)].includes("position");
+
+        for (var frame_idx = 0; frame_idx < quaternions_data.length - 1; ++frame_idx) {
+
+            quat_values.push(quaternions_data[frame_idx][quaternion_idx + 0]);
+            quat_values.push(quaternions_data[frame_idx][quaternion_idx + 1]);
+            quat_values.push(quaternions_data[frame_idx][quaternion_idx + 2]);
+            if(!isPosition)
+                quat_values.push(quaternions_data[frame_idx][quaternion_idx + 3]);
+
+            time_accum += 0.032;//landmarks[i].dt / 1000.0;
+            times.push(time_accum);
+        }
+        var data = null;
+        if(isPosition)
+        {
+            data = new THREE.VectorKeyframeTrack(names[Math.ceil(quaternion_idx / amount)], times, quat_values);
+            amount = 3;
+            quaternion_idx+=amount;
+        }
+        else{   
+            data = new THREE.QuaternionKeyframeTrack( names[Math.ceil(quaternion_idx / amount)], times, quat_values);
+            
+            amount = 4;
+            quaternion_idx+=amount;
+        }
+        tracks.push(data);
+    }
+
+    // use -1 to automatically calculate
+    // the length from the array of tracks
+    const length = -1;
+
+    return new THREE.AnimationClip(name || "sign_anim", length, tracks);
+}
+
+
+export { createSkeleton, injectNewLandmarks, createAnimation, updateThreeJSSkeleton, createAnimationFromRotations};

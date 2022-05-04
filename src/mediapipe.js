@@ -1,4 +1,8 @@
 import { app } from "./app.js";
+import "https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js";
+import "https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js";
+import "https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js";
+import "https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js";
 
 const MediaPipe = {
 
@@ -78,8 +82,7 @@ const MediaPipe = {
         const webcamera = new Camera(videoElement, {
             onFrame: async () => {
                 await holistic.send({image: videoElement});
-                var elem = document.getElementById("loading");
-                elem.style.display = "none";
+                $('#loading').fadeOut();
             },
             width: 1280,
             height: 720

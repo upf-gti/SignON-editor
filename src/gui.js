@@ -114,19 +114,33 @@ class Gui {
         menubar.root.prepend(logo);
 
         menubar.add("Project/Upload animation", {icon: "<i class='bi bi-upload float-right'></i>", callback: () => this.editor.getApp().storeAnimation() });
+        menubar.add("Project/Show video", { type: "checkbox", instance: this, property: "showVideo", callback: () => {
+            const tl = document.getElementById("capture");
+            tl.style.display = that.showVideo ? "flex": "none";
+        }});
         menubar.add("Project/");
         menubar.add("Project/BVH", {subtitle: true});
         menubar.add("Project/Export", {icon: "<i class='bi bi-file-text float-right'></i>",  callback: () => this.editor.export() });
         menubar.add("Project/Open preview", {icon: "<i class='bi bi-file-earmark-play float-right'></i>",  callback: () => this.editor.showPreview() });
 
-        menubar.add("View/Video", { type: "checkbox", instance: this, property: "showVideo", callback: () => {
-            const tl = document.getElementById("capture");
-            tl.style.display = that.showVideo ? "flex": "none";
-        }});
-        menubar.add("View/Timeline", { type: "checkbox", instance: this, property: "showTimeline", callback: () => {
+        menubar.add("Timeline/Show", { type: "checkbox", instance: this, property: "showTimeline", callback: () => {
             const tl = document.getElementById("timeline");
             tl.style.display = that.showTimeline ? "block": "none";
         }});
+
+        menubar.add("Timeline/Shortcuts", { disabled: true });
+        menubar.add("Timeline/Shortcuts/Play-Pause", { short: "SPACE" });
+        menubar.add("Timeline/Shortcuts/Zoom", { short: "Wheel" });
+        menubar.add("Timeline/Shortcuts/Change time", { short: "Left Click+Drag" });
+        menubar.add("Timeline/Shortcuts/Move keys", { short: "Hold CTRL" });
+        menubar.add("Timeline/Shortcuts/Add keys", { short: "Right Click" });
+        menubar.add("Timeline/Shortcuts/Delete keys");
+        menubar.add("Timeline/Shortcuts/Delete keys/Single", { short: "DEL" });
+        menubar.add("Timeline/Shortcuts/Delete keys/Multiple", { short: "Hold LSHIFT" });
+        menubar.add("Timeline/Shortcuts/Key Selection");
+        menubar.add("Timeline/Shortcuts/Key Selection/Single", { short: "Left Click" });
+        menubar.add("Timeline/Shortcuts/Key Selection/Multiple", { short: "Hold LSHIFT" });
+        menubar.add("Timeline/Shortcuts/Key Selection/Box", { short: "Hold LSHIFT+Drag" });
 
         this.appendButtons( menubar );
     }
@@ -148,6 +162,9 @@ class Gui {
 
     updateSidePanel(root, item_selected, options) {
 
+        if(!this.sidePanel)
+        return;
+
         item_selected = item_selected || this.item_selected;
     
         options = options || {};
@@ -167,7 +184,7 @@ class Gui {
             e.preventDefault();
             var bone_id = el.data.id;
     
-            const bone = this.editor.skeletonHelper.skeleton.getBoneByName(bone_id);
+            const bone = this.editor.skeletonHelper.getBoneByName(bone_id);
             if(!bone)
             return;
     
@@ -242,7 +259,7 @@ class Gui {
             widgets.addSeparator();
 
             const bone_selected = !(o.firstBone && numBones) ? 
-                this.editor.skeletonHelper.skeleton.getBoneByName(item_selected) : 
+                this.editor.skeletonHelper.getBoneByName(item_selected) : 
                 this.editor.skeletonHelper.bones[0];
 
             if(bone_selected) {
@@ -254,15 +271,20 @@ class Gui {
 
                 widgets.addSection("Bone", { pretitle: makePretitle('circle') });
                 widgets.addInfo("Name", bone_selected.name);
-                widgets.addInfo("Num tracks", "" + this.timeline.getNumTracks(bone_selected));
-                widgets.addTitle("Position");
-                widgets.addVector3(null, bone_selected.position.toArray(), {callback: (v) => innerUpdate("position", v)});
+                const numTracks = this.timeline.getNumTracks(bone_selected);
+                widgets.addInfo("Num tracks", "" + numTracks);
+
+                // Only edit position for root bone
+                if(bone_selected.children.length && bone_selected.parent.constructor !== bone_selected.children[0].constructor) {
+                    widgets.addTitle("Position");
+                    widgets.addVector3(null, bone_selected.position.toArray(), {className: 'bone-position', callback: (v) => innerUpdate("position", v)});
+                }
 
                 widgets.addTitle("Rotation (XYZ)");
-                widgets.addVector3(null, bone_selected.rotation.toArray(), {callback: (v) => innerUpdate("rotation", v)});
+                widgets.addVector3(null, bone_selected.rotation.toArray(), {className: 'bone-euler', callback: (v) => innerUpdate("rotation", v)});
 
                 widgets.addTitle("Quaternion");
-                widgets.addVector4(null, bone_selected.quaternion.toArray(), {callback: (v) => innerUpdate("quaternion", v)});
+                widgets.addVector4(null, bone_selected.quaternion.toArray(), {className: 'bone-quaternion', callback: (v) => innerUpdate("quaternion", v)});
             }
         };
 
@@ -279,27 +301,14 @@ class Gui {
         let prevDialog = document.getElementById("settings-dialog");
         if(prevDialog) prevDialog.remove();
 
-        const dialog = new LiteGUI.Dialog({ id: 'settings-dialog', title: firstToUpperCase(settings), close: true, width: 380, height: 150, scroll: false, draggable: true});
+        const dialog = new LiteGUI.Dialog({ id: 'settings-dialog', title: firstToUpperCase(settings), close: true, width: 380, height: 210, scroll: false, draggable: true});
 		dialog.show();
 
         const inspector = new LiteGUI.Inspector();
 
         switch( settings ) {
             case 'gizmo': 
-                inspector.addNumber( "Translation snap", this.editor.defaultTranslationSnapValue, { min: 0.5, max: 5, step: 0.5, callback: (v) => {
-                    this.editor.defaultTranslationSnapValue = v;
-                    this.editor.updateGizmoSnap();
-                }});
-                inspector.addNumber( "Rotation snap", this.editor.defaultRotationSnapValue, { min: 15, max: 180, step: 15, callback: (v) => {
-                    this.editor.defaultRotationSnapValue = v;
-                    this.editor.updateGizmoSnap();
-                }});
-                inspector.addSlider( "Size", this.editor.getGizmoSize(), { min: 0.2, max: 2, step: 0.1, callback: (v) => {
-                    this.editor.setGizmoSize(v);
-                }});
-                inspector.addSlider( "Bone marker size", this.editor.getGizmoSize(), { min: 0.01, max: 1, step: 0.01, callback: (v) => {
-                    this.editor.setBoneSize(v);
-                }});
+                this.editor.gizmo.showOptions( inspector );
                 break;
         };
 
@@ -358,7 +367,7 @@ class Gui {
             },
             {
                 id: "trim_btn",
-                text: "Trim and convert data to 3D animation",
+                text: "Convert data to 3D animation",
                 display: "none"
             }
         ];
