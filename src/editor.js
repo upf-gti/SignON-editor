@@ -10,6 +10,7 @@ import { firstToUpperCase } from "./utils.js"
 import { OrientationHelper } from "./libs/OrientationHelper.js";
 import { TFModel } from "./libs/tensorFlowWrap.module.js";
 import { CanvasButtons } from "./ui.config.js";
+import { AnimationRetargeting } from './retargeting.js'
 
 class Editor {
 
@@ -42,9 +43,14 @@ class Editor {
         this.defaultTranslationSnapValue = 1;
         this.defaultRotationSnapValue = 30; // Degrees
 
+        this.srcBindPose = null;
+        this.tgtBindPose = null;
+        this.tgtSkeleton = null;
+
         // Keep "private"
         this.__app = app;
 
+        this.retargeting = new AnimationRetargeting();
         this.init();
     }
     
@@ -223,11 +229,11 @@ class Editor {
 
         // Convert landmarks into an animation
         let quatData = [ new THREE.Vector3() ];
-        let test = new TFModel("data/ML/model.json");
+        let NN = new TFModel("data/ML/model.json");
 
-        test.onLoad = () => {
+        NN.onLoad = () => {
             for (let i = 0; i < this.landmarksNN.length; i++) {
-                let outputNN = test.predictSampleSync( this.landmarksNN[i] );
+                let outputNN = NN.predictSampleSync( this.landmarksNN[i] );
                 
                 // Solve normalization problem
                 for (let j = 0; j < outputNN.length; j+=4)
@@ -242,10 +248,10 @@ class Editor {
                 quatData.push(outputNN);
             }
 
-            test.deinit();
+            NN.deinit();
         };
         
-        // Load the model (Eva) --> TODO  
+        // Load the model (Eva)
         this.loadGLTF("models/t_pose.glb", (gltf) => {
         
             let model = gltf.scene;
@@ -508,7 +514,20 @@ class Editor {
     update(dt) {
 
         if (this.mixer && this.state)
+        {
             this.mixer.update(dt);
+            this.retargeting.retargetAnimation(this.srcBindPose, this.tgtBindPose, this.skeletonHelper, this.tgtSkeleton, true);
+            for(var i = 0; i < this.tgtSkeleton.bones.length; i++)
+            {
+                var bone = this.tgtSkeleton.bones[i];
+                var o = this.scene.getObjectByName("Eva").getObjectByName(bone.name);
+                o.position.copy(bone.position);
+                o.scale.copy(bone.scale);
+                o.quaternion.copy(bone.quaternion);
+                o.matrixWorldNeedsUpdate = true;
+            }
+
+        }
 
         this.gizmo.update(this.state, dt);
     }
