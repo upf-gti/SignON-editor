@@ -336,6 +336,10 @@ AnimationRetargeting.prototype.getBindPose = function(skeleton, updateWorld = fa
             b.world.rot.addQuaternions(p.wolrd.pos, b.position);
             b.world.scl.addVectors(p.wolrd.pos, b.position);
             b.world.from_add( p.world, b.local );*/
+        }else if (b.parent) {
+            b.world.pos.copy(b.parent.position)  ;
+            b.world.scl.copy(b.parent.scale)  ;
+            b.world.rot.copy(b.quaternion)  ;
         }else {
             b.world.pos.copy(b.position)  ;
             b.world.scl.copy(b.scale)  ;
@@ -440,7 +444,7 @@ AnimationRetargeting.prototype.retargetAnimation = function(src_tbones, tgt_tbon
 
             var pos = new THREE.Vector3();
             pos.sub(src_pose_world_pos, src_bind_world_pos);
-            pos.multiply(b);
+            //pos.multiply(b);
             pos.add(tgt_bind_world_pos);
             
             if(onlyY)//// Only Move Up and Down --> Can be a flag (parameter)

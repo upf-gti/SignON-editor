@@ -664,4 +664,23 @@ function createAnimationFromRotations(name, quaternions_data) {
     return new THREE.AnimationClip(name || "sign_anim", length, tracks);
 }
 
-export { createSkeleton, injectNewLandmarks, createAnimation, updateThreeJSSkeleton, createAnimationFromRotations};
+function retargetNames(names) {
+    
+    var lmInfoArray = Object.keys(LM_INFO);
+
+    for(var i = 0; i < names.length; i++){
+        for (const lm_data in lmInfoArray) {
+            var lm_info = LM_INFO[lmInfoArray[lm_data]];
+            var n = names[i].split(".");
+            var root = n[0].replaceAll(/[-_.:]/g,"").toUpperCase();
+            if(lm_info.name.replaceAll(/[-_.:]/g,"").toUpperCase() == root)
+            {
+                names[i] = lm_info.name+"."+n[1];
+                continue;
+            }   
+        }
+    }
+    return names;
+}
+
+export { createSkeleton, createAnimation, createAnimationFromRotations, createThreeJSSkeleton, updateThreeJSSkeleton, injectNewLandmarks };
