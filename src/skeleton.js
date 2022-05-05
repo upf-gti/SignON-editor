@@ -518,7 +518,7 @@ function createAnimation(name, landmarks) {
         for (let i = 0; i < landmarks.length; ++i) {
 
             if (lm_info.children_names.length == 0) continue;            
-
+            
             if (lm_info.parent_idx == -1 || lm_info.children_names.length > 1) {
                 pos_values.push(landmarks[i].PLM[lm_info.idx].x);
                 pos_values.push(landmarks[i].PLM[lm_info.idx].y);

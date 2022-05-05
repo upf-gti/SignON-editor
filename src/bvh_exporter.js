@@ -1,5 +1,9 @@
 import * as THREE from "./libs/three.module.js";
 
+const DOWNLOAD      = 0;
+const LOCAL_STORAGE = 1;
+const LOG           = 1;
+
 const BVHExporter = {
 
     // Function to download data to a file
@@ -21,11 +25,6 @@ const BVHExporter = {
         }
     },
 
-    rad2deg: function(radians) {
-        var pi = Math.PI;
-        return radians * (180/pi);
-    },
-
     getTabs: function(level) {
         
         var tabs = "";
@@ -37,30 +36,31 @@ const BVHExporter = {
 
     exportBone: function(bone, level) {
 
-        var end_site = bone.children.length == 0;
+        var isEndSite = bone.children.length == 0;
 
         var tabs = this.getTabs(level);
         var bvh = tabs;
 
-        var export_pos = false;
-        if (!(bone.parent instanceof THREE.Bone) && bone.parent.type != "Bone") {
+        var exportPos = false;
+        if (!(bone.parent instanceof THREE.Bone)) {
             bvh += "ROOT " + bone.name + "\n";
-            export_pos = true;
+            exportPos = true;
         } else 
-        if (end_site) {
+        if (isEndSite) {
             bvh += "End Site" + "\n";
         } else {
             bvh += "JOINT " + bone.name + "\n";
         }
 
+        const position = this.skeletonHelper.getBoneByName( bone.name ).position;
+
         bvh += tabs + "{\n";
+        bvh += tabs + "\tOFFSET "   + position.x.toFixed(6) +
+                            " "     + position.y.toFixed(6) +
+                            " "     + position.z.toFixed(6) + "\n";
 
-        bvh += tabs + "\tOFFSET " + bone.position.x.toFixed(6) +
-                            " " + bone.position.y.toFixed(6) +
-                            " " + bone.position.z.toFixed(6) + "\n";
-
-        if (!end_site) {
-            if (export_pos) {
+        if (!isEndSite) {
+            if (exportPos) {
                 bvh += tabs + "\tCHANNELS 6 Xposition Yposition Zposition Xrotation Yrotation Zrotation\n";
             } else {
                 bvh += tabs + "\tCHANNELS 3 Xrotation Yrotation Zrotation\n";
@@ -76,66 +76,104 @@ const BVHExporter = {
         return bvh;
     },
 
-    export: function(skeleton, animationClip, frames_length) {
+    quatToEulerString: function(q) {
+        var euler = new THREE.Euler();
+        euler.setFromQuaternion(q);
+        return THREE.Math.radToDeg(euler.x).toFixed(6) + " " + THREE.Math.radToDeg(euler.y).toFixed(6) + " " + THREE.Math.radToDeg(euler.z).toFixed(6) + " ";
+    },
+
+    posToString: function(p) {
+        return p.x.toFixed(6) + " " + p.y.toFixed(6) + " " + p.z.toFixed(6) + " ";
+    },
+
+    export: function(mixer, skeletonHelper, clip, mode) {
 
         var bvh = "";
+        const framerate = 1 / 30;
+        const numFrames = 1 + Math.floor(clip.duration / framerate);
+
+        this.skeletonHelper = skeletonHelper;
 
         bvh += "HIERARCHY\n";
 
-        if (skeleton.bones[0] == undefined) {
+        if (skeletonHelper.bones[0] == undefined) {
             console.error("Can not export skeleton with no bones");
             return;
         }
 
-        bvh += this.exportBone(skeleton.bones[0], 0);
+        bvh += this.exportBone(skeletonHelper.skeleton.bones[0], 0);
         
         bvh += "MOTION\n";
-        bvh += "Frames: " + frames_length + "\n";
-        bvh += "Frame Time: " + (1.0 / 30.0) + "\n";
+        bvh += "Frames: " + numFrames + "\n";
+        bvh += "Frame Time: " + framerate + "\n";
 
-        for (var frame_idx = 0; frame_idx < frames_length; ++frame_idx) {
+        const interpolants = mixer._actions[0]._interpolants;
 
-            var bone_idx = 0;
-            for (var track_idx = 0; track_idx < animationClip.tracks.length; track_idx++) {
+        const getBoneFrameData = (time, bone) => {
 
-                // End site nodes do not have channels
-                if (skeleton.bones[bone_idx].children.length == 0) {
-                    bone_idx++;
-                    //continue;
+            var data = "";
+
+            // End site
+            if(!bone.children.length)
+            return data;
+
+            const tracks = clip.tracks.filter( t => t.name.split(".")[0] === bone.name );
+
+            // No animation info            
+            if(!tracks.length)
+                data += this.quatToEulerString(bone.quaternion);
+            else {
+                for(var i = 0; i < tracks.length; ++i) {
+
+                    const t = tracks[i];
+                    const trackIndex = clip.tracks.indexOf( t );
+                    const interpolant = interpolants[ trackIndex ];
+                    const values = interpolant.evaluate(time);
+    
+                    const type = t.name.split(".")[1];
+                    switch(type) {
+                        case 'position':
+                            const pos = new THREE.Vector3();
+                            pos.fromArray(values.slice(0, 3));
+                            data += this.posToString(pos);
+                            break;
+                        case 'quaternion':
+                            const q = new THREE.Quaternion();
+                            q.fromArray(values.slice(0, 4));
+                            data += this.quatToEulerString(q);
+                    }
                 }
-
-                // Only export position for root node
-                if (track_idx == 0) {
-                    // Positions
-                    var positions = animationClip.tracks[track_idx];
-                    var x = positions.values[frame_idx * 3 + 0];
-                    var y = positions.values[frame_idx * 3 + 1];
-                    var z = positions.values[frame_idx * 3 + 2];
-                    
-                    bvh += x.toFixed(6) + " " + y.toFixed(6) + " " + z.toFixed(6) + " ";
-
-                    track_idx++;
-                }
-
-                // Quaternions
-                var quaternions = animationClip.tracks[track_idx];
-                var x = quaternions.values[frame_idx * 4 + 0];
-                var y = quaternions.values[frame_idx * 4 + 1];
-                var z = quaternions.values[frame_idx * 4 + 2];
-                var w = quaternions.values[frame_idx * 4 + 3];
-
-                var euler = new THREE.Euler();
-                euler.setFromQuaternion(new THREE.Quaternion(x, y, z, w));
-
-                bvh += this.rad2deg(euler.x).toFixed(6) + " " + this.rad2deg(euler.y).toFixed(6) + " " + this.rad2deg(euler.z).toFixed(6) + " ";
-
-                bone_idx++;
             }
 
+            for (const b of bone.children)
+                data += getBoneFrameData(time, b);
+
+            return data;
+        }
+
+        for( var frameIdx = 0; frameIdx < numFrames; ++frameIdx ) {
+            bvh += getBoneFrameData(frameIdx * framerate, skeletonHelper.skeleton.bones[0]);
             bvh += "\n";
         }
 
-        this.download(bvh, 'sign.bvh', 'text/plain');
+        switch(mode) {
+            
+            case LOCAL_STORAGE:
+                window.localStorage.setItem('three_webgl_bvhpreview', bvh);
+                break;
+            case LOG:
+                console.log(bvh);
+                break;
+            default:
+                this.download(bvh, 'sign.bvh', 'text/plain');
+                break;
+        }
+
+        this.skeletonHelper = null;
+    },
+
+    copyToLocalStorage: function(mixer, skeletonHelper, clip) {
+        this.export(mixer, skeletonHelper, clip, LOCAL_STORAGE);
     }
 };
 

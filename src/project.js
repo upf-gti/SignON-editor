@@ -46,7 +46,7 @@ class Project {
         // }
         this.pos = new Array(); // check this
     
-        this.framerate = 60;
+        this.framerate = 30;
         
         // Compute framerate manually
         if(0) {
