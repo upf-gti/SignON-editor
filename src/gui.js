@@ -240,26 +240,30 @@ class Gui {
             widgets.addInfo("Frame rate", this.project.framerate);
             widgets.addInfo("Duration", this.project.duration);
             widgets.widgets_per_row = 1;
-            widgets.addSection("Gizmo", { pretitle: makePretitle('gizmo'), settings: (e) => this.openSettings( 'gizmo' ), settings_title: "<i class='bi bi-gear-fill section-settings'></i>" });
-            widgets.addButtons( "Mode", ["Translate","Rotate"], { selected: this.editor.getGizmoMode(), name_width: "50%", width: "100%", callback: (v) => {
-                this.editor.setGizmoMode(v);
-                widgets.on_refresh();
-            }});
-
-            widgets.addButtons( "Space", ["Local","World"], { selected: this.editor.getGizmoSpace(), name_width: "50%", width: "100%", callback: (v) => {
-                this.editor.setGizmoSpace(v);
-                widgets.on_refresh();
-            }});
-
-            widgets.addCheckbox( "Snap", this.editor.isGizmoSnapActive(), {callback: () => this.editor.toggleGizmoSnap() } );
-
-            widgets.addSeparator();
 
             const bone_selected = !(o.firstBone && numBones) ? 
                 this.editor.skeletonHelper.getBoneByName(item_selected) : 
                 this.editor.skeletonHelper.bones[0];
 
             if(bone_selected) {
+
+                const numTracks = this.timeline.getNumTracks(bone_selected);
+                const _Modes = numTracks > 1 ? ["Translate","Rotate"] : ["Rotate"];
+
+                widgets.addSection("Gizmo", { pretitle: makePretitle('gizmo'), settings: (e) => this.openSettings( 'gizmo' ), settings_title: "<i class='bi bi-gear-fill section-settings'></i>" });
+                widgets.addButtons( "Mode", _Modes, { selected: this.editor.getGizmoMode(), name_width: "50%", width: "100%", callback: (v) => {
+                    this.editor.setGizmoMode(v);
+                    widgets.on_refresh();
+                }});
+
+                widgets.addButtons( "Space", ["Local","World"], { selected: this.editor.getGizmoSpace(), name_width: "50%", width: "100%", callback: (v) => {
+                    this.editor.setGizmoSpace(v);
+                    widgets.on_refresh();
+                }});
+
+                widgets.addCheckbox( "Snap", this.editor.isGizmoSnapActive(), {callback: () => this.editor.toggleGizmoSnap() } );
+
+                widgets.addSeparator();
 
                 const innerUpdate = (attribute, value) => {
                     bone_selected[attribute].fromArray( value ); 
@@ -268,20 +272,19 @@ class Gui {
 
                 widgets.addSection("Bone", { pretitle: makePretitle('circle') });
                 widgets.addInfo("Name", bone_selected.name);
-                const numTracks = this.timeline.getNumTracks(bone_selected);
-                widgets.addInfo("Num tracks", "" + numTracks);
+                widgets.addInfo("Num tracks", numTracks ?? 0);
 
                 // Only edit position for root bone
                 if(bone_selected.children.length && bone_selected.parent.constructor !== bone_selected.children[0].constructor) {
                     widgets.addTitle("Position");
-                    widgets.addVector3(null, bone_selected.position.toArray(), {className: 'bone-position', callback: (v) => innerUpdate("position", v)});
+                    widgets.addVector3(null, bone_selected.position.toArray(), {precision: 3, className: 'bone-position', callback: (v) => innerUpdate("position", v)});
                 }
 
                 widgets.addTitle("Rotation (XYZ)");
-                widgets.addVector3(null, bone_selected.rotation.toArray(), {className: 'bone-euler', callback: (v) => innerUpdate("rotation", v)});
+                widgets.addVector3(null, bone_selected.rotation.toArray(), {precision: 3, className: 'bone-euler', callback: (v) => innerUpdate("rotation", v)});
 
                 widgets.addTitle("Quaternion");
-                widgets.addVector4(null, bone_selected.quaternion.toArray(), {className: 'bone-quaternion', callback: (v) => innerUpdate("quaternion", v)});
+                widgets.addVector4(null, bone_selected.quaternion.toArray(), {precision: 3, className: 'bone-quaternion', callback: (v) => innerUpdate("quaternion", v)});
             }
         };
 

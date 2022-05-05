@@ -180,10 +180,13 @@ class Editor {
             this.state = !this.state;
             stateBtn.innerHTML = "<i class='bi bi-" + (this.state ? "pause" : "play") + "-fill'></i>";
             stateBtn.style.border = "solid #268581";
+
             if(this.state) {
                 this.gizmo.stop()
                 video.paused ? video.play() : 0;    
+                for(const ip of $(".bone-position input, .bone-euler input, .bone-quaternion input")) ip.setAttribute('disabled', true);
             } else{
+                for(const ip of $(".bone-position input, .bone-euler input, .bone-quaternion input")) ip.removeAttribute('disabled');
                 try{
                     video.paused ? 0 : video.pause();    
                 }catch(ex) {
@@ -512,6 +515,11 @@ class Editor {
         if(this.state && !force)
         return;
 
+        const bone = this.skeletonHelper.bones[this.gizmo.selectedBone];
+        if($(".bone-position").length) $(".bone-position")[0].setValue(bone.position.toArray());
+        if($(".bone-euler").length) $(".bone-euler")[0].setValue(bone.rotation.toArray());
+        if($(".bone-quaternion").length) $(".bone-quaternion")[0].setValue(bone.quaternion.toArray());
+
         this.mixer.setTime(t);
         this.gizmo.updateBones(0.0);
 
@@ -567,8 +575,14 @@ class Editor {
 
     update(dt) {
 
-        if (this.mixer && this.state)
+        if (this.mixer && this.state) {
             this.mixer.update(dt);
+            // Update ui data
+            const bone = this.skeletonHelper.bones[this.gizmo.selectedBone];
+            for(const ip of $(".bone-position")) ip.setValue(bone.position.toArray());
+            for(const ip of $(".bone-euler")) ip.setValue(bone.rotation.toArray());
+            for(const ip of $(".bone-quaternion")) ip.setValue(bone.quaternion.toArray());
+        }
 
         this.gizmo.update(this.state, dt);
     }
@@ -584,8 +598,7 @@ class Editor {
     }
 
     export() {
-        
-        BVHExporter.export(this.skeleton, this.animationClip, this.landmarksArray.length);
+        BVHExporter.export(this.mixer, this.skeletonHelper, this.animationClip);
     }
 
     showPreview() {

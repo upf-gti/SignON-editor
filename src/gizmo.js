@@ -23,9 +23,9 @@ class Gizmo {
 
             if(this.selectedBone != null) {
                 const bone = this.editor.skeletonHelper.bones[this.selectedBone];
-                if($(".bone-position")) $(".bone-position")[0].setValue(bone.position.toArray());
-                if($(".bone-euler")) $(".bone-euler")[0].setValue(bone.rotation.toArray());
-                if($(".bone-quaternion")) $(".bone-quaternion")[0].setValue(bone.quaternion.toArray());
+                for(const ip of $(".bone-position")) ip.setValue(bone.position.toArray());
+                for(const ip of $(".bone-euler")) ip.setValue(bone.rotation.toArray());
+                for(const ip of $(".bone-quaternion")) ip.setValue(bone.quaternion.toArray());
             }
         });
 
@@ -129,6 +129,7 @@ class Gizmo {
             throw("No skeleton");
 
         let transform = this.transform;
+        let timeline = this.editor.gui.timeline;
 
         const canvas = document.getElementById("webgl-canvas");
 
@@ -182,6 +183,9 @@ class Gizmo {
                     break;
 
                 case 'w':
+                    const bone = this.editor.skeletonHelper.bones[this.selectedBone];
+                    if(timeline.getNumTracks(bone) < 2) // only rotation
+                    return;
                     transform.setMode( 'translate' );
                     this.editor.gui.updateSidePanel();
                     break;
