@@ -1,5 +1,9 @@
 import * as THREE from "./libs/three.module.js";
 
+const DOWNLOAD      = 0;
+const LOCAL_STORAGE = 1;
+const LOG           = 1;
+
 const BVHExporter = {
 
     // Function to download data to a file
@@ -48,10 +52,12 @@ const BVHExporter = {
             bvh += "JOINT " + bone.name + "\n";
         }
 
+        const position = this.skeletonHelper.getBoneByName( bone.name ).position;
+
         bvh += tabs + "{\n";
-        bvh += tabs + "\tOFFSET "   + bone.position.x.toFixed(6) +
-                            " "     + bone.position.y.toFixed(6) +
-                            " "     + bone.position.z.toFixed(6) + "\n";
+        bvh += tabs + "\tOFFSET "   + position.x.toFixed(6) +
+                            " "     + position.y.toFixed(6) +
+                            " "     + position.z.toFixed(6) + "\n";
 
         if (!isEndSite) {
             if (exportPos) {
@@ -70,11 +76,6 @@ const BVHExporter = {
         return bvh;
     },
 
-    export: function(mixer, skeletonHelper, animationClip) {
-        this.mixer = mixer;
-        this.exportData( skeletonHelper, animationClip );
-    },
-
     quatToEulerString: function(q) {
         var euler = new THREE.Euler();
         euler.setFromQuaternion(q);
@@ -85,11 +86,13 @@ const BVHExporter = {
         return p.x.toFixed(6) + " " + p.y.toFixed(6) + " " + p.z.toFixed(6) + " ";
     },
 
-    exportData: function(skeletonHelper, clip) {
+    export: function(mixer, skeletonHelper, clip, mode) {
 
         var bvh = "";
         const framerate = 1 / 30;
         const numFrames = 1 + Math.floor(clip.duration / framerate);
+
+        this.skeletonHelper = skeletonHelper;
 
         bvh += "HIERARCHY\n";
 
@@ -104,7 +107,7 @@ const BVHExporter = {
         bvh += "Frames: " + numFrames + "\n";
         bvh += "Frame Time: " + framerate + "\n";
 
-        const interpolants = this.mixer._actions[0]._interpolants;
+        const interpolants = mixer._actions[0]._interpolants;
 
         const getBoneFrameData = (time, bone) => {
 
@@ -153,8 +156,24 @@ const BVHExporter = {
             bvh += "\n";
         }
 
-        // console.log(bvh);
-        this.download(bvh, 'sign.bvh', 'text/plain');
+        switch(mode) {
+            
+            case LOCAL_STORAGE:
+                window.localStorage.setItem('three_webgl_bvhpreview', bvh);
+                break;
+            case LOG:
+                console.log(bvh);
+                break;
+            default:
+                this.download(bvh, 'sign.bvh', 'text/plain');
+                break;
+        }
+
+        this.skeletonHelper = null;
+    },
+
+    copyToLocalStorage: function(mixer, skeletonHelper, clip) {
+        this.export(mixer, skeletonHelper, clip, LOCAL_STORAGE);
     }
 };
 

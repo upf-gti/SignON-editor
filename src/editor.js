@@ -602,7 +602,11 @@ class Editor {
     }
 
     showPreview() {
-        console.log( "TODO: Open URL preview with data to show BVH" );
+        
+        BVHExporter.copyToLocalStorage(this.mixer, this.skeletonHelper, this.animationClip);
+
+        const url = "https://webglstudio.org/users/arodriguez/demos/animationLoader/?load=three_webgl_bvhpreview";
+        window.open(url, '_blank').focus();
     }
 };
 
