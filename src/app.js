@@ -6,7 +6,7 @@ import { FileSystem } from "./libs/filesystem.js";
 
 class App {
 
-    constructor(){
+    constructor() {
 
         // Helpers
         this.recording = false;
