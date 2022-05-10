@@ -43,8 +43,6 @@ const MediaPipe = {
 
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
-            //canvasCtx.drawImage(results.segmentationMask, 0, 0, canvasElement.width, canvasElement.height); //not needed
-
             // Only overwrite existing pixels.
             canvasCtx.globalCompositeOperation = 'source-in';
             canvasCtx.fillStyle = '#00FF00';

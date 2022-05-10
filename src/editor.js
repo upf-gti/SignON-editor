@@ -8,7 +8,9 @@ import { Gui } from "./gui.js";
 import { Gizmo } from "./gizmo.js";
 import { firstToUpperCase } from "./utils.js"
 import { OrientationHelper } from "./libs/OrientationHelper.js";
+import { TFModel } from "./libs/tensorFlowWrap.module.js";
 import { CanvasButtons } from "./ui.config.js";
+import { AnimationRetargeting } from './retargeting.js'
 
 class Editor {
 
@@ -26,12 +28,23 @@ class Editor {
         this.showHUD = true;
         this.showSkin = true; // defines if the model skin has to be rendered
         this.character = "";
+        
+        this.spotLight = null;
 
         this.mixer = null;
-        this.skeletonHelper = null;
+        this.mixerHelper = null;
         
+        this.skeletonHelper = null;
+        this.skeleton = null;
+        
+        this.animSkeleton = null;
+        this.srcBindPose = null;
+        this.tgtBindPose = null;
+        this.tgtSkeletonHelper = null;
+
         this.pointsGeometry = null;
         this.landmarksArray = [];
+        this.landmarksNN = [];
         this.prevTime = this.iter = 0;
     	this.onDrawTimeline = null;
 	    this.onDrawSettings = null;
@@ -43,6 +56,7 @@ class Editor {
         // Keep "private"
         this.__app = app;
 
+        this.retargeting = new AnimationRetargeting();
         this.init();
     }
     
@@ -54,26 +68,46 @@ class Editor {
         const CANVAS_HEIGHT = canvasArea.clientHeight;
 
         let scene = new THREE.Scene();
-        scene.background = new THREE.Color(0x777777);
+        scene.background = new THREE.Color( 0xa0a0a0 );
+        
         const grid = new THREE.GridHelper(300, 50);
         grid.name = "Grid";
         scene.add(grid);
 
+        // ground
+        const ground = new THREE.Mesh( new THREE.PlaneGeometry( 100, 100 ), new THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } ) );
+        ground.rotation.x = - Math.PI / 2;
+        ground.receiveShadow = true;
+        scene.add( ground );
+
+        //gridhelper
+        scene.add(new THREE.GridHelper(300, 20));
+        
+        scene.fog = new THREE.Fog( 0xa0a0a0, 10, 50 );
+        
         const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
         hemiLight.position.set( 0, 20, 0 );
         scene.add( hemiLight );
 
-        const dirLight = new THREE.DirectionalLight( 0xffffff );
-        dirLight.position.set( - 3, 10, - 10 );
-        dirLight.castShadow = true;
+        const dirLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
+        dirLight.position.set( 3, 30, -50 );
+        dirLight.castShadow = false;
         dirLight.shadow.camera.top = 2;
         dirLight.shadow.camera.bottom = - 2;
         dirLight.shadow.camera.left = - 2;
         dirLight.shadow.camera.right = 2;
-        dirLight.shadow.camera.near = 0.01;
-        dirLight.shadow.camera.far = 40;
+        dirLight.shadow.camera.near = 1;
+        dirLight.shadow.camera.far = 200;
         scene.add( dirLight );
-        
+
+        this.spotLight = new THREE.SpotLight(0xffa95c,1);
+        this.spotLight.position.set(-50,50,50);
+        this.spotLight.castShadow = true;
+        this.spotLight.shadow.bias = -0.0001;
+        this.spotLight.shadow.mapSize.width = 1024*4;
+        this.spotLight.shadow.mapSize.height = 1024*4;
+        scene.add( this.spotLight );
+
         const pixelRatio = CANVAS_WIDTH / CANVAS_HEIGHT;
         let renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setPixelRatio(pixelRatio);
@@ -90,9 +124,10 @@ class Editor {
         let camera = new THREE.PerspectiveCamera(60, pixelRatio, 0.1, 1000);
         window.camera = camera;
         let controls = new OrbitControls(camera, renderer.domElement);
+        camera.position.set(0, 1, 3);
         controls.minDistance = 1;
         controls.maxDistance = 7;
-        camera.position.set(0.5, 2, -3);
+        controls.target.set(0, 1, 0);
         controls.update();  
 
         this.scene = scene;
@@ -156,8 +191,24 @@ class Editor {
         this.landmarksArray = project.landmarks;
         
         project.path = project.path || "models/bvh/victor.bvh";
-
+        
+        // Trim
         this.processLandmarks(project);
+
+        // Prepare landmarks for the NN (PLM + RLM + LLM)
+        this.landmarksNN = this.landmarksArray.map((v) => {
+            if (v.PLM == undefined)
+                v.PLM = new Array(33).fill(0).map((x) => ({x:undefined, y:undefined, z:undefined, visibility:undefined}));
+            if (v.RLM == undefined)
+                v.RLM = new Array(21).fill(0).map((x) => ({x:undefined, y:undefined, z:undefined, visibility:undefined}));
+            if (v.LLM == undefined)
+                v.LLM = new Array(21).fill(0).map((x) => ({x:undefined, y:undefined, z:undefined, visibility:undefined}));
+            let vec1 = v.PLM.concat(v.RLM, v.LLM);
+            let vec2 = vec1.map((x) => {
+                return Object.values(x).slice(0, -1); // remove visibility
+            });
+            return vec2.flat(1);
+        });
 
         // Orientation helper
         const orientationHelper = new OrientationHelper( this.camera, this.controls, { className: 'orientation-helper-dom' }, {
@@ -218,10 +269,9 @@ class Editor {
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
 
-        if( urlParams.get('load') == 'skin' || urlParams.get('load') == undefined ) {
-
+        if( urlParams.get('load') == 'hard' || urlParams.get('load') == undefined ) {
+        
             this.loadGLTF("models/t_pose.glb", gltf => {
-            
                 let model = gltf.scene;
                 this.character = model.name;
                 model.castShadow = true;
@@ -230,7 +280,7 @@ class Editor {
                 this.skeletonHelper.name = "SkeletonHelper";
                 model.children[0].setRotationFromQuaternion(new THREE.Quaternion());
                 
-                for (var bone_id in this.skeletonHelper.bones) {
+                for (let bone_id in this.skeletonHelper.bones) {
                     this.skeletonHelper.bones[bone_id].setRotationFromQuaternion(new THREE.Quaternion());
                 }
                 
@@ -247,7 +297,6 @@ class Editor {
                 this.scene.add( model );
 
                 // Play animation
-                
                 this.animationClip = createAnimation("Eva", this.landmarksArray);
                 // this.animationClip = gltf.animations[0];
                 this.mixer = new THREE.AnimationMixer(model);
@@ -263,103 +312,201 @@ class Editor {
                 $('#loading').fadeOut();
             });
 
-        } else if( urlParams.get('load') == 'ai' ) {
+        } else if( urlParams.get('load') == 'NN' ) {
 
-            let that = this;
-
-            $.getJSON( "data/Taunt.json", function( data ) {
-          
-                that.landmarksArray = [];
-                project.landmarks = [];
-                        
-                // Load the model (Eva)  
-                that.loadGLTF("models/t_pose.glb", (gltf) => {
-                
-                    let model = gltf.scene;
-                    model.castShadow = true;
-
-                    model.children[0].setRotationFromQuaternion(new THREE.Quaternion());
-                
-                    that.skeletonHelper = new THREE.SkeletonHelper(model);
-                    that.skeletonHelper.name = "SkeletonHelper";
-
-                    for (var bone_id in that.skeletonHelper.bones) {
-                        that.skeletonHelper.bones[bone_id].setRotationFromQuaternion(new THREE.Quaternion());
-                    }
+            // Convert landmarks into an animation
+            let quatData = [];
+            let NN = new TFModel("data/ML/model.json");
+    
+            NN.onLoad = () => {
+                for (let i = 0; i < this.landmarksNN.length; i++) {
+                    let outputNN = NN.predictSampleSync( this.landmarksNN[i] );
                     
-                    model.traverse(  ( object ) => {
-                        if ( object.isMesh ||object.isSkinnedMesh ) {
+                    // Solve normalization problem
+                    for (let j = 0; j < outputNN.length; j+=4)
+                    {
+                        let val = new THREE.Quaternion(outputNN[j], outputNN[j+1], outputNN[j+2], outputNN[j+3]);
+                        val.normalize();
+                        outputNN[j] = val.x;
+                        outputNN[j+1] = val.y;
+                        outputNN[j+2] = val.z;
+                        outputNN[j+3] = val.w;
+                    }
+                    quatData.push([0, 80, 0, ... outputNN]); // add netral position to hip
+                }
+                NN.deinit();
+            };
+            
+            this.loadGLTF("models/Kate_Y.glb", (gltf) => {
+    
+                let model = gltf.scene;
+                model.visible = true; // change to false
+
+                // find bind skeleton
+                let srcpose = [];
+                model.traverse( (object) => {
+                    if (object.isSkinnedMesh) {
+                        srcpose = object.skeleton;
+                        return;
+                    }
+                } );
+                //model.children[0].setRotationFromQuaternion(new THREE.Quaternion());
+
+                // get bones in bind pose
+                this.srcBindPose = this.retargeting.getBindPose(srcpose, true);
+                
+                // set model in bind pose
+                for(let i = 0; i < this.srcBindPose.length; i++)
+                {
+                    let bone = this.srcBindPose[i];
+                    let o = model.getObjectByName(bone.name);
+                    o.position.copy(bone.position);
+                    bone.scale.copy(o.scale);
+                    o.quaternion.copy(bone.quaternion);
+                    o.updateWorldMatrix();
+                }
+
+                this.skeletonHelper = this.animSkeleton = new THREE.SkeletonHelper( model );			
+                this.animSkeleton.visible = true; // change to false
+                this.scene.add(this.animSkeleton)
+                this.scene.add(model)
+
+                this.animSkeleton.name = "SkeletonHelper"; // move this line below once retargeting solved (animSkeleton --> skeletonHelper)
+                
+                updateThreeJSSkeleton(this.srcBindPose);
+                let skeleton = createSkeleton();
+                this.skeleton = skeleton;
+                this.animSkeleton.skeleton = skeleton;
+
+                const boneContainer = new THREE.Group();
+                boneContainer.add(skeleton.bones[0]);
+                this.scene.add(boneContainer);
+    
+                this.animationClip = createAnimationFromRotations("SignName", quatData);
+    
+                this.mixer = new THREE.AnimationMixer(model);
+                this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
+                       
+                project.prepareData(this.mixer, this.animationClip, skeleton);
+                this.gui.loadProject(project);
+                
+                // Load the model (Eva)  
+                this.loadGLTF("models/Eva_Y.glb", (gltf) => {
+                    
+                    this.character = gltf.scene;
+                    //this.character.position.set(0,0.75,0);
+                    this.character.castShadow = true;
+                    
+                    this.character.traverse( (object) => {
+                        if ( object.isMesh || object.isSkinnedMesh ) {
                             object.castShadow = true;
                             object.receiveShadow = true;
+                            object.frustumCulled = false;
+                            
+                            if(object.material.map) object.material.map.anisotropy = 16; 
+                            // find bind skeleton (bind matrices)
+                            this.tgtBindPose = object.skeleton;
                             
                         }
-                        if (object.isBone) {
+                        else if (object.isBone) {
                             object.scale.set(1.0, 1.0, 1.0);
+                        }
+                        if(!this.tgtBindPose){
+                            // find bind skeleton on children
+                            object.traverse((o) => {
+                                if(o.isSkinnedMesh){
+                                    this.tgtBindPose = o.skeleton;
+                                }
+                            })
                         }
                     } );
                     
-                    updateThreeJSSkeleton(that.skeletonHelper.bones);
-                    let skeleton = createSkeleton();
-                    that.skeleton = skeleton;
-                    that.skeletonHelper.skeleton = skeleton;
-                    const boneContainer = new THREE.Group();
-                    boneContainer.add(skeleton.bones[0]);
-                    that.scene.add(that.skeletonHelper);
-                    that.scene.add(boneContainer);
-                    that.scene.add( model );
-    
-                    that.animationClip = createAnimationFromRotations("Eva", data);
-    
-                    that.mixer = new THREE.AnimationMixer(model);
-                    that.mixer.clipAction(that.animationClip).setEffectiveWeight(1.0).play();
-                    that.mixer.update(that.clock.getDelta()); //do first iteration to update from T pose
-            
-                    project.prepareData(that.mixer, that.animationClip, skeleton);
-                    that.gui.loadProject(project);
-                    that.gizmo.begin(that.skeletonHelper);
+                    // get bones in bind pose
+                    this.tgtBindPose = this.retargeting.getBindPose(this.tgtBindPose);
+                    //this.tgtBindPose[0].position.copy(this.srcBindPose[0].position)
+                    this.tgtSkeletonHelper = new THREE.SkeletonHelper(this.character);
                     
+                    // correct rotation
+                    //this.character.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
+                    
+                    this.scene.add(this.tgtSkeletonHelper);
+                    this.scene.add( this.character );
+                    
+                    // apply source bind pose to intermediate skeleton
+                    this.retargeting.updateSkeleton(this.srcBindPose);
+                    // map bone names between source (Kate) and target (Eva)
+                    this.retargeting.automap(this.tgtSkeletonHelper.bones);
+                    // apply retargeting to the first frame
+                    this.mixer.update(0);
+                    this.retargeting.retargetAnimation(this.srcBindPose, this.tgtBindPose, this.animSkeleton, this.tgtSkeletonHelper, false);
+                    
+                    this.gizmo.begin(this.animSkeleton);
+                    this.setBoneSize(0.2);
+                    this.animate();
                     $('#loading').fadeOut();
-                    that.animate();
                 });
-    
             });
         }
-        else if( urlParams.get('load') == 'simple' ) {
+            //
 
-            // 3D model is always needed to extract the skeleton, commenteds for now 
+        //     this.loadGLTF("models/Kate_Y.glb", (gltf) => {
+            
+        //         let model = gltf.scene;
+        //         this.character = model.name;
+        //         model.castShadow = true;
+    
+        //         this.skeletonHelper = new THREE.SkeletonHelper(model);
+        //         this.skeletonHelper.name = "SkeletonHelper";
+        //         model.children[0].setRotationFromQuaternion(new THREE.Quaternion());
+    
+        //         for (let bone_id in this.skeletonHelper.bones) {
+        //             this.skeletonHelper.bones[bone_id].setRotationFromQuaternion(new THREE.Quaternion());
+        //         }
+                
+        //         model.traverse( (object) => {
+        //             if (object.isMesh || object.isSkinnedMesh) {
+        //                 object.castShadow = true;
+        //                 object.receiveShadow = true;
+        //                 object.frustumCulled = false;
+        //             }
+        //             if (object.isBone) {
+        //                 object.scale.set(1.0, 1.0, 1.0);
+        //             }
+        //         } );
+                
+        //         updateThreeJSSkeleton(this.skeletonHelper.bones);
+        //         let skeleton = createSkeleton();
+        //         this.skeleton = skeleton;
+        //         this.skeletonHelper.skeleton = skeleton;
+        //         const boneContainer = new THREE.Group();
+                
+        //         boneContainer.add(skeleton.bones[0]);
+        //         this.scene.add(this.skeletonHelper);
+        //         this.scene.add(boneContainer);
+        //         this.scene.add(model);
+    
+        //         this.animationClip = createAnimationFromRotations("SignName", quatData);
+    
+        //         this.mixer = new THREE.AnimationMixer(model);
+        //         this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
+        //         this.mixer.update(this.clock.getDelta()); //do first iteration to update from T pose
+        
+        //         project.prepareData(this.mixer, this.animationClip, skeleton);
+        //         this.gui.loadProject(project);
+        //         this.gizmo.begin(this.skeletonHelper);
+        //         this.setBoneSize(0.2);
+                
+        //         this.animate();
+        //         $('#loading').fadeOut();
+        //     });
+        // }
 
-            let skeleton = createSkeleton(this.landmarksArray);
-            this.skeleton = skeleton;
-
-            this.skeletonHelper = new THREE.SkeletonHelper(skeleton.bones[0]);
-            this.skeletonHelper.skeleton = skeleton; // Allow animation mixer to bind to THREE.SkeletonHelper directly
-
-            const boneContainer = new THREE.Group();
-            boneContainer.add(skeleton.bones[0]);
-            
-            this.scene.add(this.skeletonHelper);
-            this.scene.add(boneContainer);
-            
-            this.animationClip = createAnimation(project.clipName, this.landmarksArray);
-            
-            // play animation
-            this.mixer = new THREE.AnimationMixer(this.skeletonHelper);
-            this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
-            this.mixer.update(this.clock.getDelta()); // Do first iteration to update from T pose
-            
-            project.prepareData(this.mixer, this.animationClip, skeleton);
-            this.gui.loadProject(project);
-            this.gizmo.begin(this.skeletonHelper);
-
-            // Update camera
-            const bone0 = this.skeletonHelper.bones[0];
-            if(bone0) {
-                bone0.getWorldPosition(this.controls.target);
-                this.controls.update();
-            }
-            
-            this.animate();
-        }
+        // // Update camera
+        // const bone0 = this.skeletonHelper.bones[0];
+        // if(bone0) {
+        //     bone0.getWorldPosition(this.controls.target);
+        //     this.controls.update();
+        // }
     }
 
     processLandmarks(project) {
@@ -559,6 +706,12 @@ class Editor {
 
         this.render();
         this.update(this.clock.getDelta());
+
+        this.spotLight.position.set( 
+            this.camera.position.x + 10,
+            this.camera.position.y + 10,
+            this.camera.position.z + 10,
+        );
     }
 
     render() {
@@ -582,8 +735,18 @@ class Editor {
             for(const ip of $(".bone-position")) ip.setValue(bone.position.toArray());
             for(const ip of $(".bone-euler")) ip.setValue(bone.rotation.toArray());
             for(const ip of $(".bone-quaternion")) ip.setValue(bone.quaternion.toArray());
-        }
 
+            this.retargeting.retargetAnimation(this.srcBindPose, this.tgtBindPose, this.animSkeleton, this.tgtSkeletonHelper, false);
+            for(let i = 0; i < this.tgtSkeletonHelper.bones.length; i++)
+            {
+                let b = this.tgtSkeletonHelper.bones[i];
+                let o = this.character.getObjectByName(b.name);
+                o.position.copy(b.position);
+                o.scale.copy(b.scale);
+                o.quaternion.copy(b.quaternion);
+                o.matrixWorldNeedsUpdate = true;
+            }
+        }
         this.gizmo.update(this.state, dt);
     }
 
@@ -613,17 +776,11 @@ class Editor {
 THREE.SkeletonHelper.prototype.getBoneByName = function( name ) {
 
     for ( let i = 0, il = this.bones.length; i < il; i ++ ) {
-
         const bone = this.bones[ i ];
-
         if ( bone.name === name ) {
-
             return bone;
-
         }
-
     }
-
     return undefined;
 }
 

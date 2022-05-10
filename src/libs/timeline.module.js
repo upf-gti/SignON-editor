@@ -407,9 +407,15 @@ Timeline.prototype.getTracksInRange = function (minY, maxY, threshold) {
 			tracks.push( t[0] );
 		}
 	}
-
+/*let trackType = trackInfo.name.split(".");
+		
+		if(trackType.length>1){
+			name = trackType[0];
+			trackInfo.type = trackType[1];
+		}*/
 	return tracks;
 }
+
 
 Timeline.prototype.getTrackName = function (ugly_name) {
 
