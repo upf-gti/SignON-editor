@@ -198,6 +198,15 @@ class Editor {
             if (v.PLM !== undefined && v.RLM !== undefined && v.LLM !== undefined) {
                 lastNonNull = idx;
                 if (!firstNonNull) firstNonNull = idx;
+            } else {
+                const dt = v.dt * 0.001;
+                if (!firstNonNull) {
+                    // Add delta to start time
+                    project.trimTimes[0] += dt;
+                } else {
+                    // Sub delta to end time
+                    project.trimTimes[1] -= dt;
+                }
             }
 
             if (v.PLM == undefined)
@@ -214,6 +223,12 @@ class Editor {
         });
         if (!firstNonNull || !lastNonNull) throw('Missing landmarks error');
         this.landmarksNN = this.landmarksNN.slice(firstNonNull, lastNonNull + 1);
+
+        this.video.startTime = project.trimTimes[0];
+        this.video.onended = function() {
+            this.currentTime = this.startTime;
+            this.play();
+        };
 
         // Orientation helper
         const orientationHelper = new OrientationHelper( this.camera, this.controls, { className: 'orientation-helper-dom' }, {
@@ -324,7 +339,8 @@ class Editor {
             let quatData = [];
             let blankFrames = [];
             let NN = new TFModel("data/ML/model.json");
-    
+            console.log('Creating animation');
+
             NN.onLoad = () => {
                 for (let i = 0; i < this.landmarksNN.length; i++) {
                     let outputNN = NN.predictSampleSync( this.landmarksNN[i] );
@@ -344,11 +360,7 @@ class Editor {
                     
                     quatData.push([0, 90, 0, ... outputNN]); // add netral position to hip
                 }
-                
-                // Solve blank frames
-                // doesn't count first or last frame
-                // TODO
-                                
+                                                
                 // Linear interpolation to solves blank frames
                 blankFrames = consecutiveRanges(blankFrames);
                 for (let range of blankFrames) {
@@ -464,7 +476,7 @@ class Editor {
                         if(!this.tgtBindPose){
                             // find bind skeleton on children
                             object.traverse((o) => {
-                                if(o.isSkinnedMesh){
+                                if(o.isSkinnedMesh) {
                                     this.tgtBindPose = o.skeleton;
                                 }
                             })
@@ -498,12 +510,6 @@ class Editor {
                 });
             });
         }
-        // // Update camera
-        // const bone0 = this.skeletonHelper.bones[0];
-        // if(bone0) {
-        //     bone0.getWorldPosition(this.controls.target);
-        //     this.controls.update();
-        // }
     }
 
     processLandmarks(project) {

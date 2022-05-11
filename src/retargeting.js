@@ -109,7 +109,7 @@ AnimationRetargeting.prototype.createSkeletonFromJSON = function(filepath = "dat
             let bone = new THREE.Bone();
             bone.name = object.name;
             bone.matrix.fromArray( object.matrix );
-            bone.position.copy(bone.matrix.getPosition());
+            bone.position.setFromMatrixPosition(bone.matrix);
             bone.quaternion.fromArray(bone.matrix.getRotation());
             bone.scale.fromArray(bone.matrix.getScale());
             bone.layers.mask = object.layers;
@@ -279,7 +279,8 @@ AnimationRetargeting.prototype.getBindPose = function(skeleton, updateWorld = fa
         bone.matrix.copy(mat)
 
         //Assign local position
-        let pos = mat.getPosition();
+        let pos = new THREE.Vector3();
+        pos.setFromMatrixPosition(mat);
         bone.position.copy(pos);
         bone.position.round2zero();
         //Assign local rotation
@@ -439,7 +440,7 @@ AnimationRetargeting.prototype.retargetAnimation = function(src_tbones, tgt_tbon
             b.z = (Math.abs(a.z)<= 1e-4) ? 0 : b.z/a.z;
 
             let pos = new THREE.Vector3();
-            pos.sub(src_pose_world_pos, src_bind_world_pos);
+            pos.subVectors(src_pose_world_pos, src_bind_world_pos);
             //pos.multiply(b);
             pos.add(tgt_bind_world_pos);
             
@@ -586,4 +587,5 @@ THREE.Matrix4.scale = THREE.Matrix4.prototype.scale = function(x,y,z){
 
 THREE.Matrix4.exports = THREE.Matrix4;
 
-export {THREE, AnimationRetargeting, PlayAnimation}
+
+export { THREE, AnimationRetargeting, PlayAnimation }

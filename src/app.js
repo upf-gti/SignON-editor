@@ -37,8 +37,7 @@ class App {
                 await new Promise(r => setTimeout(r, 1000));
                 video.currentTime = 10000000*Math.random();
             }
-            video.currentTime = 0;
-            video.startTime = 0;
+            video.currentTime = video.startTime > 0 ? video.startTime : 0;
         });
 
         // prepare the device to capture the video
@@ -71,7 +70,6 @@ class App {
                     }
 
                     that.mediaRecorder.ondataavailable = function (e) {
-                        console.log(e.data);
                         that.chunks.push(e.data);
                     }
                 })
@@ -125,7 +123,6 @@ class App {
                 this.recording = true;
                 this.mediaRecorder.start();
                 this.startTime = Date.now();
-                console.log(this.mediaRecorder.state);
                 console.log("Start recording");
             }
             else {
@@ -138,7 +135,6 @@ class App {
                 this.mediaRecorder.stop();
                 let endTime = Date.now();
                 this.duration = endTime - this.startTime;
-                console.log(this.mediaRecorder.state);
                 console.log("Stop recording");
     
                 // Correct first dt of landmarks
