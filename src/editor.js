@@ -6,7 +6,8 @@ import { BVHExporter } from "./bvh_exporter.js";
 import { createSkeleton, createAnimation, createAnimationFromRotations, updateThreeJSSkeleton, injectNewLandmarks } from "./skeleton.js";
 import { Gui } from "./gui.js";
 import { Gizmo } from "./gizmo.js";
-import { firstToUpperCase } from "./utils.js"
+import { firstToUpperCase, consecutiveRanges } from "./utils.js"
+import { lerp } from "./math.js"
 import { OrientationHelper } from "./libs/OrientationHelper.js";
 import { TFModel } from "./libs/tensorFlowWrap.module.js";
 import { CanvasButtons } from "./ui.config.js";
@@ -69,22 +70,18 @@ class Editor {
 
         let scene = new THREE.Scene();
         scene.background = new THREE.Color( 0xa0a0a0 );
+        scene.fog = new THREE.Fog( 0xa0a0a0, 10, 50 );
         
         const grid = new THREE.GridHelper(300, 50);
         grid.name = "Grid";
         scene.add(grid);
 
-        // ground
         const ground = new THREE.Mesh( new THREE.PlaneGeometry( 100, 100 ), new THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } ) );
         ground.rotation.x = - Math.PI / 2;
         ground.receiveShadow = true;
         scene.add( ground );
-
-        //gridhelper
-        scene.add(new THREE.GridHelper(300, 20));
         
-        scene.fog = new THREE.Fog( 0xa0a0a0, 10, 50 );
-        
+        // Lights
         const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
         hemiLight.position.set( 0, 20, 0 );
         scene.add( hemiLight );
@@ -100,13 +97,13 @@ class Editor {
         dirLight.shadow.camera.far = 200;
         scene.add( dirLight );
 
-        this.spotLight = new THREE.SpotLight(0xffa95c,1);
-        this.spotLight.position.set(-50,50,50);
-        this.spotLight.castShadow = true;
-        this.spotLight.shadow.bias = -0.0001;
-        this.spotLight.shadow.mapSize.width = 1024*4;
-        this.spotLight.shadow.mapSize.height = 1024*4;
-        scene.add( this.spotLight );
+        let spotLight = new THREE.SpotLight(0xffa95c,1);
+        spotLight.position.set(-50,50,50);
+        spotLight.castShadow = true;
+        spotLight.shadow.bias = -0.0001;
+        spotLight.shadow.mapSize.width = 1024*4;
+        spotLight.shadow.mapSize.height = 1024*4;
+        scene.add( spotLight );
 
         const pixelRatio = CANVAS_WIDTH / CANVAS_HEIGHT;
         let renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -118,28 +115,27 @@ class Editor {
         renderer.domElement.id = "webgl-canvas";
         renderer.domElement.setAttribute("tabIndex", 1);
 
-        this.video = document.getElementById("recording");
-
         // camera
         let camera = new THREE.PerspectiveCamera(60, pixelRatio, 0.1, 1000);
         window.camera = camera;
         let controls = new OrbitControls(camera, renderer.domElement);
-        camera.position.set(0, 1, 3);
-        controls.minDistance = 1;
-        controls.maxDistance = 7;
+        camera.position.set(0, 1, 2);
+        controls.minDistance = 0.5;
+        controls.maxDistance = 5;
         controls.target.set(0, 1, 0);
         controls.update();  
-
+        
         this.scene = scene;
         this.camera = camera;
         this.renderer = renderer;
         this.controls = controls;
-
+        this.spotLight = spotLight;
+        
+        this.video = document.getElementById("recording");
         this.gizmo = new Gizmo(this);
 
         renderer.domElement.addEventListener( 'keydown', (e) => {
             switch ( e.key ) {
-
                 case " ": // Spacebar
                     e.preventDefault();
                     e.stopImmediatePropagation();
@@ -160,7 +156,7 @@ class Editor {
                     }
                     break;
             }
-        });
+        } );
     }
 
     getApp() {
@@ -196,24 +192,49 @@ class Editor {
         this.processLandmarks(project);
 
         // Prepare landmarks for the NN (PLM + RLM + LLM)
-        this.landmarksNN = this.landmarksArray.map((v) => {
+        let firstNonNull = null;
+        let lastNonNull = null;
+        this.landmarksNN = this.landmarksArray.map((v, idx) => {
+            if (v.PLM !== undefined && v.RLM !== undefined && v.LLM !== undefined) {
+                lastNonNull = idx;
+                if (!firstNonNull) firstNonNull = idx;
+            } else {
+                const dt = v.dt * 0.001;
+                if (!firstNonNull) {
+                    // Add delta to start time
+                    project.trimTimes[0] += dt;
+                } else {
+                    // Sub delta to end time
+                    project.trimTimes[1] -= dt;
+                }
+            }
+
             if (v.PLM == undefined)
                 v.PLM = new Array(33).fill(0).map((x) => ({x:undefined, y:undefined, z:undefined, visibility:undefined}));
             if (v.RLM == undefined)
                 v.RLM = new Array(21).fill(0).map((x) => ({x:undefined, y:undefined, z:undefined, visibility:undefined}));
             if (v.LLM == undefined)
                 v.LLM = new Array(21).fill(0).map((x) => ({x:undefined, y:undefined, z:undefined, visibility:undefined}));
+            
             let vec1 = v.PLM.concat(v.RLM, v.LLM);
-            let vec2 = vec1.map((x) => {
-                return Object.values(x).slice(0, -1); // remove visibility
-            });
+            let vec2 = vec1.map((x) => {return Object.values(x).slice(0, -1);}); // remove visibility
+            
             return vec2.flat(1);
         });
+        if (!firstNonNull || !lastNonNull) throw('Missing landmarks error');
+        this.landmarksNN = this.landmarksNN.slice(firstNonNull, lastNonNull + 1);
+
+        this.video.startTime = project.trimTimes[0];
+        this.video.onended = function() {
+            this.currentTime = this.startTime;
+            this.play();
+        };
 
         // Orientation helper
         const orientationHelper = new OrientationHelper( this.camera, this.controls, { className: 'orientation-helper-dom' }, {
             px: '+X', nx: '-X', pz: '+Z', nz: '-Z', py: '+Y', ny: '-Y'
         });
+
         document.getElementById("canvasarea").prepend(orientationHelper.domElement);
         orientationHelper.addEventListener("click", (result) => {
             const side = result.normal.multiplyScalar(5);
@@ -269,7 +290,7 @@ class Editor {
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
 
-        if( urlParams.get('load') == 'hard' || urlParams.get('load') == undefined ) {
+        if ( urlParams.get('load') == 'hard') {
         
             this.loadGLTF("models/t_pose.glb", gltf => {
                 let model = gltf.scene;
@@ -312,12 +333,14 @@ class Editor {
                 $('#loading').fadeOut();
             });
 
-        } else if( urlParams.get('load') == 'NN' ) {
+        } else if ( urlParams.get('load') == 'NN' || urlParams.get('load') == undefined ) {
 
             // Convert landmarks into an animation
             let quatData = [];
+            let blankFrames = [];
             let NN = new TFModel("data/ML/model.json");
-    
+            console.log('Creating animation');
+
             NN.onLoad = () => {
                 for (let i = 0; i < this.landmarksNN.length; i++) {
                     let outputNN = NN.predictSampleSync( this.landmarksNN[i] );
@@ -332,12 +355,49 @@ class Editor {
                         outputNN[j+2] = val.z;
                         outputNN[j+3] = val.w;
                     }
-                    quatData.push([0, 80, 0, ... outputNN]); // add netral position to hip
+                    
+                    if (outputNN.includes(NaN)) blankFrames.push(i); // track lost frames
+                    
+                    quatData.push([0, 90, 0, ... outputNN]); // add netral position to hip
                 }
+                                                
+                // Linear interpolation to solves blank frames
+                blankFrames = consecutiveRanges(blankFrames);
+                for (let range of blankFrames) {
+                    if (typeof range == 'number') {
+                        let frame = quatData[range];
+                        let prevFrame = quatData[range - 1];
+                        let nextFrame = quatData[range + 1];
+                        quatData[range] = frame.map( (v, idx) => {
+                            let a = prevFrame[idx];
+                            let b = nextFrame[idx];
+                            return lerp(a, b, 0.5);
+                        } );
+                    } else {
+                        let [x0, x1] = [... range];
+                        let n = x1 - x0 + 1; // Count middle frames
+                        let divisions = 1 / (n + 1); // Divide 1 by num of frames + 1
+                        let prevFrame = quatData[x0 - 1];
+                        let nextFrame = quatData[x1 + 1];
+    
+                        // Compute lerp for all frames
+                        for (let i = x0; i <= x1; i++) {
+                            let frame = quatData[i];
+                            quatData[i] = frame.map( (v, idx) => {
+                                let a = prevFrame[idx];
+                                let b = nextFrame[idx];
+                                return lerp(a, b, divisions);
+                            } );
+                            divisions += divisions;
+                        }
+                    }
+                }
+
                 NN.deinit();
-            };
+            }
             
-            this.loadGLTF("models/Kate_Y.glb", (gltf) => {
+            // Load the source model
+            this.loadGLTF("models/t_pose.glb", (gltf) => {
     
                 let model = gltf.scene;
                 model.visible = true; // change to false
@@ -350,7 +410,8 @@ class Editor {
                         return;
                     }
                 } );
-                //model.children[0].setRotationFromQuaternion(new THREE.Quaternion());
+                // solve the initial rotation of Kate
+                model.children[0].setRotationFromQuaternion(new THREE.Quaternion());
 
                 // get bones in bind pose
                 this.srcBindPose = this.retargeting.getBindPose(srcpose, true);
@@ -390,10 +451,11 @@ class Editor {
                 project.prepareData(this.mixer, this.animationClip, skeleton);
                 this.gui.loadProject(project);
                 
-                // Load the model (Eva)  
+                // Load the target model (Eva) 
                 this.loadGLTF("models/Eva_Y.glb", (gltf) => {
                     
                     this.character = gltf.scene;
+                    this.character.visible = false; // change to true
                     //this.character.position.set(0,0.75,0);
                     this.character.castShadow = true;
                     
@@ -414,7 +476,7 @@ class Editor {
                         if(!this.tgtBindPose){
                             // find bind skeleton on children
                             object.traverse((o) => {
-                                if(o.isSkinnedMesh){
+                                if(o.isSkinnedMesh) {
                                     this.tgtBindPose = o.skeleton;
                                 }
                             })
@@ -425,7 +487,8 @@ class Editor {
                     this.tgtBindPose = this.retargeting.getBindPose(this.tgtBindPose);
                     //this.tgtBindPose[0].position.copy(this.srcBindPose[0].position)
                     this.tgtSkeletonHelper = new THREE.SkeletonHelper(this.character);
-                    
+                    this.tgtSkeletonHelper.visible = false; // change to true
+
                     // correct rotation
                     //this.character.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
                     
@@ -447,66 +510,6 @@ class Editor {
                 });
             });
         }
-            //
-
-        //     this.loadGLTF("models/Kate_Y.glb", (gltf) => {
-            
-        //         let model = gltf.scene;
-        //         this.character = model.name;
-        //         model.castShadow = true;
-    
-        //         this.skeletonHelper = new THREE.SkeletonHelper(model);
-        //         this.skeletonHelper.name = "SkeletonHelper";
-        //         model.children[0].setRotationFromQuaternion(new THREE.Quaternion());
-    
-        //         for (let bone_id in this.skeletonHelper.bones) {
-        //             this.skeletonHelper.bones[bone_id].setRotationFromQuaternion(new THREE.Quaternion());
-        //         }
-                
-        //         model.traverse( (object) => {
-        //             if (object.isMesh || object.isSkinnedMesh) {
-        //                 object.castShadow = true;
-        //                 object.receiveShadow = true;
-        //                 object.frustumCulled = false;
-        //             }
-        //             if (object.isBone) {
-        //                 object.scale.set(1.0, 1.0, 1.0);
-        //             }
-        //         } );
-                
-        //         updateThreeJSSkeleton(this.skeletonHelper.bones);
-        //         let skeleton = createSkeleton();
-        //         this.skeleton = skeleton;
-        //         this.skeletonHelper.skeleton = skeleton;
-        //         const boneContainer = new THREE.Group();
-                
-        //         boneContainer.add(skeleton.bones[0]);
-        //         this.scene.add(this.skeletonHelper);
-        //         this.scene.add(boneContainer);
-        //         this.scene.add(model);
-    
-        //         this.animationClip = createAnimationFromRotations("SignName", quatData);
-    
-        //         this.mixer = new THREE.AnimationMixer(model);
-        //         this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
-        //         this.mixer.update(this.clock.getDelta()); //do first iteration to update from T pose
-        
-        //         project.prepareData(this.mixer, this.animationClip, skeleton);
-        //         this.gui.loadProject(project);
-        //         this.gizmo.begin(this.skeletonHelper);
-        //         this.setBoneSize(0.2);
-                
-        //         this.animate();
-        //         $('#loading').fadeOut();
-        //     });
-        // }
-
-        // // Update camera
-        // const bone0 = this.skeletonHelper.bones[0];
-        // if(bone0) {
-        //     bone0.getWorldPosition(this.controls.target);
-        //     this.controls.update();
-        // }
     }
 
     processLandmarks(project) {
