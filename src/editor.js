@@ -196,6 +196,7 @@ class Editor {
             stateBtn.style.border = "solid #268581";
 
             if(this.state) {
+                this.mixer._actions[0].paused = false;
                 this.gizmo.stop()
                 video.paused ? video.play() : 0;    
                 for(const ip of $(".bone-position input, .bone-euler input, .bone-quaternion input")) ip.setAttribute('disabled', true);
@@ -566,6 +567,21 @@ class Editor {
             }catch(ex) {
                 console.error("video warning");
             }
+        }
+    }
+
+    onAnimationEnded() {
+
+        if(this.animLoop) {
+            this.setTime(0.0, true);
+        }else {
+            this.mixer.setTime(0);
+            this.mixer._actions[0].paused = true;
+            let stateBtn = document.getElementById("state_btn");
+            stateBtn.click();
+
+            this.video.pause();
+            this.video.currentTime = this.video.startTime;
         }
     }
 

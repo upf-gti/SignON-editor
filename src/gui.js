@@ -234,7 +234,9 @@ class Gui {
             widgets.addInfo("Num bones", numBones);
             widgets.addInfo("Frame rate", this.timeline.framerate);
             widgets.addInfo("Duration", this.duration.toFixed(3));
-            widgets.addSlider("Speed", this.editor.mixer.timeScale, { callback: v => this.editor.mixer.timeScale = v, min: 0, max: 1, step: 0.1});
+            widgets.addSlider("Speed", this.editor.mixer.timeScale, { callback: v => {
+                this.editor.mixer.timeScale = this.editor.video.playbackRate = v;
+            }, min: 0.25, max: 2, step: 0.05});
             widgets.widgets_per_row = 1;
 
             const bone_selected = !(o.firstBone && numBones) ? 
@@ -395,15 +397,11 @@ class Gui {
         this.current_time = this.editor.mixer.time;
 
         if(this.current_time > this.duration) {
-            this.onAnimationEnded();
+            this.current_time = 0.0;
+            this.editor.onAnimationEnded();
         }
 
         this.timeline.draw(this.timelineCTX, this.current_time, [0, 0, canvas.width, canvas.height]);
-    }
-
-    onAnimationEnded() {
-        this.current_time = 0.0;
-        this.editor.setTime(0.0, true);
     }
 
     showKeyFrameOptions(e, info, index) {
