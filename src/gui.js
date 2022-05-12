@@ -1,6 +1,5 @@
-import { TransformControls } from "./controls/TransformControls.js";
 import { Timeline } from "./libs/timeline.module.js";
-import { firstToUpperCase } from "./utils.js";
+import { UTILS } from "./utils.js";
 
 class Gui {
 
@@ -15,11 +14,10 @@ class Gui {
         this.create();
     }
 
-    loadProject(project) {
+    loadClip( clip ) {
 
-        this.project = project;
-        this.names = project.names;
-        this.duration = project.duration;
+        this.clip = clip;
+        this.duration = clip.duration;
 
         let boneName = null;
         if(this.editor.skeletonHelper.bones.length) {
@@ -27,7 +25,7 @@ class Gui {
         }
 
         this.timeline = new Timeline( this.editor.animationClip, boneName);
-        this.timeline.framerate = project.framerate;
+        this.timeline.framerate = 30;
         this.timeline.setScale(400);
         this.timeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
         this.timeline.onSelectKeyFrame = (e, info, index) => {
@@ -44,9 +42,6 @@ class Gui {
         this.timeline.onUpdateTrack = (idx) => this.editor.updateAnimationAction(idx);
         this.timeline.onGetSelectedBone = () => { return this.editor.getSelectedBone(); };
 
-        // Move this to another place
-        // the idea is to create once and reset on load project
-        // const name = project.clipName.length ? project.clipName : null;
         this.createSidePanel();
 
         let canvasArea = document.getElementById("canvasarea");
@@ -235,10 +230,11 @@ class Gui {
 
             widgets.clear();
             widgets.addSection("Animation Clip", { pretitle: makePretitle('stickman') });
-            widgets.addString("Name", this.project.clipName || "Unnamed", { callback: (v) => this.project.clipName = v });
+            widgets.addString("Name", this.clip.name || "Unnamed", { callback: v => this.clip.name = v });
             widgets.addInfo("Num bones", numBones);
-            widgets.addInfo("Frame rate", this.project.framerate);
-            widgets.addInfo("Duration", this.project.duration);
+            widgets.addInfo("Frame rate", this.timeline.framerate);
+            widgets.addInfo("Duration", this.duration.toFixed(3));
+            widgets.addSlider("Speed", this.editor.mixer.timeScale, { callback: v => this.editor.mixer.timeScale = v, min: 0, max: 1, step: 0.1});
             widgets.widgets_per_row = 1;
 
             const bone_selected = !(o.firstBone && numBones) ? 
@@ -252,13 +248,17 @@ class Gui {
 
                 widgets.addSection("Gizmo", { pretitle: makePretitle('gizmo'), settings: (e) => this.openSettings( 'gizmo' ), settings_title: "<i class='bi bi-gear-fill section-settings'></i>" });
                 widgets.addButtons( "Mode", _Modes, { selected: this.editor.getGizmoMode(), name_width: "50%", width: "100%", callback: (v) => {
-                    this.editor.setGizmoMode(v);
-                    widgets.on_refresh();
+                    if(this.editor.getGizmoMode() != v) {
+                        this.editor.setGizmoMode(v);
+                        widgets.on_refresh();
+                    }
                 }});
 
                 widgets.addButtons( "Space", ["Local","World"], { selected: this.editor.getGizmoSpace(), name_width: "50%", width: "100%", callback: (v) => {
-                    this.editor.setGizmoSpace(v);
-                    widgets.on_refresh();
+                    if(this.editor.getGizmoSpace() != v) {
+                        this.editor.setGizmoSpace(v);
+                        widgets.on_refresh();
+                    }  
                 }});
 
                 widgets.addCheckbox( "Snap", this.editor.isGizmoSnapActive(), {callback: () => this.editor.toggleGizmoSnap() } );
@@ -277,14 +277,14 @@ class Gui {
                 // Only edit position for root bone
                 if(bone_selected.children.length && bone_selected.parent.constructor !== bone_selected.children[0].constructor) {
                     widgets.addTitle("Position");
-                    widgets.addVector3(null, bone_selected.position.toArray(), {precision: 3, className: 'bone-position', callback: (v) => innerUpdate("position", v)});
+                    widgets.addVector3(null, bone_selected.position.toArray(), {disabled: this.editor.state, precision: 3, className: 'bone-position', callback: (v) => innerUpdate("position", v)});
                 }
 
                 widgets.addTitle("Rotation (XYZ)");
-                widgets.addVector3(null, bone_selected.rotation.toArray(), {precision: 3, className: 'bone-euler', callback: (v) => innerUpdate("rotation", v)});
+                widgets.addVector3(null, bone_selected.rotation.toArray(), {disabled: this.editor.state, precision: 3, className: 'bone-euler', callback: (v) => innerUpdate("rotation", v)});
 
                 widgets.addTitle("Quaternion");
-                widgets.addVector4(null, bone_selected.quaternion.toArray(), {precision: 3, className: 'bone-quaternion', callback: (v) => innerUpdate("quaternion", v)});
+                widgets.addVector4(null, bone_selected.quaternion.toArray(), {disabled: this.editor.state, precision: 3, className: 'bone-quaternion', callback: (v) => innerUpdate("quaternion", v)});
             }
         };
 
@@ -301,7 +301,7 @@ class Gui {
         let prevDialog = document.getElementById("settings-dialog");
         if(prevDialog) prevDialog.remove();
 
-        const dialog = new LiteGUI.Dialog({ id: 'settings-dialog', title: firstToUpperCase(settings), close: true, width: 380, height: 210, scroll: false, draggable: true});
+        const dialog = new LiteGUI.Dialog({ id: 'settings-dialog', title: UTILS.firstToUpperCase(settings), close: true, width: 380, height: 210, scroll: false, draggable: true});
 		dialog.show();
 
         const inspector = new LiteGUI.Inspector();
@@ -391,17 +391,14 @@ class Gui {
 
     drawTimeline() {
         
-        if(!this.project)
-        return;
-
         const canvas = this.timelineCTX.canvas;
-        this.current_time = this.project.mixer.time;
+        this.current_time = this.editor.mixer.time;
 
         if(this.current_time > this.duration) {
             this.onAnimationEnded();
         }
 
-        this.timeline.draw(this.timelineCTX, this.project, this.current_time, [0, 0, canvas.width, canvas.height]);
+        this.timeline.draw(this.timelineCTX, this.current_time, [0, 0, canvas.width, canvas.height]);
     }
 
     onAnimationEnded() {

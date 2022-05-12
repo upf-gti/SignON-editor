@@ -1,4 +1,4 @@
-import { getTime, concatTypedArray } from '../utils.js';
+import { UTILS } from '../utils.js';
 
 // Agnostic timeline, do nos impose any timeline content
 // It renders to a canvas
@@ -289,7 +289,7 @@ Timeline.prototype._delete = function( track, index ) {
 	const slice1 = this.clip.tracks[clip_idx].values.slice(0, indexDim);
 	const slice2 = this.clip.tracks[clip_idx].values.slice(indexDim + track.dim);
 
-	this.clip.tracks[clip_idx].values = concatTypedArray([slice1, slice2], Float32Array);
+	this.clip.tracks[clip_idx].values = UTILS.concatTypedArray([slice1, slice2], Float32Array);
 
 	// Move the other's key properties
 	for(let i = index; i < this.clip.tracks[clip_idx].times.length; ++i) {
@@ -582,7 +582,7 @@ Timeline.prototype.processMouse = function (e) {
 
 	if( e.type == "mouseup" )
 	{
-		const discard = this._movingKeys || (getTime() - this._click_time) > 420; // ms
+		const discard = this._movingKeys || (UTILS.getTime() - this._click_time) > 420; // ms
 		this._movingKeys ? innerSetTime( this.current_time ) : 0;
 		
 		this._grabbing = false;
@@ -639,7 +639,7 @@ Timeline.prototype.processMouse = function (e) {
 
 	if( e.type == "mousedown")
 	{
-		this._click_time = getTime();
+		this._click_time = UTILS.getTime();
 
 		if(this._track_bullet_callback && e.track)
 			this._track_bullet_callback(e.track,e,this,[local_x,local_y]);
@@ -755,16 +755,12 @@ Timeline.prototype.processMouse = function (e) {
 		}
 	}
 
-	this._canvas.style.cursor = this._grabbing && (getTime() - this._click_time > 320) ? "grabbing" : "pointer" ;
+	this._canvas.style.cursor = this._grabbing && (UTILS.getTime() - this._click_time > 320) ? "grabbing" : "pointer" ;
 
 	return true;
 };
 
-// Project must have .duration in seconds
-Timeline.prototype.draw = function (ctx, project, current_time, rect) {
-
-	if(!project)
-		return;
+Timeline.prototype.draw = function (ctx, current_time, rect) {
 
 	if(!rect)
 		rect = [0, ctx.canvas.height - 150, ctx.canvas.width, 150 ];
@@ -779,7 +775,7 @@ Timeline.prototype.draw = function (ctx, project, current_time, rect) {
 	var timeline_height = this.size[1];
 
 	this.current_time = current_time;
-	var duration = this.duration = project.duration;
+	var duration = this.duration = this.clip.duration;
 	this.current_scroll_in_pixels = this.scrollable_height <= h ? 0 : (this.current_scroll * (this.scrollable_height - timeline_height));
 
 	ctx.save();

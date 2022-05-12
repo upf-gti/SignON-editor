@@ -1,4 +1,10 @@
 // The scope for the callbacks is the editor
+// Icons: https://icons.getbootstrap.com/
+
+// THREE.js
+const LoopOnce = 2200;
+const LoopRepeat = 2201;
+const LoopPingPong = 2202;
 
 const CanvasButtons = {
 
@@ -28,7 +34,7 @@ const CanvasButtons = {
             icon: 'person-x-fill',
             nIcon: 'person-check-fill',
             callback: function() {
-                let model = this.scene.getObjectByName(this.character);
+                let model = this.scene.getObjectByName("Armature");
                 model.visible = this.showSkin;
             }
         },
@@ -41,6 +47,23 @@ const CanvasButtons = {
                 this.scene.getObjectByName('SkeletonHelper').visible = this.showHUD;
                 this.scene.getObjectByName('GizmoPoints').visible = this.showHUD;
                 this.scene.getObjectByName('Grid').visible = this.showHUD;
+            }
+        },
+
+        {
+            name: 'anim-loop',
+            property: 'animLoop',
+            icon: 'arrow-clockwise',
+            callback: function() {
+                
+                return;
+                
+                // TODO: Fix esta shit
+                const action = this.mixer._actions[0];
+                if(!action) 
+                    throw("No animation in mixer");
+                
+                action.setLoop( action.loop == LoopOnce ? LoopRepeat : LoopOnce );
             }
         }
     ]

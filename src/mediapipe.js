@@ -8,9 +8,12 @@ const MediaPipe = {
 
     currentTime: 0,
     previousTime: 0,
+    landmarks: [],
 
-    start: async function()
-    {
+    async start() {
+
+        this.landmarks = [];
+
         // Webcam and MediaPipe Set-up
         const videoElement = document.getElementById("inputVideo");
         const canvasElement = document.getElementById("outputVideo");
@@ -36,8 +39,7 @@ const MediaPipe = {
             {
                 this.currentTime = Date.now();
                 var dt = this.currentTime - this.previousTime;
-                // console.log(dt);
-                app.fillLandmarks(results, dt);
+                this.fillLandmarks(results, dt);
                 this.previousTime = this.currentTime;
             }
 
@@ -90,8 +92,8 @@ const MediaPipe = {
     },
 
     // camera.stop() does not exist, therefore solved using jQuery, we can replace the methods with appropriate JavaScript methods
-    stop: function()
-    {
+    stop() {
+        
         // get reference of the video element the Camera is constructed on
         let $feed = $("#inputVideo")[0];
 
@@ -99,6 +101,40 @@ const MediaPipe = {
         $feed.pause();
         $feed.srcObject.getTracks().forEach(a => a.stop());
         $feed.srcObject = null;
+    },
+
+    onStartRecording() {
+        this.landmarks = [];
+    },
+
+    onStopRecording() {
+        
+        // Correct first dt of landmarks
+        this.landmarks[0].dt = 0;
+    },
+
+    fillLandmarks(data, dt) {
+
+        if(!data || data.poseLandmarks == undefined) {
+            console.warn( "no landmark data at time " + dt/1000.0 );
+            return;
+        }
+
+        for (let j = 0; j < data.poseLandmarks.length; ++j) {
+            data.poseLandmarks[j].x = (data.poseLandmarks[j].x - 0.5);
+            data.poseLandmarks[j].y = (1.0 - data.poseLandmarks[j].y) + 2;
+            data.poseLandmarks[j].z = -data.poseLandmarks[j].z * 0.5;
+        }
+        if(data.rightHandLandmarks)
+            for (let j = 0; j < data.rightHandLandmarks.length; ++j) {
+                data.rightHandLandmarks[j].z = -data.rightHandLandmarks[j].z * 0.5;
+            }
+        if(data.leftHandLandmarks)
+            for (let j = 0; j < data.leftHandLandmarks.length; ++j) {
+                data.leftHandLandmarks[j].z = -data.leftHandLandmarks[j].z * 0.5;
+            }
+
+        this.landmarks.push({"RLM": data.rightHandLandmarks, "LLM": data.leftHandLandmarks, "FLM": data.faceLandmarks, "PLM": data.poseLandmarks, "dt": dt});
     }
 }
 

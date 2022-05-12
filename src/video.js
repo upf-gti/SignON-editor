@@ -189,7 +189,7 @@ const VideoUtils = {
                         break;
                 }
 
-                this.video.currentTime = Math.min( this.endTime, Math.max( this.startTime, this.video.currentTime ) );
+                this.video.currentTime = t;//Math.min( this.endTime, Math.max( this.startTime, this.video.currentTime ) );
             }
             else {
                 if(Math.abs( this.startTime - t) < this.ratio)
