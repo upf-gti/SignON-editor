@@ -24,7 +24,7 @@ class Editor {
         this.scene = null;
         this.gizmo = null;
         this.renderer = null;
-        this.state = false;  // defines how the animation starts (moving/static)
+        this.state = false; // defines how the animation starts (moving/static)
 
         this.showHUD = true;
         this.showSkin = true; // defines if the model skin has to be rendered
