@@ -158,12 +158,12 @@ class App {
         loadData.onclick = () => {
             elem.style.display = "none";
             MediaPipe.stop();
-            this.loadAnimation(0, null);
+            this.onRecordLandmarks(0, null);
         };
 
         let trimBtn = document.getElementById("trim_btn");
         trimBtn.onclick = () => {
-            VideoUtils.unbind( (start, end) => this.loadAnimation(start, end) );
+            VideoUtils.unbind( (start, end) => this.onRecordLandmarks(start, end) );
         };
     }
     
@@ -187,7 +187,7 @@ class App {
         await VideoUtils.bind(video, canvas);
     }
 
-    loadAnimation(startTime, endTime) {
+    onRecordLandmarks(startTime, endTime) {
     
         let that = this;
         
@@ -273,7 +273,7 @@ class App {
 
         // Creates the scene and loads the animation
         this.editor.trimTimes = [startTime, endTime];
-        this.editor.loadInScene( MediaPipe.landmarks );
+        this.editor.buildAnimation( MediaPipe.landmarks );
     }
 
     async storeAnimation() {
@@ -319,7 +319,6 @@ class App {
 
         app.editor.resize(CANVAS_WIDTH, CANVAS_HEIGHT);
     }
-
 }
 
 const app = new App();
