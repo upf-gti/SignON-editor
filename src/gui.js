@@ -234,7 +234,9 @@ class Gui {
             widgets.addInfo("Num bones", numBones);
             widgets.addInfo("Frame rate", this.timeline.framerate);
             widgets.addInfo("Duration", this.duration.toFixed(3));
-            widgets.addSlider("Speed", this.editor.mixer.timeScale, { callback: v => this.editor.mixer.timeScale = v, min: 0, max: 1, step: 0.1});
+            widgets.addSlider("Speed", this.editor.mixer.timeScale, { callback: v => {
+                this.editor.mixer.timeScale = this.editor.video.playbackRate = v;
+            }, min: 0.25, max: 2, step: 0.05});
             widgets.widgets_per_row = 1;
 
             const bone_selected = !(o.firstBone && numBones) ? 
@@ -248,17 +250,11 @@ class Gui {
 
                 widgets.addSection("Gizmo", { pretitle: makePretitle('gizmo'), settings: (e) => this.openSettings( 'gizmo' ), settings_title: "<i class='bi bi-gear-fill section-settings'></i>" });
                 widgets.addButtons( "Mode", _Modes, { selected: this.editor.getGizmoMode(), name_width: "50%", width: "100%", callback: (v) => {
-                    if(this.editor.getGizmoMode() != v) {
-                        this.editor.setGizmoMode(v);
-                        widgets.on_refresh();
-                    }
+                    if(this.editor.getGizmoMode() != v) this.editor.setGizmoMode(v);
                 }});
 
                 widgets.addButtons( "Space", ["Local","World"], { selected: this.editor.getGizmoSpace(), name_width: "50%", width: "100%", callback: (v) => {
-                    if(this.editor.getGizmoSpace() != v) {
-                        this.editor.setGizmoSpace(v);
-                        widgets.on_refresh();
-                    }  
+                    if(this.editor.getGizmoSpace() != v) this.editor.setGizmoSpace(v);
                 }});
 
                 widgets.addCheckbox( "Snap", this.editor.isGizmoSnapActive(), {callback: () => this.editor.toggleGizmoSnap() } );
@@ -395,15 +391,11 @@ class Gui {
         this.current_time = this.editor.mixer.time;
 
         if(this.current_time > this.duration) {
-            this.onAnimationEnded();
+            this.current_time = 0.0;
+            this.editor.onAnimationEnded();
         }
 
         this.timeline.draw(this.timelineCTX, this.current_time, [0, 0, canvas.width, canvas.height]);
-    }
-
-    onAnimationEnded() {
-        this.current_time = 0.0;
-        this.editor.setTime(0.0, true);
     }
 
     showKeyFrameOptions(e, info, index) {
@@ -489,7 +481,7 @@ class Gui {
 
         //compute the current y scrollable value
         if (sidebar_height < scrollable_height)
-            scroll_y = -current_scroll_in_pixels; //TODO
+            scroll_y = -current_scroll_in_pixels;
         if (scroll_y) {
             ctx.beginPath();
             ctx.rect(0, vertical_offset, canvas.width, sidebar_height);

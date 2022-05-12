@@ -53,18 +53,7 @@ const CanvasButtons = {
         {
             name: 'anim-loop',
             property: 'animLoop',
-            icon: 'arrow-clockwise',
-            callback: function() {
-                
-                return;
-                
-                // TODO: Fix esta shit
-                const action = this.mixer._actions[0];
-                if(!action) 
-                    throw("No animation in mixer");
-                
-                action.setLoop( action.loop == LoopOnce ? LoopRepeat : LoopOnce );
-            }
+            icon: 'arrow-clockwise'
         }
     ]
 
