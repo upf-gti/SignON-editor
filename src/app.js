@@ -1,5 +1,4 @@
 import { MediaPipe } from "./mediapipe.js";
-import { Project } from "./project.js";
 import { Editor } from "./editor.js";
 import { VideoUtils } from "./video.js";
 import { FileSystem } from "./libs/filesystem.js";
@@ -7,7 +6,7 @@ import * as THREE from "./libs/three.module.js";
 
 class App {
 
-    constructor(){
+    constructor() {
 
         // Helpers
         this.recording = false;
@@ -16,7 +15,6 @@ class App {
 
         this.mediaRecorder = null
         this.chunks = [];
-        this.project = new Project();
         this.editor = new Editor(this);
 
         // Create the fileSystem and log the user
@@ -38,8 +36,7 @@ class App {
                 await new Promise(r => setTimeout(r, 1000));
                 video.currentTime = 10000000*Math.random();
             }
-            video.currentTime = 0;
-            video.startTime = 0;
+            video.currentTime = video.startTime > 0 ? video.startTime : 0;
         });
 
         // prepare the device to capture the video
@@ -72,7 +69,6 @@ class App {
                     }
 
                     that.mediaRecorder.ondataavailable = function (e) {
-                        console.log(e.data);
                         that.chunks.push(e.data);
                     }
                 })
@@ -122,11 +118,10 @@ class App {
                 videoCanvas.style.border = "solid #924242";
                 
                 // Start the capture
-                this.project.landmarks = []; //reset array
+                MediaPipe.onStartRecording();
                 this.recording = true;
                 this.mediaRecorder.start();
                 this.startTime = Date.now();
-                console.log(this.mediaRecorder.state);
                 console.log("Start recording");
             }
             else {
@@ -137,13 +132,10 @@ class App {
                 this.recording = false;
                 
                 this.mediaRecorder.stop();
+                MediaPipe.onStopRecording();
                 let endTime = Date.now();
                 this.duration = endTime - this.startTime;
-                console.log(this.mediaRecorder.state);
                 console.log("Stop recording");
-    
-                // Correct first dt of landmarks
-                this.project.landmarks[0].dt = 0;
 
                 // Back to initial values
                 capture.innerHTML = "Capture" + " <i class='bi bi-record2'></i>"
@@ -167,12 +159,12 @@ class App {
         loadData.onclick = () => {
             elem.style.display = "none";
             MediaPipe.stop();
-            this.loadAnimation(0, null);
+            this.onRecordLandmarks(0, null);
         };
 
         let trimBtn = document.getElementById("trim_btn");
         trimBtn.onclick = () => {
-            VideoUtils.unbind( (start, end) => this.loadAnimation(start, end) );
+            VideoUtils.unbind( (start, end) => this.onRecordLandmarks(start, end) );
         };
     }
     
@@ -196,44 +188,7 @@ class App {
         await VideoUtils.bind(video, canvas);
     }
 
-    fillLandmarks(data, dt) {
-
-        if(!data || data.poseLandmarks == undefined) {
-            console.warn( "no landmark data at time " + dt/1000.0 );
-            return;
-        }
-
-        var point = new THREE.Vector3();
-        var up = new THREE.Vector3(0, 1, 0);
-
-        for (let j = 0; j < data.poseLandmarks.length; ++j) {
-            data.poseLandmarks[j].x = (data.poseLandmarks[j].x - 0.5);
-            data.poseLandmarks[j].y = (1.0 - data.poseLandmarks[j].y) + 2;
-            data.poseLandmarks[j].z = -data.poseLandmarks[j].z * 0.5;
-        }
-        if(data.rightHandLandmarks)
-            for (let j = 0; j < data.rightHandLandmarks.length; ++j) {
-                data.rightHandLandmarks[j].z = -data.rightHandLandmarks[j].z * 0.5;
-            }
-        if(data.leftHandLandmarks)
-            for (let j = 0; j < data.leftHandLandmarks.length; ++j) {
-                data.leftHandLandmarks[j].z = -data.leftHandLandmarks[j].z * 0.5;
-            }
-
-        point.applyAxisAngle(up, Math.PI);
-        
-        data.poseLandmarks[j].x = point.x;
-        data.poseLandmarks[j].y = point.y;
-        data.poseLandmarks[j].z = point.z;
-        
-        /*for (let j = 0; j < data.ea.length; ++j) {
-            data.ea[j].y = - data.ea[j].y;
-        }*/
-        this.project.landmarks.push({"RLM": data.rightHandLandmarks, "LLM": data.leftHandLandmarks, "FLM": data.faceLandmarks, "PLM": data.poseLandmarks, "dt": dt});
-
-    }
-
-    loadAnimation(startTime, endTime) {
+    onRecordLandmarks(startTime, endTime) {
     
         let that = this;
         
@@ -270,16 +225,14 @@ class App {
 
         $(videoDiv).draggable({containment: "#canvasarea"}).resizable({ aspectRatio: true, containment: "#canvasarea"});
 
-        // videoRec.src = "models/bvh/victor.mp4";
-
         const updateFrame = (now, metadata) => {
             
             // Do something with the frame.
             const canvasElement = document.getElementById("outputVideo");
             const canvasCtx = canvasElement.getContext("2d");
     
-            //let frame = metadata.presentedFrames % project.landmarks; //maybe use project.duration, but first we need to take the animation from the video
-            let landmarks = that.project.landmarks; //[frame];
+            //let frame = metadata.presentedFrames % MediaPipe.landmarks;
+            let landmarks = MediaPipe.landmarks; //[frame];
     
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
@@ -314,14 +267,14 @@ class App {
 
             name = name || "Unnamed";
             videoRec.name = name;
-            this.project.clipName = name;
+            this.editor.clipName = name;
             this.editor.updateGUI();
 
         }, { title: "Editor", width: 350 } );
 
         // Creates the scene and loads the animation
-        this.project.trimTimes = [startTime, endTime];
-        this.editor.loadInScene(this.project);
+        this.editor.trimTimes = [startTime, endTime];
+        this.editor.buildAnimation( MediaPipe.landmarks );
     }
 
     async storeAnimation() {
@@ -367,7 +320,6 @@ class App {
 
         app.editor.resize(CANVAS_WIDTH, CANVAS_HEIGHT);
     }
-
 }
 
 const app = new App();
