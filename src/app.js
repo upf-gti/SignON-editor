@@ -1,5 +1,4 @@
 import { MediaPipe } from "./mediapipe.js";
-import { Project } from "./project.js";
 import { Editor } from "./editor.js";
 import { VideoUtils } from "./video.js";
 import { FileSystem } from "./libs/filesystem.js";
@@ -15,7 +14,6 @@ class App {
 
         this.mediaRecorder = null
         this.chunks = [];
-        this.project = new Project();
         this.editor = new Editor(this);
 
         // Create the fileSystem and log the user
@@ -119,7 +117,7 @@ class App {
                 videoCanvas.style.border = "solid #924242";
                 
                 // Start the capture
-                this.project.landmarks = []; //reset array
+                MediaPipe.onStartRecording();
                 this.recording = true;
                 this.mediaRecorder.start();
                 this.startTime = Date.now();
@@ -133,12 +131,10 @@ class App {
                 this.recording = false;
                 
                 this.mediaRecorder.stop();
+                MediaPipe.onStopRecording();
                 let endTime = Date.now();
                 this.duration = endTime - this.startTime;
                 console.log("Stop recording");
-    
-                // Correct first dt of landmarks
-                this.project.landmarks[0].dt = 0;
 
                 // Back to initial values
                 capture.innerHTML = "Capture" + " <i class='bi bi-record2'></i>"
@@ -191,30 +187,6 @@ class App {
         await VideoUtils.bind(video, canvas);
     }
 
-    fillLandmarks(data, dt) {
-
-        if(!data || data.poseLandmarks == undefined) {
-            console.warn( "no landmark data at time " + dt/1000.0 );
-            return;
-        }
-
-        for (let j = 0; j < data.poseLandmarks.length; ++j) {
-            data.poseLandmarks[j].x = (data.poseLandmarks[j].x - 0.5);
-            data.poseLandmarks[j].y = (1.0 - data.poseLandmarks[j].y) + 2;
-            data.poseLandmarks[j].z = -data.poseLandmarks[j].z * 0.5;
-        }
-        if(data.rightHandLandmarks)
-            for (let j = 0; j < data.rightHandLandmarks.length; ++j) {
-                data.rightHandLandmarks[j].z = -data.rightHandLandmarks[j].z * 0.5;
-            }
-        if(data.leftHandLandmarks)
-            for (let j = 0; j < data.leftHandLandmarks.length; ++j) {
-                data.leftHandLandmarks[j].z = -data.leftHandLandmarks[j].z * 0.5;
-            }
-
-        this.project.landmarks.push({"RLM": data.rightHandLandmarks, "LLM": data.leftHandLandmarks, "FLM": data.faceLandmarks, "PLM": data.poseLandmarks, "dt": dt});
-    }
-
     loadAnimation(startTime, endTime) {
     
         let that = this;
@@ -258,8 +230,8 @@ class App {
             const canvasElement = document.getElementById("outputVideo");
             const canvasCtx = canvasElement.getContext("2d");
     
-            //let frame = metadata.presentedFrames % project.landmarks; //maybe use project.duration, but first we need to take the animation from the video
-            let landmarks = that.project.landmarks; //[frame];
+            //let frame = metadata.presentedFrames % MediaPipe.landmarks;
+            let landmarks = MediaPipe.landmarks; //[frame];
     
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
@@ -294,14 +266,14 @@ class App {
 
             name = name || "Unnamed";
             videoRec.name = name;
-            this.project.clipName = name;
+            this.editor.clipName = name;
             this.editor.updateGUI();
 
         }, { title: "Editor", width: 350 } );
 
         // Creates the scene and loads the animation
-        this.project.trimTimes = [startTime, endTime];
-        this.editor.loadInScene(this.project);
+        this.editor.trimTimes = [startTime, endTime];
+        this.editor.loadInScene( MediaPipe.landmarks );
     }
 
     async storeAnimation() {

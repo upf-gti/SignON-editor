@@ -1,12 +1,11 @@
 import * as THREE from "./libs/three.module.js";
 import { OrbitControls } from "./controls/OrbitControls.js";
-import { MiniGLTFLoader } from "./loaders/GLTFLoader.js";
 import { BVHLoader } from "./loaders/BVHLoader.js";
 import { BVHExporter } from "./bvh_exporter.js";
 import { createSkeleton, createAnimation, createAnimationFromRotations, updateThreeJSSkeleton, injectNewLandmarks } from "./skeleton.js";
 import { Gui } from "./gui.js";
 import { Gizmo } from "./gizmo.js";
-import { firstToUpperCase, consecutiveRanges } from "./utils.js"
+import { UTILS } from "./utils.js"
 import { lerp } from "./math.js"
 import { OrientationHelper } from "./libs/OrientationHelper.js";
 import { TFModel } from "./libs/tensorFlowWrap.module.js";
@@ -28,6 +27,7 @@ class Editor {
 
         this.showHUD = true;
         this.showSkin = true; // defines if the model skin has to be rendered
+        this.animLoop = true;
         this.character = "";
         
         this.spotLight = null;
@@ -38,15 +38,15 @@ class Editor {
         this.skeletonHelper = null;
         this.skeleton = null;
         
+        // TODO: Mover esto a AnimationRetargeting
         this.animSkeleton = null;
         this.srcBindPose = null;
         this.tgtBindPose = null;
         this.tgtSkeletonHelper = null;
+        this.retargeting = new AnimationRetargeting();
 
-        this.pointsGeometry = null;
         this.landmarksArray = [];
         this.landmarksNN = [];
-        this.prevTime = this.iter = 0;
     	this.onDrawTimeline = null;
 	    this.onDrawSettings = null;
         this.gui = new Gui(this);
@@ -57,7 +57,6 @@ class Editor {
         // Keep "private"
         this.__app = app;
 
-        this.retargeting = new AnimationRetargeting();
         this.init();
     }
     
@@ -68,6 +67,7 @@ class Editor {
         const CANVAS_WIDTH = canvasArea.clientWidth;
         const CANVAS_HEIGHT = canvasArea.clientHeight;
 
+        // Create scene
         let scene = new THREE.Scene();
         scene.background = new THREE.Color( 0xa0a0a0 );
         scene.fog = new THREE.Fog( 0xa0a0a0, 10, 50 );
@@ -105,6 +105,7 @@ class Editor {
         spotLight.shadow.mapSize.height = 1024*4;
         scene.add( spotLight );
 
+        // Create 3D renderer
         const pixelRatio = CANVAS_WIDTH / CANVAS_HEIGHT;
         let renderer = new THREE.WebGLRenderer({ antialias: true });
         renderer.setPixelRatio(pixelRatio);
@@ -115,7 +116,7 @@ class Editor {
         renderer.domElement.id = "webgl-canvas";
         renderer.domElement.setAttribute("tabIndex", 1);
 
-        // camera
+        // Camera
         let camera = new THREE.PerspectiveCamera(60, pixelRatio, 0.1, 1000);
         window.camera = camera;
         let controls = new OrbitControls(camera, renderer.domElement);
@@ -162,34 +163,13 @@ class Editor {
     getApp() {
         return this.__app;
     }
-    
-    loadGLTF(animationFile, onLoaded) {
-        
-        $('#loading').fadeIn();
-        const gltfLoader = new MiniGLTFLoader();
 
-        if(typeof(Worker) !== 'undefined') {
-            const worker = new Worker("src/workers/loader.js?filename=" + animationFile, { type: "module" });
-            worker.onmessage = function (event) {
-                gltfLoader.parse(event.data, animationFile, onLoaded);
-                worker.terminate();
-            };
-        } else {
-            // browser does not support Web Workers
-            // call regular load function
-            gltfLoader.load( animationFile, onLoaded );
-        }
-    }
+    loadInScene(landmarks) {
 
-    loadInScene(project) {
-
-        this.project = project;
-        this.landmarksArray = project.landmarks;
-        
-        project.path = project.path || "models/bvh/victor.bvh";
-        
+        this.landmarksArray = landmarks;
+                
         // Trim
-        this.processLandmarks(project);
+        this.processLandmarks();
 
         // Prepare landmarks for the NN (PLM + RLM + LLM)
         let firstNonNull = null;
@@ -202,10 +182,10 @@ class Editor {
                 const dt = v.dt * 0.001;
                 if (!firstNonNull) {
                     // Add delta to start time
-                    project.trimTimes[0] += dt;
+                    this.trimTimes[0] += dt;
                 } else {
                     // Sub delta to end time
-                    project.trimTimes[1] -= dt;
+                    this.trimTimes[1] -= dt;
                 }
             }
 
@@ -224,7 +204,7 @@ class Editor {
         if (!firstNonNull || !lastNonNull) throw('Missing landmarks error');
         this.landmarksNN = this.landmarksNN.slice(firstNonNull, lastNonNull + 1);
 
-        this.video.startTime = project.trimTimes[0];
+        this.video.startTime = this.trimTimes[0];
         this.video.onended = function() {
             this.currentTime = this.startTime;
             this.play();
@@ -280,19 +260,12 @@ class Editor {
 
         this.appendCanvasButtons();
 
-        // To debug landmarks (Not the gizmo ones)
-        this.pointsGeometry = new THREE.BufferGeometry();
-        const material = new THREE.PointsMaterial( { color: 0x880000 } );
-        material.size = 0.025;
-        const points = new THREE.Points( this.pointsGeometry, material );
-        this.scene.add( points );
-
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
 
         if ( urlParams.get('load') == 'hard') {
         
-            this.loadGLTF("models/t_pose.glb", gltf => {
+            UTILS.loadGLTF("models/t_pose.glb", gltf => {
                 let model = gltf.scene;
                 this.character = model.name;
                 model.castShadow = true;
@@ -318,14 +291,12 @@ class Editor {
                 this.scene.add( model );
 
                 // Play animation
-                this.animationClip = createAnimation("Eva", this.landmarksArray);
-                // this.animationClip = gltf.animations[0];
+                this.animationClip = createAnimation(this.clipName, this.landmarksArray);
                 this.mixer = new THREE.AnimationMixer(model);
                 this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
                 this.mixer.update(this.clock.getDelta()); // Do first iteration to update from T pose
         
-                project.prepareData(this.mixer, this.animationClip, skeleton, this.video);
-                this.gui.loadProject(project);
+                this.gui.loadClip(this.animationClip);
                 this.gizmo.begin(this.skeletonHelper);
                 this.setBoneSize(0.2);
                 
@@ -362,7 +333,7 @@ class Editor {
                 }
                                                 
                 // Linear interpolation to solves blank frames
-                blankFrames = consecutiveRanges(blankFrames);
+                blankFrames = UTILS.consecutiveRanges(blankFrames);
                 for (let range of blankFrames) {
                     if (typeof range == 'number') {
                         let frame = quatData[range];
@@ -397,7 +368,7 @@ class Editor {
             }
             
             // Load the source model
-            this.loadGLTF("models/t_pose.glb", (gltf) => {
+            UTILS.loadGLTF("models/t_pose.glb", (gltf) => {
     
                 let model = gltf.scene;
                 model.visible = true; // change to false
@@ -443,16 +414,15 @@ class Editor {
                 boneContainer.add(skeleton.bones[0]);
                 this.scene.add(boneContainer);
     
-                this.animationClip = createAnimationFromRotations("SignName", quatData);
+                this.animationClip = createAnimationFromRotations(this.clipName, quatData);
     
                 this.mixer = new THREE.AnimationMixer(model);
                 this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
                        
-                project.prepareData(this.mixer, this.animationClip, skeleton);
-                this.gui.loadProject(project);
+                this.gui.loadClip(this.animationClip);
                 
                 // Load the target model (Eva) 
-                this.loadGLTF("models/Eva_Y.glb", (gltf) => {
+                UTILS.loadGLTF("models/Eva_Y.glb", (gltf) => {
                     
                     this.character = gltf.scene;
                     this.character.visible = false; // change to true
@@ -512,9 +482,9 @@ class Editor {
         }
     }
 
-    processLandmarks(project) {
+    processLandmarks() {
         
-        const [startTime, endTime] = project.trimTimes;
+        const [startTime, endTime] = this.trimTimes;
 
         // Video is duration-complete
         if(!endTime)
@@ -605,7 +575,7 @@ class Editor {
     }
 
     getGizmoMode() {
-        return firstToUpperCase( this.gizmo.transform.mode );
+        return UTILS.firstToUpperCase( this.gizmo.transform.mode );
     }
 
     setGizmoMode( mode ) {
@@ -616,7 +586,7 @@ class Editor {
     }
 
     getGizmoSpace() {
-        return firstToUpperCase( this.gizmo.transform.space );
+        return UTILS.firstToUpperCase( this.gizmo.transform.space );
     }
 
     setGizmoSpace( space ) {
