@@ -286,7 +286,6 @@ class Gizmo {
         if(!timeline._lastKeyFramesSelected.length)
         return;
 
-        // TODO: Apply all the same action
         let [name, trackIndex, keyFrameIndex] = timeline._lastKeyFramesSelected[0];
         let track = timeline.getTrack(timeline._lastKeyFramesSelected[0]);
 

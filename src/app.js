@@ -260,16 +260,9 @@ class App {
         // Initially register the callback to be notified about the first frame.
         videoRec.requestVideoFrameCallback(updateFrame);
 
-        // Make a prompt but since we have to load the model, do it meanwhile 
-        // and set the name later 
-        LiteGUI.prompt( "Please, enter the name of the sign performed and the language. (Example: Dog in Irish Sign Language --> dog_ISL)", (name) => {
-
-            name = name || "Unnamed";
-            videoRec.name = name;
-            this.editor.clipName = name;
-            this.editor.updateGUI();
-
-        }, { title: "Editor", width: 350 } );
+        const name = "Unnamed";
+        this.editor.clipName = name;
+        this.editor.updateGUI();
 
         // Creates the scene and loads the animation
         this.editor.trimTimes = [startTime, endTime];
@@ -278,33 +271,43 @@ class App {
 
     async storeAnimation() {
 
-        // CHECK THE INPUT FILE !!!!TODO!!!!
-        let file = undefined;
+        const innerStore = (async function() {
 
-        if (!confirm("Have you finished editing your animation? Remember that uploading the animation to the database implies that it will be used in the synthesis of the 3D avatar used in SignON European project."))
-        return;
-        
-        // Check if are files loaded
-        if (!file) {
-            w2popup.close();
-            console.log("Not BVH found.");
+            // CHECK THE INPUT FILE !!!!TODO!!!!
+            let file = undefined;
+
+            if (!confirm("Have you finished editing your animation? Remember that uploading the animation to the database implies that it will be used in the synthesis of the 3D avatar used in SignON European project."))
             return;
+
+            // Check if are files loaded
+            if (!file) {
+                console.log("Not BVH found.");
+                return;
+            }
+
+            // Log the user
+            await this.FS.login();
+
+            // folder, data, filename, metadata
+            await this.FS.uploadData("animations", file, file.name || "noName", "");
+
+            // Log out the user
+            this.FS.logout();
+
+            // For now this is used in timeline_maanager
+            // refactor!!
+            window.storeAnimation = this.storeAnimation;
+            
+        }).bind(this);
+
+        if( this.editor.clipName === "Unnamed" ) {
+            LiteGUI.prompt( "Please, enter the name of the sign performed and the language. (Example: Dog in Irish Sign Language --> dog_ISL)", async (name) => {
+
+                this.editor.clipName = name;
+                await innerStore();
+
+            }, { title: "Sign Name", width: 350 } );
         }
-
-        // Log the user
-        await this.FS.login();
-
-        // folder, data, filename, metadata
-        await this.FS.uploadData("animations", file, file.name || "noName", "");
-
-        // Log out the user
-        this.FS.logout();
-
-        w2popup.close();
-
-        // For now this is used in timeline_maanager
-        // refactor!!
-        window.storeAnimation = this.storeAnimation;
     }
 
     onResize() {

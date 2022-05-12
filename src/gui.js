@@ -250,17 +250,11 @@ class Gui {
 
                 widgets.addSection("Gizmo", { pretitle: makePretitle('gizmo'), settings: (e) => this.openSettings( 'gizmo' ), settings_title: "<i class='bi bi-gear-fill section-settings'></i>" });
                 widgets.addButtons( "Mode", _Modes, { selected: this.editor.getGizmoMode(), name_width: "50%", width: "100%", callback: (v) => {
-                    if(this.editor.getGizmoMode() != v) {
-                        this.editor.setGizmoMode(v);
-                        widgets.on_refresh();
-                    }
+                    if(this.editor.getGizmoMode() != v) this.editor.setGizmoMode(v);
                 }});
 
                 widgets.addButtons( "Space", ["Local","World"], { selected: this.editor.getGizmoSpace(), name_width: "50%", width: "100%", callback: (v) => {
-                    if(this.editor.getGizmoSpace() != v) {
-                        this.editor.setGizmoSpace(v);
-                        widgets.on_refresh();
-                    }  
+                    if(this.editor.getGizmoSpace() != v) this.editor.setGizmoSpace(v);
                 }});
 
                 widgets.addCheckbox( "Snap", this.editor.isGizmoSnapActive(), {callback: () => this.editor.toggleGizmoSnap() } );
@@ -487,7 +481,7 @@ class Gui {
 
         //compute the current y scrollable value
         if (sidebar_height < scrollable_height)
-            scroll_y = -current_scroll_in_pixels; //TODO
+            scroll_y = -current_scroll_in_pixels;
         if (scroll_y) {
             ctx.beginPath();
             ctx.rect(0, vertical_offset, canvas.width, sidebar_height);
