@@ -302,7 +302,7 @@ class Editor {
                     o.quaternion.copy(bone.quaternion);
                     o.updateWorldMatrix();
                 }
-
+                
                 this.skeletonHelper = this.animSkeleton = new THREE.SkeletonHelper( model );			
                 this.animSkeleton.visible = true; // change to false
                 this.scene.add(this.animSkeleton)
@@ -315,6 +315,9 @@ class Editor {
                 this.skeleton = skeleton;
                 this.animSkeleton.skeleton = skeleton;
 
+                this.retargeting.src_bind = this.srcBindPose;
+                this.retargeting.src_pose = this.animSkeleton;
+
                 const boneContainer = new THREE.Group();
                 boneContainer.add(skeleton.bones[0]);
                 this.scene.add(boneContainer);
@@ -325,6 +328,7 @@ class Editor {
                 this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
                        
                 this.gui.loadClip(this.animationClip);
+                this.retargeting.createMixer(model, this.animationClip);
                 
                 // Load the target model (Eva) 
                 UTILS.loadGLTF("models/Eva_Y.glb", (gltf) => {
@@ -364,19 +368,19 @@ class Editor {
                     this.tgtSkeletonHelper = new THREE.SkeletonHelper(this.character);
                     this.tgtSkeletonHelper.visible = false; // change to true
 
+                    this.retargeting.tgt_bind = this.tgtBindPose;
+                    this.retargeting.tgt_pose = this.tgtSkeletonHelper;
                     // correct rotation
                     //this.character.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
                     
                     this.scene.add(this.tgtSkeletonHelper);
                     this.scene.add( this.character );
                     
-                    // apply source bind pose to intermediate skeleton
-                    this.retargeting.updateSkeleton(this.srcBindPose);
-                    // map bone names between source (Kate) and target (Eva)
-                    this.retargeting.automap(this.tgtSkeletonHelper.bones);
-                    // apply retargeting to the first frame
-                    this.mixer.update(0);
-                    this.retargeting.retargetAnimation(this.srcBindPose, this.tgtBindPose, this.animSkeleton, this.tgtSkeletonHelper, false);
+                    //create retargeted animation
+                    
+                    let newAnimation = this.retargeting.createAnimation(this.mixer, "retargedAnim", false);
+                    this.EvaMixer = new THREE.AnimationMixer(this.character);
+                    this.EvaMixer.clipAction(newAnimation).setEffectiveWeight(1.0).play();
                     
                     this.gizmo.begin(this.animSkeleton);
                     this.setBoneSize(0.2);
@@ -636,14 +640,15 @@ class Editor {
 
         if (this.mixer && this.state) {
             this.mixer.update(dt);
+            this.EvaMixer.update(dt);
             // Update ui data
             const bone = this.skeletonHelper.bones[this.gizmo.selectedBone];
             for(const ip of $(".bone-position")) ip.setValue(bone.position.toArray());
             for(const ip of $(".bone-euler")) ip.setValue(bone.rotation.toArray());
             for(const ip of $(".bone-quaternion")) ip.setValue(bone.quaternion.toArray());
 
-            this.retargeting.retargetAnimation(this.srcBindPose, this.tgtBindPose, this.animSkeleton, this.tgtSkeletonHelper, false);
-            for(let i = 0; i < this.tgtSkeletonHelper.bones.length; i++)
+            //this.retargeting.retargetAnimation(this.srcBindPose, this.tgtBindPose, this.animSkeleton, this.tgtSkeletonHelper, false);
+            /*for(let i = 0; i < this.tgtSkeletonHelper.bones.length; i++)
             {
                 let b = this.tgtSkeletonHelper.bones[i];
                 let o = this.character.getObjectByName(b.name);
@@ -651,7 +656,7 @@ class Editor {
                 o.scale.copy(b.scale);
                 o.quaternion.copy(b.quaternion);
                 o.matrixWorldNeedsUpdate = true;
-            }
+            }*/
         }
         this.gizmo.update(this.state, dt);
     }

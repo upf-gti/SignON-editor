@@ -4,11 +4,19 @@ let base_size = 1;
 
 class AnimationRetargeting {
 
-    constructor() {
+    constructor(src_bind = null, src_pose = null, tgt_bind = null, tgt_pose = null) {
 
         this.rskeleton = [];
         this.map_idx = [];
         this.map_names = {};
+        
+        this.src_bind = src_bind;
+        this.src_pose = src_pose;
+        this.tgt_bind = tgt_bind;
+        this.tgt_pose = tgt_pose;
+    
+        this.mixer = null;
+
         // Mediapipe landmark information (idx, name, prev landmark idx, x, y, z)
         this.LM_INFO = class LandmarksInfo {
 
@@ -357,7 +365,12 @@ class AnimationRetargeting {
     }
 
     //Transform source and target bones rotations into world space
-    retargetAnimation(src_tbones, tgt_tbones, src, tgt, onlyY) {
+    retargetAnimation(onlyY, anim) {
+
+        let src_tbones = this.src_bind;
+        let tgt_tbones = this.tgt_bind;
+        let src = this.src_bind;
+        let tgt = this.tgt_bind;
 
         for (let i = 0; i < this.map_idx.length; i++) {
             let s_idx = this.map_idx[i].from_idx;
@@ -416,6 +429,14 @@ class AnimationRetargeting {
             diff.multiply(convert).premultiply(tgt_bind_inv.invert());
             //diff.multiply(convert).premultiply(tgt_bind_inv.invert());
             tgt_pose.quaternion.copy(diff);
+            
+            //upload quaternion bone to animation
+            let name = tgt_bind.name + '.quaternion';
+            if(!anim[name])
+                anim[name] = tgt_pose.quaternion;
+            else
+                anim[name].push(tgt_pose.quaternion);
+
             //tgt_pose.updateMatrix()
             if(tgt_pose.name.includes("Hips")) {
                 let src_bind_world_pos = new THREE.Vector3();
@@ -450,9 +471,61 @@ class AnimationRetargeting {
                     pos.z = tgt_bind_world_pos.z;
                 }
                 tgt_pose.position.set(pos.x, pos.y, pos.z);
+            
+                //upload position bone to animation
+                name = tgt_bind.name + '.position';
+                if(!anim[name])
+                    anim[name] = tgt_pose.position;
+                else
+                    anim[name].push(tgt_pose.position);
             }
         }
     }
+
+    createAnimation(mixer, filename, onlyY) {
+        // apply source bind pose to intermediate skeleton
+        this.updateSkeleton(this.src_bind);
+        // map bone names between source (Kate) and target (Eva)
+        this.automap(this.tgt_pose.bones);
+        // apply retargeting to the first frame
+        let times = mixer._actions[0]._clip.tracks[0].times;
+        let animTracks = {};
+        this.mixer.update(0);
+        this.retargetAnimation(false, animTracks);
+
+        //apply animation using time values of animation
+        for(let i = 0; i < times.length; i++){
+            this.mixer.update(times[i]);
+            this.retargetAnimation(false, animTracks);
+        }
+        let tracks = [];
+        if (times.length > 0) {
+
+            for(let trackName in animTracks){
+                if(trackName.includes('.position')){
+                    const positions = new THREE.VectorKeyframeTrack( trackName, times, animTracks[trackName]);
+                    tracks.push(positions);
+                }
+                else if(trackName.includes('.quaternion')){
+                    const rotations = new THREE.QuaternionKeyframeTrack( trackName, times, animTracks[trackName]);
+                    tracks.push(rotations);
+                }
+            }
+        }
+    
+        // use -1 to automatically calculate
+        // the length from the array of tracks
+        const length = -1;
+
+        return new THREE.AnimationClip(filename || "", length, tracks);
+    }
+
+    createMixer(model, animation) {
+        this.mixer = new THREE.AnimationMixer(model);
+        this.src_bind = new THREE.SkeletonHelper( model );
+        this.mixer.clipAction(animation).setEffectiveWeight(1.0).play();
+    }
+
 }
 
 class PlayAnimation {
