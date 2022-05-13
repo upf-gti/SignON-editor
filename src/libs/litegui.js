@@ -7322,7 +7322,7 @@ Inspector.prototype.refresh = function()
 		this.on_refresh();
 }
 
-// Append widget to this inspector (TODO: rename to appendWidget)
+// Append widget to this inspector
 // + widget_parent
 // + replace
 Inspector.prototype.append = function( widget, options )
@@ -9608,6 +9608,13 @@ Inspector.prototype.addButtons = function(name, value, options)
 	{
 		var button = buttons[i];
 		button.addEventListener("click", function(evt) {
+			var buttons = element.querySelectorAll("button");
+			for(var i = 0; i < buttons.length; ++i)
+			{
+				buttons[i].classList.remove("selected");
+				if(buttons[i] == evt.currentTarget)
+					buttons[i].classList.add("selected");
+			}
 			Inspector.onWidgetChange.call(that, element, name, this.innerHTML, options, null, evt);
 			LiteGUI.trigger( element, "wclick",this.innerHTML );
 		});
@@ -10065,7 +10072,6 @@ Inspector.prototype.addArray = function( name, value, options )
 		this.value[ this.index ] = v;
 		if(options.callback)
 			options.callback.call( container, this.value, this.index );
-		//todo: trigger change
 	}
 
 	container.setValue = function(v)

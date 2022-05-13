@@ -1,4 +1,6 @@
 import * as THREE from "./libs/three.module.js";
+import { createSkeleton, createAnimationFromRotations, updateThreeJSSkeleton } from "./skeleton.js";
+
 
 let base_size = 1;
 
@@ -9,13 +11,18 @@ class AnimationRetargeting {
         this.rskeleton = [];
         this.map_idx = [];
         this.map_names = {};
+
+        this.srcBindPose = null;
+        this.srcSkeletonHelper = null;
+        this.tgtBindPose = null;
+        this.tgtSkeletonHelper = null;
         
-        this.src_bind = src_bind;
-        this.src_pose = src_pose;
-        this.tgt_bind = tgt_bind;
-        this.tgt_pose = tgt_pose;
-    
-        this.mixer = null;
+        this.skeleton = null;
+        this.animationClip = null;
+        this.srcMixer = null;
+
+        this.animTracks = null;
+        this.animName = null,
 
         // Mediapipe landmark information (idx, name, prev landmark idx, x, y, z)
         this.LM_INFO = class LandmarksInfo {
@@ -365,12 +372,12 @@ class AnimationRetargeting {
     }
 
     //Transform source and target bones rotations into world space
-    retargetAnimation(onlyY, anim) {
+    retargetAnimation(anim, onlyY) {
 
-        let src_tbones = this.src_bind;
-        let tgt_tbones = this.tgt_bind;
-        let src = this.src_bind;
-        let tgt = this.tgt_bind;
+        let src_tbones = this.srcBindPose;
+        let tgt_tbones = this.tgtBindPose;
+        let src = this.srcSkeletonHelper;
+        let tgt = this.tgtSkeletonHelper;
 
         for (let i = 0; i < this.map_idx.length; i++) {
             let s_idx = this.map_idx[i].from_idx;
@@ -429,13 +436,16 @@ class AnimationRetargeting {
             diff.multiply(convert).premultiply(tgt_bind_inv.invert());
             //diff.multiply(convert).premultiply(tgt_bind_inv.invert());
             tgt_pose.quaternion.copy(diff);
-            
+
             //upload quaternion bone to animation
             let name = tgt_bind.name + '.quaternion';
             if(!anim[name])
-                anim[name] = tgt_pose.quaternion;
+                anim[name] = [tgt_pose.quaternion.x];
             else
-                anim[name].push(tgt_pose.quaternion);
+                anim[name].push(tgt_pose.quaternion.x);
+            anim[name].push(tgt_pose.quaternion.y);
+            anim[name].push(tgt_pose.quaternion.z);
+            anim[name].push(tgt_pose.quaternion.w);
 
             //tgt_pose.updateMatrix()
             if(tgt_pose.name.includes("Hips")) {
@@ -471,59 +481,134 @@ class AnimationRetargeting {
                     pos.z = tgt_bind_world_pos.z;
                 }
                 tgt_pose.position.set(pos.x, pos.y, pos.z);
-            
+
                 //upload position bone to animation
                 name = tgt_bind.name + '.position';
                 if(!anim[name])
-                    anim[name] = tgt_pose.position;
+                    anim[name] = [tgt_pose.position.x];
                 else
-                    anim[name].push(tgt_pose.position);
+                    anim[name].push(tgt_pose.position.x);
+                anim[name].push(tgt_pose.position.y);
+                anim[name].push(tgt_pose.position.z);
             }
         }
     }
 
-    createAnimation(mixer, filename, onlyY) {
-        // apply source bind pose to intermediate skeleton
-        this.updateSkeleton(this.src_bind);
-        // map bone names between source (Kate) and target (Eva)
-        this.automap(this.tgt_pose.bones);
-        // apply retargeting to the first frame
-        let times = mixer._actions[0]._clip.tracks[0].times;
-        let animTracks = {};
-        this.mixer.update(0);
-        this.retargetAnimation(false, animTracks);
+    loadAnimation(model, quatData, clipName) {
 
-        //apply animation using time values of animation
-        for(let i = 0; i < times.length; i++){
-            this.mixer.update(times[i]);
-            this.retargetAnimation(false, animTracks);
+        this.animName = clipName;
+
+        // find bind skeleton
+        let srcpose = [];
+        model.traverse( (object) => {
+            if (object.isSkinnedMesh) {
+                srcpose = object.skeleton;
+                return;
+            }
+        } );
+
+        // solve the initial rotation of Kate
+        model.children[0].setRotationFromQuaternion(new THREE.Quaternion());
+
+        // get bones in bind pose
+        this.srcBindPose = this.getBindPose(srcpose, true);
+
+        // set model in bind pose
+        for(let i = 0; i < this.srcBindPose.length; i++)
+        {
+            let bone = this.srcBindPose[i];
+            let o = model.getObjectByName(bone.name);
+            o.position.copy(bone.position);
+            bone.scale.copy(o.scale);
+            o.quaternion.copy(bone.quaternion);
+            o.updateWorldMatrix();
         }
+
+        this.srcSkeletonHelper = new THREE.SkeletonHelper( model );
+
+        this.animationClip = createAnimationFromRotations(clipName, quatData);
+        
+        this.srcMixer = new THREE.AnimationMixer(model);
+        this.srcMixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
+        this.srcMixer.update(0);
+    }
+    
+    createAnimation(model, animationName) {
+
+        model.traverse( (object) => {
+            if (object.isMesh || object.isSkinnedMesh) {
+                object.castShadow = true;
+                object.receiveShadow = true;
+                object.frustumCulled = false;
+                
+                if(object.material.map)
+                    object.material.map.anisotropy = 16; 
+                    
+                // find bind skeleton (bind matrices)
+                this.tgtBindPose = object.skeleton;
+            }
+            else if (object.isBone) {
+                object.scale.set(1.0, 1.0, 1.0);
+            }
+            if (!this.tgtBindPose) {
+                // find bind skeleton on children
+                object.traverse((o) => {
+                    if(o.isSkinnedMesh) {
+                        this.tgtBindPose = o.skeleton;
+                    }
+                })
+            }
+        } );
+        
+        // get bones in bind pose
+        this.tgtBindPose = this.getBindPose(this.tgtBindPose);
+        this.tgtSkeletonHelper = new THREE.SkeletonHelper(model);
+        this.tgtSkeletonHelper.visible = true;
+        this.tgtSkeletonHelper.name = "SkeletonHelper";
+        
+        updateThreeJSSkeleton(this.tgtBindPose);
+        this.tgtSkeletonHelper.skeleton = createSkeleton();
+
+        // // canviar a los de Eva
+        // const boneContainer = new THREE.Group();
+        // boneContainer.add(skeleton.bones[0]);
+        // this.scene.add(boneContainer);
+
+        // correct rotation
+        model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
+
+        // apply source bind pose to intermediate skeleton
+        this.updateSkeleton(this.srcBindPose);
+        // map bone names between source (Kate) and target (Eva)
+        this.automap(this.tgtSkeletonHelper.bones);
+
+        // apply retargeting to the first frame
+        let animTracks = {};
+        let times = this.srcMixer._actions[0]._clip.tracks[0].times;
+        this.retargetAnimation(animTracks, false);
+        for (let i = 0; i < times.length; i++) {
+            this.srcMixer.update(times[i]);
+            this.retargetAnimation(animTracks, false);
+        }
+
         let tracks = [];
         if (times.length > 0) {
-
-            for(let trackName in animTracks){
-                if(trackName.includes('.position')){
-                    const positions = new THREE.VectorKeyframeTrack( trackName, times, animTracks[trackName]);
-                    tracks.push(positions);
+            for(let trackName in animTracks) {
+                if(trackName.includes('.position')) {
+                    const positions = new THREE.VectorKeyframeTrack( trackName, [0, ...times], animTracks[trackName]);
+                    tracks.push(positions) ;
                 }
-                else if(trackName.includes('.quaternion')){
-                    const rotations = new THREE.QuaternionKeyframeTrack( trackName, times, animTracks[trackName]);
+                else if(trackName.includes('.quaternion')) {
+                    const rotations = new THREE.QuaternionKeyframeTrack( trackName, [0 , ...times], animTracks[trackName]);
                     tracks.push(rotations);
                 }
             }
         }
-    
-        // use -1 to automatically calculate
-        // the length from the array of tracks
-        const length = -1;
 
-        return new THREE.AnimationClip(filename || "", length, tracks);
-    }
+        // use -1 to automatically calculate the length from the array of tracks
+        let newAnimation = new THREE.AnimationClip(animationName || this.animName, -1, tracks);
 
-    createMixer(model, animation) {
-        this.mixer = new THREE.AnimationMixer(model);
-        this.src_bind = new THREE.SkeletonHelper( model );
-        this.mixer.clipAction(animation).setEffectiveWeight(1.0).play();
+        return newAnimation;
     }
 
 }
