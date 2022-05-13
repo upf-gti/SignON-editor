@@ -587,7 +587,7 @@ class AnimationRetargeting {
         let times = this.srcMixer._actions[0]._clip.tracks[0].times;
         this.retargetAnimation(animTracks, false);
         for (let i = 0; i < times.length; i++) {
-            this.srcMixer.update(times[i]);
+            this.srcMixer.setTime(times[i]);
             this.retargetAnimation(animTracks, false);
         }
 
