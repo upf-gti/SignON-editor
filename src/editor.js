@@ -266,38 +266,45 @@ class Editor {
             // Convert landmarks into an animation
             const quatData = this.nn.getQuaternions();
 
-            let aaa = [];
-            $.getJSON( 'src/Agreeing.json', ( data ) => {
-                aaa = data.map(v=>[0,90,0,...v]);
-            } );
-
             // Load the source model
             UTILS.loadGLTF("models/t_pose.glb", (gltf) => {
-    
+                
                 let auxModel = gltf.scene;
                 auxModel.visible = true; // change to false
-                this.scene.add( auxModel );
 
-                this.retargeting.loadAnimation(auxModel, aaa, this.clipName);
+                let auxAnimation = createAnimationFromRotations(this.clipName, quatData);
+                this.retargeting.loadAnimation(auxModel, auxAnimation);
                 
                 // Load the target model (Eva) 
                 UTILS.loadGLTF("models/Eva_Y.glb", (gltf) => {
                     
                     let model = gltf.scene;
-                    model.visible = true; // change to true
+                    model.visible = true;
                     model.castShadow = true;
-                    //this.character.position.set(0,0.75,0);
+                    
+                    // correct model
+                    model.position.set(0,0.85,0);
+                    model.rotateOnAxis(new THREE.Vector3(1,0,0), -Math.PI/2);
                     
                     this.animationClip = this.retargeting.createAnimation(model);
-                    this.skeletonHelper = this.retargeting.tgtSkeletonHelper;
                     this.mixer = new THREE.AnimationMixer(model);
                     this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
+                    
+                    // guizmo stuff
+                    updateThreeJSSkeleton(this.retargeting.tgtBindPose);
+                    this.skeletonHelper = this.retargeting.tgtSkeletonHelper;
+                    this.skeletonHelper.name = "SkeletonHelper";
+                    this.skeletonHelper.skeleton = this.skeleton = createSkeleton();
+
+                    // const boneContainer = new THREE.Group();
+                    // boneContainer.add(skeleton.bones[0]);
+                    // this.scene.add(boneContainer); 
                     
                     this.scene.add( model );
                     this.scene.add( this.skeletonHelper );
                     
-                    this.gui.loadClip(this.animationClip); // move down (the animation to load in gui is eva's)
-                    this.gizmo.begin(this.skeletonHelper); // change to the eva skeleton
+                    this.gui.loadClip(this.animationClip);
+                    this.gizmo.begin(this.skeletonHelper);
                     this.setBoneSize(0.2);
                     this.animate();
                     $('#loading').fadeOut();
@@ -553,24 +560,12 @@ class Editor {
 
         if (this.mixer && this.state) {
             this.mixer.update(dt);
-            this.retargeting.srcMixer.update(dt);
 
             // Update ui data
             const bone = this.skeletonHelper.bones[this.gizmo.selectedBone];
             for(const ip of $(".bone-position")) ip.setValue(bone.position.toArray());
             for(const ip of $(".bone-euler")) ip.setValue(bone.rotation.toArray());
             for(const ip of $(".bone-quaternion")) ip.setValue(bone.quaternion.toArray());
-
-            // this.retargeting.retargetAnimation(this.srcBindPose, this.tgtBindPose, this.animSkeleton, this.tgtSkeletonHelper, false);
-            // for(let i = 0; i < this.tgtSkeletonHelper.bones.length; i++)
-            // {
-            //     let b = this.tgtSkeletonHelper.bones[i];
-            //     let o = this.character.getObjectByName(b.name);
-            //     o.position.copy(b.position);
-            //     o.scale.copy(b.scale);
-            //     o.quaternion.copy(b.quaternion);
-            //     o.matrixWorldNeedsUpdate = true;
-            // }
         }
         this.gizmo.update(this.state, dt);
     }

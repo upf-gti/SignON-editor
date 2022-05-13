@@ -1,6 +1,4 @@
 import * as THREE from "./libs/three.module.js";
-import { createSkeleton, createAnimationFromRotations, updateThreeJSSkeleton } from "./skeleton.js";
-
 
 let base_size = 1;
 
@@ -17,11 +15,7 @@ class AnimationRetargeting {
         this.tgtBindPose = null;
         this.tgtSkeletonHelper = null;
         
-        this.skeleton = null;
-        this.animationClip = null;
         this.srcMixer = null;
-
-        this.animTracks = null;
         this.animName = null,
 
         // Mediapipe landmark information (idx, name, prev landmark idx, x, y, z)
@@ -134,8 +128,9 @@ class AnimationRetargeting {
                 bones.push(bone);
             }
             let skeleton = new THREE.Skeleton( bones );
-            if(callback) callback(skeleton);
-        })
+            if(callback) 
+                callback(skeleton);
+        } )
     }
 
     // Based on mixamo skeleton
@@ -145,7 +140,6 @@ class AnimationRetargeting {
 
         // used to store bone by landmark index, necessary to create hierarchy
         const temp_map = {};
-
         let lmInfoArray = Object.keys(this.LM_INFO);
 
         for (const lm_data in lmInfoArray) {
@@ -163,11 +157,11 @@ class AnimationRetargeting {
             bone.quaternion.y = lm_info.rotation.y;
             bone.quaternion.z = lm_info.rotation.z;
             bone.quaternion.w = lm_info.rotation.w;
+
             bone.matrixWorldNeedsUpdate = true
             temp_map[lm_info.idx] = bone;
 
             if (lm_info.parent_idx != -1) {
-
                 if (temp_map[lm_info.parent_idx] != undefined) {
                     temp_map[lm_info.parent_idx].add(bone);
                 }
@@ -186,7 +180,7 @@ class AnimationRetargeting {
         for (const lm_data in lmInfoArray) {
 
             let lm_info = this.LM_INFO[lmInfoArray[lm_data]];
-            for(let i = 0; i<skeleton.length;i++){
+            for(let i = 0; i<skeleton.length;i++) {
                 let name = skeleton[i].name.replaceAll(/[-_.:]/g,"").toUpperCase();
                 this.LM_INFO[lmInfoArray[lm_data]].idx = -1;
                 if(lm_info.name.replaceAll(/[-_.:]/g,"").toUpperCase() == name)
@@ -214,7 +208,7 @@ class AnimationRetargeting {
 
     automap(bones) {
         
-        for(let i = 0; i<bones.length;i++){
+        for(let i = 0; i<bones.length;i++) {
             let name = bones[i].name.replaceAll(/[-_.:]/g,"").toUpperCase();
             for (let s = 0; s<this.rskeleton.length; s++) {
                 if(this.rskeleton[s].name.replaceAll(/[-_.:]/g,"").toUpperCase() == name)
@@ -239,7 +233,7 @@ class AnimationRetargeting {
         let new_anim = anim.clone();
         let tracks = [];
                     
-        for(let i = 0; i < new_anim.tracks.length; i++){
+        for(let i = 0; i < new_anim.tracks.length; i++) {
             let name = new_anim.tracks[i].name;
             
             name = name.replaceAll(".position", "").replaceAll('.quaternion', "").replaceAll(".scale", "");
@@ -264,14 +258,14 @@ class AnimationRetargeting {
             let bone = new THREE.Bone();
             bone.name = skeleton.bones[i].name;
             let parent = skeleton.bones[i].parent;
-            bone.parent = (parent)? bones[map[parent.name]] : null;
+            bone.parent = (parent) ? bones[map[parent.name]] : null;
             // If no parent bone, The inverse is enough
             let bindMatInverse = skeleton.boneInverses[i];
             let mat = new THREE.Matrix4();
             mat.fromArray(bindMatInverse);
             mat = bindMatInverse.clone();
             mat.elements = new Float32Array(mat.elements);
-            mat.invert(); 	// Child Bone UN-Inverted
+            mat.invert(); // Child Bone UN-Inverted
 
             // if parent exists, keep it parent inverted since thats how it exists in gltf
             // BUT invert the child bone then multiple to get local space matrix.
@@ -311,7 +305,7 @@ class AnimationRetargeting {
 
             bone.updateMatrixWorld();
                 
-            bones.push( bone );
+            bones.push(bone);
         }
         // Compute the model Local & World Transform Bind Pose
         // THREE will compute the inverse matrix bind pose on its own when bones are given to THREE.Skeleton
@@ -331,13 +325,13 @@ class AnimationRetargeting {
                 //------------------------------------------
                 // POSITION - parent.position + ( parent.rotation * ( parent.scale * child.position ) )
                 let v = new THREE.Vector3();
-                v.multiplyVectors( p.world.scl, b.position ); // parent.scale * child.position;
-                v.applyQuaternion( p.world.rot ); //Vec3.transform_quat( v, tp.rot, v );
-                b.world.pos.addVectors( p.world.pos, v ); // Vec3.add( tp.pos, v, this.pos );
+                v.multiplyVectors(p.world.scl, b.position); // parent.scale * child.position;
+                v.applyQuaternion(p.world.rot ); //Vec3.transform_quat( v, tp.rot, v );
+                b.world.pos.addVectors(p.world.pos, v); // Vec3.add( tp.pos, v, this.pos );
 
                 //------------------------------------------
                 // SCALE - parent.scale * child.scale
-                b.world.scl.multiplyVectors( p.world.scl, b.scale );
+                b.world.scl.multiplyVectors(p.world.scl, b.scale);
 
                 //------------------------------------------
                 // ROTATION - parent.rotation * child.rotation
@@ -349,18 +343,18 @@ class AnimationRetargeting {
                 b.world.scl.addVectors(p.wolrd.pos, b.position);
                 b.world.from_add( p.world, b.local );*/
             } else if (b.parent) {
-                b.world.pos.copy(b.parent.position)  ;
-                b.world.scl.copy(b.parent.scale)  ;
-                b.world.rot.copy(b.quaternion)  ;
+                b.world.pos.copy(b.parent.position);
+                b.world.scl.copy(b.parent.scale);
+                b.world.rot.copy(b.quaternion);
             } else {
-                b.world.pos.copy(b.position)  ;
-                b.world.scl.copy(b.scale)  ;
-                b.world.rot.copy(b.quaternion)  ;
+                b.world.pos.copy(b.position);
+                b.world.scl.copy(b.scale);
+                b.world.rot.copy(b.quaternion);
             }
         
         }
         if(updateWorld) {
-            for( b of bones ){
+            for( b of bones ) {
             
                 b.updateMatrix();
                 b.updateWorldMatrix();
@@ -425,8 +419,7 @@ class AnimationRetargeting {
 
             //shift the src bone rotation into the target's bone using the tpose difference
             //orientation stuff
-            if(diff.dot(src_bind_world) < 0)
-            {
+            if(diff.dot(src_bind_world) < 0) {
                 convert.x *= -1;
                 convert.y *= -1;
                 convert.z *= -1;
@@ -475,8 +468,7 @@ class AnimationRetargeting {
                 pos.add(tgt_bind_world_pos);
                 
                 // Only Move Up and Down --> Can be a flag (parameter)
-                if(onlyY) 
-                {
+                if(onlyY) {
                     pos.x = tgt_bind_world_pos.x;
                     pos.z = tgt_bind_world_pos.z;
                 }
@@ -494,9 +486,9 @@ class AnimationRetargeting {
         }
     }
 
-    loadAnimation(model, quatData, clipName) {
+    loadAnimation(model, animClip) {
 
-        this.animName = clipName;
+        this.animName = animClip.name;
 
         // find bind skeleton
         let srcpose = [];
@@ -525,12 +517,9 @@ class AnimationRetargeting {
         }
 
         this.srcSkeletonHelper = new THREE.SkeletonHelper( model );
-
-        this.animationClip = createAnimationFromRotations(clipName, quatData);
         
         this.srcMixer = new THREE.AnimationMixer(model);
-        this.srcMixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
-        this.srcMixer.update(0);
+        this.srcMixer.clipAction(animClip).setEffectiveWeight(1.0).play();
     }
     
     createAnimation(model, animationName) {
@@ -541,7 +530,7 @@ class AnimationRetargeting {
                 object.receiveShadow = true;
                 object.frustumCulled = false;
                 
-                if(object.material.map)
+                if (object.material.map)
                     object.material.map.anisotropy = 16; 
                     
                 // find bind skeleton (bind matrices)
@@ -553,7 +542,7 @@ class AnimationRetargeting {
             if (!this.tgtBindPose) {
                 // find bind skeleton on children
                 object.traverse((o) => {
-                    if(o.isSkinnedMesh) {
+                    if (o.isSkinnedMesh) {
                         this.tgtBindPose = o.skeleton;
                     }
                 })
@@ -564,18 +553,6 @@ class AnimationRetargeting {
         this.tgtBindPose = this.getBindPose(this.tgtBindPose);
         this.tgtSkeletonHelper = new THREE.SkeletonHelper(model);
         this.tgtSkeletonHelper.visible = true;
-        this.tgtSkeletonHelper.name = "SkeletonHelper";
-        
-        updateThreeJSSkeleton(this.tgtBindPose);
-        this.tgtSkeletonHelper.skeleton = createSkeleton();
-
-        // // canviar a los de Eva
-        // const boneContainer = new THREE.Group();
-        // boneContainer.add(skeleton.bones[0]);
-        // this.scene.add(boneContainer);
-
-        // correct rotation
-        model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
 
         // apply source bind pose to intermediate skeleton
         this.updateSkeleton(this.srcBindPose);
@@ -585,9 +562,8 @@ class AnimationRetargeting {
         // apply retargeting to the first frame
         let animTracks = {};
         let times = this.srcMixer._actions[0]._clip.tracks[0].times;
-        this.retargetAnimation(animTracks, false);
         for (let i = 0; i < times.length; i++) {
-            this.srcMixer.update(times[i]);
+            this.srcMixer.setTime(times[i]);
             this.retargetAnimation(animTracks, false);
         }
 
@@ -595,22 +571,19 @@ class AnimationRetargeting {
         if (times.length > 0) {
             for(let trackName in animTracks) {
                 if(trackName.includes('.position')) {
-                    const positions = new THREE.VectorKeyframeTrack( trackName, [0, ...times], animTracks[trackName]);
+                    const positions = new THREE.VectorKeyframeTrack( trackName, times, animTracks[trackName]);
                     tracks.push(positions) ;
                 }
                 else if(trackName.includes('.quaternion')) {
-                    const rotations = new THREE.QuaternionKeyframeTrack( trackName, [0 , ...times], animTracks[trackName]);
+                    const rotations = new THREE.QuaternionKeyframeTrack( trackName, times, animTracks[trackName]);
                     tracks.push(rotations);
                 }
             }
         }
 
         // use -1 to automatically calculate the length from the array of tracks
-        let newAnimation = new THREE.AnimationClip(animationName || this.animName, -1, tracks);
-
-        return newAnimation;
+        return new THREE.AnimationClip(animationName || this.animName, -1, tracks);
     }
-
 }
 
 class PlayAnimation {
@@ -629,7 +602,7 @@ class PlayAnimation {
         if(this.time>this.animation.duration) 
             this.time = 0;
         //Find frames
-        for(let i = 0; i < this.animation.tracks.length; i++){
+        for(let i = 0; i < this.animation.tracks.length; i++) {
             let track = this.animation.tracks[i];
             let info = track.name.split(".");
             let name = info[0];
@@ -657,7 +630,7 @@ class PlayAnimation {
 // ------------------------------------------ THREE MATH functions ------------------------------------------//
 
 //When values are very small, like less then 0.000001, just make it zero.
-THREE.Vector3.round2zero = THREE.Vector3.prototype.round2zero = function( out=null ){
+THREE.Vector3.round2zero = THREE.Vector3.prototype.round2zero = function( out=null ) {
     out = out || this;
     if(Math.abs(out.x) <= 1e-4) out.x = 0;
     if(Math.abs(out.y) <= 1e-4) out.y = 0;
@@ -669,7 +642,7 @@ THREE.Vector3.exports = THREE.Vector3;
 
 // Returns a quaternion representing the rotational component of a transformation matrix. If a matrix is built with
 // fromRotationTranslation, the returned quaternion will be the same as the quaternion originally supplied
-THREE.Matrix4.getRotation = THREE.Matrix4.prototype.getRotation = function ( out=null ){
+THREE.Matrix4.getRotation = THREE.Matrix4.prototype.getRotation = function ( out=null ) {
     // Algorithm taken from http://www.euclideanspace.com/maths/geometry/rotations/conversions/matrixToQuaternion/index.htm
     let trace	= this.elements[0] + this.elements[5] + this.elements[10],
         S		= 0;
@@ -681,7 +654,7 @@ THREE.Matrix4.getRotation = THREE.Matrix4.prototype.getRotation = function ( out
         out[0] = (this.elements[6] - this.elements[9]) / S;
         out[1] = (this.elements[8] - this.elements[2]) / S; 
         out[2] = (this.elements[1] - this.elements[4]) / S; 
-    }else if( (this.elements[0] > this.elements[5]) & (this.elements[0] > this.elements[10]) ){ 
+    }else if( (this.elements[0] > this.elements[5]) & (this.elements[0] > this.elements[10]) ) { 
         S = Math.sqrt(1.0 + this.elements[0] - this.elements[5] - this.elements[10]) * 2;
         out[3] = (this.elements[6] - this.elements[9]) / S;
         out[0] = 0.25 * S;
@@ -703,7 +676,7 @@ THREE.Matrix4.getRotation = THREE.Matrix4.prototype.getRotation = function ( out
     return out;
 }
 
-THREE.Matrix4.getRotationNormalized = THREE.Matrix4.prototype.getRotationNormalized = function( out=null ){
+THREE.Matrix4.getRotationNormalized = THREE.Matrix4.prototype.getRotationNormalized = function( out=null ) {
     let rotation = this.getRotation(out);
     let len =  rotation[0]**2 + rotation[1]**2 + rotation[2]**2 + rotation[3]**2;
     if(len > 0){
@@ -716,7 +689,7 @@ THREE.Matrix4.getRotationNormalized = THREE.Matrix4.prototype.getRotationNormali
     return rotation;
 }
 
-THREE.Matrix4.getScale = THREE.Matrix4.prototype.getScale = function( out=null ){
+THREE.Matrix4.getScale = THREE.Matrix4.prototype.getScale = function( out=null ) {
     out = out || [0,0,0];
     let m11 = this.elements[0],
         m12 = this.elements[1],
@@ -733,7 +706,7 @@ THREE.Matrix4.getScale = THREE.Matrix4.prototype.getScale = function( out=null )
     return out;
 }
 
-THREE.Matrix4.scale = THREE.Matrix4.prototype.scale = function(x,y,z){
+THREE.Matrix4.scale = THREE.Matrix4.prototype.scale = function(x,y,z) {
     this.elements[1] *= x;
     this.elements[2] *= x;
     this.elements[3] *= x;
