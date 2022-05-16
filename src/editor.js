@@ -39,7 +39,6 @@ class Editor {
         this.retargeting = new AnimationRetargeting();
 
         this.nn = new NN("data/ML/model.json");
-        this.landmarksNN = [];
         this.landmarksArray = [];
         
     	this.onDrawTimeline = null;
@@ -85,19 +84,19 @@ class Editor {
         dirLight.position.set( 3, 30, -50 );
         dirLight.castShadow = false;
         dirLight.shadow.camera.top = 2;
-        dirLight.shadow.camera.bottom = - 2;
+        dirLight.shadow.camera.bottom = -2;
         dirLight.shadow.camera.left = - 2;
         dirLight.shadow.camera.right = 2;
         dirLight.shadow.camera.near = 1;
         dirLight.shadow.camera.far = 200;
         scene.add( dirLight );
 
-        let spotLight = new THREE.SpotLight(0xffa95c,1);
+        let spotLight = new THREE.SpotLight(0xffa95c, 1);
         spotLight.position.set(-50,50,50);
         spotLight.castShadow = true;
         spotLight.shadow.bias = -0.0001;
-        spotLight.shadow.mapSize.width = 1024*4;
-        spotLight.shadow.mapSize.height = 1024*4;
+        spotLight.shadow.mapSize.width = 2048;
+        spotLight.shadow.mapSize.height = 2048;
         scene.add( spotLight );
 
         // Create 3D renderer
@@ -120,13 +119,29 @@ class Editor {
         controls.maxDistance = 5;
         controls.target.set(0, 1, 0);
         controls.update();  
+
+        // Orientation helper
+        const orientationHelper = new OrientationHelper( camera, controls, { className: 'orientation-helper-dom' }, {
+            px: '+X', nx: '-X', pz: '+Z', nz: '-Z', py: '+Y', ny: '-Y'
+        });
+
+        document.getElementById("canvasarea").prepend(orientationHelper.domElement);
+        orientationHelper.domElement.style.display = "none";
+        orientationHelper.addEventListener("click", (result) => {
+            const side = result.normal.multiplyScalar(4);
+            if(side.x != 0 || side.z != 0) side.y =controls.target.y;
+            camera.position.set(side.x, side.y, side.z);
+            camera.setRotationFromQuaternion( new THREE.Quaternion() );
+            controls.update();
+        });
         
         this.scene = scene;
         this.camera = camera;
         this.renderer = renderer;
         this.controls = controls;
         this.spotLight = spotLight;
-        
+        this.orientationHelper = orientationHelper;
+
         this.video = document.getElementById("recording");
         this.gizmo = new Gizmo(this);
 
@@ -159,70 +174,58 @@ class Editor {
         return this.__app;
     }
 
-    buildAnimation(landmarks) {
+    onPlay(element, e) {
 
-        this.landmarksArray = landmarks;
-                
-        // Trim
-        this.processLandmarks();
+        this.state = !this.state;
+        element.innerHTML = "<i class='bi bi-" + (this.state ? "pause" : "play") + "-fill'></i>";
+        element.style.border = "solid #268581";
 
-        // Orientation helper
-        const orientationHelper = new OrientationHelper( this.camera, this.controls, { className: 'orientation-helper-dom' }, {
-            px: '+X', nx: '-X', pz: '+Z', nz: '-Z', py: '+Y', ny: '-Y'
-        });
-
-        document.getElementById("canvasarea").prepend(orientationHelper.domElement);
-        orientationHelper.addEventListener("click", (result) => {
-            const side = result.normal.multiplyScalar(5);
-            if(side.x != 0 || side.z != 0) side.y = this.controls.target.y;
-            this.camera.position.set(side.x, side.y, side.z);
-            this.camera.setRotationFromQuaternion( new THREE.Quaternion() );
-            this.controls.update();
-        });
-
-        // set onclick function to play button
-        let stateBtn = document.getElementById("state_btn");
-        let video = document.getElementById("recording");
-        video.loop = false;
-        stateBtn.onclick = (e) => {
-            this.state = !this.state;
-            stateBtn.innerHTML = "<i class='bi bi-" + (this.state ? "pause" : "play") + "-fill'></i>";
-            stateBtn.style.border = "solid #268581";
-
-            if(this.state) {
-                this.mixer._actions[0].paused = false;
-                this.gizmo.stop()
-                video.paused ? video.play() : 0;    
-                for(const ip of $(".bone-position input, .bone-euler input, .bone-quaternion input")) ip.setAttribute('disabled', true);
-            } else{
-                for(const ip of $(".bone-position input, .bone-euler input, .bone-quaternion input")) ip.removeAttribute('disabled');
-                try{
-                    video.paused ? 0 : video.pause();    
-                }catch(ex) {
-                    console.error("video warning");
-                }
+        if(this.state) {
+            this.mixer._actions[0].paused = false;
+            this.video.paused ? this.video.play() : 0;    
+            this.gizmo.stop();
+            this.gui.setBoneInfoState( false );
+        } else{
+            this.gui.setBoneInfoState( true );
+            try{
+                this.video.paused ? 0 : this.video.pause();    
+            }catch(ex) {
+                console.error("video warning");
             }
-            stateBtn.blur();
-        };
-
-        let stopBtn = document.getElementById("stop_btn");
-        stopBtn.onclick = (e) => {
-            this.state = false;
-            stateBtn.innerHTML = "<i class='bi bi-play-fill'></i>";
-            stateBtn.style.removeProperty("border");
-            this.stopAnimation();
-            video.pause();
-            video.currentTime = video.startTime;
         }
 
-        this.appendCanvasButtons();
+        element.blur();
+    }
+    
+    onStop(element, e) {
 
+        this.state = false;
+        element.innerHTML = "<i class='bi bi-play-fill'></i>";
+        element.style.removeProperty("border");
+        this.stopAnimation();
+        this.video.pause();
+        this.video.currentTime = this.video.startTime;
+    }
+
+    buildAnimation(landmarks) {
+
+        // Remove loop mode for the display video
+        this.video.loop = false;
+
+        // Trim
+        this.landmarksArray = this.processLandmarks( landmarks );
+
+        // Canvas UI buttons
+        this.createSceneUI();
+
+        // Mode for loading the animation
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
 
-        if ( urlParams.get('load') == 'hard') {
+        UTILS.loadGLTF("models/t_pose.glb", gltf => {
+           
+            if ( urlParams.get('load') == 'hard') {
         
-            UTILS.loadGLTF("models/t_pose.glb", gltf => {
                 let model = gltf.scene;
                 this.character = model.name;
                 model.castShadow = true;
@@ -240,11 +243,7 @@ class Editor {
                 injectNewLandmarks(this.landmarksArray);
                 this.skeleton = skeleton;
                 this.skeletonHelper.skeleton = skeleton;
-                const boneContainer = new THREE.Group();
-
-                boneContainer.add(skeleton.bones[0]);
                 this.scene.add(this.skeletonHelper);
-                this.scene.add(boneContainer);
                 this.scene.add( model );
 
                 // Play animation
@@ -252,27 +251,20 @@ class Editor {
                 this.mixer = new THREE.AnimationMixer(model);
                 this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
                 this.mixer.update(this.clock.getDelta()); // Do first iteration to update from T pose
-        
+
                 this.gui.loadClip(this.animationClip);
                 this.gizmo.begin(this.skeletonHelper);
                 this.setBoneSize(0.2);
-                
                 this.animate();
                 $('#loading').fadeOut();
-            });
-
-        } else if ( urlParams.get('load') == 'NN' || urlParams.get('load') == undefined ) {
-
-            // Convert landmarks into an animation
-            const quatData = this.nn.getQuaternions();
-
-            // Load the source model
-            UTILS.loadGLTF("models/t_pose.glb", (gltf) => {
-                
+        
+            } else if ( urlParams.get('load') == 'NN' || urlParams.get('load') == undefined ) {
+    
                 let auxModel = gltf.scene;
                 auxModel.visible = true; // change to false
-
-                let auxAnimation = createAnimationFromRotations(this.clipName, quatData);
+                
+                // Convert landmarks into an animation
+                let auxAnimation = createAnimationFromRotations(this.clipName, this.nn.getQuaternions());
                 this.retargeting.loadAnimation(auxModel, auxAnimation);
                 
                 // Load the target model (Eva) 
@@ -296,24 +288,20 @@ class Editor {
                     this.skeletonHelper.name = "SkeletonHelper";
                     this.skeletonHelper.skeleton = this.skeleton = createSkeleton();
 
-                    // const boneContainer = new THREE.Group();
-                    // boneContainer.add(skeleton.bones[0]);
-                    // this.scene.add(boneContainer); 
-                    
                     this.scene.add( model );
                     this.scene.add( this.skeletonHelper );
-                    
+
                     this.gui.loadClip(this.animationClip);
                     this.gizmo.begin(this.skeletonHelper);
                     this.setBoneSize(0.2);
                     this.animate();
                     $('#loading').fadeOut();
                 });
-            });
-        }
+            }
+        });
     }
 
-    processLandmarks() {
+    processLandmarks( landmarks ) {
         
         const [startTime, endTime] = this.trimTimes;
 
@@ -325,27 +313,27 @@ class Editor {
     
             // remove starting frames
             while( totalDt < startTime ) {
-                const lm = this.landmarksArray[index];
+                const lm = landmarks[index];
                 totalDt += lm.dt * 0.001;
                 index++;
             }
     
             if(totalDt > 0) {
-                this.landmarksArray = this.landmarksArray.slice(index - 1);
+                landmarks = landmarks.slice(index - 1);
             }
     
             // remove ending frames
             index = 1;
-            while( totalDt < endTime && index < this.landmarksArray.length ) {
-                const lm = this.landmarksArray[index];
+            while( totalDt < endTime && index < landmarks.length ) {
+                const lm = landmarks[index];
                 totalDt += lm.dt * 0.001;
                 index++;
             }
     
-            this.landmarksArray = this.landmarksArray.slice(0, index - 1);
+            landmarks = landmarks.slice(0, index - 1);
         }
 
-        this.nn.loadLandmarks( this.landmarksArray, offsets => {
+        this.nn.loadLandmarks( landmarks, offsets => {
             this.trimTimes[0] += offsets[0];
             this.trimTimes[1] += offsets[1];
 
@@ -355,9 +343,13 @@ class Editor {
                 this.play();
             };
         } );
+
+        return landmarks;
     }
 
-    appendCanvasButtons() {
+    createSceneUI() {
+
+        $(this.orientationHelper.domElement).show();
 
         let canvasArea = document.getElementById("canvasarea");
         let timelineCanvas = document.getElementById("timelineCanvas");
@@ -477,13 +469,9 @@ class Editor {
         if(this.state && !force)
         return;
 
-        const bone = this.skeletonHelper.bones[this.gizmo.selectedBone];
-        if($(".bone-position").length) $(".bone-position")[0].setValue(bone.position.toArray());
-        if($(".bone-euler").length) $(".bone-euler")[0].setValue(bone.rotation.toArray());
-        if($(".bone-quaternion").length) $(".bone-quaternion")[0].setValue(bone.quaternion.toArray());
-
         this.mixer.setTime(t);
         this.gizmo.updateBones(0.0);
+        this.gui.updateBoneProperties();
 
         // Update video
         this.video.currentTime = this.video.startTime + t;
@@ -559,14 +547,11 @@ class Editor {
     update(dt) {
 
         if (this.mixer && this.state) {
-            this.mixer.update(dt);
 
-            // Update ui data
-            const bone = this.skeletonHelper.bones[this.gizmo.selectedBone];
-            for(const ip of $(".bone-position")) ip.setValue(bone.position.toArray());
-            for(const ip of $(".bone-euler")) ip.setValue(bone.rotation.toArray());
-            for(const ip of $(".bone-quaternion")) ip.setValue(bone.quaternion.toArray());
+            this.mixer.update(dt);
+            this.gui.updateBoneProperties();
         }
+
         this.gizmo.update(this.state, dt);
     }
 
@@ -587,21 +572,9 @@ class Editor {
     showPreview() {
         
         BVHExporter.copyToLocalStorage(this.mixer, this.skeletonHelper, this.animationClip);
-
         const url = "https://webglstudio.org/users/arodriguez/demos/animationLoader/?load=three_webgl_bvhpreview";
         window.open(url, '_blank').focus();
     }
 };
-
-THREE.SkeletonHelper.prototype.getBoneByName = function( name ) {
-
-    for ( let i = 0, il = this.bones.length; i < il; i ++ ) {
-        const bone = this.bones[ i ];
-        if ( bone.name === name ) {
-            return bone;
-        }
-    }
-    return undefined;
-}
 
 export { Editor };

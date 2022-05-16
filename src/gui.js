@@ -11,6 +11,8 @@ class Gui {
         this.skeletonScroll = 0;
         this.editor = editor;
 
+        this.boneProperties = {};
+
         this.create();
     }
 
@@ -160,6 +162,7 @@ class Gui {
         item_selected = item_selected || this.item_selected;
     
         options = options || {};
+        this.boneProperties = {};
         this.item_selected = item_selected;
         root = root || this.sidePanel;
         $(root.content).empty();
@@ -236,7 +239,7 @@ class Gui {
             widgets.addInfo("Duration", this.duration.toFixed(3));
             widgets.addSlider("Speed", this.editor.mixer.timeScale, { callback: v => {
                 this.editor.mixer.timeScale = this.editor.video.playbackRate = v;
-            }, min: 0.25, max: 2, step: 0.05});
+            }, min: 0.25, max: 2, step: 0.05, precision: 2});
             widgets.widgets_per_row = 1;
 
             const bone_selected = !(o.firstBone && numBones) ? 
@@ -273,14 +276,14 @@ class Gui {
                 // Only edit position for root bone
                 if(bone_selected.children.length && bone_selected.parent.constructor !== bone_selected.children[0].constructor) {
                     widgets.addTitle("Position");
-                    widgets.addVector3(null, bone_selected.position.toArray(), {disabled: this.editor.state, precision: 3, className: 'bone-position', callback: (v) => innerUpdate("position", v)});
+                    this.boneProperties['position'] = widgets.addVector3(null, bone_selected.position.toArray(), {disabled: this.editor.state, precision: 3, className: 'bone-position', callback: (v) => innerUpdate("position", v)});
                 }
 
                 widgets.addTitle("Rotation (XYZ)");
-                widgets.addVector3(null, bone_selected.rotation.toArray(), {disabled: this.editor.state, precision: 3, className: 'bone-euler', callback: (v) => innerUpdate("rotation", v)});
+                this.boneProperties['rotation'] = widgets.addVector3(null, bone_selected.rotation.toArray(), {disabled: this.editor.state, precision: 3, className: 'bone-euler', callback: (v) => innerUpdate("rotation", v)});
 
                 widgets.addTitle("Quaternion");
-                widgets.addVector4(null, bone_selected.quaternion.toArray(), {disabled: this.editor.state, precision: 3, className: 'bone-quaternion', callback: (v) => innerUpdate("quaternion", v)});
+                this.boneProperties['quaternion'] = widgets.addVector4(null, bone_selected.quaternion.toArray(), {disabled: this.editor.state, precision: 3, className: 'bone-quaternion', callback: (v) => innerUpdate("quaternion", v)});
             }
         };
 
@@ -290,6 +293,19 @@ class Gui {
         var element = root.content.querySelectorAll(".inspector")[0];
         var maxScroll = element.scrollHeight;
         element.scrollTop = options.maxScroll ? maxScroll : (options.scroll ? options.scroll : 0);
+    }
+
+    // Listed with __ at the beggining
+    updateBoneProperties() {
+
+        const bone = this.editor.skeletonHelper.bones[this.editor.gizmo.selectedBone];
+        if(!bone)
+        return;
+
+        for( const p in this.boneProperties ) {
+            // @eg: p as position, element.setValue( bone.position.toArray() )
+            this.boneProperties[p].setValue( bone[p].toArray() );
+        }
     }
 
     openSettings( settings ) {
@@ -339,6 +355,11 @@ class Gui {
         return mytree;
     }
 
+    setBoneInfoState( enabled ) {
+        for(const ip of $(".bone-position input, .bone-euler input, .bone-quaternion input"))
+            enabled ? ip.removeAttribute('disabled') : ip.setAttribute('disabled', !enabled);
+    }
+
     appendButtons(menubar) {
 
         const buttonContainer = document.createElement('div');
@@ -378,6 +399,12 @@ class Gui {
             if(b.callback) button.addEventListener('click', b.callback);
             buttonContainer.appendChild(button);
         }
+
+        // Add editor listeners
+        let stateBtn = document.getElementById("state_btn");
+        stateBtn.onclick = this.editor.onPlay.bind(this.editor, stateBtn);
+        let stopBtn = document.getElementById("stop_btn");
+        stopBtn.onclick = this.editor.onStop.bind(this.editor, stateBtn);
     }
 
     render() {

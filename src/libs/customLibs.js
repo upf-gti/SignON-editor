@@ -1,4 +1,18 @@
-// overwrite method
+import * as THREE from "./three.module.js";
+
+// Overwrite/add methods
+
+THREE.SkeletonHelper.prototype.getBoneByName = function( name ) {
+
+    for ( let i = 0, il = this.bones.length; i < il; i ++ ) {
+        const bone = this.bones[ i ];
+        if ( bone.name === name ) {
+            return bone;
+        }
+    }
+    return undefined;
+}
+
 Inspector.prototype.addSlider = function(name, value, options)
 {
 	options = this.processOptions(options);
@@ -99,6 +113,7 @@ function Slider(value, options)
 	this.root = canvas;
 	var that = this;
 	this.value = value;
+	this.defValue = value;
 
 	this.ready = true;
 
@@ -155,16 +170,27 @@ function Slider(value, options)
 
 	var doc_binded = null;
 
-	canvas.addEventListener("mousedown", function(e) {
-		var mouseX, mouseY;
-		if(e.offsetX) { mouseX = e.offsetX; mouseY = e.offsetY; }
-		else if(e.layerX) { mouseX = e.layerX; mouseY = e.layerY; }	
-		setFromX(mouseX);
-		doc_binded = canvas.ownerDocument;
-		doc_binded.addEventListener("mousemove", onMouseMove );
-		doc_binded.addEventListener("mouseup", onMouseUp );
+	canvas.oncontextmenu = () => { return false; };
 
-		doc_binded.body.style.cursor = "none";
+	canvas.addEventListener("mousedown", function(e) {
+
+		doc_binded = canvas.ownerDocument;
+		// right click
+		if(e.button === 2) {
+			e.preventDefault();
+			e.stopPropagation();
+			e.stopImmediatePropagation();
+			doc_binded.addEventListener("mouseup", onMouseUp );
+			that.setValue(that.defValue);
+		} else {
+			var mouseX, mouseY;
+			if(e.offsetX) { mouseX = e.offsetX; mouseY = e.offsetY; }
+			else if(e.layerX) { mouseX = e.layerX; mouseY = e.layerY; }	
+			setFromX(mouseX);
+			doc_binded.addEventListener("mousemove", onMouseMove );
+			doc_binded.addEventListener("mouseup", onMouseUp );
+			doc_binded.body.style.cursor = "none";
+		}
 	});
 
 	function onMouseMove(e)
@@ -179,12 +205,14 @@ function Slider(value, options)
 
 	function onMouseUp(e)
 	{
+		e.preventDefault();
+		e.stopPropagation();
+		e.stopImmediatePropagation();
+		
 		var doc = doc_binded || document;
 		doc_binded = null;
 		doc.removeEventListener("mousemove", onMouseMove );
 		doc.removeEventListener("mouseup", onMouseUp );
-		e.preventDefault();
-		
 		doc.body.style.cursor = "default";
 
 		return false;
