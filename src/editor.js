@@ -25,6 +25,7 @@ class Editor {
         this.renderer = null;
         this.state = false; // defines how the animation starts (moving/static)
 
+        this.boneUseDepthBuffer = false;
         this.showHUD = true;
         this.showSkin = true; // defines if the model skin has to be rendered
         this.animLoop = true;
@@ -202,6 +203,7 @@ class Editor {
         this.state = false;
         element.innerHTML = "<i class='bi bi-play-fill'></i>";
         element.style.removeProperty("border");
+        this.gui.setBoneInfoState( true );
         this.stopAnimation();
         this.video.pause();
         this.video.currentTime = this.video.startTime;
@@ -363,8 +365,17 @@ class Editor {
             let content = null;
 
             if(b.icon) {
-                content = document.createElement("i");
-                content.className = 'bi bi-' + b.icon;
+
+                switch(b.type) {
+                    case 'image': 
+                        content = document.createElement("img");
+                        content.style.opacity = 0.75;
+                        content.src = b.icon;
+                        break;
+                    default: 
+                        content = document.createElement("i");
+                        content.className = 'bi bi-' + b.icon;
+                }
             }
 
             const btn = document.createElement('button');

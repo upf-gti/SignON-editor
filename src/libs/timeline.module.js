@@ -782,10 +782,11 @@ Timeline.prototype.draw = function (ctx, current_time, rect) {
 	ctx.translate( this.position[0], this.position[1] + this.top_margin ); //20 is the top margin area
 
 	//background
+	ctx.clearRect(0,-this.top_margin,w,h+this.top_margin);
 	ctx.fillStyle = "#000";
-	ctx.globalAlpha = 1;
+	ctx.globalAlpha = 0.65;
 	ctx.fillRect(0,-this.top_margin,w,this.top_margin);
-	ctx.globalAlpha = this.opacity;
+	ctx.globalAlpha = 0.55;
 	ctx.fillRect(0,0,w,h);
 	ctx.globalAlpha = 1;
 
@@ -817,21 +818,11 @@ Timeline.prototype.draw = function (ctx, current_time, rect) {
 	// Calls using as 0,0 the top-left of the tracks area (not the top-left of the timeline but 20 pixels below)
 	this._tracks_drawn.length = 0;
 
-	// Scrollbar
-	// if( h < this.scrollable_height )
-	// {
-	// 	ctx.fillStyle = "#222";
-	// 	ctx.fillRect( w - 10, 0, h, 10 );
-	// 	var scrollh = h * (h / this.scrollable_height);
-	// 	ctx.fillStyle = "#AAA";
-	// 	ctx.fillRect( w - 8, this.current_scroll * (h - scrollh), 6, scrollh );
-	// }
-
 	// Frame lines
 	if(S2P > 200)
 	{
 		ctx.strokeStyle = "#444";
-		ctx.globalAlpha = (S2P - 200) / 400;
+		ctx.globalAlpha = 0.4;
 		ctx.beginPath();
 
 		let start = time_start;

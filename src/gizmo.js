@@ -356,7 +356,6 @@ class Gizmo {
 
         const depthTestEnabled = this.bonePoints.material.depthTest;
         inspector.addCheckbox( "Depth test", depthTestEnabled, (v) => { this.bonePoints.material.depthTest = v; })
-
     }
     
 };
