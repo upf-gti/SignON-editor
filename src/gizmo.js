@@ -22,10 +22,7 @@ class Gizmo {
             this.updateBones();
 
             if(this.selectedBone != null) {
-                const bone = this.editor.skeletonHelper.bones[this.selectedBone];
-                for(const ip of $(".bone-position")) ip.setValue(bone.position.toArray());
-                for(const ip of $(".bone-euler")) ip.setValue(bone.rotation.toArray());
-                for(const ip of $(".bone-quaternion")) ip.setValue(bone.quaternion.toArray());
+                editor.gui.updateBoneProperties();
             }
         });
 

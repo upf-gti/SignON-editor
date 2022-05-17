@@ -31,8 +31,11 @@ class Gui {
         this.timeline.setScale(400);
         this.timeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
         this.timeline.onSelectKeyFrame = (e, info, index) => {
-            if(e.button != 2)
-            return false;
+            if(e.button != 2) {
+                this.editor.gizmo.mustUpdate = true
+                this.editor.gizmo.update(true);
+                return false;
+            }
 
             // Change gizmo mode and dont handle
             // return false;
@@ -236,10 +239,10 @@ class Gui {
             widgets.addString("Name", this.clip.name || "Unnamed", { callback: v => this.clip.name = v });
             widgets.addInfo("Num bones", numBones);
             widgets.addInfo("Frame rate", this.timeline.framerate);
-            widgets.addInfo("Duration", this.duration.toFixed(3));
+            widgets.addInfo("Duration", this.duration.toFixed(2));
             widgets.addSlider("Speed", this.editor.mixer.timeScale, { callback: v => {
                 this.editor.mixer.timeScale = this.editor.video.playbackRate = v;
-            }, min: 0.25, max: 2, step: 0.05, precision: 2});
+            }, min: 0.25, max: 1.5, step: 0.05, precision: 2});
             widgets.widgets_per_row = 1;
 
             const bone_selected = !(o.firstBone && numBones) ? 
