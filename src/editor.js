@@ -10,13 +10,15 @@ import { NN } from "./ML.js"
 import { OrientationHelper } from "./libs/OrientationHelper.js";
 import { CanvasButtons } from "./ui.config.js";
 import { AnimationRetargeting } from './retargeting.js'
-
+import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 class Editor {
 
     constructor(app) {
 
         this.clock = new THREE.Clock();
         this.loader = new BVHLoader();
+        this.loader2 = new GLTFLoader();
+        this.help = null;
         
         this.camera = null;
         this.controls = null;
@@ -222,44 +224,57 @@ class Editor {
 
         if ( urlParams.get('load') == 'hard') {
         
-            UTILS.loadGLTF("models/t_pose.glb", gltf => {
-                let model = gltf.scene;
-                this.character = model.name;
+            this.loader2.load( 'models/Eva_Y.glb', (glb) => {
+
+                let model = glb.scene;
+                model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
+                model.position.set(0, 0.75, 0);
                 model.castShadow = true;
                 
+                model.traverse( (object) => {
+                    if ( object.isMesh || object.isSkinnedMesh ) {
+                        object.material.side = THREE.FrontSide;
+                        object.frustumCulled = false;
+                        object.castShadow = true;
+                        object.receiveShadow = true;
+                        if (object.name == "Eyelashes")
+                            object.castShadow = false;
+                        if(object.material.map)
+                            object.material.map.anisotropy = 16; 
+                        this.help = object.skeleton;
+                        
+                    } else if (object.isBone) {
+                        object.scale.set(1.0, 1.0, 1.0);
+                    }
+                } );
+    
+                
                 this.skeletonHelper = new THREE.SkeletonHelper(model);
+                updateThreeJSSkeleton(this.help.bones);
+                this.skeletonHelper.visible = true;
                 this.skeletonHelper.name = "SkeletonHelper";
-                model.children[0].setRotationFromQuaternion(new THREE.Quaternion());
+                this.skeletonHelper.skeleton = this.skeleton = createSkeleton();
                 
-                for (let bone_id in this.skeletonHelper.bones) {
-                    this.skeletonHelper.bones[bone_id].setRotationFromQuaternion(new THREE.Quaternion());
-                }
-                
-                updateThreeJSSkeleton(this.skeletonHelper.bones);
-                let skeleton = createSkeleton();
-                injectNewLandmarks(this.landmarksArray);
-                this.skeleton = skeleton;
-                this.skeletonHelper.skeleton = skeleton;
-                const boneContainer = new THREE.Group();
-
-                boneContainer.add(skeleton.bones[0]);
                 this.scene.add(this.skeletonHelper);
-                this.scene.add(boneContainer);
-                this.scene.add( model );
-
-                // Play animation
-                this.animationClip = createAnimation(this.clipName, this.landmarksArray);
-                this.mixer = new THREE.AnimationMixer(model);
-                this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
-                this.mixer.update(this.clock.getDelta()); // Do first iteration to update from T pose
-        
-                this.gui.loadClip(this.animationClip);
-                this.gizmo.begin(this.skeletonHelper);
-                this.setBoneSize(0.2);
+                this.scene.add(model);
                 
-                this.animate();
-                $('#loading').fadeOut();
-            });
+                // load the actual animation to play
+                this.mixer = new THREE.AnimationMixer( model );
+                this.loader.load( 'models/ISL Thanks final.bvh' , (result) => {
+                    this.animationClip = result.clip;
+                    for (let i = 0; i < result.clip.tracks.length; i++) {
+                        this.animationClip.tracks[i].name = this.animationClip.tracks[i].name.replaceAll(/[\]\[]/g,"").replaceAll(".bones","");
+                    }
+                    this.gui.loadClip(this.animationClip);
+                    this.mixer.clipAction( this.animationClip ).setEffectiveWeight( 1.0 ).play();
+                    this.mixer.update(0);
+                    this.gizmo.begin(this.skeletonHelper);
+                    this.setBoneSize(0.2);
+                    this.animate();
+                    $('#loading').fadeOut();
+                } );
+                
+            } );
 
         } else if ( urlParams.get('load') == 'NN' || urlParams.get('load') == undefined ) {
 
