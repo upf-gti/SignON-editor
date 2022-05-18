@@ -401,7 +401,7 @@ class Editor {
 
     getSelectedBone() {
         const idx = this.gizmo.selectedBone;
-        return idx == undefined ? idx : this.skeleton.bones[ idx ];
+        return idx == undefined ? idx : this.skeletonHelper.bones[ idx ];
     }
 
     setBoneSize(newSize) {
@@ -529,6 +529,39 @@ class Editor {
         mixer._actions[0]._interpolants[idx].sampleValues = this.animationClip.tracks[idx].values;
     }
     
+    cleanTracks(excludeList) {
+
+        for( let i = 0; i < this.animationClip.tracks.length; ++i ) {
+
+            const track = this.animationClip.tracks[i];
+            const [boneName, type] = this.gui.timeline.getTrackName(track.name);
+
+            if(excludeList && excludeList.indexOf( boneName ) != -1)
+            continue;
+
+            track.times = new Float32Array( [track.times[0]] );
+            track.values = track.values.slice(0, type === 'quaternion' ? 4 : 3);
+
+            this.updateAnimationAction(i);
+        }
+    }
+
+    optimizeTracks() {
+        console.warn("[[Not implemented yet]]");
+        return;
+
+        for( let i = 0; i < this.animationClip.tracks.length; ++i ) {
+
+            const track = this.animationClip.tracks[i];
+            const [boneName, type] = this.gui.timeline.getTrackName(track.name);
+
+            // TODO
+            // Delete useless keyframes
+
+            this.updateAnimationAction(i);
+        }
+    }
+
     animate() {
         
         requestAnimationFrame(this.animate.bind(this));

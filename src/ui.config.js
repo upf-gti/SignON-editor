@@ -1,11 +1,6 @@
 // The scope for the callbacks is the editor
 // Icons: https://icons.getbootstrap.com/
 
-// THREE.js
-const LoopOnce = 2200;
-const LoopRepeat = 2201;
-const LoopPingPong = 2202;
-
 const CanvasButtons = {
 
     onCreate: function(item, content) {

@@ -13,6 +13,80 @@ THREE.SkeletonHelper.prototype.getBoneByName = function( name ) {
     return undefined;
 }
 
+THREE.KeyframeTrack.prototype.optimize = function() {
+	// times or values may be shared with other tracks, so overwriting is unsafe
+	const times = AnimationUtils.arraySlice( this.times ),
+	values = AnimationUtils.arraySlice( this.values ),
+	stride = this.getValueSize(),
+	smoothInterpolation = this.getInterpolation() === InterpolateSmooth,
+	lastIndex = times.length - 1;
+	let writeIndex = 1;
+
+	for ( let i = 1; i < lastIndex; ++ i ) {
+
+		let keep = false;
+		const time = times[ i ];
+		const timeNext = times[ i + 1 ];
+
+		// remove adjacent keyframes scheduled at the same time
+
+		if ( time !== timeNext && ( i !== 1 || time !== times[ 0 ] ) ) {
+			if ( ! smoothInterpolation ) {
+
+				// remove unnecessary keyframes same as their neighbors
+				const offset = i * stride,
+					offsetP = offset - stride,
+					offsetN = offset + stride;
+
+				for ( let j = 0; j !== stride; ++ j ) {
+					const value = values[ offset + j ];
+					if ( value !== values[ offsetP + j ] ||
+						value !== values[ offsetN + j ] ) {
+						keep = true;
+						break;
+					}
+				}
+			} else {
+				keep = true;
+			}
+		}
+
+		// in-place compaction
+		if ( keep ) {
+			if ( i !== writeIndex ) {
+				times[ writeIndex ] = times[ i ];
+				const readOffset = i * stride,
+					writeOffset = writeIndex * stride;
+				for ( let j = 0; j !== stride; ++ j ) {
+					values[ writeOffset + j ] = values[ readOffset + j ];
+				}
+			}
+			++ writeIndex;
+		}
+	}
+
+	// flush last keyframe (compaction looks ahead)
+	if ( lastIndex > 0 ) {
+		times[ writeIndex ] = times[ lastIndex ];
+		for ( let readOffset = lastIndex * stride, writeOffset = writeIndex * stride, j = 0; j !== stride; ++ j ) {
+			values[ writeOffset + j ] = values[ readOffset + j ];
+		}
+		++ writeIndex;
+	}
+
+	if ( writeIndex !== times.length ) {
+
+		this.times = AnimationUtils.arraySlice( times, 0, writeIndex );
+		this.values = AnimationUtils.arraySlice( values, 0, writeIndex * stride );
+	} else {
+
+		this.times = times;
+		this.values = values;
+	}
+
+	return this;
+}
+
 Inspector.prototype.addSlider = function(name, value, options)
 {
 	options = this.processOptions(options);

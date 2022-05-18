@@ -139,6 +139,10 @@ class Gui {
         menubar.add("Timeline/Shortcuts/Key Selection/Multiple", { short: "Hold LSHIFT" });
         menubar.add("Timeline/Shortcuts/Key Selection/Box", { short: "Hold LSHIFT+Drag" });
 
+        menubar.add("Timeline/");
+        menubar.add("Timeline/Empty tracks", { callback: () => this.editor.cleanTracks() });
+        menubar.add("Timeline/Optimize tracks", { callback: () => this.editor.optimizeTracks() });
+
         this.appendButtons( menubar );
     }
 
