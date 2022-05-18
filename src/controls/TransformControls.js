@@ -848,7 +848,7 @@ class TransformControlsGizmo extends Object3D {
 
 		function CircleGeometry( radius, arc, lineWidth ) {
 
-			const geometry = new TorusGeometry( radius, lineWidth || 0.0065, 3, 64, arc * Math.PI * 2 );
+			const geometry = new TorusGeometry( radius, lineWidth || 0.0075, 3, 64, arc * Math.PI * 2 );
 			geometry.rotateY( Math.PI / 2 );
 			geometry.rotateX( Math.PI / 2 );
 			return geometry;
@@ -949,20 +949,20 @@ class TransformControlsGizmo extends Object3D {
 
 		const gizmoRotate = {
 			XYZE: [
-				[ new Mesh( CircleGeometry( 0.425, 1, 0.009 ), matGray ), null, [ 0, Math.PI / 2, 0 ]],
-				[ new Mesh(new SphereGeometry( 0.4 ), matGrayTransparent ), null, [ 0, Math.PI / 2, 0 ]]
+				[ new Mesh( CircleGeometry( 0.5, 1 ), matGray ), null, [ 0, Math.PI / 2, 0 ]],
+				[ new Mesh(new SphereGeometry( 0.5 ), matGrayTransparent ), null, [ 0, Math.PI / 2, 0 ]]
 			],
 			X: [
-				[ new Mesh( CircleGeometry( 0.4, 0.5 ), matRed ) ]
+				[ new Mesh( CircleGeometry( 0.5, 0.5 ), matRed ) ]
 			],
 			Y: [
-				[ new Mesh( CircleGeometry( 0.4, 0.5 ), matGreen ), null, [ 0, 0, - Math.PI / 2 ]]
+				[ new Mesh( CircleGeometry( 0.5, 0.5 ), matGreen ), null, [ 0, 0, - Math.PI / 2 ]]
 			],
 			Z: [
-				[ new Mesh( CircleGeometry( 0.4, 0.5 ), matBlue ), null, [ 0, Math.PI / 2, 0 ]]
+				[ new Mesh( CircleGeometry( 0.5, 0.5 ), matBlue ), null, [ 0, Math.PI / 2, 0 ]]
 			],
 			E: [
-				[ new Mesh( CircleGeometry( 0.55, 1 ), matYellowTransparent ), null, [ 0, Math.PI / 2, 0 ]]
+				[ new Mesh( CircleGeometry( 0.75, 1 ), matYellowTransparent ), null, [ 0, Math.PI / 2, 0 ]]
 			]
 		};
 
@@ -973,9 +973,9 @@ class TransformControlsGizmo extends Object3D {
 		};
 
 		const pickerRotate = {
-			XYZE: [
-				[ new Mesh( new SphereGeometry( 0.25, 10, 8 ), matInvisible ) ]
-			],
+			// XYZE: [
+			// 	[ new Mesh( new SphereGeometry( 0.25, 10, 8 ), matInvisible ) ]
+			// ],
 			X: [
 				[ new Mesh( new TorusGeometry( 0.5, 0.1, 4, 24 ), matInvisible ), [ 0, 0, 0 ], [ 0, - Math.PI / 2, - Math.PI / 2 ]],
 			],

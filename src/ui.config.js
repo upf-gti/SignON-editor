@@ -1,11 +1,6 @@
 // The scope for the callbacks is the editor
 // Icons: https://icons.getbootstrap.com/
 
-// THREE.js
-const LoopOnce = 2200;
-const LoopRepeat = 2201;
-const LoopPingPong = 2202;
-
 const CanvasButtons = {
 
     onCreate: function(item, content) {
@@ -19,10 +14,10 @@ const CanvasButtons = {
         if(!item.nIcon) item.nIcon = item.icon;
 
         if( this[item.property] ) {
-            content.className = 'bi bi-' + item.icon;
+            item.type === 'image' ? content.src = item.icon : content.className = 'bi bi-' + item.icon;
             content.parentElement.classList.add('selected');
         }else {
-            content.className = 'bi bi-' + item.nIcon;
+            item.type === 'image' ? content.src = item.nIcon : content.className = 'bi bi-' + item.nIcon;
             content.parentElement.classList.remove('selected');
         }
     },
@@ -42,11 +37,31 @@ const CanvasButtons = {
         {
             name: 'hud',
             property: 'showHUD',
-            icon: 'box',
+            icon: 'https://webglstudio.org/latest/imgs/mini-icon-gui.png',
+            type: 'image',
             callback: function() {
                 this.scene.getObjectByName('SkeletonHelper').visible = this.showHUD;
                 this.scene.getObjectByName('GizmoPoints').visible = this.showHUD;
                 this.scene.getObjectByName('Grid').visible = this.showHUD;
+
+                if(!this.showHUD) {
+                    this.gizmo.stop();
+                }
+
+                const video = document.getElementById("capture");
+                const tl = document.getElementById("timeline");
+                tl.style.display    = this.showHUD ? "block": "none";
+                video.style.display = this.showHUD ? "flex" : "none";
+            }
+        },
+
+        {
+            name: 'bonesZtest',
+            property: 'boneUseDepthBuffer',
+            icon: 'https://webglstudio.org/latest/imgs/mini-icon-depth.png',
+            type: 'image',
+            callback: function() {
+                this.gizmo.bonePoints.material.depthTest = !this.gizmo.bonePoints.material.depthTest;
             }
         },
 

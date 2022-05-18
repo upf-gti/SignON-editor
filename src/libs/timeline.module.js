@@ -9,7 +9,7 @@ function Timeline( clip, bone_name ) {
 	this.framerate = 30;
 	this.opacity = 0.8;
 	this.sidebar_width = 200;
-	this.top_margin = 20;
+	this.top_margin = 24;
 	this.render_out_frames = false;
 
 	//do not change, it will be updated when called draw
@@ -33,11 +33,13 @@ function Timeline( clip, bone_name ) {
 
 	this._trackState = [];
 	this._tracks_drawn = [];
+	this._buttons_drawn = [];
 	this._clipboard = null;
 
 	this.clip = clip;
 	this.selected_bone = bone_name;
 	this.snappedKeyFrameIndex = -1;
+	this.autoKeyEnabled = false;
 
 	this.processTracks();
 
@@ -55,6 +57,30 @@ function Timeline( clip, bone_name ) {
 			this.drawTrackWithKeyframes(ctx, (i+1) * height, height, track.name + " (" + track.type + ")", track, i);
 		}
 	};
+
+	this.autoKeyButtonImg = document.createElement('img');
+	this.autoKeyButtonImg.src = 'data/imgs/mini-icon-auto.png';
+
+	// Add button data
+	this._buttons_drawn.push( [this.autoKeyButtonImg, "autoKeyEnabled", 9, -this.top_margin + 1, 22, 22] );
+}
+
+Timeline.prototype.validUpdate = function (gizmoMode) {
+	
+	if(this.selected_bone == null || (!this._lastKeyFramesSelected.length && !this.autoKeyEnabled))
+	return;
+
+	let tracks = this.tracksPerBone[this.selected_bone];
+	if(!tracks) return;
+
+	let track = null;
+
+	if(tracks.length == 1) track = tracks[0];
+	else {
+		track = gizmoMode === 'Rotate' ? tracks[0] : tracks[1];
+	}
+
+	this.addKeyFrame( track );
 }
 
 // Creates a map for each bone -> tracks
@@ -219,11 +245,23 @@ Timeline.prototype.addKeyFrame = function( track ) {
 	// Find new index
 	let newIdx = this.clip.tracks[clip_idx].times.findIndex( (t) => { return t > this.current_time; } );
 
+	// Add as last index
+	let lastIndex = false;
+	if(newIdx < 0) {
+		newIdx = this.clip.tracks[clip_idx].times.length;
+		lastIndex = true;
+	}
+
 	// Add time key
 	const timesArray = [];
 	this.clip.tracks[clip_idx].times.forEach( (a, b) => {
 		b == newIdx ? timesArray.push(this.current_time, a) : timesArray.push(a);
 	} );
+
+	if(lastIndex) {
+		timesArray.push(this.current_time);			
+	}
+
 	this.clip.tracks[clip_idx].times = new Float32Array( timesArray );
 	
 	// Get mid values
@@ -239,6 +277,12 @@ Timeline.prototype.addKeyFrame = function( track ) {
 		}
 		valuesArray.push(a);
 	} );
+
+	if(lastIndex) {
+		for( let i = 0; i < track.dim; ++i )
+			valuesArray.push(lerpValue[i]);
+	}
+
 	this.clip.tracks[clip_idx].values = new Float32Array( valuesArray );
 
 	// Move the other's key properties
@@ -271,10 +315,10 @@ Timeline.prototype._delete = function( track, index ) {
 	const clip_idx = track.clip_idx;
 
 	// Don't remove by now the last key
-	if(index == this.clip.tracks[clip_idx].times.length - 1) {
-		console.warn("Operation not supported! [remove last keyframe track]");
-		return;
-	}
+	// if(index == this.clip.tracks[clip_idx].times.length - 1) {
+	// 	console.warn("Operation not supported! [remove last keyframe track]");
+	// 	return;
+	// }
 
 	// Reset this key's properties
 	track.hovered[index] = undefined;
@@ -617,9 +661,20 @@ Timeline.prototype.processMouse = function (e) {
 			}
 
 		}else {
+
 			// Check exact track keyframe
 			if(!discard && track) {
 				this.processCurrentKeyFrame( e, null, track, local_x );
+			} else {
+				y -= this.top_margin;
+				for( const b of this._buttons_drawn ) {
+					// Set button property
+					const bActive = x >= b[2] && x <= (b[2] + b[4]) && y >= b[3] && y <= (b[3] + b[5]);
+					if(bActive) {
+						this[ b[1] ] = !this[ b[1] ];
+						break;
+					}
+				}
 			}
 		}
 
@@ -782,27 +837,29 @@ Timeline.prototype.draw = function (ctx, current_time, rect) {
 	ctx.translate( this.position[0], this.position[1] + this.top_margin ); //20 is the top margin area
 
 	//background
+	ctx.clearRect(0,-this.top_margin,w,h+this.top_margin);
 	ctx.fillStyle = "#000";
-	ctx.globalAlpha = 1;
+	ctx.globalAlpha = 0.65;
 	ctx.fillRect(0,-this.top_margin,w,this.top_margin);
-	ctx.globalAlpha = this.opacity;
+	ctx.globalAlpha = 0.55;
 	ctx.fillRect(0,0,w,h);
 	ctx.globalAlpha = 1;
+
+	//buttons
+	for( const b of this._buttons_drawn ) {
+		ctx.fillStyle = this[ b[1] ] ? "#aaa" : "#454545";	
+		ctx.roundRect(b[2], b[3], b[4], b[5], 5, true, false);
+		ctx.drawImage(b[0], b[2] + 1, b[3] + 1, b[4] - 2, b[5] - 2);
+	}
 
 	//seconds markers
 	var seconds_full_window = (w * P2S); //how many seconds fit in the current window
 	var seconds_half_window = seconds_full_window * 0.5;
-	var hw = w * 0.5; //half width
 
 	//time in the left side (current time is always in the middle)
 	var time_start = current_time - seconds_half_window;
-	//if(time_start < 0)
-	//	time_start = 0;
-
 	//time in the right side
 	var time_end = current_time + seconds_half_window;
-	//if(time_end > duration )
-	//	time_end = duration;
 
 	this._start_time = time_start;
 	this._end_time = time_end;
@@ -817,21 +874,11 @@ Timeline.prototype.draw = function (ctx, current_time, rect) {
 	// Calls using as 0,0 the top-left of the tracks area (not the top-left of the timeline but 20 pixels below)
 	this._tracks_drawn.length = 0;
 
-	// Scrollbar
-	// if( h < this.scrollable_height )
-	// {
-	// 	ctx.fillStyle = "#222";
-	// 	ctx.fillRect( w - 10, 0, h, 10 );
-	// 	var scrollh = h * (h / this.scrollable_height);
-	// 	ctx.fillStyle = "#AAA";
-	// 	ctx.fillRect( w - 8, this.current_scroll * (h - scrollh), 6, scrollh );
-	// }
-
 	// Frame lines
 	if(S2P > 200)
 	{
 		ctx.strokeStyle = "#444";
-		ctx.globalAlpha = (S2P - 200) / 400;
+		ctx.globalAlpha = 0.4;
 		ctx.beginPath();
 
 		let start = time_start;
@@ -1034,5 +1081,57 @@ Timeline.prototype.drawTrackWithKeyframes = function (ctx, y, track_height, titl
 
 	ctx.globalAlpha = 1;
 }
+
+/**
+ * Draws a rounded rectangle using the current state of the canvas.
+ * If you omit the last three params, it will draw a rectangle
+ * outline with a 5 pixel border radius
+ * @param {Number} x The top left x coordinate
+ * @param {Number} y The top left y coordinate
+ * @param {Number} width The width of the rectangle
+ * @param {Number} height The height of the rectangle
+ * @param {Number} [radius = 5] The corner radius; It can also be an object 
+ *                 to specify different radii for corners
+ * @param {Number} [radius.tl = 0] Top left
+ * @param {Number} [radius.tr = 0] Top right
+ * @param {Number} [radius.br = 0] Bottom right
+ * @param {Number} [radius.bl = 0] Bottom left
+ * @param {Boolean} [fill = false] Whether to fill the rectangle.
+ * @param {Boolean} [stroke = true] Whether to stroke the rectangle.
+ */
+ CanvasRenderingContext2D.prototype.roundRect = function(x, y, width, height, radius, fill, stroke) {
+	if (typeof stroke === 'undefined') {
+	  stroke = true;
+	}
+	if (typeof radius === 'undefined') {
+	  radius = 5;
+	}
+	if (typeof radius === 'number') {
+	  radius = {tl: radius, tr: radius, br: radius, bl: radius};
+	} else {
+	  var defaultRadius = {tl: 0, tr: 0, br: 0, bl: 0};
+	  for (var side in defaultRadius) {
+		radius[side] = radius[side] || defaultRadius[side];
+	  }
+	}
+	this.beginPath();
+	this.moveTo(x + radius.tl, y);
+	this.lineTo(x + width - radius.tr, y);
+	this.quadraticCurveTo(x + width, y, x + width, y + radius.tr);
+	this.lineTo(x + width, y + height - radius.br);
+	this.quadraticCurveTo(x + width, y + height, x + width - radius.br, y + height);
+	this.lineTo(x + radius.bl, y + height);
+	this.quadraticCurveTo(x, y + height, x, y + height - radius.bl);
+	this.lineTo(x, y + radius.tl);
+	this.quadraticCurveTo(x, y, x + radius.tl, y);
+	this.closePath();
+	if (fill) {
+	  this.fill();
+	}
+	if (stroke) {
+	  this.stroke();
+	}
+  
+  }
 
 export { Timeline };

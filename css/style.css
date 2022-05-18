@@ -89,11 +89,11 @@ canvas {
 }
 
 #signOn-logo {
-	width: 40px;
+	width: 37px;
 	padding: 3px;
 	cursor: pointer;
-	margin-right: 5px;
-	margin-left: 5px;
+	margin-right: 1px;
+	margin-left: 3px;
 }
 
 #header #capture_btn {

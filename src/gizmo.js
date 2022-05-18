@@ -22,10 +22,7 @@ class Gizmo {
             this.updateBones();
 
             if(this.selectedBone != null) {
-                const bone = this.editor.skeletonHelper.bones[this.selectedBone];
-                for(const ip of $(".bone-position")) ip.setValue(bone.position.toArray());
-                for(const ip of $(".bone-euler")) ip.setValue(bone.rotation.toArray());
-                for(const ip of $(".bone-quaternion")) ip.setValue(bone.quaternion.toArray());
+                editor.gui.updateBoneProperties();
             }
         });
 
@@ -282,8 +279,7 @@ class Gizmo {
         return;
 
         let timeline = this.editor.gui.timeline;
-
-        if(!timeline._lastKeyFramesSelected.length)
+        if(!timeline.validUpdate( this.editor.getGizmoMode() ))
         return;
 
         let [name, trackIndex, keyFrameIndex] = timeline._lastKeyFramesSelected[0];
@@ -356,7 +352,6 @@ class Gizmo {
 
         const depthTestEnabled = this.bonePoints.material.depthTest;
         inspector.addCheckbox( "Depth test", depthTestEnabled, (v) => { this.bonePoints.material.depthTest = v; })
-
     }
     
 };
