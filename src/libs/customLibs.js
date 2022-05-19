@@ -13,14 +13,19 @@ THREE.SkeletonHelper.prototype.getBoneByName = function( name ) {
     return undefined;
 }
 
-THREE.KeyframeTrack.prototype.optimize = function() {
+// Track optimization
+const CompareEqual = (v, p, n) => { return v !== p || v !== n };
+const CompareThreshold = (v, p, n, t) => { return Math.abs(v - p) >= t || Math.abs(v - n) >= t };
+
+THREE.KeyframeTrack.prototype.optimize = function( threshold = 0.0025 ) {
 	// times or values may be shared with other tracks, so overwriting is unsafe
-	const times = AnimationUtils.arraySlice( this.times ),
-	values = AnimationUtils.arraySlice( this.values ),
+	const times = THREE.AnimationUtils.arraySlice( this.times ),
+	values = THREE.AnimationUtils.arraySlice( this.values ),
 	stride = this.getValueSize(),
-	smoothInterpolation = this.getInterpolation() === InterpolateSmooth,
+	smoothInterpolation = this.getInterpolation() === THREE.InterpolateSmooth,
 	lastIndex = times.length - 1;
 	let writeIndex = 1;
+	let cmpFunction = CompareThreshold;
 
 	for ( let i = 1; i < lastIndex; ++ i ) {
 
@@ -39,9 +44,12 @@ THREE.KeyframeTrack.prototype.optimize = function() {
 					offsetN = offset + stride;
 
 				for ( let j = 0; j !== stride; ++ j ) {
-					const value = values[ offset + j ];
-					if ( value !== values[ offsetP + j ] ||
-						value !== values[ offsetN + j ] ) {
+					if( cmpFunction(
+						values[ offset + j ], 
+						values[ offsetP + j ], 
+						values[ offsetN + j ],
+						threshold))
+					{
 						keep = true;
 						break;
 					}
@@ -76,8 +84,8 @@ THREE.KeyframeTrack.prototype.optimize = function() {
 
 	if ( writeIndex !== times.length ) {
 
-		this.times = AnimationUtils.arraySlice( times, 0, writeIndex );
-		this.values = AnimationUtils.arraySlice( values, 0, writeIndex * stride );
+		this.times = THREE.AnimationUtils.arraySlice( times, 0, writeIndex );
+		this.values = THREE.AnimationUtils.arraySlice( values, 0, writeIndex * stride );
 	} else {
 
 		this.times = times;

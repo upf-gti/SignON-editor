@@ -1,7 +1,7 @@
 import * as THREE from "./libs/three.module.js";
 import { OrbitControls } from "./controls/OrbitControls.js";
 import { BVHLoader } from "./loaders/BVHLoader.js";
-import { BVHExporter } from "./bvh_exporter.js";
+import { BVHExporter } from "./exporters/BVHExporter.js";
 import { createSkeleton, createAnimation, createAnimationFromRotations, updateThreeJSSkeleton, injectNewLandmarks } from "./skeleton.js";
 import { Gui } from "./gui.js";
 import { Gizmo } from "./gizmo.js";
@@ -46,6 +46,7 @@ class Editor {
 	    this.onDrawSettings = null;
         this.gui = new Gui(this);
 
+        this.optimizeThreshold = 0.025;
         this.defaultTranslationSnapValue = 1;
         this.defaultRotationSnapValue = 30; // Degrees
 
@@ -547,17 +548,9 @@ class Editor {
     }
 
     optimizeTracks() {
-        console.warn("[[Not implemented yet]]");
-        return;
-
         for( let i = 0; i < this.animationClip.tracks.length; ++i ) {
-
             const track = this.animationClip.tracks[i];
-            const [boneName, type] = this.gui.timeline.getTrackName(track.name);
-
-            // TODO
-            // Delete useless keyframes
-
+            track.optimize( this.optimizeThreshold );
             this.updateAnimationAction(i);
         }
     }

@@ -61,8 +61,15 @@ function Timeline( clip, bone_name ) {
 	this.autoKeyButtonImg = document.createElement('img');
 	this.autoKeyButtonImg.src = 'data/imgs/mini-icon-auto.png';
 
+	this.optimizeButtonImg = document.createElement('img');
+	this.optimizeButtonImg.src = 'data/imgs/mini-icon-mask.png';
+
 	// Add button data
+	const offset = 30;
 	this._buttons_drawn.push( [this.autoKeyButtonImg, "autoKeyEnabled", 9, -this.top_margin + 1, 22, 22] );
+	this._buttons_drawn.push( [this.optimizeButtonImg, "optimize", 9 + offset, -this.top_margin + 1, 22, 22, (e) => {
+		this.onShowOptimizeMenu(e);
+	}] );
 }
 
 Timeline.prototype.validUpdate = function (gizmoMode) {
@@ -80,7 +87,16 @@ Timeline.prototype.validUpdate = function (gizmoMode) {
 		track = gizmoMode === 'Rotate' ? tracks[0] : tracks[1];
 	}
 
-	this.addKeyFrame( track );
+	// Add new keyframe
+	const newIdx = this.addKeyFrame( track );
+
+	// Select it
+	this._lastKeyFramesSelected.push( [track.name, track.idx, newIdx] );
+	track.selected[newIdx] = true;
+
+	// Update time
+	if(this.onSetTime)
+		this.onSetTime(this.current_time);
 }
 
 // Creates a map for each bone -> tracks
@@ -120,6 +136,32 @@ Timeline.prototype.getNumTracks = function(bone) {
 	return;
 	const tracks = this.tracksPerBone[bone.name];
 	return tracks ? tracks.length : null;
+}
+
+Timeline.prototype.onShowOptimizeMenu = function(e) {
+	
+	let actions = [{ title: "Optimize", disabled: true }, null];
+
+	if(this.selected_bone == null)
+	return;
+
+	let tracks = this.tracksPerBone[this.selected_bone];
+	if(!tracks) return;
+
+	const threshold = this.onGetOptimizeThreshold ? this.onGetOptimizeThreshold() : 0.025;
+
+	for( let t of tracks ) {
+		actions.push( {
+			title: t.name+"@"+t.type,
+			callback: () => { 
+				this.clip.tracks[t.clip_idx].optimize( threshold );
+			}
+		} );
+	}
+	
+	const menu = new LiteGUI.ContextMenu( actions, { event: e });
+	for( const el of menu.root.querySelectorAll(".submenu") )
+		el.style.fontSize = "0.9em";
 }
 
 Timeline.prototype.isKeyFrameSelected = function ( track, index ) {
@@ -301,6 +343,8 @@ Timeline.prototype.addKeyFrame = function( track ) {
 
 	if(this.onSetTime)
 		this.onSetTime(this.current_time);
+
+	return newIdx;
 }
 
 Timeline.prototype._delete = function( track, index ) {
@@ -671,7 +715,9 @@ Timeline.prototype.processMouse = function (e) {
 					// Set button property
 					const bActive = x >= b[2] && x <= (b[2] + b[4]) && y >= b[3] && y <= (b[3] + b[5]);
 					if(bActive) {
-						this[ b[1] ] = !this[ b[1] ];
+						const callback = b[6]; 
+						if(callback) callback(e);
+						else this[ b[1] ] = !this[ b[1] ];
 						break;
 					}
 				}
@@ -847,9 +893,9 @@ Timeline.prototype.draw = function (ctx, current_time, rect) {
 
 	//buttons
 	for( const b of this._buttons_drawn ) {
-		ctx.fillStyle = this[ b[1] ] ? "#aaa" : "#454545";	
+		ctx.fillStyle = this[ b[1] ] ? "#b66" : "#454545";	
 		ctx.roundRect(b[2], b[3], b[4], b[5], 5, true, false);
-		ctx.drawImage(b[0], b[2] + 1, b[3] + 1, b[4] - 2, b[5] - 2);
+		ctx.drawImage(b[0], b[2] + 2, b[3] + 2, b[4] - 4, b[5] - 4);
 	}
 
 	//seconds markers
