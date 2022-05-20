@@ -279,7 +279,10 @@ class Gizmo {
         return;
 
         let timeline = this.editor.gui.timeline;
-        if(!timeline.validUpdate( this.editor.getGizmoMode() ))
+        if(timeline.onUpdateTracks( this.editor.getGizmoMode() ))
+        return; // Return if event handled
+
+        if(!timeline.getNumKeyFramesSelected())
         return;
 
         let [name, trackIndex, keyFrameIndex] = timeline._lastKeyFramesSelected[0];

@@ -60,21 +60,25 @@ function Timeline( clip, bone_name ) {
 
 	this.autoKeyButtonImg = document.createElement('img');
 	this.autoKeyButtonImg.src = 'data/imgs/mini-icon-auto.png';
-
 	this.optimizeButtonImg = document.createElement('img');
-	this.optimizeButtonImg.src = 'data/imgs/mini-icon-mask.png';
+	this.optimizeButtonImg.src = 'data/imgs/mini-icon-optimize.png';
+	this.unSelectAllKeyFramesImg = document.createElement('img');
+	this.unSelectAllKeyFramesImg.src = 'data/imgs/close-icon.png';
 
 	// Add button data
-	const offset = 30;
+	let offset = 25;
 	this._buttons_drawn.push( [this.autoKeyButtonImg, "autoKeyEnabled", 9, -this.top_margin + 1, 22, 22] );
-	this._buttons_drawn.push( [this.optimizeButtonImg, "optimize", 9 + offset, -this.top_margin + 1, 22, 22, (e) => {
+	this._buttons_drawn.push( [this.optimizeButtonImg, "optimize", 9 + offset * this._buttons_drawn.length, -this.top_margin + 1, 22, 22, (e) => {
 		this.onShowOptimizeMenu(e);
+	}] );
+	this._buttons_drawn.push( [this.unSelectAllKeyFramesImg, "unselectAll", 9 + offset * this._buttons_drawn.length, -this.top_margin + 1, 22, 22, (e) => {
+		this.unSelectAllKeyFrames();
 	}] );
 }
 
-Timeline.prototype.validUpdate = function (gizmoMode) {
+Timeline.prototype.onUpdateTracks = function (gizmoMode) {
 	
-	if(this.selected_bone == null || (!this._lastKeyFramesSelected.length && !this.autoKeyEnabled))
+	if(this.selected_bone == null || this._lastKeyFramesSelected.length || !this.autoKeyEnabled)
 	return;
 
 	let tracks = this.tracksPerBone[this.selected_bone];
@@ -97,6 +101,8 @@ Timeline.prototype.validUpdate = function (gizmoMode) {
 	// Update time
 	if(this.onSetTime)
 		this.onSetTime(this.current_time);
+
+	return true; // Handled
 }
 
 // Creates a map for each bone -> tracks
@@ -1103,9 +1109,9 @@ Timeline.prototype.drawTrackWithKeyframes = function (ctx, y, track_height, titl
 				if(track.edited[j])
 					ctx.fillStyle = "rgba(255,0,255,1)";
 				if(selected) {
-					ctx.fillStyle = "rgba(200,200,10,1)";
-					size = track_height * 0.45;
-					margin = -1;
+					ctx.fillStyle = "rgba(250,250,20,1)";
+					size = track_height * 0.5;
+					margin = -2;
 				}
 				if(track.hovered[j]) {
 					size = track_height * 0.5;
@@ -1116,7 +1122,7 @@ Timeline.prototype.drawTrackWithKeyframes = function (ctx, y, track_height, titl
 				ctx.rotate(45 * Math.PI / 180);		
 				ctx.fillRect( -size, -size, size, size);
 				if(selected) {
-					ctx.globalAlpha = 0.25;
+					ctx.globalAlpha = 0.3;
 					ctx.fillRect( -size*1.5, -size*1.5, size*2, size*2);
 				}
 					
