@@ -278,7 +278,7 @@ class Gui {
 
                 const innerUpdate = (attribute, value) => {
                     bone_selected[attribute].fromArray( value ); 
-                    this.editor.gizmo.updateBones();
+                    this.editor.gizmo.onGUI();
                 };
 
                 widgets.addSection("Bone", { pretitle: makePretitle('circle') });
@@ -316,7 +316,7 @@ class Gui {
 
         for( const p in this.boneProperties ) {
             // @eg: p as position, element.setValue( bone.position.toArray() )
-            this.boneProperties[p].setValue( bone[p].toArray() );
+            this.boneProperties[p].setValue( bone[p].toArray(), true );
         }
     }
 

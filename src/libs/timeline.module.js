@@ -161,6 +161,7 @@ Timeline.prototype.onShowOptimizeMenu = function(e) {
 			title: t.name+"@"+t.type,
 			callback: () => { 
 				this.clip.tracks[t.clip_idx].optimize( threshold );
+				t.edited = [];
 			}
 		} );
 	}
@@ -168,6 +169,14 @@ Timeline.prototype.onShowOptimizeMenu = function(e) {
 	const menu = new LiteGUI.ContextMenu( actions, { event: e });
 	for( const el of menu.root.querySelectorAll(".submenu") )
 		el.style.fontSize = "0.9em";
+}
+
+Timeline.prototype.onPreProcessTrack = function( track ) {
+	const name = this.getTrackName(track.name)[0];
+	let trackInfo = this.tracksPerBone[name][track.idx];
+	trackInfo.selected = [];
+	trackInfo.edited = [];
+	trackInfo.hovered = [];
 }
 
 Timeline.prototype.isKeyFrameSelected = function ( track, index ) {

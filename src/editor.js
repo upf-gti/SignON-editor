@@ -544,6 +544,7 @@ class Editor {
             track.values = track.values.slice(0, type === 'quaternion' ? 4 : 3);
 
             this.updateAnimationAction(i);
+            this.gui.timeline.onPreProcessTrack( track );
         }
     }
 
@@ -552,6 +553,8 @@ class Editor {
             const track = this.animationClip.tracks[i];
             track.optimize( this.optimizeThreshold );
             this.updateAnimationAction(i);
+
+            this.gui.timeline.onPreProcessTrack( track );
         }
     }
 

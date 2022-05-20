@@ -29,7 +29,7 @@ class Gizmo {
         transform.addEventListener( 'mouseUp', e => {
             if(this.selectedBone === undefined)
             return;
-            this.updateTracks(true);
+            this.updateTracks();
         } );
 
         transform.addEventListener( 'dragging-changed', e => {
@@ -273,10 +273,7 @@ class Gizmo {
         geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
     }
 
-    updateTracks(force) {
-
-        if(!force)
-        return;
+    updateTracks() {
 
         let timeline = this.editor.gui.timeline;
         if(timeline.onUpdateTracks( this.editor.getGizmoMode() ))
@@ -355,6 +352,12 @@ class Gizmo {
 
         const depthTestEnabled = this.bonePoints.material.depthTest;
         inspector.addCheckbox( "Depth test", depthTestEnabled, (v) => { this.bonePoints.material.depthTest = v; })
+    }
+
+    onGUI() {
+
+        this.updateBones();
+        this.updateTracks();
     }
     
 };
