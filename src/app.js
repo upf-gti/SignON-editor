@@ -14,61 +14,86 @@ class App {
 
         this.mediaRecorder = null
         this.chunks = [];
+
         this.editor = new Editor(this);
 
         // Create the fileSystem and log the user
         this.FS = new FileSystem("signon", "signon", () => console.log("Auto login of guest user"));
 
-        window.app = this;
+    	window.globals = {
+            "app": this
+        };
     }
 
-    init() {
+    init( settings ) {
 
         let that = this;
+        settings = settings || {};
 
-        MediaPipe.start();
+        const mode = settings.mode ?? 'capture';
 
-        let video = document.getElementById("recording");
+        if(mode === 'capture') {
 
-        video.addEventListener('loadedmetadata', async function () {
-            while(video.duration === Infinity) {
-                await new Promise(r => setTimeout(r, 1000));
-                video.currentTime = 10000000*Math.random();
+            // Run mediapipe to extract landmarks
+            MediaPipe.start( () => {
+                $('#loading').fadeOut();
+            } );
+    
+            // Show video
+            let video = document.getElementById("recording");
+            $("#capture").removeClass("hidden")
+    
+            video.addEventListener('loadedmetadata', async function () {
+                while(video.duration === Infinity) {
+                    await new Promise(r => setTimeout(r, 1000));
+                    video.currentTime = 10000000*Math.random();
+                }
+                video.currentTime = video.startTime > 0 ? video.startTime : 0;
+            });
+    
+            if(!this.mediaDevicesSupported(video, this)) {
+                console.log("This app is not supported in your browser");
             }
-            video.currentTime = video.startTime > 0 ? video.startTime : 0;
-        });
+    
+            this.setEvents();
+
+        } else if(mode === 'bvh') {
+
+            this.onLoadAnimation( settings.animation );
+        }
+
+        window.addEventListener("resize", this.onResize);
+    }
+    
+    mediaDevicesSupported(video, scope) {
 
         // prepare the device to capture the video
         if (navigator.mediaDevices) {
-            console.log("getUserMedia supported.");
+            console.log("UserMedia supported");
 
             let constraints = { video: true, audio: false };
 
-            navigator.mediaDevices.getUserMedia(constraints)
-                .then(function (stream) {
+            navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
+
                     let videoElement = document.getElementById("inputVideo");
-                    that.mediaRecorder = new MediaRecorder(videoElement.srcObject);
+                    scope.mediaRecorder = new MediaRecorder(videoElement.srcObject);
 
-                    that.mediaRecorder.onstop = function (e) {
+                    scope.mediaRecorder.onstop = function (e) {
 
-                        video.addEventListener("play", function() {
-                           
-                        });
-                        video.addEventListener("pause", function() {
-                            
-                        });
+                        video.addEventListener("play", function() {});
+                        video.addEventListener("pause", function() {});
                         video.setAttribute('controls', 'name');
                         video.controls = false;
                         video.loop = true;
                         
-                        let blob = new Blob(that.chunks, { "type": "video/mp4; codecs=avc1" });
+                        let blob = new Blob(scope.chunks, { "type": "video/mp4; codecs=avc1" });
                         let videoURL = URL.createObjectURL(blob);
                         video.src = videoURL;
                         console.log("Recording correctly saved");
                     }
 
-                    that.mediaRecorder.ondataavailable = function (e) {
-                        that.chunks.push(e.data);
+                    scope.mediaRecorder.ondataavailable = function (e) {
+                        scope.chunks.push(e.data);
                     }
                 })
                 .catch(function (err) {
@@ -76,14 +101,10 @@ class App {
                 })
         }
         else {
-            console.log("This app is not supported in your browser anymore");
+            return false;
         }
-
-        this.setEvents();
-
-        window.addEventListener("resize", this.onResize);
     }
-    
+
     isRecording() {
         return this.recording;
     }
@@ -187,10 +208,8 @@ class App {
         await VideoUtils.bind(video, canvas);
     }
 
-    onRecordLandmarks(startTime, endTime) {
-    
-        let that = this;
-        
+    onBeginEdition() {
+
         // Update header
         let capture = document.getElementById("capture_btn");
         capture.disabled = true;
@@ -204,6 +223,13 @@ class App {
         stateBtn.style.display = "block";
         let stopBtn = document.getElementById("stop_btn");
         stopBtn.style.display = "block";
+    }
+
+    onRecordLandmarks(startTime, endTime) {
+    
+        let that = this;
+        
+        this.onBeginEdition();
     
         // Reposition the canvas elements
         let videoDiv = document.getElementById("capture");
@@ -269,6 +295,17 @@ class App {
         this.editor.buildAnimation( MediaPipe.landmarks );
     }
 
+    onLoadAnimation( animation ) {
+    
+        this.onBeginEdition();
+
+        const name = animation.filename;
+        this.editor.clipName = name;
+        this.editor.updateGUI();
+
+        this.editor.loadAnimation( animation );
+    }
+
     async storeAnimation() {
 
         const innerStore = (async function() {
@@ -324,7 +361,4 @@ class App {
     }
 }
 
-const app = new App();
-app.init();
-
-export { app };
+export { App };

@@ -350,6 +350,63 @@ class Editor {
         return landmarks;
     }
 
+    loadAnimation( animation ) {
+
+        // Canvas UI buttons
+        this.createSceneUI();
+
+        const innerOnLoad = result => {
+
+            UTILS.loadGLTF("models/t_pose.glb", gltf => {
+           
+                let auxModel = gltf.scene;
+                auxModel.visible = true; // change to false
+                
+                this.retargeting.loadAnimation(auxModel, result.clip);
+                
+                // Load the target model (Eva) 
+                UTILS.loadGLTF("models/Eva_Y.glb", (gltf) => {
+                    
+                    let model = gltf.scene;
+                    model.visible = true;
+                    model.castShadow = true;
+                    
+                    // correct model
+                    model.position.set(0,0.85,0);
+                    model.rotateOnAxis(new THREE.Vector3(1,0,0), -Math.PI/2);
+                    
+                    this.animationClip = this.retargeting.createAnimation(model);
+                    this.mixer = new THREE.AnimationMixer(model);
+                    this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
+                    
+                    // guizmo stuff
+                    updateThreeJSSkeleton(this.retargeting.tgtBindPose);
+                    this.skeletonHelper = this.retargeting.tgtSkeletonHelper;
+                    this.skeletonHelper.name = "SkeletonHelper";
+                    this.skeletonHelper.skeleton = this.skeleton = createSkeleton();
+
+                    this.scene.add( model );
+                    this.scene.add( this.skeletonHelper );
+
+                    this.gui.loadClip(this.animationClip);
+                    this.gizmo.begin(this.skeletonHelper);
+                    this.setBoneSize(0.2);
+                    this.animate();
+                    $('#loading').fadeOut();
+                });
+            });
+
+        };
+
+        var reader = new FileReader();
+        reader.onload = (e) => {
+            const text = e.currentTarget.result;
+            const data = this.loader.parse( text );
+            innerOnLoad(data);
+        };
+        reader.readAsText(animation);
+    }
+
     createSceneUI() {
 
         $(this.orientationHelper.domElement).show();
@@ -532,6 +589,9 @@ class Editor {
     
     cleanTracks(excludeList) {
 
+        if(!this.animationClip)
+        return;
+
         for( let i = 0; i < this.animationClip.tracks.length; ++i ) {
 
             const track = this.animationClip.tracks[i];
@@ -549,6 +609,10 @@ class Editor {
     }
 
     optimizeTracks() {
+
+        if(!this.animationClip)
+        return;
+
         for( let i = 0; i < this.animationClip.tracks.length; ++i ) {
             const track = this.animationClip.tracks[i];
             track.optimize( this.optimizeThreshold );
