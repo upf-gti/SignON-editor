@@ -72,6 +72,16 @@
 
 	import { App } from "./src/app.js";
 
+	const dialog = $("#init-dialog")[0];
+	dialog.ondragover = () => {return false};
+	dialog.ondragend = () => {return false};
+	dialog.ondrop = (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		$(dialog).dialog("close");
+		createApp({mode: 'bvh', animation: e.dataTransfer.files[0]});
+	};
+
 	const createApp = (settings) => {
 		const app = new App();
 		app.init(settings);
@@ -85,9 +95,8 @@
 
 		input.onchange = (e) => {
 			$(this).dialog("close");
-
-			const file = e.currentTarget.files[0];
-			createApp({mode: 'bvh', animation: file});
+			createApp({mode: 'bvh', animation: e.currentTarget.files[0]});
+			console.log(e.currentTarget.files[0]);
 		}
 	}
 
@@ -105,19 +114,15 @@
 
 		$("#loading").fadeOut();
 
-		$("#init-dialog").dialog({
-			dialogClass: "no-close",
-			resizable: false,
-			draggable: false,
-			height: "auto",
-			width: 500,
-			modal: true,
+		$(dialog).dialog({
+			dialogClass: "no-close", resizable: false, draggable: false, height: "auto", width: 500, modal: true,
 			buttons: {
 				"Load animation": onloadanimation,
 				"Load video": onloadvideo,
 				"Capture": oncapture
 			}
 		});
+		
 	} );
 
 </script>

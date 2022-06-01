@@ -299,7 +299,7 @@ class App {
     
         this.onBeginEdition();
 
-        const name = animation.filename;
+        const name = animation.name;
         this.editor.clipName = name;
         this.editor.updateGUI();
 
