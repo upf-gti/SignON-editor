@@ -774,7 +774,7 @@ Timeline.prototype.processMouse = function (e) {
 				this.boxSelectionStart = [local_x,local_y - 20];
 			}else if(e.ctrlKey && track) {
 				const keyFrameIndex = this.getCurrentKeyFrame( track, this.xToTime( local_x ), this._pixels_to_seconds * 5 );
-				if( keyFrameIndex ) {
+				if( keyFrameIndex != undefined ) {
 					this.processCurrentKeyFrame( e, keyFrameIndex, track, null, true ); // Settings this as multiple so time is not being set
 					this._movingKeys = true;
 

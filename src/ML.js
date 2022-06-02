@@ -57,6 +57,9 @@ class NN {
         this.landmarksNN    = this.landmarksNN.slice(firstNonNull, lastNonNull + 1);
         this.nnDeltas       = this.nnDeltas.slice(firstNonNull, lastNonNull + 1);
 
+        // First frame begins in 0
+        this.nnDeltas[0] = 0;
+
         if(onLoad) 
             onLoad( timeOffset )
     }
