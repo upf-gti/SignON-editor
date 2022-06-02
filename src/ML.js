@@ -11,6 +11,8 @@ class NN {
 
     loadLandmarks(landmarks, onLoad) {
 
+        this.nnDeltas = [];
+
         // Prepare landmarks for the NN (PLM + RLM + LLM)
         let firstNonNull = null;
         let lastNonNull = null;
@@ -18,12 +20,13 @@ class NN {
 
         this.landmarksNN = landmarks.map((v, idx) => {
 
+            const dt = v.dt * 0.001;
+
             if (v.PLM !== undefined && v.RLM !== undefined && v.LLM !== undefined) {
                 lastNonNull = idx;
                 if (!firstNonNull) 
                     firstNonNull = idx;
             } else {
-                const dt = v.dt * 0.001;
                 if (!firstNonNull) {
                     // Add delta to start time
                     timeOffset[0] += dt;
@@ -43,16 +46,23 @@ class NN {
             let vec1 = v.PLM.concat(v.RLM, v.LLM);
             let vec2 = vec1.map((x) => {return Object.values(x).slice(0, -1);}); // remove visibility
             
+            this.nnDeltas.push( dt );
+
             return vec2.flat(1);
         });
 
         if (!firstNonNull || !lastNonNull) 
             throw('Missing landmarks error');
 
-        this.landmarksNN = this.landmarksNN.slice(firstNonNull, lastNonNull + 1);
+        this.landmarksNN    = this.landmarksNN.slice(firstNonNull, lastNonNull + 1);
+        this.nnDeltas       = this.nnDeltas.slice(firstNonNull, lastNonNull + 1);
 
         if(onLoad) 
             onLoad( timeOffset )
+    }
+
+    getFrameDelta(idx) {
+        return this.nnDeltas[ idx ];
     }
 
     getQuaternions() {

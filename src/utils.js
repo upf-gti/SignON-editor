@@ -8,6 +8,11 @@ const UTILS = {
 	getTime() {
 		return new Date().getTime();
 	},
+
+	getExtension(filename) {
+		const tkns = filename.split('.');
+		return tkns[ tkns.length - 1 ];
+	},
 	
 	firstToUpperCase(string) {
 		return string.charAt(0).toUpperCase() + string.slice(1);

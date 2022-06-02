@@ -71,6 +71,12 @@
 <script type="module">
 
 	import { App } from "./src/app.js";
+	import { UTILS } from "./src/utils.js";
+
+	const createApp = (settings) => {
+		const app = new App();
+		app.init(settings);
+	}
 
 	const dialog = $("#init-dialog")[0];
 	dialog.ondragover = () => {return false};
@@ -79,15 +85,13 @@
 		e.preventDefault();
 		e.stopPropagation();
 		$(dialog).dialog("close");
-		createApp({mode: 'bvh', animation: e.dataTransfer.files[0]});
+
+		const file = e.dataTransfer.files[0];
+		const extension = UTILS.getExtension(file.name);
+		createApp({mode: extension === 'bvh' ? 'bvh' : 'video', data: file});
 	};
 
-	const createApp = (settings) => {
-		const app = new App();
-		app.init(settings);
-	}
-
-	const onloadanimation = function() {
+	const onloadfile = function() {
 
 		const input = document.createElement('input');
 		input.type = 'file';
@@ -95,18 +99,10 @@
 
 		input.onchange = (e) => {
 			$(this).dialog("close");
-			createApp({mode: 'bvh', animation: e.currentTarget.files[0]});
+			const file = e.currentTarget.files[0];
+			const extension = UTILS.getExtension(file.name);
+			createApp({mode: extension === 'bvh' ? 'bvh' : 'video', data: file});
 		}
-	}
-
-	const onloadvideo = function() {
-		// $(this).dialog("close");
-		console.warn("Not supported");
-	}
-
-	const oncapture = function() {
-		$(this).dialog("close");
-		createApp();
 	}
 
 	$( function() {
@@ -116,9 +112,12 @@
 		$(dialog).dialog({
 			dialogClass: "no-close", resizable: false, draggable: false, height: "auto", width: 500, modal: true,
 			buttons: {
-				"Load animation": onloadanimation,
-				"Load video": onloadvideo,
-				"Capture": oncapture
+				"Load animation": onloadfile,
+				"Load video": onloadfile,
+				"Capture": function() {
+					$(this).dialog("close");
+					createApp();
+				}
 			}
 		});
 		

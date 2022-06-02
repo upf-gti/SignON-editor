@@ -12,11 +12,12 @@ const MediaPipe = {
     previousTime: 0,
     landmarks: [],
 
-    async start( onload ) {
+    async start( live, onload ) {
 
         UTILS.makeLoading("Loading MediaPipe...");
 
         this.landmarks = [];
+        this.onload = onload;
 
         // Webcam and MediaPipe Set-up
         const videoElement = document.getElementById("inputVideo");
@@ -83,20 +84,37 @@ const MediaPipe = {
 
         }).bind(this));
 
-        const webcamera = new Camera(videoElement, {
-            onFrame: async () => {
-                await holistic.send({image: videoElement});
+        if(live) {
+            const webcamera = new Camera(videoElement, {
+                onFrame: async () => {
+                    await holistic.send({image: videoElement});
+    
+                    if(!this.loaded) {
+                        this.loaded = true;
+                        if(this.onload) this.onload();
+                    }
+                },
+                width: 1280,
+                height: 720
+            });
+    
+            webcamera.start();
+        } else {
+            videoElement.play();
+            videoElement.controls = true;
+            videoElement.loop = true;
+            videoElement.requestVideoFrameCallback( this.sendVideo.bind(this, holistic, videoElement) );  
+        }
+    },
 
-                if(!this.loaded) {
-                    this.loaded = true;
-                    if(onload) onload();
-                }
-            },
-            width: 1280,
-            height: 720
-        });
+    async sendVideo(holistic, videoElement){
+        await holistic.send({image: videoElement});
+        videoElement.requestVideoFrameCallback(this.sendVideo.bind(this, holistic, videoElement));
 
-        webcamera.start();
+        if(!this.loaded) {
+            this.loaded = true;
+            if(this.onload) this.onload();
+        }
     },
 
     // camera.stop() does not exist, therefore solved using jQuery, we can replace the methods with appropriate JavaScript methods
@@ -107,6 +125,8 @@ const MediaPipe = {
 
         // reset feed source 
         $feed.pause();
+        if(!$feed.srcObject)
+            $feed.srcObject = $feed.captureStream();
         $feed.srcObject.getTracks().forEach(a => a.stop());
         $feed.srcObject = null;
     },

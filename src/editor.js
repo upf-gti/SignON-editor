@@ -275,7 +275,7 @@ class Editor {
                 auxModel.visible = true; // change to false
                 
                 // Convert landmarks into an animation
-                let auxAnimation = createAnimationFromRotations(this.clipName, this.nn.getQuaternions());
+                let auxAnimation = createAnimationFromRotations(this.clipName, this.nn);
                 this.retargeting.loadAnimation(auxModel, auxAnimation);
                 
                 // Load the target model (Eva) 
