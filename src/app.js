@@ -44,7 +44,7 @@ class App {
                 break;
         }
 
-        window.addEventListener("resize", this.onResize);
+        window.addEventListener("resize", this.onResize.bind(this));
     }
 
     isRecording() {
@@ -411,7 +411,7 @@ class App {
         const timelineCanvas = document.getElementById("timelineCanvas");
         timelineCanvas.width = CANVAS_WIDTH;
 
-        app.editor.resize(CANVAS_WIDTH, CANVAS_HEIGHT);
+        this.editor.resize(CANVAS_WIDTH, CANVAS_HEIGHT);
     }
 }
 
