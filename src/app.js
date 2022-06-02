@@ -223,6 +223,9 @@ class App {
         stateBtn.style.display = "block";
         let stopBtn = document.getElementById("stop_btn");
         stopBtn.style.display = "block";
+
+        let timelineDiv = document.getElementById("timeline");
+        timelineDiv.classList.remove("hidden");
     }
 
     onRecordLandmarks(startTime, endTime) {
@@ -238,9 +241,6 @@ class App {
         videoRec.classList.remove("hidden");
         videoRec.style.width = "100%";
         videoRec.style.height = "100%";
-
-        let timelineDiv = document.getElementById("timeline");
-        timelineDiv.classList.remove("hidden");
     
         // Solve the aspect ratio problem of the video
         let videoCanvas = document.getElementById("outputVideo");
