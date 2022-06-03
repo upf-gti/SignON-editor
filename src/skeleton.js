@@ -502,10 +502,10 @@ function createAnimation(name, landmarks) {
     for (const lm_data in lmInfoArray) {
 
         const pos_values = [];
-        const quat_values = [];
+        const quatValues = [];
 
         const times = [];
-        var time_accum = 0.0;
+        var timeAccum = 0.0;
 
         var lm_info = LM_INFO[lmInfoArray[lm_data]];
 
@@ -529,10 +529,10 @@ function createAnimation(name, landmarks) {
 
                 previous_quats[lm_info.idx].push(quat);
 
-                quat_values.push(quat.x);
-                quat_values.push(quat.y);
-                quat_values.push(quat.z);
-                quat_values.push(quat.w);
+                quatValues.push(quat.x);
+                quatValues.push(quat.y);
+                quatValues.push(quat.z);
+                quatValues.push(quat.w);
                 /*let obj = new THREE.Object3D();
                 obj.position = new THREE.Vector3(landmarks[i].PLM[lm_info.idx].x, landmarks[i].PLM[lm_info.idx].y, landmarks[i].PLM[lm_info.idx].z);
                 pos_values.push(landmarks[i].PLM[lm_info.idx].x);
@@ -540,10 +540,10 @@ function createAnimation(name, landmarks) {
                 pos_values.push(landmarks[i].PLM[lm_info.idx].z);
                 var quat = obj.quaternion;
                 previous_quats[lm_info.idx].push(quat);
-                quat_values.push(quat.x);
-                quat_values.push(quat.y);
-                quat_values.push(quat.z);
-                quat_values.push(quat.w);*/
+                quatValues.push(quat.x);
+                quatValues.push(quat.y);
+                quatValues.push(quat.z);
+                quatValues.push(quat.w);*/
 
             } else {
 
@@ -576,15 +576,15 @@ function createAnimation(name, landmarks) {
 
                     previous_quats[lm_info.idx].push(quat_info.rotation);
 
-                    quat_values.push(quat_info.rotation_diff.x);
-                    quat_values.push(quat_info.rotation_diff.y);
-                    quat_values.push(quat_info.rotation_diff.z);
-                    quat_values.push(quat_info.rotation_diff.w);
+                    quatValues.push(quat_info.rotation_diff.x);
+                    quatValues.push(quat_info.rotation_diff.y);
+                    quatValues.push(quat_info.rotation_diff.z);
+                    quatValues.push(quat_info.rotation_diff.w);
                 //}
             }
 
-            time_accum += landmarks[i].dt / 1000.0;
-            times.push(time_accum);
+            timeAccum += landmarks[i].dt / 1000.0;
+            times.push(timeAccum);
         }
 
         if (times.length > 0) {
@@ -594,8 +594,8 @@ function createAnimation(name, landmarks) {
                 tracks.push(positions);
             }
 
-            if (quat_values.length > 0) {
-                const rotations = new THREE.QuaternionKeyframeTrack( lm_info.name + '.quaternion', times, quat_values);
+            if (quatValues.length > 0) {
+                const rotations = new THREE.QuaternionKeyframeTrack( lm_info.name + '.quaternion', times, quatValues);
                 tracks.push(rotations);
             }
         }
@@ -608,52 +608,55 @@ function createAnimation(name, landmarks) {
     return new THREE.AnimationClip(name || "sign_anim", length, tracks);
 }
 
-function createAnimationFromRotations(name, quaternions_data) {
+function createAnimationFromRotations(name, nn) {
 
-    var names = quaternions_data[quaternions_data.length - 1];
+    var quatData = nn.getQuaternions();
+    var names = quatData[quatData.length - 1];
     if(typeof(names[0]) != "string")
         names = ["mixamorigHips.position","mixamorigHips.quaternion","mixamorigSpine.quaternion","mixamorigSpine1.quaternion","mixamorigSpine2.quaternion","mixamorigNeck.quaternion","mixamorigHead.quaternion","mixamorigLeftShoulder.quaternion","mixamorigLeftArm.quaternion","mixamorigLeftForeArm.quaternion","mixamorigLeftHand.quaternion","mixamorigLeftHandThumb1.quaternion","mixamorigLeftHandThumb2.quaternion","mixamorigLeftHandThumb3.quaternion","mixamorigLeftHandIndex1.quaternion","mixamorigLeftHandIndex2.quaternion","mixamorigLeftHandIndex3.quaternion","mixamorigLeftHandMiddle1.quaternion","mixamorigLeftHandMiddle2.quaternion","mixamorigLeftHandMiddle3.quaternion","mixamorigLeftHandRing1.quaternion","mixamorigLeftHandRing2.quaternion","mixamorigLeftHandRing3.quaternion","mixamorigLeftHandPinky1.quaternion","mixamorigLeftHandPinky2.quaternion","mixamorigLeftHandPinky3.quaternion","mixamorigRightShoulder.quaternion","mixamorigRightArm.quaternion","mixamorigRightForeArm.quaternion","mixamorigRightHand.quaternion","mixamorigRightHandThumb1.quaternion","mixamorigRightHandThumb2.quaternion","mixamorigRightHandThumb3.quaternion","mixamorigRightHandIndex1.quaternion","mixamorigRightHandIndex2.quaternion","mixamorigRightHandIndex3.quaternion","mixamorigRightHandMiddle1.quaternion","mixamorigRightHandMiddle2.quaternion","mixamorigRightHandMiddle3.quaternion","mixamorigRightHandRing1.quaternion","mixamorigRightHandRing2.quaternion","mixamorigRightHandRing3.quaternion","mixamorigRightHandPinky1.quaternion","mixamorigRightHandPinky2.quaternion","mixamorigRightHandPinky3.quaternion","mixamorigLeftUpLeg.quaternion","mixamorigLeftLeg.quaternion","mixamorigLeftFoot.quaternion","mixamorigLeftToeBase.quaternion","mixamorigRightUpLeg.quaternion","mixamorigRightLeg.quaternion","mixamorigRightFoot.quaternion","mixamorigRightToeBase.quaternion"];
     //names = retargetNames(names);
-    var bones_length = quaternions_data[0].length;
+    var numBones = quatData[0].length;
 
     var tracks = [];
-    var quat_values = [];
+    var quatValues = [];
     var times = [];
-    var time_accum = 0.0;
+    var timeAccum = 0.0;
 
-    var quaternion_idx = 0;
+    var quatIdx = 0;
     var amount = 4;
     var isPosition = false;
 
-    while(quaternion_idx < bones_length){
-        quat_values = [];
+    while(quatIdx < numBones) {
+        
+        quatValues = [];
         times = [];
-        time_accum = 0.0;
-        isPosition = names[Math.ceil(quaternion_idx/amount)].includes("position");
+        timeAccum = 0.0;
+        isPosition = names[Math.ceil(quatIdx/amount)].includes("position");
 
         // loop for all frames
-        for (var frame_idx = 0; frame_idx < quaternions_data.length; ++frame_idx) {
-            quat_values.push(quaternions_data[frame_idx][quaternion_idx + 0]);
-            quat_values.push(quaternions_data[frame_idx][quaternion_idx + 1]);
-            quat_values.push(quaternions_data[frame_idx][quaternion_idx + 2]);
+        for (var frameIdx = 0; frameIdx < quatData.length; ++frameIdx) {
+            quatValues.push(quatData[frameIdx][quatIdx + 0]);
+            quatValues.push(quatData[frameIdx][quatIdx + 1]);
+            quatValues.push(quatData[frameIdx][quatIdx + 2]);
             if(!isPosition)
-                quat_values.push(quaternions_data[frame_idx][quaternion_idx + 3]);
+                quatValues.push(quatData[frameIdx][quatIdx + 3]);
 
-            time_accum += 0.032;//landmarks[i].dt / 1000.0;
-            times.push(time_accum);
+            timeAccum += nn.getFrameDelta( frameIdx );
+            times.push(timeAccum);
         }
 
         var data = null;
         if(isPosition) {
-            data = new THREE.VectorKeyframeTrack(names[Math.ceil(quaternion_idx / amount)], times, quat_values);
+            data = new THREE.VectorKeyframeTrack(names[Math.ceil(quatIdx / amount)], times, quatValues);
             amount = 3;
-            quaternion_idx += amount;
+            quatIdx += amount;
         }
         else {
-            data = new THREE.QuaternionKeyframeTrack( names[Math.ceil(quaternion_idx / amount)], times, quat_values);
+            data = new THREE.QuaternionKeyframeTrack( names[Math.ceil(quatIdx / amount)], times, quatValues);
             amount = 4;
-            quaternion_idx += amount;
+            quatIdx += amount;
         }
+
         tracks.push(data);
     }
 

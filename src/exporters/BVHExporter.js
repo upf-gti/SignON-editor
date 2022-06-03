@@ -1,4 +1,4 @@
-import * as THREE from "./libs/three.module.js";
+import * as THREE from "../libs/three.module.js";
 
 const DOWNLOAD      = 0;
 const LOCAL_STORAGE = 1;
@@ -169,6 +169,75 @@ const BVHExporter = {
                 break;
         }
 
+        this.skeletonHelper = null;
+    },
+
+    exportCustom: function(mixer, skeletonHelper, clip, mode) {
+
+        var bvh = "";
+
+        this.skeletonHelper = skeletonHelper;
+
+        bvh += "HIERARCHY\n";
+
+        if (skeletonHelper.bones[0] == undefined) {
+            console.error("Can not export skeleton with no bones");
+            return;
+        }
+
+        bvh += this.exportBone(skeletonHelper.skeleton.bones[0], 0);
+        
+        bvh += "MOTION\n";
+
+        const interpolants = mixer._actions[0]._interpolants;
+
+        const getBoneFrameData = (bone) => {
+
+            var data = "";
+
+            // End site
+            if(!bone.children.length)
+            return data;
+
+            const tracks = clip.tracks.filter( t => t.name.split(".")[0] === bone.name );
+
+            if(tracks.length) {
+                data += "\n" + bone.name;
+            }
+
+            for(var i = 0; i < tracks.length; ++i) {
+
+                const t = tracks[i];
+                const type = t.name.split(".")[1];
+                data += "\n" + type + " @";
+
+                for( let j = 0; j < t.times.length; ++j ) {
+                    
+                    data += t.times[j] + " ";
+
+                    switch(type) {
+                        case 'position':
+                            const pos = new THREE.Vector3();
+                            pos.fromArray(t.values.slice(j * 3, j * 3 + 3));
+                            data += this.posToString(pos);
+                            break;
+                        case 'quaternion':
+                            const q = new THREE.Quaternion();
+                            q.fromArray(t.values.slice(j * 4, j * 4 + 4));
+                            data += this.quatToEulerString(q);
+                    }
+                }
+
+            }
+
+            for (const b of bone.children)
+                data += getBoneFrameData(b);
+
+            return data;
+        }
+
+        bvh += getBoneFrameData(skeletonHelper.skeleton.bones[0]);
+        this.download(bvh, 'test.sga', 'text/plain');
         this.skeletonHelper = null;
     },
 

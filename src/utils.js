@@ -8,6 +8,11 @@ const UTILS = {
 	getTime() {
 		return new Date().getTime();
 	},
+
+	getExtension(filename) {
+		const tkns = filename.split('.');
+		return tkns[ tkns.length - 1 ];
+	},
 	
 	firstToUpperCase(string) {
 		return string.charAt(0).toUpperCase() + string.slice(1);
@@ -49,7 +54,7 @@ const UTILS = {
 
 	loadGLTF(animationFile, onLoaded) {
         
-        $('#loading').fadeIn();
+        this.makeLoading("Loading GLTF [" + animationFile +"]...", 0.75)
         const gltfLoader = new MiniGLTFLoader();
 
         if(typeof(Worker) !== 'undefined') {
@@ -63,7 +68,14 @@ const UTILS = {
             // call regular load function
             gltfLoader.load( animationFile, onLoaded );
         }
-    }
+    },
+
+	makeLoading( string, opacity = 1 ) {
+
+		$("#loading p").text( string );
+		$("#loading").css({ background: "rgba(17,17,17," + opacity + ")" })
+		$("#loading").fadeIn();
+	}
 };
 
 const ShaderChunk = {
