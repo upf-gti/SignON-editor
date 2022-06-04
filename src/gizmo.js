@@ -276,7 +276,9 @@ class Gizmo {
     updateTracks() {
 
         let timeline = this.editor.gui.timeline;
-        if(timeline.onUpdateTracks( this.editor.getGizmoMode() ))
+        let keyType = Gizmo.ModeToKeyType[ this.editor.getGizmoMode() ];
+
+        if(timeline.onUpdateTracks( keyType ))
         return; // Return if event handled
 
         if(!timeline.getNumKeyFramesSelected())
@@ -286,7 +288,7 @@ class Gizmo {
         let track = timeline.getTrack(timeline._lastKeyFramesSelected[0]);
 
         // Don't store info if we are using wrong mode for that track
-        if(Gizmo.ModeToKeyType[ this.editor.getGizmoMode() ] != track.type)
+        if(keyType != track.type)
         return;
 
         let bone = this.skeletonHelper.getBoneByName(name);

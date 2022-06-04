@@ -1,4 +1,5 @@
 import * as THREE from "./three.module.js";
+import { CompareThreshold } from "../utils.js"
 
 // Overwrite/add methods
 
@@ -12,10 +13,6 @@ THREE.SkeletonHelper.prototype.getBoneByName = function( name ) {
     }
     return undefined;
 }
-
-// Track optimization
-const CompareEqual = (v, p, n) => { return v !== p || v !== n };
-const CompareThreshold = (v, p, n, t) => { return Math.abs(v - p) >= t || Math.abs(v - n) >= t };
 
 THREE.KeyframeTrack.prototype.optimize = function( threshold = 0.0025 ) {
 	// times or values may be shared with other tracks, so overwriting is unsafe

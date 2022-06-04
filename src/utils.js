@@ -4,6 +4,9 @@ import { MiniGLTFLoader } from "./loaders/GLTFLoader.js";
 	Some utils
 */
 
+const CompareEqual = (v, p, n) => { return v !== p || v !== n };
+const CompareThreshold = (v, p, n, t) => { return Math.abs(v - p) >= t || Math.abs(v - n) >= t };
+
 const UTILS = {
 	getTime() {
 		return new Date().getTime();
@@ -125,4 +128,4 @@ const ShaderChunk = {
 
 };
 
-export { UTILS, ShaderChunk }
+export { UTILS, ShaderChunk, CompareThreshold }

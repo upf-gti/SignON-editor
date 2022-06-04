@@ -251,7 +251,7 @@ class Gui {
             widgets.addSeparator();
             widgets.addSlider("Optimize Threshold", this.editor.optimizeThreshold, { callback: v => {
                 this.editor.optimizeThreshold = v;
-            }, min: 0, max: 0.1, step: 0.001, precision: 4});
+            }, min: 0, max: 0.25, step: 0.001, precision: 4});
             widgets.widgets_per_row = 1;
 
             const bone_selected = !(o.firstBone && numBones) ? 
