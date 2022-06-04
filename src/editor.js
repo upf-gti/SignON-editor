@@ -365,6 +365,8 @@ class Editor {
 
         const innerOnLoad = result => {
 
+            result.clip.name = UTILS.removeExtension(this.clipName);
+
             // Load the target model (Eva) 
             UTILS.loadGLTF("models/Eva_Y.glb", (gltf) => {
                 
@@ -581,10 +583,12 @@ class Editor {
         if(!mixer._actions.length || mixer._actions[0]._clip != this.animationClip) 
             return;
 
+        const track = this.animationClip.tracks[idx];
+
         // Update times
-        mixer._actions[0]._interpolants[idx].parameterPositions = this.animationClip.tracks[idx].times;
+        mixer._actions[0]._interpolants[idx].parameterPositions = track.times;
         // Update values
-        mixer._actions[0]._interpolants[idx].sampleValues = this.animationClip.tracks[idx].values;
+        mixer._actions[0]._interpolants[idx].sampleValues = track.values;
     }
     
     cleanTracks(excludeList) {

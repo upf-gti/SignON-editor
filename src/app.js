@@ -106,8 +106,6 @@ class App {
 
         const name = animation.name;
         this.editor.clipName = name;
-        this.editor.updateGUI();
-
         this.editor.loadAnimation( animation );
     }
 
@@ -145,13 +143,6 @@ class App {
         MediaPipe.start( false, () => {
             $('#loading').fadeOut();
         } );
-
-        // // Start MP as local mode, not live stream
-        // videoElement.addEventListener('loadeddata', function() {
-        //     // MediaPipe.start( false, () => {
-        //     //     $('#loading').fadeOut();
-        //     // } );
-        //  }, false);
     }
 
     onRecordLandmarks(startTime, endTime) {

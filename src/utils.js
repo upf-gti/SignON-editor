@@ -12,9 +12,12 @@ const UTILS = {
 		return new Date().getTime();
 	},
 
-	getExtension(filename) {
-		const tkns = filename.split('.');
-		return tkns[ tkns.length - 1 ];
+	getExtension(s) {
+		return s.substr(s.lastIndexOf(".") + 1);
+	},
+
+	removeExtension(s) {
+		return s.substr(0, s.lastIndexOf("."));
 	},
 	
 	firstToUpperCase(string) {
