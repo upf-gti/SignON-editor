@@ -20,8 +20,16 @@
 <body>
 
 	<div id="init-dialog" title="SignON Editor">
-		<p style="width: 50%; float: left;">End-to-end system able to generate animations of the signing avatar from user input.</p>
-		<img src="data/imgs/logo_SignON.png" style="width: 50%; float: right;">
+		<img src="data/imgs/signOn_title.png" id="titleImg">
+		<p style="width: 50%; float: left; font-weight: bolder; font-family: 'Roboto';">
+			End-to-end system able to generate animations of the signing avatar from user input.
+		</p>
+		
+		<img src="data/imgs/logo_SignON.png" id="logoImg">
+		<div style="font-weight: bolder; font-family: 'Roboto'; position: absolute;
+		margin-top: 18em; opacity: 0.8;">
+			<img src="data/imgs/upf.png" style="width: 45px;">
+		</div>
 	</div>
 
 	<!-- Modals -->
@@ -110,7 +118,7 @@
 		$("#loading").fadeOut();
 
 		$(dialog).dialog({
-			dialogClass: "no-close", resizable: false, draggable: false, height: "auto", width: 500, modal: true,
+			dialogClass: "no-close", resizable: false, draggable: false, height: "auto", width: 750, modal: true,
 			buttons: {
 				"Load animation": onloadfile,
 				"Load video": onloadfile,
