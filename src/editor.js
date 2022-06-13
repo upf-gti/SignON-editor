@@ -372,7 +372,14 @@ class Editor {
                 
                 let model = gltf.scene;
                 model.visible = true;
-                model.castShadow = true;
+
+                model.traverse( o => {
+                    if (o.isMesh || o.isSkinnedMesh) {
+                        o.castShadow = true;
+                        o.receiveShadow = true;
+                        o.frustumCulled = false;
+                    }
+                } );
                 
                 // correct model
                 model.position.set(0,0.85,0);
