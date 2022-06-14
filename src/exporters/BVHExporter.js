@@ -47,7 +47,7 @@ const BVHExporter = {
             exportPos = true;
         } else 
         if (isEndSite) {
-            bvh += "End Site" + "\n";
+            bvh += "ENDSITE " + bone.name + "\n";
         } else {
             bvh += "JOINT " + bone.name + "\n";
         }

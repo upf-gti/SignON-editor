@@ -549,17 +549,17 @@ class AnimationRetargeting {
             }
         } );
         
-        // get bones in bind pose
+        // Get bones in bind pose
         this.tgtBindPose = this.getBindPose(this.tgtBindPose);
         this.tgtSkeletonHelper = new THREE.SkeletonHelper(model);
         this.tgtSkeletonHelper.visible = true;
 
-        // apply source bind pose to intermediate skeleton
+        // Apply source bind pose to intermediate skeleton
         this.updateSkeleton(this.srcBindPose);
-        // map bone names between source (Kate) and target (Eva)
+        // Map bone names between source (Kate) and target (Eva)
         this.automap(this.tgtSkeletonHelper.bones);
 
-        // apply retargeting to the first frame
+        // Apply retargeting to the first frame
         let animTracks = {};
         let times = this.srcMixer._actions[0]._clip.tracks[0].times;
         for (let i = 0; i < times.length; i++) {
@@ -581,7 +581,12 @@ class AnimationRetargeting {
             }
         }
 
-        // use -1 to automatically calculate the length from the array of tracks
+        // Position track has to go first
+        const tmp = tracks[0];
+        tracks[0] = tracks[1];
+        tracks[1] = tmp;
+
+        // Use -1 to automatically calculate the length from the array of tracks
         return new THREE.AnimationClip(animationName || this.animName, -1, tracks);
     }
 }

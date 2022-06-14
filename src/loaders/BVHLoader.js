@@ -221,17 +221,8 @@ class BVHLoader extends Loader {
 
 			let tokens = firstline.split( /[\s]+/ );
 
-			if ( tokens[ 0 ].toUpperCase() === 'END' && tokens[ 1 ].toUpperCase() === 'SITE' ) {
-
-				node.type = 'ENDSITE';
-				node.name = 'ENDSITE'; // bvh end sites have no name
-
-			} else {
-
-				node.name = tokens[ 1 ];
-				node.type = tokens[ 0 ].toUpperCase();
-
-			}
+			node.type = tokens[ 0 ].toUpperCase();
+			node.name = tokens[ 1 ];
 
 			if ( nextLine( lines ) !== '{' ) {
 
