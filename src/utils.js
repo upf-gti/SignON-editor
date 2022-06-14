@@ -4,9 +4,20 @@ import { MiniGLTFLoader } from "./loaders/GLTFLoader.js";
 	Some utils
 */
 
+const CompareEqual = (v, p, n) => { return v !== p || v !== n };
+const CompareThreshold = (v, p, n, t) => { return Math.abs(v - p) >= t || Math.abs(v - n) >= t };
+
 const UTILS = {
 	getTime() {
 		return new Date().getTime();
+	},
+
+	getExtension(s) {
+		return s.substr(s.lastIndexOf(".") + 1);
+	},
+
+	removeExtension(s) {
+		return s.substr(0, s.lastIndexOf("."));
 	},
 	
 	firstToUpperCase(string) {
@@ -49,7 +60,7 @@ const UTILS = {
 
 	loadGLTF(animationFile, onLoaded) {
         
-        $('#loading').fadeIn();
+        this.makeLoading("Loading GLTF [" + animationFile +"]...", 0.75)
         const gltfLoader = new MiniGLTFLoader();
 
         if(typeof(Worker) !== 'undefined') {
@@ -63,7 +74,14 @@ const UTILS = {
             // call regular load function
             gltfLoader.load( animationFile, onLoaded );
         }
-    }
+    },
+
+	makeLoading( string, opacity = 1 ) {
+
+		$("#loading p").text( string );
+		$("#loading").css({ background: "rgba(17,17,17," + opacity + ")" })
+		$("#loading").fadeIn();
+	}
 };
 
 const ShaderChunk = {
@@ -113,4 +131,4 @@ const ShaderChunk = {
 
 };
 
-export { UTILS, ShaderChunk }
+export { UTILS, ShaderChunk, CompareThreshold }

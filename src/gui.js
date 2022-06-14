@@ -46,6 +46,7 @@ class Gui {
         this.timeline.onBoneUnselected = () => this.editor.gizmo.stop();
         this.timeline.onUpdateTrack = (idx) => this.editor.updateAnimationAction(idx);
         this.timeline.onGetSelectedBone = () => { return this.editor.getSelectedBone(); };
+        this.timeline.onGetOptimizeThreshold = () => { return this.editor.optimizeThreshold; }
 
         this.createSidePanel();
 
@@ -247,6 +248,10 @@ class Gui {
             widgets.addSlider("Speed", this.editor.mixer.timeScale, { callback: v => {
                 this.editor.mixer.timeScale = this.editor.video.playbackRate = v;
             }, min: 0.25, max: 1.5, step: 0.05, precision: 2});
+            widgets.addSeparator();
+            widgets.addSlider("Optimize Threshold", this.editor.optimizeThreshold, { callback: v => {
+                this.editor.optimizeThreshold = v;
+            }, min: 0, max: 0.25, step: 0.001, precision: 4});
             widgets.widgets_per_row = 1;
 
             const bone_selected = !(o.firstBone && numBones) ? 
@@ -273,7 +278,7 @@ class Gui {
 
                 const innerUpdate = (attribute, value) => {
                     bone_selected[attribute].fromArray( value ); 
-                    this.editor.gizmo.updateBones();
+                    this.editor.gizmo.onGUI();
                 };
 
                 widgets.addSection("Bone", { pretitle: makePretitle('circle') });
@@ -311,7 +316,7 @@ class Gui {
 
         for( const p in this.boneProperties ) {
             // @eg: p as position, element.setValue( bone.position.toArray() )
-            this.boneProperties[p].setValue( bone[p].toArray() );
+            this.boneProperties[p].setValue( bone[p].toArray(), true );
         }
     }
 

@@ -29,7 +29,7 @@ class Gizmo {
         transform.addEventListener( 'mouseUp', e => {
             if(this.selectedBone === undefined)
             return;
-            this.updateTracks(true);
+            this.updateTracks();
         } );
 
         transform.addEventListener( 'dragging-changed', e => {
@@ -273,20 +273,22 @@ class Gizmo {
         geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
     }
 
-    updateTracks(force) {
-
-        if(!force)
-        return;
+    updateTracks() {
 
         let timeline = this.editor.gui.timeline;
-        if(!timeline.validUpdate( this.editor.getGizmoMode() ))
+        let keyType = Gizmo.ModeToKeyType[ this.editor.getGizmoMode() ];
+
+        if(timeline.onUpdateTracks( keyType ))
+        return; // Return if event handled
+
+        if(!timeline.getNumKeyFramesSelected())
         return;
 
         let [name, trackIndex, keyFrameIndex] = timeline._lastKeyFramesSelected[0];
         let track = timeline.getTrack(timeline._lastKeyFramesSelected[0]);
 
         // Don't store info if we are using wrong mode for that track
-        if(Gizmo.ModeToKeyType[ this.editor.getGizmoMode() ] != track.type)
+        if(keyType != track.type)
         return;
 
         let bone = this.skeletonHelper.getBoneByName(name);
@@ -352,6 +354,12 @@ class Gizmo {
 
         const depthTestEnabled = this.bonePoints.material.depthTest;
         inspector.addCheckbox( "Depth test", depthTestEnabled, (v) => { this.bonePoints.material.depthTest = v; })
+    }
+
+    onGUI() {
+
+        this.updateBones();
+        this.updateTracks();
     }
     
 };

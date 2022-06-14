@@ -1,18 +1,23 @@
-import { app } from "./app.js";
 import "https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js";
 import "https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js";
 import "https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js";
 import "https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js";
 
+import { UTILS } from "./utils.js"
+
 const MediaPipe = {
 
+    loaded: false,
     currentTime: 0,
     previousTime: 0,
     landmarks: [],
 
-    async start() {
+    async start( live, onload ) {
+
+        UTILS.makeLoading("Loading MediaPipe...");
 
         this.landmarks = [];
+        this.onload = onload;
 
         // Webcam and MediaPipe Set-up
         const videoElement = document.getElementById("inputVideo");
@@ -35,7 +40,7 @@ const MediaPipe = {
 
         holistic.onResults((function(results) {
 
-            if (app.isRecording()) // store MediaPipe data
+            if (window.globals.app.isRecording()) // store MediaPipe data
             {
                 this.currentTime = Date.now();
                 var dt = this.currentTime - this.previousTime;
@@ -79,16 +84,37 @@ const MediaPipe = {
 
         }).bind(this));
 
-        const webcamera = new Camera(videoElement, {
-            onFrame: async () => {
-                await holistic.send({image: videoElement});
-                $('#loading').fadeOut();
-            },
-            width: 1280,
-            height: 720
-        });
+        if(live) {
+            const webcamera = new Camera(videoElement, {
+                onFrame: async () => {
+                    await holistic.send({image: videoElement});
+    
+                    if(!this.loaded) {
+                        this.loaded = true;
+                        if(this.onload) this.onload();
+                    }
+                },
+                width: 1280,
+                height: 720
+            });
+    
+            webcamera.start();
+        } else {
+            videoElement.play();
+            videoElement.controls = true;
+            videoElement.loop = true;
+            videoElement.requestVideoFrameCallback( this.sendVideo.bind(this, holistic, videoElement) );  
+        }
+    },
 
-        webcamera.start();
+    async sendVideo(holistic, videoElement){
+        await holistic.send({image: videoElement});
+        videoElement.requestVideoFrameCallback(this.sendVideo.bind(this, holistic, videoElement));
+
+        if(!this.loaded) {
+            this.loaded = true;
+            if(this.onload) this.onload();
+        }
     },
 
     // camera.stop() does not exist, therefore solved using jQuery, we can replace the methods with appropriate JavaScript methods
@@ -99,6 +125,8 @@ const MediaPipe = {
 
         // reset feed source 
         $feed.pause();
+        if(!$feed.srcObject)
+            $feed.srcObject = $feed.captureStream();
         $feed.srcObject.getTracks().forEach(a => a.stop());
         $feed.srcObject = null;
     },

@@ -353,12 +353,13 @@ class BVHLoader extends Loader {
 			for ( let i = 0; i < bones.length; i ++ ) {
 
 				const bone = bones[ i ];
-
+				
 				if ( bone.type === 'ENDSITE' )
-					continue;
-
+				continue;
+				
 				// track data
-
+				
+				const isRoot = bone.type === 'ROOT';
 				const times = [];
 				const positions = [];
 				const rotations = [];
@@ -383,15 +384,15 @@ class BVHLoader extends Loader {
 
 				}
 
-				if ( scope.animateBonePositions ) {
+				if ( isRoot && scope.animateBonePositions ) {
 
-					tracks.push( new VectorKeyframeTrack( '.bones[' + bone.name + '].position', times, positions ) );
+					tracks.push( new VectorKeyframeTrack( bone.name + '.position', times, positions ) );
 
 				}
 
 				if ( scope.animateBoneRotations ) {
 
-					tracks.push( new QuaternionKeyframeTrack( '.bones[' + bone.name + '].quaternion', times, rotations ) );
+					tracks.push( new QuaternionKeyframeTrack( bone.name + '.quaternion', times, rotations ) );
 
 				}
 

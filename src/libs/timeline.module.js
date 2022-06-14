@@ -1,4 +1,4 @@
-import { UTILS } from '../utils.js';
+import { UTILS, CompareThreshold } from '../utils.js';
 
 // Agnostic timeline, do nos impose any timeline content
 // It renders to a canvas
@@ -60,27 +60,50 @@ function Timeline( clip, bone_name ) {
 
 	this.autoKeyButtonImg = document.createElement('img');
 	this.autoKeyButtonImg.src = 'data/imgs/mini-icon-auto.png';
+	this.optimizeButtonImg = document.createElement('img');
+	this.optimizeButtonImg.src = 'data/imgs/mini-icon-optimize.png';
+	this.unSelectAllKeyFramesImg = document.createElement('img');
+	this.unSelectAllKeyFramesImg.src = 'data/imgs/close-icon.png';
 
 	// Add button data
+	let offset = 25;
 	this._buttons_drawn.push( [this.autoKeyButtonImg, "autoKeyEnabled", 9, -this.top_margin + 1, 22, 22] );
+	this._buttons_drawn.push( [this.optimizeButtonImg, "optimize", 9 + offset * this._buttons_drawn.length, -this.top_margin + 1, 22, 22, (e) => {
+		this.onShowOptimizeMenu(e);
+	}] );
+	this._buttons_drawn.push( [this.unSelectAllKeyFramesImg, "unselectAll", 9 + offset * this._buttons_drawn.length, -this.top_margin + 1, 22, 22, (e) => {
+		this.unSelectAllKeyFrames();
+	}] );
 }
 
-Timeline.prototype.validUpdate = function (gizmoMode) {
+Timeline.prototype.onUpdateTracks = function ( keyType ) {
 	
-	if(this.selected_bone == null || (!this._lastKeyFramesSelected.length && !this.autoKeyEnabled))
+	if(this.selected_bone == null || this._lastKeyFramesSelected.length || !this.autoKeyEnabled)
 	return;
 
 	let tracks = this.tracksPerBone[this.selected_bone];
 	if(!tracks) return;
 
-	let track = null;
+	// Get current track
+	const selectedTrackIdx = tracks.findIndex( t => t.type === keyType );
+	if(selectedTrackIdx < 0)
+		return;
+	let track = tracks[ selectedTrackIdx ];
+	
+	// Add new keyframe
+	const newIdx = this.addKeyFrame( track );
+	if(newIdx === null) 
+		return;
 
-	if(tracks.length == 1) track = tracks[0];
-	else {
-		track = gizmoMode === 'Rotate' ? tracks[0] : tracks[1];
-	}
+	// Select it
+	this._lastKeyFramesSelected.push( [track.name, track.idx, newIdx] );
+	track.selected[newIdx] = true;
 
-	this.addKeyFrame( track );
+	// Update time
+	if(this.onSetTime)
+		this.onSetTime(this.current_time);
+
+	return true; // Handled
 }
 
 // Creates a map for each bone -> tracks
@@ -120,6 +143,41 @@ Timeline.prototype.getNumTracks = function(bone) {
 	return;
 	const tracks = this.tracksPerBone[bone.name];
 	return tracks ? tracks.length : null;
+}
+
+Timeline.prototype.onShowOptimizeMenu = function(e) {
+	
+	let actions = [{ title: "Optimize", disabled: true }, null];
+
+	if(this.selected_bone == null)
+	return;
+
+	let tracks = this.tracksPerBone[this.selected_bone];
+	if(!tracks) return;
+
+	const threshold = this.onGetOptimizeThreshold ? this.onGetOptimizeThreshold() : 0.025;
+
+	for( let t of tracks ) {
+		actions.push( {
+			title: t.name+"@"+t.type,
+			callback: () => { 
+				this.clip.tracks[t.clip_idx].optimize( threshold );
+				t.edited = [];
+			}
+		} );
+	}
+	
+	const menu = new LiteGUI.ContextMenu( actions, { event: e });
+	for( const el of menu.root.querySelectorAll(".submenu") )
+		el.style.fontSize = "0.9em";
+}
+
+Timeline.prototype.onPreProcessTrack = function( track ) {
+	const name = this.getTrackName(track.name)[0];
+	let trackInfo = this.tracksPerBone[name][track.idx];
+	trackInfo.selected = [];
+	trackInfo.edited = [];
+	trackInfo.hovered = [];
 }
 
 Timeline.prototype.isKeyFrameSelected = function ( track, index ) {
@@ -240,10 +298,17 @@ Timeline.prototype.addKeyFrame = function( track ) {
 	// Update clip information
 	const clip_idx = track.clip_idx;
 
+	// Time slot with other key?
+	const keyInCurrentSlot = this.clip.tracks[clip_idx].times.find( t => { return !CompareThreshold(this.current_time, t, t, 0.001 ); });
+	if( keyInCurrentSlot ) {
+		console.warn("There is already a keyframe stored in time slot ", keyInCurrentSlot)
+		return;
+	}
+
 	this.saveState(clip_idx);
 
 	// Find new index
-	let newIdx = this.clip.tracks[clip_idx].times.findIndex( (t) => { return t > this.current_time; } );
+	let newIdx = this.clip.tracks[clip_idx].times.findIndex( t => t > this.current_time );
 
 	// Add as last index
 	let lastIndex = false;
@@ -301,6 +366,8 @@ Timeline.prototype.addKeyFrame = function( track ) {
 
 	if(this.onSetTime)
 		this.onSetTime(this.current_time);
+
+	return newIdx;
 }
 
 Timeline.prototype._delete = function( track, index ) {
@@ -451,12 +518,7 @@ Timeline.prototype.getTracksInRange = function (minY, maxY, threshold) {
 			tracks.push( t[0] );
 		}
 	}
-/*let trackType = trackInfo.name.split(".");
-		
-		if(trackType.length>1){
-			name = trackType[0];
-			trackInfo.type = trackType[1];
-		}*/
+
 	return tracks;
 }
 
@@ -591,7 +653,6 @@ Timeline.prototype.processMouse = function (e) {
 		return;
 
 	var w = this.size[0];
-	var h = this.size[1];
 
 	// Process mouse
 	var x = e.offsetX;
@@ -668,10 +729,12 @@ Timeline.prototype.processMouse = function (e) {
 			} else {
 				y -= this.top_margin;
 				for( const b of this._buttons_drawn ) {
-					// Set button property
+					b.pressed = false;
 					const bActive = x >= b[2] && x <= (b[2] + b[4]) && y >= b[3] && y <= (b[3] + b[5]);
 					if(bActive) {
-						this[ b[1] ] = !this[ b[1] ];
+						const callback = b[6]; 
+						if(callback) callback(e);
+						else this[ b[1] ] = !this[ b[1] ];
 						break;
 					}
 				}
@@ -713,7 +776,7 @@ Timeline.prototype.processMouse = function (e) {
 				this.boxSelectionStart = [local_x,local_y - 20];
 			}else if(e.ctrlKey && track) {
 				const keyFrameIndex = this.getCurrentKeyFrame( track, this.xToTime( local_x ), this._pixels_to_seconds * 5 );
-				if( keyFrameIndex ) {
+				if( keyFrameIndex != undefined ) {
 					this.processCurrentKeyFrame( e, keyFrameIndex, track, null, true ); // Settings this as multiple so time is not being set
 					this._movingKeys = true;
 
@@ -725,6 +788,12 @@ Timeline.prototype.processMouse = function (e) {
 					}
 
 					this._timeBeforeMove = track.times[ keyFrameIndex ];
+				}
+			}else if(!track) {
+				y -= this.top_margin;
+				for( const b of this._buttons_drawn ) {
+					const bActive = x >= b[2] && x <= (b[2] + b[4]) && y >= b[3] && y <= (b[3] + b[5]);
+					b.pressed = bActive;
 				}
 			}
 		}
@@ -847,9 +916,11 @@ Timeline.prototype.draw = function (ctx, current_time, rect) {
 
 	//buttons
 	for( const b of this._buttons_drawn ) {
-		ctx.fillStyle = this[ b[1] ] ? "#aaa" : "#454545";	
+		const boundProperty = b[1];
+		ctx.fillStyle = this[ boundProperty ] ? "#b66" : "#454545";	
+		if(b.pressed) ctx.fillStyle = "#eee";
 		ctx.roundRect(b[2], b[3], b[4], b[5], 5, true, false);
-		ctx.drawImage(b[0], b[2] + 1, b[3] + 1, b[4] - 2, b[5] - 2);
+		ctx.drawImage(b[0], b[2] + 2, b[3] + 2, b[4] - 4, b[5] - 4);
 	}
 
 	//seconds markers
@@ -1057,9 +1128,9 @@ Timeline.prototype.drawTrackWithKeyframes = function (ctx, y, track_height, titl
 				if(track.edited[j])
 					ctx.fillStyle = "rgba(255,0,255,1)";
 				if(selected) {
-					ctx.fillStyle = "rgba(200,200,10,1)";
-					size = track_height * 0.45;
-					margin = -1;
+					ctx.fillStyle = "rgba(250,250,20,1)";
+					size = track_height * 0.5;
+					margin = -2;
 				}
 				if(track.hovered[j]) {
 					size = track_height * 0.5;
@@ -1070,7 +1141,7 @@ Timeline.prototype.drawTrackWithKeyframes = function (ctx, y, track_height, titl
 				ctx.rotate(45 * Math.PI / 180);		
 				ctx.fillRect( -size, -size, size, size);
 				if(selected) {
-					ctx.globalAlpha = 0.25;
+					ctx.globalAlpha = 0.3;
 					ctx.fillRect( -size*1.5, -size*1.5, size*2, size*2);
 				}
 					
