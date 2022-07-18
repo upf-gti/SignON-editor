@@ -609,7 +609,8 @@ function createAnimation(name, landmarks) {
 }
 
 function createAnimationFromRotations(name, nn) {
-
+    
+    // Convert landmarks into an animation
     var quatData = nn.getQuaternions();
     var names = quatData[quatData.length - 1];
     if(typeof(names[0]) != "string")

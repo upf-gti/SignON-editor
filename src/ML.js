@@ -43,8 +43,8 @@ class NN {
             if (v.LLM == undefined)
                 v.LLM = new Array(21).fill(0).map((x) => ({x: undefined, y: undefined, z: undefined, visibility: undefined}));
             
-            let vec1 = v.PLM.concat(v.RLM, v.LLM);
-            let vec2 = vec1.map((x) => {return Object.values(x).slice(0, -1);}); // remove visibility
+            let vec1 = v.PLM.slice(0,25).concat(v.RLM, v.LLM);
+            let vec2 = vec1.map((x) => {return Object.values(x).slice(0, -2);}); // remove z and visibility
             
             this.nnDeltas.push( dt );
 
@@ -125,6 +125,17 @@ class NN {
                 }
             }
         }
+
+        // WARNING: hardcoded download for TFM purposes
+        function download(content, fileName, contentType) {
+            let a = document.createElement("a");
+            let file = new Blob([content], {type: contentType});
+            a.href = URL.createObjectURL(file);
+            a.download = fileName;
+            a.click();
+        };
+        let JSONgt = JSON.stringify(quatData.map((x) => (x.slice(3))));
+        download(JSONgt, 'testing.json', 'application/json');
 
         return quatData;
     }

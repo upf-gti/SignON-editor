@@ -11,6 +11,7 @@ import { OrientationHelper } from "./libs/OrientationHelper.js";
 import { CanvasButtons } from "./ui.config.js";
 import { AnimationRetargeting } from './retargeting.js'
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
+
 class Editor {
 
     constructor(app) {
@@ -260,7 +261,6 @@ class Editor {
                         object.scale.set(1.0, 1.0, 1.0);
                     }
                 } );
-
             
                 this.skeletonHelper = new THREE.SkeletonHelper(model);
                 updateThreeJSSkeleton(this.help.bones);
@@ -290,9 +290,6 @@ class Editor {
             } );
 
         } else if ( urlParams.get('load') == 'NN' || urlParams.get('load') == undefined ) {
-
-            // Convert landmarks into an animation
-            const quatData = this.nn.getQuaternions();
 
             // Load the source model
             UTILS.loadGLTF("models/t_pose.glb", (gltf) => {
