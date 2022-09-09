@@ -295,10 +295,11 @@ class Editor {
             const quatData = this.nn.getQuaternions();
 
             // Load the source model
-            UTILS.loadGLTF("models/t_pose.glb", (gltf) => {
+            UTILS.loadGLTF("models/test1.glb", (gltf) => {
                 
                 let auxModel = gltf.scene;
                 auxModel.visible = true; // change to false
+                this.scene.add( auxModel );
                 
                 // Convert landmarks into an animation
                 let auxAnimation = createAnimationFromRotations(this.clipName, this.nn);

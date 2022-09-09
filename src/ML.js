@@ -37,14 +37,14 @@ class NN {
             }
 
             if (v.PLM == undefined)
-                v.PLM = new Array(33).fill(0).map((x) => ({x: undefined, y: undefined, z: undefined, visibility: undefined}));
+                v.PLM = new Array(25).fill(0).map((x) => ({x: undefined, y: undefined, z: undefined, visibility: undefined}));
             if (v.RLM == undefined)
                 v.RLM = new Array(21).fill(0).map((x) => ({x: undefined, y: undefined, z: undefined, visibility: undefined}));
             if (v.LLM == undefined)
                 v.LLM = new Array(21).fill(0).map((x) => ({x: undefined, y: undefined, z: undefined, visibility: undefined}));
             
-            let vec1 = v.PLM.concat(v.RLM, v.LLM);
-            let vec2 = vec1.map((x) => {return Object.values(x).slice(0, -1);}); // remove visibility
+            let vec1 = v.PLM.slice(0, -8).concat(v.RLM, v.LLM);
+            let vec2 = vec1.map((x) => {return Object.values(x).slice(0, -2);}); // remove z and visibility
             
             this.nnDeltas.push( dt );
 
