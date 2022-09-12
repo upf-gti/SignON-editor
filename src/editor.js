@@ -1,6 +1,6 @@
 import * as THREE from "./libs/three.module.js";
 import { OrbitControls } from "./controls/OrbitControls.js";
-import { BVHLoader } from "./loaders/BVHLoader.js";
+import { BVHLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/BVHLoader.js';
 import { BVHExporter } from "./exporters/BVHExporter.js";
 import { createSkeleton, createAnimation, createAnimationFromRotations, updateThreeJSSkeleton, injectNewLandmarks } from "./skeleton.js";
 import { Gui } from "./gui.js";
@@ -289,10 +289,47 @@ class Editor {
             
             } );
 
+        } else if ( urlParams.get('load') == 'TFM' ) {
+
+            this.animationClip = createAnimationFromRotations(this.clipName, this.nn);
+
+            this.loader.load( 'models/create_db_m.bvh' , (result) => {
+
+                let skinnedMesh = result.skeleton;
+                this.skeletonHelper = new THREE.SkeletonHelper( skinnedMesh.bones[0] );
+                this.skeletonHelper.skeleton = this.skeleton = skinnedMesh;
+                this.skeletonHelper.name = "SkeletonHelper";
+
+                // Correct mixamo skeleton rotation
+                let obj = new THREE.Object3D();
+                obj.add( this.skeletonHelper )
+                obj.scale.set(10,10,10);
+                //obj.rotateOnAxis( new THREE.Vector3(1,0,0), Math.PI/2 );
+
+                let boneContainer = new THREE.Group();
+                boneContainer.add( result.skeleton.bones[0] );
+
+                this.scene.add( this.skeletonHelper );
+                this.scene.add( obj );
+                this.scene.add( boneContainer );
+
+                this.mixer = new THREE.AnimationMixer( this.skeletonHelper );
+
+                this.gui.loadClip(this.animationClip);
+                this.mixer.clipAction( this.animationClip ).setEffectiveWeight( 1.0 ).play();
+                
+                this.mixer.update(0);
+                this.gizmo.begin(this.skeletonHelper);
+                this.setBoneSize(0.2);
+                this.animate();
+                $('#loading').fadeOut();
+            } );
+
+        
         } else if ( urlParams.get('load') == 'NN' || urlParams.get('load') == undefined ) {
 
             // Convert landmarks into an animation
-            const quatData = this.nn.getQuaternions();
+            this.nn.getQuaternions();
 
             // Load the source model
             UTILS.loadGLTF("models/test1.glb", (gltf) => {
