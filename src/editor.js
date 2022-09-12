@@ -303,13 +303,14 @@ class Editor {
                 // Correct mixamo skeleton rotation
                 let obj = new THREE.Object3D();
                 obj.add( this.skeletonHelper )
-                obj.scale.set(10,10,10);
-                //obj.rotateOnAxis( new THREE.Vector3(1,0,0), Math.PI/2 );
+                //obj.scale.set(0.01, 0.01, 0.01);
+                // obj.name = "Padre Esqueleto"
+                // obj.rotateOnAxis( new THREE.Vector3(1,0,0), Math.PI/2 );
 
                 let boneContainer = new THREE.Group();
                 boneContainer.add( result.skeleton.bones[0] );
 
-                this.scene.add( this.skeletonHelper );
+                // this.scene.add( this.skeletonHelper );
                 this.scene.add( obj );
                 this.scene.add( boneContainer );
 
