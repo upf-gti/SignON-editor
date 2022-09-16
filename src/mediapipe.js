@@ -148,19 +148,19 @@ const MediaPipe = {
             return;
         }
 
-        for (let j = 0; j < data.poseLandmarks.length; ++j) {
-            data.poseLandmarks[j].x = (data.poseLandmarks[j].x - 0.5);
-            data.poseLandmarks[j].y = (1.0 - data.poseLandmarks[j].y) + 2;
-            data.poseLandmarks[j].z = -data.poseLandmarks[j].z * 0.5;
-        }
-        if(data.rightHandLandmarks)
-            for (let j = 0; j < data.rightHandLandmarks.length; ++j) {
-                data.rightHandLandmarks[j].z = -data.rightHandLandmarks[j].z * 0.5;
-            }
-        if(data.leftHandLandmarks)
-            for (let j = 0; j < data.leftHandLandmarks.length; ++j) {
-                data.leftHandLandmarks[j].z = -data.leftHandLandmarks[j].z * 0.5;
-            }
+        // for (let j = 0; j < data.poseLandmarks.length; ++j) {
+        //     data.poseLandmarks[j].x = (data.poseLandmarks[j].x - 0.5);
+        //     data.poseLandmarks[j].y = (1.0 - data.poseLandmarks[j].y) + 2;
+        //     data.poseLandmarks[j].z = -data.poseLandmarks[j].z * 0.5;
+        // }
+        // if(data.rightHandLandmarks)
+        //     for (let j = 0; j < data.rightHandLandmarks.length; ++j) {
+        //         data.rightHandLandmarks[j].z = -data.rightHandLandmarks[j].z * 0.5;
+        //     }
+        // if(data.leftHandLandmarks)
+        //     for (let j = 0; j < data.leftHandLandmarks.length; ++j) {
+        //         data.leftHandLandmarks[j].z = -data.leftHandLandmarks[j].z * 0.5;
+        //     }
 
         this.landmarks.push({"RLM": data.rightHandLandmarks, "LLM": data.leftHandLandmarks, "FLM": data.faceLandmarks, "PLM": data.poseLandmarks, "dt": dt});
     }

@@ -228,6 +228,18 @@ class Editor {
         // Trim
         this.landmarksArray = this.processLandmarks( landmarks );
 
+        // DELETE
+        // function download(content, fileName, contentType) {
+        //     let a = document.createElement("a");
+        //     let file = new Blob([content], {type: contentType});
+        //     a.href = URL.createObjectURL(file);
+        //     a.download = fileName;
+        //     a.click();
+        // };
+
+        // let aa = JSON.stringify(this.nn.landmarksNN);
+        // download(aa, 'processedLandmarks.json', 'application/json');
+
         // Canvas UI buttons
         this.createSceneUI();
 
@@ -303,9 +315,7 @@ class Editor {
                 // Correct mixamo skeleton rotation
                 let obj = new THREE.Object3D();
                 obj.add( this.skeletonHelper )
-                //obj.scale.set(0.01, 0.01, 0.01);
-                // obj.name = "Padre Esqueleto"
-                // obj.rotateOnAxis( new THREE.Vector3(1,0,0), Math.PI/2 );
+                obj.rotateOnAxis( new THREE.Vector3(1,0,0), Math.PI/2 );
 
                 let boneContainer = new THREE.Group();
                 boneContainer.add( result.skeleton.bones[0] );
@@ -328,9 +338,6 @@ class Editor {
 
         
         } else if ( urlParams.get('load') == 'NN' || urlParams.get('load') == undefined ) {
-
-            // Convert landmarks into an animation
-            this.nn.getQuaternions();
 
             // Load the source model
             UTILS.loadGLTF("models/test1.glb", (gltf) => {
