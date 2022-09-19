@@ -313,16 +313,19 @@ class Editor {
                 this.skeletonHelper.name = "SkeletonHelper";
 
                 // Correct mixamo skeleton rotation
-                let obj = new THREE.Object3D();
-                obj.add( this.skeletonHelper )
-                obj.rotateOnAxis( new THREE.Vector3(1,0,0), Math.PI/2 );
+                //let obj = new THREE.Object3D();
+                //obj.add( this.skeletonHelper )
+                //obj.rotateOnAxis( new THREE.Vector3(1,0,0), Math.PI/2 );
 
                 let boneContainer = new THREE.Group();
                 boneContainer.add( result.skeleton.bones[0] );
+                boneContainer.rotateOnAxis( new THREE.Vector3(1,0,0), Math.PI/2 );
+                boneContainer.position.set(0, 0.85, 0);
+                this.skeletonHelper.position.set(0, 0.85, 0);
 
-                // this.scene.add( this.skeletonHelper );
-                this.scene.add( obj );
+                //this.scene.add( obj );
                 this.scene.add( boneContainer );
+                this.scene.add( this.skeletonHelper );
 
                 this.mixer = new THREE.AnimationMixer( this.skeletonHelper );
 
