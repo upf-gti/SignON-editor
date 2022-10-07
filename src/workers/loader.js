@@ -7,8 +7,6 @@ location.search.slice(1).split("&").forEach( function(key_value) { var kv = key_
 const file = "../../" + parameters['filename'];
 const onLoad = data => postMessage( data.currentTarget.response );
 
-console.log(file);
-
 FileLoader.Load(
     file,
     onLoad

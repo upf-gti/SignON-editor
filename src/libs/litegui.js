@@ -7322,7 +7322,7 @@ Inspector.prototype.refresh = function()
 		this.on_refresh();
 }
 
-// Append widget to this inspector (TODO: rename to appendWidget)
+// Append widget to this inspector
 // + widget_parent
 // + replace
 Inspector.prototype.append = function( widget, options )
@@ -8454,8 +8454,8 @@ Inspector.prototype.addVector3 = function(name,value, options)
 	element.setValue = function( v, skip_event ) { 
 		if(!v)
 			return;
-		dragger1.setValue(v[0],true);
-		dragger2.setValue(v[1],true);
+		dragger1.setValue(v[0],skip_event);
+		dragger2.setValue(v[1],skip_event);
 		dragger3.setValue(v[2],skip_event); //last triggers
 	}
 	element.setRange = function(min,max) { dragger1.setRange(min,max); dragger2.setRange(min,max); dragger3.setRange(min,max); }
@@ -9608,6 +9608,13 @@ Inspector.prototype.addButtons = function(name, value, options)
 	{
 		var button = buttons[i];
 		button.addEventListener("click", function(evt) {
+			var buttons = element.querySelectorAll("button");
+			for(var i = 0; i < buttons.length; ++i)
+			{
+				buttons[i].classList.remove("selected");
+				if(buttons[i] == evt.currentTarget)
+					buttons[i].classList.add("selected");
+			}
 			Inspector.onWidgetChange.call(that, element, name, this.innerHTML, options, null, evt);
 			LiteGUI.trigger( element, "wclick",this.innerHTML );
 		});
@@ -10065,7 +10072,6 @@ Inspector.prototype.addArray = function( name, value, options )
 		this.value[ this.index ] = v;
 		if(options.callback)
 			options.callback.call( container, this.value, this.index );
-		//todo: trigger change
 	}
 
 	container.setValue = function(v)

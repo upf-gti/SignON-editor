@@ -1,6 +1,5 @@
-import { TransformControls } from "./controls/TransformControls.js";
 import { Timeline } from "./libs/timeline.module.js";
-import { firstToUpperCase } from "./utils.js";
+import { UTILS } from "./utils.js";
 
 class Gui {
 
@@ -11,6 +10,12 @@ class Gui {
         this.current_time = 0;
         this.skeletonScroll = 0;
         this.editor = editor;
+
+        // Move this to another place
+        // the idea is to create once and reset on load project
+        // const name = project.clipName.length ? project.clipName : null;
+        //if(this.editor.skeletonHelper)
+        this.boneProperties = {};
 
         this.create();
     }
@@ -59,42 +64,78 @@ class Gui {
         this.render();
     }
 
-    loadMorphTargetsProject(project) {
+    loadBlendshapesClip(clip) {
 
-        this.project = project;
-        this.names = project.names;
-        this.duration = project.duration;
-
-        let morphName = this.names[0];
-        /*if(this.editor.morphTargetDictionary) {
+        this.clip = clip;
+        this.duration = clip.duration;
+        
+        let morphName = 'Blink_Left';
+        if(this.editor.morphTargetDictionary) {
             morphName = Object.keys(this.editor.morphTargetDictionary)[0];
-        }*/
-
-        if(this.editor.animationClip) {
-
-            this.timeline = new Timeline( this.editor.animationClip, morphName, "morphTargets");
-            this.timeline.framerate = project.framerate;
-            this.timeline.setScale(400);
-            this.timeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
-            this.timeline.onSelectKeyFrame = (e, info, index) => {
-                if(e.button != 2)
-                return false;
-
-                // Change gizmo mode and dont handle
-                // return false;
-
-                this.showKeyFrameOptions(e, info, index);
-                return true; // Handled
-            };
-            //this.timeline.onBoneUnselected = () => this.editor.gizmo.stop();
-            this.timeline.onUpdateTrack = (track) => this.editor.updateAnimationAction(track);
-            this.timeline.onGetSelectedMorphTarget = () => { return this.editor.getSelectedBone(); };
         }
 
-        // Move this to another place
-        // the idea is to create once and reset on load project
-        // const name = project.clipName.length ? project.clipName : null;
-        //if(this.editor.skeletonHelper)
+        this.timeline = new Timeline( this.editor.animationClip, morphName, "morphTargets");
+        this.timeline.framerate = 30;
+        this.timeline.setScale(400);
+        this.timeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
+        this.timeline.onSelectKeyFrame = (e, info, index) => {
+            if(e.button != 2)
+                return false;
+
+            // Change gizmo mode and dont handle
+            // return false;
+
+            this.showKeyFrameOptions(e, info, index);
+            return true; // Handled
+        };
+        //this.timeline.onBoneUnselected = () => this.editor.gizmo.stop();
+        this.timeline.onUpdateTrack = (idx) => this.editor.updateAnimationAction(idx);
+        this.timeline.onGetSelectedMorphTarget = () => { return this.editor.getSelectedBone(); };
+
+        // this.timeline.onGetSelectedBone = () => { return this.editor.getSelectedBone(); };
+        // this.timeline.onGetOptimizeThreshold = () => { return this.editor.optimizeThreshold; }
+
+        this.createSidePanel();
+
+        let canvasArea = document.getElementById("canvasarea");
+        this.editor.resize(canvasArea.clientWidth, canvasArea.clientHeight);
+
+        this.render();
+        
+    }
+
+    loadSkeletonClip( clip ) {
+
+        this.clip = clip;
+        this.duration = clip.duration;
+
+        let boneName = null;
+        if(this.editor.skeletonHelper.bones.length) {
+            boneName = this.editor.skeletonHelper.bones[0].name;
+        }
+
+        this.timeline = new Timeline( this.editor.animationClip, boneName);
+        this.timeline.framerate = 30;
+        this.timeline.setScale(400);
+        this.timeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
+        this.timeline.onSelectKeyFrame = (e, info, index) => {
+            if(e.button != 2) {
+                this.editor.gizmo.mustUpdate = true
+                this.editor.gizmo.update(true);
+                return false;
+            }
+
+            // Change gizmo mode and dont handle
+            // return false;
+
+            this.showKeyFrameOptions(e, info, index);
+            return true; // Handled
+        };
+        this.timeline.onBoneUnselected = () => this.editor.gizmo.stop();
+        this.timeline.onUpdateTrack = (idx) => this.editor.updateAnimationAction(idx);
+        this.timeline.onGetSelectedBone = () => { return this.editor.getSelectedBone(); };
+        this.timeline.onGetOptimizeThreshold = () => { return this.editor.optimizeThreshold; }
+
         this.createSidePanel();
 
         let canvasArea = document.getElementById("canvasarea");
@@ -186,6 +227,10 @@ class Gui {
         menubar.add("Timeline/Shortcuts/Key Selection/Multiple", { short: "Hold LSHIFT" });
         menubar.add("Timeline/Shortcuts/Key Selection/Box", { short: "Hold LSHIFT+Drag" });
 
+        menubar.add("Timeline/");
+        menubar.add("Timeline/Empty tracks", { callback: () => this.editor.cleanTracks() });
+        menubar.add("Timeline/Optimize tracks", { callback: () => this.editor.optimizeTracks() });
+
         this.appendButtons( menubar );
     }
 
@@ -196,7 +241,7 @@ class Gui {
         this.mainArea.getSection(1).add( docked );
         $(docked).bind("closed", function() { this.mainArea.merge(); });
         this.sidePanel = docked;
-        this.updateSidePanel( docked );
+        this.updateSidePanel( docked, 'root', {firstBone: true} );
         
         docked.content.id = "main-inspector-content";
         docked.content.style.width = "100%";
@@ -213,24 +258,23 @@ class Gui {
         root = root || this.sidePanel;
         $(root.content).empty();
         
-        var mytree = this.updateMTNodeTree();
+        var mytree = this.updateMTNodeTree(); //this.updateNodeTree();
     
         var litetree = new LiteGUI.Tree(mytree, {id: "tree", selected: "Blink_left"});
         litetree.setSelectedItem(item_selected);
         var that = this;
         
-        //Click right mouse
-        // litetree.onItemContextMenu = (e, el) => { 
+        //  // Click right mouse
+        //  litetree.onItemContextMenu = (e, el) => { 
     
         //     e.preventDefault();
-        //     var morphTarget = el.data.id;
+        //     var bone_id = el.data.id;
     
         //     const bone = this.editor.skeletonHelper.getBoneByName(bone_id);
         //     if(!bone)
         //     return;
     
         //     const boneEnabled = true;
-
         //     var actions = [
         //         {
         //             title: (boneEnabled?"Disable":"Enable") + "<i class='bi bi-" + (boneEnabled?"dash":"check") + "-circle float-right'></i>",
@@ -287,6 +331,7 @@ class Gui {
         }
         widgets.refresh();
     }
+
     // updateSidePanel(root, item_selected, options) {
 
     //     if(!this.sidePanel)
@@ -295,6 +340,7 @@ class Gui {
     //     item_selected = item_selected || this.item_selected;
     
     //     options = options || {};
+    //     this.boneProperties = {};
     //     this.item_selected = item_selected;
     //     root = root || this.sidePanel;
     //     $(root.content).empty();
@@ -365,25 +411,18 @@ class Gui {
 
     //         widgets.clear();
     //         widgets.addSection("Animation Clip", { pretitle: makePretitle('stickman') });
-    //         widgets.addString("Name", this.project.clipName || "Unnamed", { callback: (v) => this.project.clipName = v });
+    //         widgets.addString("Name", this.clip.name || "Unnamed", { callback: v => this.clip.name = v });
     //         widgets.addInfo("Num bones", numBones);
-    //         widgets.addInfo("Frame rate", this.project.framerate);
-    //         widgets.addInfo("Duration", this.project.duration);
-    //         widgets.widgets_per_row = 1;
-    //         widgets.addSection("Gizmo", { pretitle: makePretitle('gizmo'), settings: (e) => this.openSettings( 'gizmo' ), settings_title: "<i class='bi bi-gear-fill section-settings'></i>" });
-    //         widgets.addButtons( "Mode", ["Translate","Rotate"], { selected: this.editor.getGizmoMode(), name_width: "50%", width: "100%", callback: (v) => {
-    //             this.editor.setGizmoMode(v);
-    //             widgets.on_refresh();
-    //         }});
-
-    //         widgets.addButtons( "Space", ["Local","World"], { selected: this.editor.getGizmoSpace(), name_width: "50%", width: "100%", callback: (v) => {
-    //             this.editor.setGizmoSpace(v);
-    //             widgets.on_refresh();
-    //         }});
-
-    //         widgets.addCheckbox( "Snap", this.editor.isGizmoSnapActive(), {callback: () => this.editor.toggleGizmoSnap() } );
-
+    //         widgets.addInfo("Frame rate", this.timeline.framerate);
+    //         widgets.addInfo("Duration", this.duration.toFixed(2));
+    //         widgets.addSlider("Speed", this.editor.mixer.timeScale, { callback: v => {
+    //             this.editor.mixer.timeScale = this.editor.video.playbackRate = v;
+    //         }, min: 0.25, max: 1.5, step: 0.05, precision: 2});
     //         widgets.addSeparator();
+    //         widgets.addSlider("Optimize Threshold", this.editor.optimizeThreshold, { callback: v => {
+    //             this.editor.optimizeThreshold = v;
+    //         }, min: 0, max: 0.25, step: 0.001, precision: 4});
+    //         widgets.widgets_per_row = 1;
 
     //         const bone_selected = !(o.firstBone && numBones) ? 
     //             this.editor.skeletonHelper.getBoneByName(item_selected) : 
@@ -391,27 +430,42 @@ class Gui {
 
     //         if(bone_selected) {
 
+    //             const numTracks = this.timeline.getNumTracks(bone_selected);
+    //             const _Modes = numTracks > 1 ? ["Translate","Rotate"] : ["Rotate"];
+
+    //             widgets.addSection("Gizmo", { pretitle: makePretitle('gizmo'), settings: (e) => this.openSettings( 'gizmo' ), settings_title: "<i class='bi bi-gear-fill section-settings'></i>" });
+    //             widgets.addButtons( "Mode", _Modes, { selected: this.editor.getGizmoMode(), name_width: "50%", width: "100%", callback: (v) => {
+    //                 if(this.editor.getGizmoMode() != v) this.editor.setGizmoMode(v);
+    //             }});
+
+    //             widgets.addButtons( "Space", ["Local","World"], { selected: this.editor.getGizmoSpace(), name_width: "50%", width: "100%", callback: (v) => {
+    //                 if(this.editor.getGizmoSpace() != v) this.editor.setGizmoSpace(v);
+    //             }});
+
+    //             widgets.addCheckbox( "Snap", this.editor.isGizmoSnapActive(), {callback: () => this.editor.toggleGizmoSnap() } );
+
+    //             widgets.addSeparator();
+
     //             const innerUpdate = (attribute, value) => {
     //                 bone_selected[attribute].fromArray( value ); 
-    //                 this.editor.gizmo.updateBones();
+    //                 this.editor.gizmo.onGUI();
     //             };
 
     //             widgets.addSection("Bone", { pretitle: makePretitle('circle') });
     //             widgets.addInfo("Name", bone_selected.name);
-    //             const numTracks = this.timeline.getNumTracks(bone_selected);
-    //             widgets.addInfo("Num tracks", "" + numTracks);
+    //             widgets.addInfo("Num tracks", numTracks ?? 0);
 
     //             // Only edit position for root bone
     //             if(bone_selected.children.length && bone_selected.parent.constructor !== bone_selected.children[0].constructor) {
     //                 widgets.addTitle("Position");
-    //                 widgets.addVector3(null, bone_selected.position.toArray(), {className: 'bone-position', callback: (v) => innerUpdate("position", v)});
+    //                 this.boneProperties['position'] = widgets.addVector3(null, bone_selected.position.toArray(), {disabled: this.editor.state, precision: 3, className: 'bone-position', callback: (v) => innerUpdate("position", v)});
     //             }
 
     //             widgets.addTitle("Rotation (XYZ)");
-    //             widgets.addVector3(null, bone_selected.rotation.toArray(), {className: 'bone-euler', callback: (v) => innerUpdate("rotation", v)});
+    //             this.boneProperties['rotation'] = widgets.addVector3(null, bone_selected.rotation.toArray(), {disabled: this.editor.state, precision: 3, className: 'bone-euler', callback: (v) => innerUpdate("rotation", v)});
 
     //             widgets.addTitle("Quaternion");
-    //             widgets.addVector4(null, bone_selected.quaternion.toArray(), {className: 'bone-quaternion', callback: (v) => innerUpdate("quaternion", v)});
+    //             this.boneProperties['quaternion'] = widgets.addVector4(null, bone_selected.quaternion.toArray(), {disabled: this.editor.state, precision: 3, className: 'bone-quaternion', callback: (v) => innerUpdate("quaternion", v)});
     //         }
     //     };
 
@@ -423,12 +477,25 @@ class Gui {
     //     element.scrollTop = options.maxScroll ? maxScroll : (options.scroll ? options.scroll : 0);
     // }
 
+    // Listed with __ at the beggining
+    updateBoneProperties() {
+
+        const bone = this.editor.skeletonHelper.bones[this.editor.gizmo.selectedBone];
+        if(!bone)
+        return;
+
+        for( const p in this.boneProperties ) {
+            // @eg: p as position, element.setValue( bone.position.toArray() )
+            this.boneProperties[p].setValue( bone[p].toArray(), true );
+        }
+    }
+    
     openSettings( settings ) {
 
         let prevDialog = document.getElementById("settings-dialog");
         if(prevDialog) prevDialog.remove();
 
-        const dialog = new LiteGUI.Dialog({ id: 'settings-dialog', title: firstToUpperCase(settings), close: true, width: 380, height: 210, scroll: false, draggable: true});
+        const dialog = new LiteGUI.Dialog({ id: 'settings-dialog', title: UTILS.firstToUpperCase(settings), close: true, width: 380, height: 210, scroll: false, draggable: true});
 		dialog.show();
 
         const inspector = new LiteGUI.Inspector();
@@ -477,6 +544,7 @@ class Gui {
 
         return mytree;
     }
+    
     updateNodeTree() {
         
         const rootBone = this.editor.skeletonHelper.bones[0];
@@ -504,7 +572,12 @@ class Gui {
         mytree['children'] = children;
         return mytree;
     }
-    
+
+    setBoneInfoState( enabled ) {
+        for(const ip of $(".bone-position input, .bone-euler input, .bone-quaternion input"))
+            enabled ? ip.removeAttribute('disabled') : ip.setAttribute('disabled', !enabled);
+    }
+
     appendButtons(menubar) {
 
         const buttonContainer = document.createElement('div');
@@ -544,6 +617,12 @@ class Gui {
             if(b.callback) button.addEventListener('click', b.callback);
             buttonContainer.appendChild(button);
         }
+
+        // Add editor listeners
+        let stateBtn = document.getElementById("state_btn");
+        stateBtn.onclick = this.editor.onPlay.bind(this.editor, stateBtn);
+        let stopBtn = document.getElementById("stop_btn");
+        stopBtn.onclick = this.editor.onStop.bind(this.editor, stateBtn);
     }
 
     render() {
@@ -553,22 +632,32 @@ class Gui {
 
     drawTimeline() {
         
-        if(!this.project || !this.project.mixer)
-        return;
+        if(!this.editor.mixer)
+            return;
 
         const canvas = this.timelineCTX.canvas;
-        this.current_time = this.project.mixer.time;
+        this.current_time = this.editor.mixer.time;
 
         if(this.current_time > this.duration) {
-            this.onAnimationEnded();
+            this.current_time = 0.0;
+            this.editor.onAnimationEnded();
         }
 
-        this.timeline.draw(this.timelineCTX, this.project, this.current_time, [0, 0, canvas.width, canvas.height]);
+        this.timeline.draw(this.timelineCTX, this.current_time, [0, 0, canvas.width, canvas.height]);
     }
 
     onAnimationEnded() {
         this.current_time = 0.0;
         this.editor.setTime(0.0, true);
+        const canvas = this.timelineCTX.canvas;
+        this.current_time = this.editor.mixer.time;
+
+        if(this.current_time > this.duration) {
+            this.current_time = 0.0;
+            this.editor.onAnimationEnded();
+        }
+
+        this.timeline.draw(this.timelineCTX, this.current_time, [0, 0, canvas.width, canvas.height]);
     }
 
     showKeyFrameOptions(e, info, index) {
@@ -654,7 +743,7 @@ class Gui {
 
         //compute the current y scrollable value
         if (sidebar_height < scrollable_height)
-            scroll_y = -current_scroll_in_pixels; //TODO
+            scroll_y = -current_scroll_in_pixels;
         if (scroll_y) {
             ctx.beginPath();
             ctx.rect(0, vertical_offset, canvas.width, sidebar_height);

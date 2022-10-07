@@ -1,4 +1,97 @@
-// overwrite method
+import * as THREE from "three";
+import { CompareThreshold } from "../utils.js"
+
+// Overwrite/add methods
+
+THREE.SkeletonHelper.prototype.getBoneByName = function( name ) {
+
+    for ( let i = 0, il = this.bones.length; i < il; i ++ ) {
+        const bone = this.bones[ i ];
+        if ( bone.name === name ) {
+            return bone;
+        }
+    }
+    return undefined;
+}
+
+THREE.KeyframeTrack.prototype.optimize = function( threshold = 0.0025 ) {
+	// times or values may be shared with other tracks, so overwriting is unsafe
+	const times = THREE.AnimationUtils.arraySlice( this.times ),
+	values = THREE.AnimationUtils.arraySlice( this.values ),
+	stride = this.getValueSize(),
+	smoothInterpolation = this.getInterpolation() === THREE.InterpolateSmooth,
+	lastIndex = times.length - 1;
+	let writeIndex = 1;
+	let cmpFunction = CompareThreshold;
+
+	for ( let i = 1; i < lastIndex; ++ i ) {
+
+		let keep = false;
+		const time = times[ i ];
+		const timeNext = times[ i + 1 ];
+
+		// remove adjacent keyframes scheduled at the same time
+
+		if ( time !== timeNext && ( i !== 1 || time !== times[ 0 ] ) ) {
+			if ( ! smoothInterpolation ) {
+
+				// remove unnecessary keyframes same as their neighbors
+				const offset = i * stride,
+					offsetP = offset - stride,
+					offsetN = offset + stride;
+
+				for ( let j = 0; j !== stride; ++ j ) {
+					if( cmpFunction(
+						values[ offset + j ], 
+						values[ offsetP + j ], 
+						values[ offsetN + j ],
+						threshold))
+					{
+						keep = true;
+						break;
+					}
+				}
+			} else {
+				keep = true;
+			}
+		}
+
+		// in-place compaction
+		if ( keep ) {
+			if ( i !== writeIndex ) {
+				times[ writeIndex ] = times[ i ];
+				const readOffset = i * stride,
+					writeOffset = writeIndex * stride;
+				for ( let j = 0; j !== stride; ++ j ) {
+					values[ writeOffset + j ] = values[ readOffset + j ];
+				}
+			}
+			++ writeIndex;
+		}
+	}
+
+	// flush last keyframe (compaction looks ahead)
+	if ( lastIndex > 0 ) {
+		times[ writeIndex ] = times[ lastIndex ];
+		for ( let readOffset = lastIndex * stride, writeOffset = writeIndex * stride, j = 0; j !== stride; ++ j ) {
+			values[ writeOffset + j ] = values[ readOffset + j ];
+		}
+		++ writeIndex;
+	}
+
+	if ( writeIndex !== times.length ) {
+
+		this.times = THREE.AnimationUtils.arraySlice( times, 0, writeIndex );
+		this.values = THREE.AnimationUtils.arraySlice( values, 0, writeIndex * stride );
+	} else {
+
+		this.times = times;
+		this.values = values;
+	}
+
+	return this;
+}
+
 Inspector.prototype.addSlider = function(name, value, options)
 {
 	options = this.processOptions(options);
@@ -99,6 +192,7 @@ function Slider(value, options)
 	this.root = canvas;
 	var that = this;
 	this.value = value;
+	this.defValue = value;
 
 	this.ready = true;
 
@@ -155,16 +249,27 @@ function Slider(value, options)
 
 	var doc_binded = null;
 
-	canvas.addEventListener("mousedown", function(e) {
-		var mouseX, mouseY;
-		if(e.offsetX) { mouseX = e.offsetX; mouseY = e.offsetY; }
-		else if(e.layerX) { mouseX = e.layerX; mouseY = e.layerY; }	
-		setFromX(mouseX);
-		doc_binded = canvas.ownerDocument;
-		doc_binded.addEventListener("mousemove", onMouseMove );
-		doc_binded.addEventListener("mouseup", onMouseUp );
+	canvas.oncontextmenu = () => { return false; };
 
-		doc_binded.body.style.cursor = "none";
+	canvas.addEventListener("mousedown", function(e) {
+
+		doc_binded = canvas.ownerDocument;
+		// right click
+		if(e.button === 2) {
+			e.preventDefault();
+			e.stopPropagation();
+			e.stopImmediatePropagation();
+			doc_binded.addEventListener("mouseup", onMouseUp );
+			that.setValue(that.defValue);
+		} else {
+			var mouseX, mouseY;
+			if(e.offsetX) { mouseX = e.offsetX; mouseY = e.offsetY; }
+			else if(e.layerX) { mouseX = e.layerX; mouseY = e.layerY; }	
+			setFromX(mouseX);
+			doc_binded.addEventListener("mousemove", onMouseMove );
+			doc_binded.addEventListener("mouseup", onMouseUp );
+			doc_binded.body.style.cursor = "none";
+		}
 	});
 
 	function onMouseMove(e)
@@ -179,12 +284,14 @@ function Slider(value, options)
 
 	function onMouseUp(e)
 	{
+		e.preventDefault();
+		e.stopPropagation();
+		e.stopImmediatePropagation();
+		
 		var doc = doc_binded || document;
 		doc_binded = null;
 		doc.removeEventListener("mousemove", onMouseMove );
 		doc.removeEventListener("mouseup", onMouseUp );
-		e.preventDefault();
-		
 		doc.body.style.cursor = "default";
 
 		return false;

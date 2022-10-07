@@ -22,17 +22,14 @@ class Gizmo {
             this.updateBones();
 
             if(this.selectedBone != null) {
-                const bone = this.editor.skeletonHelper.bones[this.selectedBone];
-                if($(".bone-position")) $(".bone-position")[0].setValue(bone.position.toArray());
-                if($(".bone-euler")) $(".bone-euler")[0].setValue(bone.rotation.toArray());
-                if($(".bone-quaternion")) $(".bone-quaternion")[0].setValue(bone.quaternion.toArray());
+                editor.gui.updateBoneProperties();
             }
         });
 
         transform.addEventListener( 'mouseUp', e => {
             if(this.selectedBone === undefined)
             return;
-            this.updateTracks(true);
+            this.updateTracks();
         } );
 
         transform.addEventListener( 'dragging-changed', e => {
@@ -129,6 +126,7 @@ class Gizmo {
             throw("No skeleton");
 
         let transform = this.transform;
+        let timeline = this.editor.gui.timeline;
 
         const canvas = document.getElementById("webgl-canvas");
 
@@ -182,6 +180,9 @@ class Gizmo {
                     break;
 
                 case 'w':
+                    const bone = this.editor.skeletonHelper.bones[this.selectedBone];
+                    if(timeline.getNumTracks(bone) < 2) // only rotation
+                    return;
                     transform.setMode( 'translate' );
                     this.editor.gui.updateSidePanel();
                     break;
@@ -272,22 +273,22 @@ class Gizmo {
         geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
     }
 
-    updateTracks(force) {
-
-        if(!force)
-        return;
+    updateTracks() {
 
         let timeline = this.editor.gui.timeline;
+        let keyType = Gizmo.ModeToKeyType[ this.editor.getGizmoMode() ];
 
-        if(!timeline._lastKeyFramesSelected.length)
+        if(timeline.onUpdateTracks( keyType ))
+        return; // Return if event handled
+
+        if(!timeline.getNumKeyFramesSelected())
         return;
 
-        // TODO: Apply all the same action
         let [name, trackIndex, keyFrameIndex] = timeline._lastKeyFramesSelected[0];
         let track = timeline.getTrack(timeline._lastKeyFramesSelected[0]);
 
         // Don't store info if we are using wrong mode for that track
-        if(Gizmo.ModeToKeyType[ this.editor.getGizmoMode() ] != track.type)
+        if(keyType != track.type)
         return;
 
         let bone = this.skeletonHelper.getBoneByName(name);
@@ -353,7 +354,12 @@ class Gizmo {
 
         const depthTestEnabled = this.bonePoints.material.depthTest;
         inspector.addCheckbox( "Depth test", depthTestEnabled, (v) => { this.bonePoints.material.depthTest = v; })
+    }
 
+    onGUI() {
+
+        this.updateBones();
+        this.updateTracks();
     }
     
 };

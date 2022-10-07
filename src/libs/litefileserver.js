@@ -1061,7 +1061,6 @@ Session.prototype.uploadFile = function( fullpath, data, extra, on_complete, on_
 
         if(data.constructor === String)
         {
-            //TODO
             throw("String big file split not implemented yet, " + filename);
         }
         else if(data.constructor === ArrayBuffer)

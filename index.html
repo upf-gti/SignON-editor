@@ -1,57 +1,71 @@
 <!DOCTYPE html>
 <html>
-	<head>
-		<meta charset="utf-8">
-		<meta name="author" content="UPF-GTI">
-		<title>Animations Editor (Dev)</title>
 
-		<link rel="stylesheet" href="css/w2ui.css">
-		<link rel="stylesheet" href="css/w2ui_mod.css">
-		<link rel="stylesheet" href="css/style.css">
-		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
-		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
-		<link rel="stylesheet" href="css/litegui.css">
-		<link rel="stylesheet" href="css/jquery-ui.css">
+<head>
+	<meta charset="utf-8">
+	<meta name="author" content="UPF-GTI">
+	<title>Animations Editor</title>
+	<link rel="icon" type="image/x-icon" href="data/imgs/logo_SignON.png">
 
-		<script type="text/javascript" src="src/libs/jquery-3.5.0.min.js"></script>
-		<script type="text/javascript" src="src/libs/jquery-ui.min.js"></script>
-	</head>
-	<body>
+	<link rel="stylesheet" href="css/style.css">
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
+	<link rel="stylesheet" href="css/litegui.css">
+	<link rel="stylesheet" href="css/jquery-ui.css">
 
-		<!-- Modals -->
-		<div id="loading" class="modal">
-			<div class="load-7">
-				<p>Loading, please wait</p>
-				<div class="square-holder">
-				  <div class="square"></div>
-				</div>
-			  </div>
+	<script type="text/javascript" src="src/libs/jquery-3.5.0.min.js"></script>
+	<script type="text/javascript" src="src/libs/jquery-ui.min.js"></script>
+</head>
+
+<body>
+
+	<div id="init-dialog" title="SignON Editor">
+		<img src="data/imgs/signOn_title.png" id="titleImg">
+		<p style="width: 50%; float: left; font-weight: bolder; font-family: 'Roboto';">
+			End-to-end system able to generate animations of the signing avatar from user input.
+		</p>
+		
+		<img src="data/imgs/logo_SignON.png" id="logoImg">
+		<div style="font-weight: bolder; font-family: 'Roboto'; position: absolute;
+		margin-top: 18em; opacity: 0.8;">
+			<img src="data/imgs/upf.png" style="width: 45px;">
 		</div>
-		<div id="startOfCapture" class="modal" style="display: none">
-			<button id="live_btn" class="btn" style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Real-time video</span></button>
-			<button id="local_btn" class="btn" style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Local video</span></button>
-			<input type="file" id="file" style="display: none;"> 
-		</div>
-		<div id="endOfCapture" class="modal" style="display: none">
-			<button id="redo_btn" class="btn" style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Redo the video</span></button>
-			<button id="trimData_btn" class="btn" style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Trim video</span></button>
-			<button id="loadData_btn" class="btn" style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Create 3D animation</span></button>
-		</div>
+	</div>
 
-		<!---->
-		<div id="capture" class="expanded" draggable="false">
-			<video id="inputVideo" class="hidden"></video>
-			<canvas id="outputVideo" width="1280px" height="720px" style="z-index: 1; margin-top: 1px;" tabindex="1"></canvas>
-			<video id="recording" class="hidden"></video>
+	<!-- Modals -->
+	<div id="loading" class="modal">
+		<div class="load-7">
+			<p>Loading application, please wait</p>
+			<div class="square-holder">
+				<div class="square"></div>
+			</div>
 		</div>
+	</div>
 
-		<div id="timeline" class="hidden" style="opacity: 0.5;">
-			<canvas id="timelineCanvas" tabindex="1"></canvas>
-		</div>
+	<div id="endOfCapture" class="modal" style="display: none">
+		<button id="redo_btn" class="btn" style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Redo
+				the video</span></button>
+		<button id="trimData_btn" class="btn"
+			style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Trim video</span></button>
+		<button id="loadData_btn" class="btn"
+			style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Create 3D animation</span></button>
+	</div>
 
-	</body>
+	<!---->
+	<div id="capture" class="expanded hidden" draggable="false">
+		<video id="inputVideo" class="hidden"></video>
+		<canvas id="outputVideo" width="1280px" height="720px" style="z-index: 1; margin-top: 1px;"
+			tabindex="1"></canvas>
+		<video id="recording" class="hidden"></video>
+	</div>
 
-	<script type="importmap">
+	<div id="timeline" class="hidden">
+		<canvas id="timelineCanvas" tabindex="1"></canvas>
+	</div>
+
+</body>
+
+<script type="importmap">
 		{
 			"imports": {
 				"three": "./src/libs/three.module.js"
@@ -59,8 +73,64 @@
 		}
 	</script>
 
-	<script type="text/javascript" src="src/libs/litegui.js"></script>
-	<script type="text/javascript" src="src/libs/customLibs.js"></script>
-	<script type="module" src="src/app.js"></script>
+<script type="text/javascript" src="src/libs/litegui.js"></script>
+<script type="module" src="src/libs/customLibs.js"></script>
+
+<script type="module">
+
+	import { App } from "./src/app.js";
+	import { UTILS } from "./src/utils.js";
+
+	const createApp = (settings) => {
+		const app = new App();
+		app.init(settings);
+	}
+
+	const dialog = $("#init-dialog")[0];
+	dialog.ondragover = () => {return false};
+	dialog.ondragend = () => {return false};
+	dialog.ondrop = (e) => {
+		e.preventDefault();
+		e.stopPropagation();
+		$(dialog).dialog("close");
+
+		const file = e.dataTransfer.files[0];
+		const extension = UTILS.getExtension(file.name);
+		createApp({mode: extension === 'bvh' ? 'bvh' : 'video', data: file});
+	};
+
+	const onloadfile = function() {
+
+		const input = document.createElement('input');
+		input.type = 'file';
+		input.click();
+
+		input.onchange = (e) => {
+			$(this).dialog("close");
+			const file = e.currentTarget.files[0];
+			const extension = UTILS.getExtension(file.name);
+			createApp({mode: extension === 'bvh' ? 'bvh' : 'video', data: file});
+		}
+	}
+
+	$( function() {
+
+		$("#loading").fadeOut();
+
+		$(dialog).dialog({
+			dialogClass: "no-close", resizable: false, draggable: false, height: "auto", width: 750, modal: true,
+			buttons: {
+				"Load animation": onloadfile,
+				"Load video": onloadfile,
+				"Capture": function() {
+					$(this).dialog("close");
+					createApp();
+				}
+			}
+		});
+		
+	} );
+
+</script>
 
 </html>
