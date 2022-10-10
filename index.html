@@ -94,9 +94,27 @@
 		e.stopPropagation();
 		$(dialog).dialog("close");
 
-		const file = e.dataTransfer.files[0];
-		const extension = UTILS.getExtension(file.name);
-		createApp({mode: extension === 'bvh' ? 'bvh' : 'video', data: file});
+		const files = e.dataTransfer.files;
+			
+		if(files.length > 1){
+			let dataToSend = {};
+			for(let i = 0; i < files.length; i++) {
+				let extension = UTILS.getExtension(files[i].name);
+				if(extension != 'bvh' && extension != 'csv' ) {
+					dataToSend.extraData = files[i];
+				}else {		
+					dataToSend.mode = extension;
+					dataToSend.data = files[i];
+				}
+			}
+			createApp( dataToSend );
+		} else {
+			const file = files[0];
+			let extension = UTILS.getExtension(file.name);
+			if(extension != 'bvh' && extension != 'csv' )
+				extension = 'video';
+			createApp({mode: extension, data: file});
+		}
 	};
 
 	const onloadfile = function() {
@@ -107,9 +125,28 @@
 
 		input.onchange = (e) => {
 			$(this).dialog("close");
-			const file = e.currentTarget.files[0];
-			const extension = UTILS.getExtension(file.name);
-			createApp({mode: extension === 'bvh' ? 'bvh' : 'video', data: file});
+			const files = e.currentTarget.files;
+			
+			if(files.length > 1){
+				let dataToSend = {};
+				for(let i = 0; i < files.length; i++) {
+					let extension = UTILS.getExtension(files[i].name);
+					if(extension != 'bvh' && extension != 'csv' ) {
+						dataToSend.extraData = files[i];
+					}else {		
+						dataToSend.mode = extension;
+						dataToSend.data = files[i];
+					}
+				}
+				createApp( dataToSend );
+			} else {
+				const file = files[0];
+				let extension = UTILS.getExtension(file.name);
+				if(extension != 'bvh' && extension != 'csv' )
+					extension = 'video';
+				createApp({mode: extension, data: file});
+			}
+			
 		}
 	}
 

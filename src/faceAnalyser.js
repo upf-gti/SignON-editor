@@ -1559,6 +1559,135 @@ AnimationGenerator.prototype.createFacialAnimation = function(name, landmarks, m
   return new THREE.AnimationClip(name || "facial_anim", length, tracks);
 }
 
+AnimationGenerator.prototype.createFacialAnimationFromData = function(data, morphTargetDictionary) {
+
+  let BS = [];
+  if(morphTargetDictionary){
+    BS.length = Object.keys(morphTargetDictionary).length;
+    BS.fill(0);
+  }
+
+  let tracks = [];
+  let values = {};
+
+  const times = [];
+  var time_accum = 0.0;
+      
+  let AU2BS = {
+    "AU01": ["BrowsOuterLower_Left", "BrowsOuterLower_Right"], 
+    "AU02": ["BrowsUp_Left", "BrowsUp_Right"], 
+    "AU04": ["BrowsIn_Left", "BrowsIn_Right"], 
+    "AU05": ["EyesWide_Left", "EyesWide_Right"], 
+    "AU06": null, //Cheek Raiser
+    "AU07": ["Squint_Left", "Squint_Right"], 
+    "AU09": ["NoseScrunch_Left", "NoseScrunch_Right"], 
+    "AU10": ["UpperLipUp_Left", "UpperLipUp_Right"], 
+    "AU12": ["Smile_Left", "Smile_Right"], 
+    "AU14": null, //Dimpler
+    "AU15": ["Frown_Left", "Frown_Right"], 
+    "AU17": ["MouthUp"], 
+    "AU20": null,  //Lip Stretcher
+    "AU23": ["MouthNarrow_Left", "MouthNarrow_Right"], 
+    "AU25": ["LowerLipDown_Left", "LowerLipDown_Right"], 
+    "AU26": ["JawDown"], 
+    "AU28": ["UpperLipIn", "LowerLipIn"], 
+    "AU45": ["Blink_Left", "Blink_Right"],
+  }
+  let headPose = [];
+  //go through all AU data
+  let AUs = Object.keys(AU2BS);
+  for (let frame = 0; frame < data.length; frame++) {
+
+    let rawData = data[frame];
+
+    // if(rawData.confidence < 0.5)
+    //   continue;
+    for (let i = 0; i < AUs.length; i++) {
+      let idx = AUs[i] + '_r'; //AUx_r = intensity
+      let pix = AUs[i] + '_c'; //AUx_c = presence
+      let intensity = rawData[pix] ? rawData[idx] / 5 : 0; // OpenFace: For intensity of AU 1 the column AU01_r in the output file would range from 0 (not present), 1 (present at minimum intensity), 5 (present at maximum intensity)
+      let trackNames = AU2BS[AUs[i]];
+      
+      if (!trackNames) 
+        continue;
+      
+      for (let t = 0; t < trackNames.length; t++) {
+        if (values[trackNames[t]] === undefined)
+          values[trackNames[t]] = [ parseFloat(intensity) ];
+          else 
+            values[trackNames[t]].push( parseFloat(intensity) );
+      }
+    }
+    const euler = new THREE.Euler( rawData['pose_Rx'], rawData['pose_Ry'], rawData['pose_Rz'], 'ZYX' );
+    const quaternion = new THREE.Quaternion().setFromEuler ( euler );
+    headPose.push( quaternion.x );
+    headPose.push( quaternion.y );
+    headPose.push( quaternion.z );
+    headPose.push( quaternion.w );
+
+    times.push( parseFloat(rawData.timestamp) );
+  }
+
+  if (times.length > 0) {
+    let tracksL = Object.keys(values).length;
+
+    if (tracksL > 0) {
+      for(let name in values) {
+      //for (let name in values) {
+        let bodyBS = null;
+        let eyelashesBS = null; 
+
+        if(values[name]){
+          bodyBS = new THREE.NumberKeyframeTrack( 'Body.morphTargetInfluences['+ name +']', times, values[name] || 0.0);
+          eyelashesBS = new THREE.NumberKeyframeTrack( 'Eyelashes.morphTargetInfluences['+ name +']', times, values[name] || 0.0);
+        }
+        else{
+          let BS = [];
+          BS.length = times.length;
+          BS.fill(0);
+          bodyBS = new THREE.NumberKeyframeTrack( 'Body.morphTargetInfluences['+ name +']', times, BS);
+          eyelashesBS = new THREE.NumberKeyframeTrack( 'Eyelashes.morphTargetInfluences['+ name +']', times, BS );
+        }
+        tracks.push(bodyBS);
+        tracks.push(eyelashesBS);
+      }
+    }
+    tracks.push( new THREE.QuaternionKeyframeTrack( 'mixamorig_Head.quaternion', times, headPose || 0.0) );
+  }
+  // use -1 to automatically calculate
+  // the length from the array of tracks
+  const length = -1;
+  //download(JSON.stringify(jsonData), "facialLandmarks.json", "text/plain");
+  return new THREE.AnimationClip(name || "facial_anim", length, tracks);
+}
+
+AnimationGenerator.prototype.create3DLandmarksAnimation = function ( data, name ) {
+  
+  let times = [];
+  let values = {};
+  for (let i = 0; i < data.length; i++){
+    for (let j = 0; j < 68; j++){
+        let landmark = [ 0.001  * parseFloat( data[i]["X_" + j] ), 2.25 - 0.001  * parseFloat( data[i]["Y_" + j] ), parseFloat(0.9 - 0.001 * data[i]["Z_" + j] )];
+        if( values[j] === undefined) 
+          values[j] = landmark;
+        else
+          values[j] =  [...values[j], ...landmark ] ;
+        }
+    times.push( parseFloat(data[i].timestamp) );
+  }
+  
+  let tracks = [];
+  for(let trackname in values) {
+    tracks.push( new THREE.VectorKeyframeTrack( 'lm_' + trackname + '.position', times, values[trackname] || 0.0) );
+  }
+
+  // use -1 to automatically calculate
+  // the length from the array of tracks
+  const length = -1;
+  //download(JSON.stringify(jsonData), "facialLandmarks.json", "text/plain");
+  return new THREE.AnimationClip(name || "3D_landmarks", length, tracks);
+}
+
 function smoothDepth(data){
   // Filter requirements.
   let T = 5.0         //Sample Period

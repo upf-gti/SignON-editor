@@ -241,7 +241,7 @@ class Gui {
         this.mainArea.getSection(1).add( docked );
         $(docked).bind("closed", function() { this.mainArea.merge(); });
         this.sidePanel = docked;
-        this.updateSidePanel( docked, 'root', {firstBone: true} );
+        this.updateSidePanel( docked, 'root', {firstBone: true, id : 'Blink_Left'} );
         
         docked.content.id = "main-inspector-content";
         docked.content.style.width = "100%";
@@ -249,12 +249,14 @@ class Gui {
         this.resize();
     }
 
-    updateSidePanel(root, item_selected) {
+    updateSidePanel(root, item_selected, options) {
 
         if(!this.sidePanel)
             return;
 
+        options = options || {};
         item_selected = item_selected || this.item_selected;
+        this.item_selected = item_selected;
         root = root || this.sidePanel;
         $(root.content).empty();
         
@@ -317,8 +319,8 @@ class Gui {
 
         widgets.on_refresh = (o) => {
             widgets.clear();
-
-            if(o && o.id)
+            o = o || {};
+            if(o.id)
             {
                 let idx = this.editor.morphTargetDictionary[o.id];
                 widgets.addSlider(o.id, this.editor.bodyBS.morphTargetInfluences[o.id], {className: 'morph-value', callback : function(v){
@@ -329,7 +331,7 @@ class Gui {
             }
             
         }
-        widgets.refresh();
+        widgets.refresh(options);
     }
 
     // updateSidePanel(root, item_selected, options) {

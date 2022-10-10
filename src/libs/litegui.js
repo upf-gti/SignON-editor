@@ -7316,10 +7316,10 @@ Inspector.prototype.clear = function()
 * Tryes to refresh (calls on_refresh)
 * @method refresh
 */
-Inspector.prototype.refresh = function()
+Inspector.prototype.refresh = function(options)
 {
 	if(this.on_refresh)
-		this.on_refresh();
+		this.on_refresh(options);
 }
 
 // Append widget to this inspector

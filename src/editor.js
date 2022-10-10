@@ -204,6 +204,8 @@ class Editor {
 
         if(this.state) {
             this.mixer._actions[0].paused = false;
+            if(this.mixerLm)
+                this.mixerLm._actions[0].paused = false;
             this.gizmo.stop();
             this.gui.setBoneInfoState( false );
             (this.video.paused && this.video.sync) ? this.video.play() : 0;    
@@ -443,7 +445,9 @@ class Editor {
 
         // Canvas UI buttons
         this.createSceneUI();
-
+    // Remove loop mode for the display video
+    this.video.sync = true;
+    this.video.loop = false;
         const innerOnLoad = result => {
 
             result.clip.name = UTILS.removeExtension(this.clipName);
@@ -471,6 +475,11 @@ class Editor {
                 this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
                 this.mixer.update(0.); // Do first iteration to update from T pose
 
+                //face blend shapes
+                this.bodyBS = model.getObjectByName( 'Body' );
+                this.eyelashesBS = model.getObjectByName( 'Eyelashes' );
+                this.morphTargetDictionary = this.bodyBS.morphTargetDictionary;
+
                 // guizmo stuff
                 this.skeletonHelper = new THREE.SkeletonHelper(model);
                 this.skeletonHelper.name = "SkeletonHelper";
@@ -479,21 +488,52 @@ class Editor {
                 this.scene.add( model );
                 this.scene.add( this.skeletonHelper );
 
-                this.gui.loadClip(this.animationClip);
+                if(result.skeleton)
+                    this.gui.loadSkeletonClip(this.animationClip);
+                else
+                    this.gui.loadBlendshapesClip(this.animationClip);
+
                 this.gizmo.begin(this.skeletonHelper);
                 this.setBoneSize(0.2);
                 this.animate();
+                
+                
+                let positions = [];
+                const geometry = new THREE.SphereGeometry(0.005, 32, 16 );
+                const material = new THREE.MeshBasicMaterial( { color: 0x4287f5 } );
+                
+                const group = new THREE.Group();
+
+                for ( let lm in result.landmarksClip.tracks ) {
+                    const sphere = new THREE.Mesh( geometry, material );
+                    sphere.position.set( result.landmarksClip.tracks[lm].values[0], result.landmarksClip.tracks[lm][1], result.landmarksClip.tracks[lm][2] );
+                    sphere.name = result.landmarksClip.tracks[lm].name.replace('.position', '');
+                    group.add( sphere );
+                }
+                this.scene.add( group );
+                this.mixerLm = new THREE.AnimationMixer(group);
+                this.mixerLm.clipAction(result.landmarksClip).setEffectiveWeight(1.0).play();
+                this.mixerLm.update(0.); // Do first iteration to update from T pose
                 $('#loading').fadeOut();
             });
 
         };
-
         var reader = new FileReader();
-        reader.onload = (e) => {
-            const text = e.currentTarget.result;
-            const data = this.loader.parse( text );
-            innerOnLoad(data);
-        };
+        if(animation.type == "text/csv"){
+            reader.onload = (e) => {
+                const text = e.currentTarget.result;
+                const parsedData = UTILS.csvToArray( text );
+                const data = this.generator.createFacialAnimationFromData( parsedData, this.morphTargetDictionary );
+                const landmarks = this.generator.create3DLandmarksAnimation( parsedData );
+                innerOnLoad( {clip : data, landmarksClip: landmarks} );
+            };
+        } else {
+            reader.onload = (e) => {
+                const text = e.currentTarget.result;
+                const data = this.loader.parse( text );
+                innerOnLoad(data);
+            };
+        }
         reader.readAsText(animation);
     }
 
@@ -630,6 +670,11 @@ class Editor {
             
         if(this.mixer)
             this.mixer.setTime(t);
+        
+        //3D landmarks mixer
+        if(this.mixerLm)
+            this.mixerLm.setTime(t);
+
         this.gizmo.updateBones(0.0);
         this.gui.updateBoneProperties();
             
@@ -697,17 +742,17 @@ class Editor {
     stopAnimation() {
         
         this.mixer.setTime(0.0);
+        if(this.mixerLm)
+            this.mixerLm.setTime(0.0);
         this.gizmo.updateBones(0.0);
     }
 
-    updateAnimationAction(idx) {
+    updateAnimationAction(idx, mixer = this.mixer, animationClip = this.animationClip) {
 
-        const mixer = this.mixer;
-
-        if(!mixer._actions.length || mixer._actions[0]._clip != this.animationClip) 
+        if(!mixer._actions.length || mixer._actions[0]._clip != animationClip) 
             return;
 
-        const track = this.animationClip.tracks[idx];
+        const track = animationClip.tracks[idx];
 
         // Update times
         mixer._actions[0]._interpolants[idx].parameterPositions = track.times;
@@ -843,7 +888,11 @@ class Editor {
             //     }
                
             // }
+            //3D landmarks mixer
+            if(this.mixerLm)
+                this.mixerLm.update(dt);
         }
+
 
         this.gizmo.update(this.state, dt);
     }

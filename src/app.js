@@ -2,6 +2,7 @@ import { MediaPipe } from "./mediapipe.js";
 import { Editor } from "./editor.js";
 import { VideoUtils } from "./video.js";
 import { FileSystem } from "./libs/filesystem.js";
+import { UTILS } from "./utils.js";
 
 class App {
 
@@ -29,6 +30,37 @@ class App {
         let that = this;
         settings = settings || {};
 
+        if(settings.extraData) {
+            // that.setEvents();
+            let video = document.getElementById( 'recording' );
+            video.preload = 'metadata';
+
+            // Reposition the canvas elements
+            let videoDiv = document.getElementById("capture");
+            
+            videoDiv.classList.remove("hidden");
+            video.classList.remove("hidden");
+            
+            // Solve the aspect ratio problem of the video
+            let videoCanvas = document.getElementById("outputVideo");
+            
+            video.onloadeddata = function() {
+                
+                window.URL.revokeObjectURL(video.src);
+                that.processVideo();
+                videoDiv.classList.remove("expanded");
+                let aspectRatio = video.clientWidth / videoDiv.clientHeight;
+                video.width  = videoDiv.width  = videoCanvas.width  = videoDiv.clientWidth;
+                video.height = videoDiv.height = videoCanvas.height = videoCanvas.width / aspectRatio;            
+                $(videoDiv).draggable({containment: "#canvasarea"}).resizable({ aspectRatio: true, containment: "#canvasarea"});
+                video.style.width = "100%";
+                video.style.height = "100%";
+
+            }
+            const url = URL.createObjectURL(settings.extraData);
+            video.src = url;
+            
+        }
         const mode = settings.mode ?? 'capture';
 
         switch(mode) {
@@ -41,8 +73,11 @@ class App {
             case 'video': 
                 this.onLoadVideo( settings.data );
                 break;
+            case 'csv':
+                this.onParseAnimation( settings.data );
+                break;
         }
-
+                
         window.addEventListener("resize", this.onResize.bind(this));
     }
 
@@ -142,6 +177,23 @@ class App {
         MediaPipe.start( false, () => {
             $('#loading').fadeOut();
         } );
+    }
+
+    onParseAnimation( animation ) {
+    
+        this.onBeginEdition();
+        this.editor.clipName = animation.name;
+        this.editor.loadAnimation( animation );
+        // const reader = new FileReader();
+        // reader.readAsText(animation)
+        // reader.onload = function (e) {
+        //     const data = UTILS.csvToArray(e.target.result);
+        //     debugger;
+            
+        //   };
+        // const name = animation.name;
+        // this.editor.clipName = name;
+        // this.editor.loadAnimation( animation );
     }
 
     onRecordLandmarks(startTime, endTime) {
