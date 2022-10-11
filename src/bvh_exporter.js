@@ -43,7 +43,7 @@ const BVHExporter = {
         var bvh = tabs;
 
         var export_pos = false;
-        if (!(bone.parent instanceof THREE.Bone)) {
+        if (!(bone.parent.type == 'Bone')) {
             bvh += "ROOT " + bone.name + "\n";
             export_pos = true;
         } else 
@@ -149,7 +149,7 @@ const BVHExporter = {
 
         bvh += "HIERARCHY\n";
 
-        if (skeleton.bones[0] == undefined) {
+        if (skeleton.bones == undefined || skeleton.bones[0] == undefined) {
             console.error("Can not export skeleton with no bones");
             return;
         }

@@ -445,9 +445,9 @@ class Editor {
 
         // Canvas UI buttons
         this.createSceneUI();
-    // Remove loop mode for the display video
-    this.video.sync = true;
-    this.video.loop = false;
+        // Remove loop mode for the display video
+        this.video.sync = true;
+        this.video.loop = false;
         const innerOnLoad = result => {
 
             result.clip.name = UTILS.removeExtension(this.clipName);

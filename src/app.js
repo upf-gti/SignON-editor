@@ -408,7 +408,7 @@ class App {
         const innerStore = (async function() {
 
             // CHECK THE INPUT FILE !!!!TODO!!!!
-            let file = undefined;
+            let file = this.export();
 
             if (!confirm("Have you finished editing your animation? Remember that uploading the animation to the database implies that it will be used in the synthesis of the 3D avatar used in SignON European project."))
             return;
@@ -434,14 +434,18 @@ class App {
             
         }).bind(this);
 
-        if( this.editor.clipName === "Unnamed" ) {
-            LiteGUI.prompt( "Please, enter the name of the sign performed and the language. (Example: Dog in Irish Sign Language --> dog_ISL)", async (name) => {
-
-                this.editor.clipName = name;
-                await innerStore();
-
-            }, { title: "Sign Name", width: 350 } );
+        let text = "Please, enter the name of the sign performed and the language. (Example: Dog in Irish Sign Language --> dog_ISL)";
+        let options = { title: "Sign Name", width: 350 };
+        if( this.editor.clipName != "Unnamed" && this.editor.clipName != undefined) {
+            text = "Please, confirm the name of the sign performed and the language. (Example: Dog in Irish Sign Language --> dog_ISL)";
+            options.value =  this.editor.clipName;
         }
+        LiteGUI.prompt( text, async (name) => {
+
+            this.editor.clipName = name;
+            await innerStore();
+
+        }, options );
     }
 
     onResize() {
