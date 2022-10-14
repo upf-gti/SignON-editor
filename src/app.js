@@ -120,7 +120,9 @@ class App {
         videoElement.src = url;
         let video = document.getElementById("recording");
         video.src = url; 
-        this.mediaRecorder = new MediaRecorder(videoElement.captureStream());
+        let videoCanvas = document.getElementById("outputVideo");
+        let stream = videoCanvas.captureStream()
+        this.mediaRecorder = new MediaRecorder(stream);
 
         this.mediaRecorder.onstop = function (e) {
 

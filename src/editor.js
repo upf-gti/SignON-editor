@@ -304,40 +304,15 @@ class Editor {
         } else if ( urlParams.get('load') == 'TFM' ) {
 
             this.animationClip = createAnimationFromRotations(this.clipName, this.nn);
-
-            this.loader.load( 'models/create_db_m.bvh' , (result) => {
-
-                let skinnedMesh = result.skeleton;
-                this.skeletonHelper = new THREE.SkeletonHelper( skinnedMesh.bones[0] );
-                this.skeletonHelper.skeleton = this.skeleton = skinnedMesh;
-                this.skeletonHelper.name = "SkeletonHelper";
-
-                // Correct mixamo skeleton rotation
-                //let obj = new THREE.Object3D();
-                //obj.add( this.skeletonHelper )
-                //obj.rotateOnAxis( new THREE.Vector3(1,0,0), Math.PI/2 );
-
-                let boneContainer = new THREE.Group();
-                boneContainer.add( result.skeleton.bones[0] );
-                boneContainer.rotateOnAxis( new THREE.Vector3(1,0,0), Math.PI/2 );
-                boneContainer.position.set(0, 0.85, 0);
-                this.skeletonHelper.position.set(0, 0.85, 0);
-
-                //this.scene.add( obj );
-                this.scene.add( boneContainer );
-                this.scene.add( this.skeletonHelper );
-
-                this.mixer = new THREE.AnimationMixer( this.skeletonHelper );
-
-                this.gui.loadClip(this.animationClip);
-                this.mixer.clipAction( this.animationClip ).setEffectiveWeight( 1.0 ).play();
-                
-                this.mixer.update(0);
-                this.gizmo.begin(this.skeletonHelper);
-                this.setBoneSize(0.2);
-                this.animate();
-                $('#loading').fadeOut();
-            } );
+            if(urlParams.get('skin') && urlParams.get('skin') == 'true') {
+                this.loader.load( 'models/create_db_m.bvh' , (result) => {
+                    result.clip = this.animationClip;
+                    this.loadAnimationWithSkin(result);
+                });
+            }
+            else
+                this.loadAnimationWithSkeleton(this.animationClip);
+          
 
         
         } else if ( urlParams.get('load') == 'NN' || urlParams.get('load') == undefined ) {
@@ -437,49 +412,14 @@ class Editor {
 
         // Canvas UI buttons
         this.createSceneUI();
-
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        
         const innerOnLoad = result => {
-
-            result.clip.name = UTILS.removeExtension(this.clipName);
-
-            // Load the target model (Eva) 
-            UTILS.loadGLTF("models/Eva_Y.glb", (gltf) => {
-                
-                let model = gltf.scene;
-                model.visible = true;
-
-                model.traverse( o => {
-                    if (o.isMesh || o.isSkinnedMesh) {
-                        o.castShadow = true;
-                        o.receiveShadow = true;
-                        o.frustumCulled = false;
-                    }
-                } );
-                
-                // correct model
-                model.position.set(0,0.85,0);
-                model.rotateOnAxis(new THREE.Vector3(1,0,0), -Math.PI/2);
-                
-                this.animationClip = result.clip;
-                this.mixer = new THREE.AnimationMixer(model);
-                this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
-                this.mixer.update(0.); // Do first iteration to update from T pose
-
-                // guizmo stuff
-                this.skeletonHelper = new THREE.SkeletonHelper(model);
-                this.skeletonHelper.name = "SkeletonHelper";
-                this.skeletonHelper.skeleton = this.skeleton = result.skeleton;
-
-                this.scene.add( model );
-                this.scene.add( this.skeletonHelper );
-
-                this.gui.loadClip(this.animationClip);
-                this.gizmo.begin(this.skeletonHelper);
-                this.setBoneSize(0.2);
-                this.animate();
-                $('#loading').fadeOut();
-            });
-
+            if(urlParams.get('skin') && urlParams.get('skin') == 'true')
+                this.loadAnimationWithSkin(result);
+            else
+                this.loadAnimationWithSkeleton(result);
         };
 
         var reader = new FileReader();
@@ -489,6 +429,98 @@ class Editor {
             innerOnLoad(data);
         };
         reader.readAsText(animation);
+    }
+
+    loadAnimationWithSkin(result) {
+        
+        result.clip.name = UTILS.removeExtension(this.clipName || result.clip.name);
+        this.animationClip = result.clip;
+        let skinnedMesh = result.skeleton;
+        let tracks = [];
+        
+        for (let i = 0; i < this.animationClip.tracks.length; i++) {
+            if( i && this.animationClip.tracks[i].name.includes('position')) {
+                continue;
+            }
+            tracks.push( this.animationClip.tracks[i] );
+        }
+        this.animationClip.tracks = tracks;
+        this.retargeting.loadAnimationFromSkeleton(skinnedMesh, this.animationClip);
+        // Load the target model (Eva) 
+        UTILS.loadGLTF("models/Eva_Y.glb", (gltf) => {
+            
+            let model = gltf.scene;
+            model.visible = true;
+            
+            model.traverse( o => {
+                if (o.isMesh || o.isSkinnedMesh) {
+                    o.castShadow = true;
+                    o.receiveShadow = true;
+                    o.frustumCulled = false;
+                }
+            } );
+            
+            // correct model
+            model.position.set(0,0.85,0);
+            model.rotateOnAxis(new THREE.Vector3(1,0,0), -Math.PI/2);
+            
+            this.animationClip = this.retargeting.createAnimation(model);
+            this.mixer = new THREE.AnimationMixer(model);
+            this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
+            
+            // guizmo stuff
+            updateThreeJSSkeleton(this.retargeting.tgtBindPose);
+            this.skeletonHelper = this.retargeting.tgtSkeletonHelper;
+            this.skeletonHelper.name = "SkeletonHelper";
+            this.skeletonHelper.skeleton = this.skeleton = createSkeleton();
+            
+            this.scene.add( model );
+            this.scene.add( this.skeletonHelper );
+            this.scene.add(this.retargeting.srcSkeletonHelper)
+            
+            this.gui.loadClip(this.animationClip);
+            this.gizmo.begin(this.skeletonHelper);
+            this.setBoneSize(0.2);
+            this.animate();
+            $('#loading').fadeOut();
+        });   
+    }
+
+    loadAnimationWithSkeleton(animation) {
+        this.animationClip = animation.clip || animation || this.animationClip;
+        this.loader.load( 'models/create_db_m.bvh' , (result) => {
+    
+            let skinnedMesh = result.skeleton;
+            this.skeletonHelper = new THREE.SkeletonHelper( skinnedMesh.bones[0] );
+            this.skeletonHelper.skeleton = this.skeleton = skinnedMesh;
+            this.skeletonHelper.name = "SkeletonHelper";
+
+            // Correct mixamo skeleton rotation
+            //let obj = new THREE.Object3D();
+            //obj.add( this.skeletonHelper )
+            //obj.rotateOnAxis( new THREE.Vector3(1,0,0), Math.PI/2 );
+
+            let boneContainer = new THREE.Group();
+            boneContainer.add( result.skeleton.bones[0] );
+            boneContainer.rotateOnAxis( new THREE.Vector3(1,0,0), Math.PI/2 );
+            boneContainer.position.set(0, 0.85, 0);
+            this.skeletonHelper.position.set(0, 0.85, 0);
+
+            //this.scene.add( obj );
+            this.scene.add( boneContainer );
+            this.scene.add( this.skeletonHelper );
+
+            this.mixer = new THREE.AnimationMixer( this.skeletonHelper );
+
+            this.gui.loadClip(this.animationClip);
+            this.mixer.clipAction( this.animationClip ).setEffectiveWeight( 1.0 ).play();
+            
+            this.mixer.update(0);
+            this.gizmo.begin(this.skeletonHelper);
+            this.setBoneSize(0.2);
+            this.animate();
+            $('#loading').fadeOut();
+        } );
     }
 
     createSceneUI() {

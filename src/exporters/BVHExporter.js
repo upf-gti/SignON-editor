@@ -42,12 +42,12 @@ const BVHExporter = {
         var bvh = tabs;
 
         var exportPos = false;
-        if (!(bone.parent instanceof THREE.Bone)) {
+        if (!bone.parent || bone.parent.type != 'Bone') {
             bvh += "ROOT " + bone.name + "\n";
             exportPos = true;
         } else 
         if (isEndSite) {
-            bvh += "ENDSITE " + bone.name + "\n";
+            bvh += "End Site" + "\n";
         } else {
             bvh += "JOINT " + bone.name + "\n";
         }

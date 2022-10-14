@@ -366,7 +366,7 @@ class AnimationRetargeting {
     }
 
     //Transform source and target bones rotations into world space
-    retargetAnimation(anim, onlyY) {
+    retargetAnimation(anim, onlyY = false, changeAxis = false) {
 
         let src_tbones = this.srcBindPose;
         let tgt_tbones = this.tgtBindPose;
@@ -428,6 +428,21 @@ class AnimationRetargeting {
             let tgt_bind_inv = tgt_parent_bind_rot.clone();
             diff.multiply(convert).premultiply(tgt_bind_inv.invert());
             //diff.multiply(convert).premultiply(tgt_bind_inv.invert());
+            if(changeAxis){
+                if((tgt_bind.name.includes("Arm") || tgt_bind.name.includes("Hand"))){
+
+                    let e = new THREE.Euler().setFromQuaternion(diff);
+                    e.x =  - e.x;
+                    //e.z =  - e.z;
+                    //e.y =  - e.y;
+                    //diff.setFromEuler(e) ;
+                }
+                else if ( tgt_bind.name.includes("Shoulder") ) {
+                    // let e = new THREE.Euler().setFromQuaternion(diff);
+                    // e.z = - e.z;
+                    // diff.setFromEuler(e) ;
+                }
+            }
             tgt_pose.quaternion.copy(diff);
 
             //upload quaternion bone to animation
@@ -521,6 +536,30 @@ class AnimationRetargeting {
         this.srcMixer = new THREE.AnimationMixer(model);
         this.srcMixer.clipAction(animClip).setEffectiveWeight(1.0).play();
     }
+
+    loadAnimationFromSkeleton(srcpose, animClip) {
+
+        this.animName = animClip.name;
+
+        // get bones in bind pose
+        this.srcBindPose = this.getBindPose(srcpose, true);
+
+        // // set model in bind pose
+        // for(let i = 0; i < this.srcBindPose.length; i++)
+        // {
+        //     let bone = this.srcBindPose[i];
+        //     let o = model.getObjectByName(bone.name);
+        //     o.position.copy(bone.position);
+        //     bone.scale.copy(o.scale);
+        //     o.quaternion.copy(bone.quaternion);
+        //     o.updateWorldMatrix();
+        // }
+
+        this.srcSkeletonHelper = new THREE.SkeletonHelper( srcpose.bones[0] );
+        this.srcSkeletonHelper.skeleton = srcpose;
+        this.srcMixer = new THREE.AnimationMixer(this.srcSkeletonHelper );
+        this.srcMixer.clipAction(animClip).setEffectiveWeight(1.0).play();
+    }
     
     createAnimation(model, animationName) {
 
@@ -564,7 +603,7 @@ class AnimationRetargeting {
         let times = this.srcMixer._actions[0]._clip.tracks[0].times;
         for (let i = 0; i < times.length; i++) {
             this.srcMixer.setTime(times[i]);
-            this.retargetAnimation(animTracks, false);
+            this.retargetAnimation(animTracks, false, true);
         }
 
         let tracks = [];
