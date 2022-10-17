@@ -154,7 +154,8 @@ class App {
         videoElement.src = url;
         let video = document.getElementById("recording");
         video.src = url; 
-        this.mediaRecorder = new MediaRecorder(videoElement.captureStream());
+        let videoCanvas = document.getElementById("outputVideo")
+        this.mediaRecorder = new MediaRecorder(videoCanvas.captureStream());
 
         this.mediaRecorder.onstop = function (e) {
 

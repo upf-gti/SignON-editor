@@ -237,14 +237,28 @@ class Gui {
     createSidePanel() {
 
         this.mainArea.split("horizontal", [null,"300px"], true);
+        
+        //create some tabs
+		var tabs = new LiteGUI.Tabs("tabs",{ size: "full" });
         var docked = new LiteGUI.Panel("sidePanel", {title: 'Skeleton', scroll: true});
-        this.mainArea.getSection(1).add( docked );
         $(docked).bind("closed", function() { this.mainArea.merge(); });
         this.sidePanel = docked;
-        this.updateSidePanel( docked, 'root', {firstBone: true, id : 'Blink_Left'} );
         
         docked.content.id = "main-inspector-content";
         docked.content.style.width = "100%";
+        
+        var rig = new LiteGUI.Panel("sidePanel", {title: 'Facial Rig', scroll: true});
+        let img = document.createElement("img");
+        img.src = "data/imgs/baseFace2.png";
+        img.style.width = '100%';
+        rig.content.appendChild(img);
+        
+        this.updateSidePanel( docked, 'root', {firstBone: true, id : 'Blink_Left'} );
+		var skeletonTab = tabs.addTab("Skeleton", { size: "full", content: docked.content });
+        var rigTab = tabs.addTab("Rig", { size: "full" , content: rig.content});
+        this.mainArea.getSection(1).add( tabs );
+        //$(rig).bind("closed", function() { this.mainArea.merge(); });
+        //this.sidePanel = tabs;
 
         this.resize();
     }

@@ -4,7 +4,8 @@ import { BVHLoader } from "./loaders/BVHLoader.js";
 import { BVHExporter } from "./bvh_exporter.js";
 import { createSkeleton, createAnimation, createAnimationFromRotations, updateThreeJSSkeleton, injectNewLandmarks } from "./skeleton.js";
 import { Gui } from "./gui.js";
-import { Gizmo } from "./gizmo.js";
+import { Gizmo} from "./gizmo.js";
+import { FacialRig } from "./facialRig.js";
 import { linearInterpolation, cosineInterpolation } from "./utils.js";
 import { OrientationHelper } from "./libs/OrientationHelper.js";
 import { CanvasButtons } from "./ui.config.js";
@@ -100,7 +101,7 @@ class Editor {
         scene.add( hemiLight );
 
         const dirLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
-        dirLight.position.set( 3, 30, -50 );
+        dirLight.position.set( 3, 50, -40 );
         dirLight.castShadow = false;
         dirLight.shadow.camera.top = 2;
         dirLight.shadow.camera.bottom = -2;
@@ -135,10 +136,10 @@ class Editor {
         let camera = new THREE.PerspectiveCamera(60, pixelRatio, 0.1, 1000);
         window.camera = camera;
         let controls = new OrbitControls(camera, renderer.domElement);
-        camera.position.set(0, 1, 2);
+        camera.position.set(0, 2, 2);
         controls.minDistance = 0.5;
         controls.maxDistance = 5;
-        controls.target.set(0, 1, 0);
+        controls.target.set(0, 2, 0);
         controls.update();  
 
         // Orientation helper
@@ -166,6 +167,7 @@ class Editor {
         this.video = document.getElementById("recording");
         this.video.startTime = 0;
         this.gizmo = new Gizmo(this);
+        this.faceGizmo = new FacialRig(this);
 
         renderer.domElement.addEventListener( 'keydown', (e) => {
             switch ( e.key ) {
@@ -244,8 +246,8 @@ class Editor {
         this.video.sync = true;
         this.video.loop = false;
 
-        let mode = landmarks[landmarks.length/2].FLM != undefined ? 'face' : false;  
-        mode = landmarks[landmarks.length/2].PLM != undefined ? 'pose' : mode;
+        let mode = landmarks[Math.ceil(landmarks.length/2)].FLM != undefined ? 'face' : false;  
+        mode = landmarks[Math.ceil(landmarks.length/2)].PLM != undefined ? 'pose' : mode;
         // Trim
         this.landmarksArray = this.processLandmarks( landmarks, mode );
 
@@ -390,7 +392,12 @@ class Editor {
                 this.gizmo.begin(this.skeletonHelper);
                 this.setBoneSize(0.2);
                 this.animate();
-                $('#loading').fadeOut();
+                UTILS.loadGLTF("models/Rig.glb", (gltf) => {
+                    gltf.scene.position.set(0,0.85,0);
+                    this.scene.add( gltf.scene );
+                    this.faceGizmo.begin(gltf.scene)
+                    $('#loading').fadeOut();
+                });
             });
         }
     }
@@ -895,6 +902,7 @@ class Editor {
 
 
         this.gizmo.update(this.state, dt);
+        this.faceGizmo.update(this.state, dt);
     }
     
     applyBlendShapes(facialLandmarks, t){
