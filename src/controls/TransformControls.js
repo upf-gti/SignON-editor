@@ -32,6 +32,7 @@ const _unit = {
 };
 
 const _changeEvent = { type: 'change' };
+const _constraintEvent = { type: 'constraint' };
 const _mouseDownEvent = { type: 'mouseDown' };
 const _mouseUpEvent = { type: 'mouseUp', mode: null };
 const _objectChangeEvent = { type: 'objectChange' };
@@ -52,15 +53,15 @@ class TransformControls extends Object3D {
 		this.visible = false;
 		this.domElement = domElement;
 		this.domElement.style.touchAction = 'none'; // disable touch scroll
-
+		
 		const _gizmo = new TransformControlsGizmo();
 		this._gizmo = _gizmo;
 		this.add( _gizmo );
-
+		
 		const _plane = new TransformControlsPlane();
 		this._plane = _plane;
 		this.add( _plane );
-
+		
 		const scope = this;
 
 		// Defined getter, setter and store for a property
@@ -114,6 +115,7 @@ class TransformControls extends Object3D {
 		defineProperty( 'space', 'world' );
 		defineProperty( 'size', 1 );
 		defineProperty( 'dragging', false );
+		defineProperty( 'constraint', null );
 		defineProperty( 'showX', true );
 		defineProperty( 'showY', true );
 		defineProperty( 'showZ', true );
@@ -315,7 +317,29 @@ class TransformControls extends Object3D {
 
 			}
 
+			let tmpPosition = new Vector3();
+			
+			tmpPosition.copy( this.object.position );
+
 			object.position.copy( this._offset ).add( this._positionStart );
+
+			// Apply constraints
+
+			if( this.constraint !== null) {
+
+				const result = this.constraint.evaluate( this, axis );
+
+				if( result === false ) {
+
+					// Reset previous position
+
+					object.position.copy( tmpPosition );
+
+					return;
+
+				}
+
+			}
 
 			// Apply translation snap
 

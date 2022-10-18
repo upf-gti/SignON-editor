@@ -241,6 +241,7 @@ class Gizmo {
 
         this.transform.attach( this.skeletonHelper.bones[this.selectedBone] );
         this.mustUpdate = false; 
+        this.editor.faceGizmo.stop();
     }
 
     updateBones( dt ) {

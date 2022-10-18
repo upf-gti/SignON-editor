@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { ShaderChunk } from "./utils.js";
 import { TransformControls } from './controls/TransformControls.js';
+import { TranslationConstraint } from './controls/Constraint.js'
 
 class FacialRig {
 
@@ -9,8 +10,12 @@ class FacialRig {
         if(!editor)
         throw("No editor to attach Gizmo!");
 
+        let scene = editor.scene;
+
         this.raycastEnabled = true;
+        this.helper = null;
         this.undoSteps = [];
+        this.maxBlendShapeTranslationOffset = 0.05;
 
         let transform = new TransformControls( editor.camera, editor.renderer.domElement );
         window.trans = transform;
@@ -19,19 +24,14 @@ class FacialRig {
         transform.addEventListener( 'change', editor.render );
         transform.setSize(0.5);
 
+        transform.constraint = new TranslationConstraint();
+
         transform.addEventListener( 'objectChange', e => {
-            // let defPosition = this.defaultPositions[this.selectedPoint];
-            // let tempVec = e.target.worldPosition;
-            // tempVec.x = tempVec.x > 1 ? 3: tempVec.x;//Math.min(Math.max(tempVec.x, -0.5), defPosition.x + 1);
-            // tempVec.y = Math.min(Math.max(tempVec.y, defPosition.y - 1), defPosition.y + 1);
-            // tempVec.z = Math.min(Math.max(tempVec.z, defPosition.z - 1), defPosition.z + 1);
-           
-           // e.target.position.copy(e.target.worldToLocal(tempVec));
+
             this.updateBlendshapes();
 
             if(this.selectedPoint != null) {
-                
-                //editor.gui.updateBlendshapesProperties();
+                // editor.gui.updateBlendshapesProperties();
             }
         });
 
@@ -46,6 +46,10 @@ class FacialRig {
             editor.controls.enabled = !enabled;
             this.raycastEnabled = !this.raycastEnabled;
             
+            if( enabled && this.helper !== null ) {
+                this.helper.material.color.setHex( transform.constraint.getHelperColor( e ) );
+            }
+
             if(this.selectedPoint == null)
             return;
 
@@ -60,7 +64,6 @@ class FacialRig {
             // }
         });
 
-        let scene = editor.scene;
         scene.add( transform );
 
         this.camera = editor.camera;
@@ -237,15 +240,59 @@ class FacialRig {
         });
     }
 
+    attachObject() {
+
+        this.mustUpdate = false; 
+
+        this.transform.attach( this.mesh.children[this.selectedPoint] );
+
+        if( this.transform.constraint !== null ) {
+            
+            // Set new max translation constraints
+            
+            let dPos = this.defaultPositions[this.selectedPoint];
+            
+            this.transform.constraint.setFromPointAndOffset( dPos, this.maxBlendShapeTranslationOffset );
+
+            // Add constraint helper
+            
+            if( this.helper !== null ) {
+                this.helper.removeFromParent();
+                delete this.helper;
+                this.helper = null;
+            }
+
+            const size = this.maxBlendShapeTranslationOffset * 2;
+            const helper = new THREE.BoxHelper( new THREE.Mesh( new THREE.BoxGeometry( size, size, size ) ) );
+            helper.material = new THREE.MeshBasicMaterial( {
+                depthTest: false,
+                depthWrite: false,
+                fog: false,
+                toneMapped: false,
+                transparent: true
+            } );
+            helper.material.color.setHex( 0x444444 );
+            helper.material.opacity = 0.75;
+            helper.position.copy( dPos );
+            helper.updateMatrix();
+            this.helper = helper;
+            this.editor.scene.add( helper );
+        }
+
+        // Detach skeleton gizmo
+        
+        this.editor.gizmo.stop();
+
+    }
+
     update(state, dt) {
 
         if(state) this.updateBlendshapes(dt);
 
-        if(this.selectedPoint == null || !this.mustUpdate)
+        if(this.selectedPoint === null || !this.mustUpdate)
             return;
 
-        this.transform.attach( this.mesh.children[this.selectedPoint] );
-        this.mustUpdate = false; 
+        this.attachObject();
     }
 
     updateBlendshapes( dt ) {
