@@ -143,7 +143,7 @@ class Gizmo {
 
         canvas.addEventListener( 'pointerdown', e => {
 
-            if(e.button != 0 || !this.bonePoints || this.editor.state || (!this.raycastEnabled && !e.ctrlKey))
+            if(e.button != 0 || !this.bonePoints || this.editor.state || (!this.raycastEnabled && !e.ctrlKey) || this.bonePoints.material.depthTest)
             return;
 
             const pointer = new THREE.Vector2(( e.offsetX / canvas.clientWidth ) * 2 - 1, -( e.offsetY / canvas.clientHeight ) * 2 + 1);

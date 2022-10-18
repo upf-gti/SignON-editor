@@ -15,22 +15,23 @@ class FacialRig {
         this.raycastEnabled = true;
         this.helper = null;
         this.undoSteps = [];
-        this.maxBlendShapeTranslationOffset = 0.05;
+        this.maxBlendShapeTranslationOffset = 0.015;
 
         let transform = new TransformControls( editor.camera, editor.renderer.domElement );
         window.trans = transform;
         transform.setSpace( 'local' );
         transform.setMode( 'translate' );
         transform.addEventListener( 'change', editor.render );
-        transform.setSize(0.5);
+        transform.setSize(0.1);
 
         transform.constraint = new TranslationConstraint();
 
         transform.addEventListener( 'objectChange', e => {
 
-            this.updateBlendshapes();
+            this.updateRig();
 
             if(this.selectedPoint != null) {
+                this.updateBlendshapes(e.target);
                 // editor.gui.updateBlendshapesProperties();
             }
         });
@@ -79,7 +80,7 @@ class FacialRig {
         this.mustUpdate = true; 
     }
 
-    begin(mesh) {
+    begin(mesh, blendshapes) {
         
         this.mesh = mesh;
 
@@ -123,6 +124,7 @@ class FacialRig {
         
         this.bindEvents();
         
+        this.automap();
         // First update to get bones in place
         this.update(true, 0.0);
 
@@ -130,6 +132,34 @@ class FacialRig {
             this.updatePointsColors();
     }
 
+    automap() {
+
+        this.map = {};
+        let i = 0;
+        for(let point of this.mesh.children) {
+            this.map[i] = point.name;
+            i++
+        }
+        this.blendshapesMap = {
+            "Brows": {x: [], y: ["BrowsDown_Left", "BrowsDown_Right","-BrowsOuterLower_Left", "-BrowsOuterLower_Right"]},
+            "Brow_L": {x: ["BrowsIn_Left"], y: ["-BrowsUp_Left"]},
+            "Brow_R": {x: ["-BrowsIn_Right"], y: ["-BrowsUp_Right"]},
+            "Nose_R001": {x: [], y: ["-NoseScrunch_Right"]},
+            "Nose_L001": {x: [], y: ["-NoseScrunch_Left"]},
+            "Cheek_L": {x: ["-CheekPuff_Left"], y: []},
+            "Cheek_R": {x: ["CheekPuff_Right"], y: []},
+            "UpperLip_R001": {x: [], y: ["UpperLipUp_Right", "-UpperLipDown_Right"], z: ["UpperLip"]},
+            "UpperLip_L001": {x: [], y: ["UpperLipUp_Left", "-UpperLipDown_Left"], z: []},
+            "Smile_R001": {x: [], y: ["-Smile_Right", "Frown_Right"]},
+            "Smile_L001": {x: [], y: ["-Smile_Left", "Frown_Left"]},
+            "Mouth001": { x: ["Midmouth_Right","-Midmouth_Left"], y: ["-MouthUp", "MouthDown"]},
+            "LowerLip_L001": {x: [], y: ["-LowerLip_Right"]},
+            "LowerLip_R001": {x: [], y: ["-LowerLip_Left"]},
+            "Jaw001": {x: ["Jaw_Right","-Jaw_Left"], y: ["Jaw_Down","-Jaw_Up"]},
+
+        }
+
+    }
     stop() {
         this.transform.detach();
     }
@@ -220,7 +250,7 @@ class FacialRig {
                         let bone = this.editor.skeletonHelper.bones[step.boneId];
                         bone.position.fromArray( step.pos );
                         bone.quaternion.fromArray( step.quat );
-                        this.updateBlendshapes();
+                        this.updateRig();
                     }
                     else
                         transform.showZ = ! transform.showZ;
@@ -287,7 +317,7 @@ class FacialRig {
 
     update(state, dt) {
 
-        if(state) this.updateBlendshapes(dt);
+        if(state) this.updateRig(dt);
 
         if(this.selectedPoint === null || !this.mustUpdate)
             return;
@@ -295,7 +325,7 @@ class FacialRig {
         this.attachObject();
     }
 
-    updateBlendshapes( dt ) {
+    updateRig( dt ) {
 
         if(!this.meshPoints)
             return;
@@ -310,6 +340,34 @@ class FacialRig {
 
         this.meshPoints.geometry.setFromPoints(vertices);
         this.meshPoints.geometry.computeBoundingSphere();
+    }
+
+    updateBlendshapes(target) {
+        let name = this.map[this.selectedPoint];
+        let bs = {};
+        let max = this.maxBlendShapeTranslationOffset;
+        let offsets = new THREE.Vector3();
+        offsets.subVectors(target.worldPosition, this.defaultPositions[this.selectedPoint]);;
+
+        for(let i = 0; i < this.blendshapesMap[name].x.length; i++) {
+            let bsName = this.blendshapesMap[name].x[i];
+            let sign = 1;
+            if(bsName.includes('-')) {
+                bsName = bsName.replace('-', '');
+                sign = -1;
+            }
+            bs[bsName] = -sign*offsets.x/max;
+        }
+        for(let i = 0; i < this.blendshapesMap[name].y.length; i++) {
+            let bsName = this.blendshapesMap[name].y[i];
+            let sign = 1;
+            if(bsName.includes('-')) {
+                bsName = bsName.replace('-', '');
+                sign = -1;
+            }
+            bs[bsName] = -sign*offsets.y/max;
+        }
+        this.editor.updateBlendshapes(bs);
     }
 
     updatePointsColors() {
@@ -411,7 +469,7 @@ class FacialRig {
 
     onGUI() {
 
-        this.updateBlendshapes();
+        this.updateRig();
         this.updateTracks();
     }
     

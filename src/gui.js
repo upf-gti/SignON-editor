@@ -248,11 +248,12 @@ class Gui {
         docked.content.style.width = "100%";
         
         var rig = new LiteGUI.Panel("sidePanel", {title: 'Facial Rig', scroll: true});
-        let img = document.createElement("img");
-        img.src = "data/imgs/baseFace2.png";
-        img.style.width = '100%';
-        rig.content.appendChild(img);
+        // let img = document.createElement("img");
+        // img.src = "data/imgs/baseFace(2).png";
+        // img.style.width = '100%';
+        // rig.content.appendChild(img);
         
+        rig.content.appendChild(this.drawRigCanvas())
         this.updateSidePanel( docked, 'root', {firstBone: true, id : 'Blink_Left'} );
 		var skeletonTab = tabs.addTab("Skeleton", { size: "full", content: docked.content });
         var rigTab = tabs.addTab("Rig", { size: "full" , content: rig.content});
@@ -261,6 +262,46 @@ class Gui {
         //this.sidePanel = tabs;
 
         this.resize();
+    }
+
+    drawRigCanvas() {
+        let canvas = document.createElement('canvas');
+        canvas.style.width = '100%';
+        console.log(canvas.clientWidth)
+        canvas.style.height = '100%';
+        let img = document.createElement("img");
+        img.src = "data/imgs/baseFace(2).png";
+        img.addEventListener('load', () => {
+            
+            let ctx = canvas.getContext('2d');
+            canvas.height = canvas.width
+            ctx.drawImage(img,0,0, canvas.width,canvas.height);
+            this.drawTarget(ctx, canvas.width*265/532, canvas.height*656/696);
+        })
+        return canvas;
+    }
+    
+    drawTarget(ctx, centerX, centerY, x = null,y = null){
+        
+       
+        
+        ctx.fillStyle = "#000000";
+        ctx.fillRect(centerX-5, centerY-5, 10, 10);
+        ctx.strokeStyle = "rgba(0,125,125,0.9)";
+        ctx.lineWidth  = "5";
+        ctx.rect(centerX-5, centerY-5, 10, 10);
+        ctx.stroke();
+    
+        if(x == undefined && y == undefined)
+        {
+          x = centerX;
+          y = centerY;
+        }
+        ctx.fillStyle = "rgba(0,125,125,0.9)";
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.stroke();
     }
 
     updateSidePanel(root, item_selected, options) {

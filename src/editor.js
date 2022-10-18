@@ -136,10 +136,10 @@ class Editor {
         let camera = new THREE.PerspectiveCamera(60, pixelRatio, 0.1, 1000);
         window.camera = camera;
         let controls = new OrbitControls(camera, renderer.domElement);
-        camera.position.set(0, 2, 2);
+        camera.position.set(0, 2.5, 0.8);
         controls.minDistance = 0.5;
         controls.maxDistance = 5;
-        controls.target.set(0, 2, 0);
+        controls.target.set(0, 2.1, 0);
         controls.update();  
 
         // Orientation helper
@@ -981,6 +981,15 @@ class Editor {
 
                 break;
         }
+    }
+
+    updateBlendshapes(values) {
+        for(let v in values) {
+            let i = this.bodyBS.morphTargetDictionary[v];
+            this.bodyBS.morphTargetInfluences[i] = values[v];
+            this.eyelashesBS.morphTargetInfluences[i] = values[v];
+        }
+        
     }
 
     resize(width, height) {
