@@ -276,26 +276,60 @@ class Gui {
             let ctx = canvas.getContext('2d');
             canvas.height = canvas.width
             ctx.drawImage(img,0,0, canvas.width,canvas.height);
-            this.drawTarget(ctx, canvas.width*265/532, canvas.height*656/696);
+            this.drawSquare(ctx, canvas.width*265/532, canvas.height*656/696, 32); //jaw
+            this.drawSquare(ctx, canvas.width*265/532, canvas.height*546/696, 32); //mouth
+            this.drawSquare(ctx, canvas.width*265/532, canvas.height*298/696, 32); //brows
+            this.drawLine(ctx, canvas.width*370/532, canvas.height*287/696, 32, 'vertical'); //brow left
+            this.drawLine(ctx, canvas.width*170/532, canvas.height*287/696, 32, 'vertical'); //brow right
+            this.drawLine(ctx, canvas.width*200/532, canvas.height*480/696, 32, 'vertical'); //upperlip right
+            this.drawLine(ctx, canvas.width*320/532, canvas.height*480/696, 32, 'vertical'); //upperlip left
         })
+
         return canvas;
     }
     
-    drawTarget(ctx, centerX, centerY, x = null,y = null){
+    drawSquare(ctx, centerX, centerY, width, x = null, y = null){
         
-       
-        
-        ctx.fillStyle = "#000000";
-        ctx.fillRect(centerX-5, centerY-5, 10, 10);
         ctx.strokeStyle = "rgba(0,125,125,0.9)";
-        ctx.lineWidth  = "5";
-        ctx.rect(centerX-5, centerY-5, 10, 10);
+        ctx.lineWidth  = "2";
+        ctx.rect(centerX - width/2, centerY - width/2, width, width);
         ctx.stroke();
     
         if(x == undefined && y == undefined)
         {
           x = centerX;
           y = centerY;
+        }
+        ctx.fillStyle = "rgba(0,125,125,0.9)";
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.stroke();
+    }
+
+    drawLine(ctx, ox, oy, length, direction, x = null, y = null){
+        
+        ctx.strokeStyle = "rgba(0,125,125,0.9)";
+        ctx.lineWidth  = "2";
+        ctx.beginPath();
+        ctx.moveTo(ox, oy);
+        if(direction == 'vertical')
+            ctx.lineTo(ox, oy + length);
+        else
+            ctx.lineTo(ox + length, oy);
+        
+        ctx.stroke();
+    
+        if(x == undefined && y == undefined)
+        {
+            if(direction == 'vertical') {
+                x = ox;
+                y = oy + length/2;
+            }
+            else {
+                x = ox + length/2;
+                y = oy;
+            }
         }
         ctx.fillStyle = "rgba(0,125,125,0.9)";
         ctx.beginPath();
