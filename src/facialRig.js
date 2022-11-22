@@ -141,21 +141,21 @@ class FacialRig {
             i++
         }
         this.blendshapesMap = {
-            "Brows": {x: [], y: ["BrowsDown_Left", "BrowsDown_Right","-BrowsOuterLower_Left", "-BrowsOuterLower_Right"]},
-            "Brow_L": {x: ["BrowsIn_Left"], y: ["-BrowsUp_Left"]},
-            "Brow_R": {x: ["-BrowsIn_Right"], y: ["-BrowsUp_Right"]},
-            "Nose_R001": {x: [], y: ["-NoseScrunch_Right"]},
-            "Nose_L001": {x: [], y: ["-NoseScrunch_Left"]},
-            "Cheek_L": {x: ["-CheekPuff_Left"], y: []},
-            "Cheek_R": {x: ["CheekPuff_Right"], y: []},
-            "UpperLip_R001": {x: [], y: ["UpperLipUp_Right", "-UpperLipDown_Right"], z: ["UpperLip"]},
-            "UpperLip_L001": {x: [], y: ["UpperLipUp_Left", "-UpperLipDown_Left"], z: []},
-            "Smile_R001": {x: [], y: ["-Smile_Right", "Frown_Right"]},
-            "Smile_L001": {x: [], y: ["-Smile_Left", "Frown_Left"]},
-            "Mouth001": { x: ["Midmouth_Right","-Midmouth_Left"], y: ["-MouthUp", "MouthDown"]},
-            "LowerLip_L001": {x: [], y: ["-LowerLip_Right"]},
-            "LowerLip_R001": {x: [], y: ["-LowerLip_Left"]},
-            "Jaw001": {x: ["Jaw_Right","-Jaw_Left"], y: ["Jaw_Down","-Jaw_Up"]},
+            "Brows": {x: [], y: ["BrowsDown_Left", "BrowsDown_Right","-BrowsOuterLower_Left", "-BrowsOuterLower_Right"], z:[]},
+            "Brow_L": {x: ["BrowsIn_Left"], y: ["-BrowsUp_Left", "-EyesWide_Left"], z:[]},
+            "Brow_R": {x: ["-BrowsIn_Right"], y: ["-BrowsUp_Right", "-EyesWide_Right"], z:[]},
+            "Nose_R001": {x: [], y: ["-NoseScrunch_Right"], z:[]},
+            "Nose_L001": {x: [], y: ["-NoseScrunch_Left"], z:[]},
+            "Cheek_L": {x: ["-CheekPuff_Left"], y: [], z:[]},
+            "Cheek_R": {x: ["CheekPuff_Right"], y: [], z:[]},
+            "UpperLip_R001": {x: [], y: ["-UpperLipUp_Right", "UpperLipDown_Right"], z: ["UpperLip"]},
+            "UpperLip_L001": {x: [], y: ["-UpperLipUp_Left", "UpperLipDown_Left"], z: []},
+            "Smile_R001": {x: ["-MotuhNarrow_Right"], y: ["-Smile_Right", "Frown_Right"], z:[]},
+            "Smile_L001": {x: ["MotuhNarrow_Left"], y: ["-Smile_Left", "Frown_Left"], z:[]},
+            "Mouth001": { x: ["Midmouth_Right","-Midmouth_Left"], y: ["-MouthUp", "MouthDown"], z: ["MouthWhistle_NazrrowAdjust_Left", "MouthWhistle_NarrowAdjust_Right"]},
+            "LowerLip_L001": {x: [], y: ["-LowerLip_Right"], z:[]},
+            "LowerLip_R001": {x: [], y: ["-LowerLip_Left"], z:[]},
+            "Jaw001": {x: ["Jaw_Right","-Jaw_Left"], y: ["Jaw_Down","-Jaw_Up"], z:[]},
 
         }
 
@@ -367,6 +367,16 @@ class FacialRig {
             }
             bs[bsName] = -sign*offsets.y/max;
         }
+
+        for(let i = 0; i < this.blendshapesMap[name].z.length; i++) {
+            let bsName = this.blendshapesMap[name].z[i];
+            let sign = 1;
+            if(bsName.includes('-')) {
+                bsName = bsName.replace('-', '');
+                sign = -1;
+            }
+            bs[bsName] = sign*offsets.z/max;
+        }
         this.editor.updateBlendshapes(bs);
     }
 
@@ -387,7 +397,7 @@ class FacialRig {
     updateTracks() {
 
         let timeline = this.editor.gui.timeline;
-        let keyType = FacialRig.ModeToKeyType[ this.editor.getGizmoMode() ];
+        let keyType = 'weight';// FacialRig.ModeToKeyType[ this.editor.getGizmoMode() ];
 
         if(timeline.onUpdateTracks( keyType ))
         return; // Return if event handled
@@ -446,26 +456,6 @@ class FacialRig {
         this.transform.setSpace( space );
     }
 
-    showOptions( inspector ) {
-        inspector.addNumber( "Translation snap", this.editor.defaultTranslationSnapValue, { min: 0.5, max: 5, step: 0.5, callback: (v) => {
-            this.editor.defaultTranslationSnapValue = v;
-            this.editor.updateGizmoSnap();
-        }});
-        inspector.addNumber( "Rotation snap", this.editor.defaultRotationSnapValue, { min: 15, max: 180, step: 15, callback: (v) => {
-            this.editor.defaultRotationSnapValue = v;
-            this.editor.updateGizmoSnap();
-        }});
-        inspector.addSlider( "Size", this.editor.getGizmoSize(), { min: 0.2, max: 2, step: 0.1, callback: (v) => {
-            this.editor.setGizmoSize(v);
-        }});
-        inspector.addTitle("Bone markers")
-        inspector.addSlider( "Size", this.editor.getGizmoSize(), { min: 0.01, max: 1, step: 0.01, callback: (v) => {
-            this.editor.setBoneSize(v);
-        }});
-
-        const depthTestEnabled = this.bonePoints.material.depthTest;
-        inspector.addCheckbox( "Depth test", depthTestEnabled, (v) => { this.bonePoints.material.depthTest = v; })
-    }
 
     onGUI() {
 
@@ -474,11 +464,4 @@ class FacialRig {
     }
     
 };
-
-FacialRig.ModeToKeyType = {
-    'Translate': 'position',
-    'Rotate': 'quaternion',
-    'Scale': 'scale'
-};
-
 export { FacialRig };
