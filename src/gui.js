@@ -262,11 +262,19 @@ class Gui {
 
                 const numTracks = this.timeline.getNumTracks(bone_selected);
                 const _Modes = numTracks > 1 ? ["Translate","Rotate"] : ["Rotate"];
+                const _Tools = ["Joint", "Follow"];
 
                 widgets.addSection("Gizmo", { pretitle: makePretitle('gizmo'), settings: (e) => this.openSettings( 'gizmo' ), settings_title: "<i class='bi bi-gear-fill section-settings'></i>" });
-                widgets.addButtons( "Mode", _Modes, { selected: this.editor.getGizmoMode(), name_width: "50%", width: "100%", callback: (v) => {
-                    if(this.editor.getGizmoMode() != v) this.editor.setGizmoMode(v);
+                
+                widgets.addButtons( "Tool", _Tools, { selected: this.editor.getGizmoTool(), name_width: "50%", width: "100%", callback: (v) => {
+                    if(this.editor.getGizmoTool() != v) this.editor.setGizmoTool(v);
                 }});
+
+                if( this.editor.getGizmoTool() == "Joint" ){
+                    widgets.addButtons( "Mode", _Modes, { selected: this.editor.getGizmoMode(), name_width: "50%", width: "100%", callback: (v) => {
+                        if(this.editor.getGizmoMode() != v) this.editor.setGizmoMode(v);
+                    }});
+                }
 
                 widgets.addButtons( "Space", ["Local","World"], { selected: this.editor.getGizmoSpace(), name_width: "50%", width: "100%", callback: (v) => {
                     if(this.editor.getGizmoSpace() != v) this.editor.setGizmoSpace(v);

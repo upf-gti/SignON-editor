@@ -1,6 +1,7 @@
 import * as THREE from './libs/three.module.js';
 import { ShaderChunk } from "./utils.js";
 import { TransformControls } from './controls/TransformControls.js';
+import { FABRIKSolver } from "./IKSolver.js"
 
 class Gizmo {
 
@@ -35,20 +36,46 @@ class Gizmo {
         transform.addEventListener( 'dragging-changed', e => {
             const enabled = e.value;
             editor.controls.enabled = !enabled;
-            this.raycastEnabled = !this.raycastEnabled;
+            this.raycastEnabled = !enabled;//!this.raycastEnabled;
             
             if(this.selectedBone == null)
             return;
 
-            const bone = this.editor.skeletonHelper.bones[this.selectedBone];
-
+            
             if(enabled) {
-                this.undoSteps.push( {
-                    boneId: this.selectedBone,
-                    pos: bone.position.toArray(),
-                    quat: bone.quaternion.toArray(),
-                } );
+                if ( this.toolSelected == Gizmo.Tools.ik ){
+                    if ( !this.ikSelectedChain ){
+                        return; 
+                    }
+       
+                    let step = [];
+                    let chain = this.ikSelectedChain.chain;
+                    for ( let i = 1; i < chain.length; ++i){ // effector does not change
+                        const bone = this.editor.skeletonHelper.bones[chain[i]];
+                        step.push( {
+                            boneId: chain[i],
+                            pos: bone.position.toArray(),
+                            quat: bone.quaternion.toArray(),
+                        } );
+                    }
+                    if ( step.length > 0 ){
+                        
+                        step.push( { ikpos: this.ikTarget.position.toArray() } );
+                        
+                        this.undoSteps.push( step );
+                    }
+                }else{
+                    const bone = this.editor.skeletonHelper.bones[this.selectedBone];
+            
+                    this.undoSteps.push( [{
+                        boneId: this.selectedBone,
+                        pos: bone.position.toArray(),
+                        quat: bone.quaternion.toArray(),
+                    }] );
+                }
             }
+
+
         });
 
         let scene = editor.scene;
@@ -64,11 +91,15 @@ class Gizmo {
 
         // Update in first iteration
         this.mustUpdate = true; 
+
+        this.toolSelected = Gizmo.Tools.joint;
+        this.mode = "rotate";
     }
 
     begin(skeletonHelper) {
         
         this.skeletonHelper = skeletonHelper;
+        this.ikInit();
 
         // point cloud for bones
         const pointsShaderMaterial = new THREE.ShaderMaterial( {
@@ -82,18 +113,18 @@ class Gizmo {
             fragmentShader: ShaderChunk["Point"].fragmentshader
         });
 
-        const geometry = new THREE.BufferGeometry();
-
+        
         let vertices = [];
-
+        
         for(let bone of skeletonHelper.bones) {
             let tempVec = new THREE.Vector3();
             bone.getWorldPosition(tempVec);
             vertices.push( tempVec );
         }
-
+        
         this.selectedBone = vertices.length ? 0 : null;
-
+        
+        const geometry = new THREE.BufferGeometry();
         geometry.setFromPoints(vertices);
         
         const positionAttribute = geometry.getAttribute( 'position' );
@@ -102,6 +133,8 @@ class Gizmo {
 
         this.bonePoints = new THREE.Points( geometry, pointsShaderMaterial );
         this.bonePoints.name = "GizmoPoints";
+        this.bonePoints.renderOrder = 1;
+        this.scene.remove(this.scene.getObjectByName("GizmoPoints"));
         this.scene.add( this.bonePoints );
         
         this.raycaster = new THREE.Raycaster();
@@ -114,10 +147,107 @@ class Gizmo {
 
         if(this.selectedBone != null) 
             this.updateBoneColors();
+
+    }
+
+    ikInit() {
+        this.ikTarget = new THREE.Object3D();
+        this.ikTarget.name = "ikTarget";
+        let scene = this.editor.scene;
+        scene.add( this.ikTarget );
+        
+        this.ikSolver = new FABRIKSolver( this.skeletonHelper.skeleton );
+        this.ikSolver.setIterations( 1 );
+        this.ikSolver.setSquaredDistanceThreshold( 0.000001 );
+
+        this.ikSelectedChain = null;
+        this._ikCreateChains( "HeadTop_End", "Spine" );
+        this._ikCreateChains( "LeftToe_End", "LeftUpLeg" );
+        this._ikCreateChains( "RightToe_End", "RightUpLeg" );
+        
+        this._ikCreateChains( "LeftHandThumb4", "LeftShoulder" );
+        this._ikCreateChains( "LeftHandIndex4", "LeftShoulder" );
+        this._ikCreateChains( "LeftHandMiddle4", "LeftShoulder" );
+        this._ikCreateChains( "LeftHandRing4", "LeftShoulder" );
+        this._ikCreateChains( "LeftHandPinky4", "LeftShoulder" );
+        
+        this._ikCreateChains( "RightHandThumb4", "RightShoulder" );
+        this._ikCreateChains( "RightHandIndex4", "RightShoulder" );
+        this._ikCreateChains( "RightHandMiddle4", "RightShoulder" );
+        this._ikCreateChains( "RightHandRing4", "RightShoulder" );
+        this._ikCreateChains( "RightHandPinky4", "RightShoulder" );
+        
+        this.ikSolver.setChainEnablerAll( false );
+    }
+
+    _ikCreateChains( effectorName, rootName ){
+        let bones = this.skeletonHelper.bones;
+        let effector = this.skeletonHelper.getBoneByName( effectorName );
+        let root = this.skeletonHelper.getBoneByName( rootName );
+        
+        if ( !effector ){ 
+            for ( let i= 0; i < bones.length; ++i ){
+                if( bones[i].name.includes(effectorName) ){ 
+                    effector = bones[i]; 
+                    break;
+                }
+            } 
+        }
+        if ( !root ){ 
+            for ( let i= 0; i < bones.length; ++i ){
+                if( bones[i].name.includes(rootName) ){ 
+                    root = bones[i]; 
+                    break;
+                }
+            } 
+        }
+        if ( !effector || !root ){  return; }
+
+        let chain = []
+        
+        while ( effector != root ){
+            chain.push( bones.indexOf( effector ) );
+            if ( !effector.parent ){ debugger;}
+            effector = effector.parent;
+        }
+        chain.push( bones.indexOf( root ) );
+
+        
+        effector = bones[ chain[0] ];
+        
+        while ( effector != root ){
+            if( ! this.ikSolver.getChain( effector.name ) ){
+                this.ikSolver.createChain( chain, null, this.ikTarget, effector.name );
+            }
+            chain.splice(0,1);
+            effector = bones[ chain[0] ];
+        }
+    }
+
+    ikSetBone( boneIdx ){
+        this.ikSolver.setChainEnablerAll( false );
+        this.transform.detach();
+        this.ikSelectedChain = null;
+        
+        let enabled = this.ikSolver.setChainEnabler( this.skeletonHelper.bones[ boneIdx ].name, true );
+        if ( !enabled ){ return false; }
+        
+        this.ikSelectedChain = this.ikSolver.getChain( this.skeletonHelper.bones[ boneIdx ].name );
+        // position target on selected bone
+        let v = new THREE.Vector3();
+        this.skeletonHelper.skeleton.bones[ boneIdx ].getWorldPosition( v );
+        this.ikTarget.parent.worldToLocal( v );
+        this.ikTarget.position.copy( v );
+        this.transform.attach( this.ikTarget );
+        return true;
+    }
+    ikStop() {
+        this.ikSelectedChain = null;
     }
 
     stop() {
         this.transform.detach();
+        this.ikStop();
     }
 
     bindEvents() {
@@ -158,8 +288,8 @@ class Gizmo {
                 this.selectedBone = intersection.index;
                 let boneName = this.skeletonHelper.bones[this.selectedBone].name;
 
-                this.mustUpdate = true;
-                this.editor.gui.updateSidePanel(null, boneName);
+                this.setTool( this.toolSelected ); // updates panel already
+
                 this.editor.gui.timeline.setSelectedBone( boneName );
                 this.updateBoneColors();
             }
@@ -182,16 +312,23 @@ class Gizmo {
                 case 'w':
                     const bone = this.editor.skeletonHelper.bones[this.selectedBone];
                     if(timeline.getNumTracks(bone) < 2) // only rotation
-                    return;
-                    transform.setMode( 'translate' );
+                        return;
+                    this.setTool( Gizmo.Tools.joint );
+                    this.setMode( "translate" );
                     this.editor.gui.updateSidePanel();
                     break;
 
                 case 'e':
-                    transform.setMode( 'rotate' );
+                    this.setTool( Gizmo.Tools.joint );
+                    this.setMode( "rotate" );
                     this.editor.gui.updateSidePanel();
                     break;
 
+                case 'r':
+                    this.setTool( Gizmo.Tools.ik );
+                    this.editor.gui.updateSidePanel();
+                    break;
+    
                 case 'x':
                     transform.showX = ! transform.showX;
                     break;
@@ -207,13 +344,21 @@ class Gizmo {
                         return;
                         
                         const step = this.undoSteps.pop();
-                        let bone = this.editor.skeletonHelper.bones[step.boneId];
-                        bone.position.fromArray( step.pos );
-                        bone.quaternion.fromArray( step.quat );
+                        for ( let i = 0; i < step.length; ++i){
+                            if ( step[i].ikpos ){
+                                this.ikTarget.position.fromArray( step[i].ikpos );
+                            }
+                            else{
+                                let bone = this.editor.skeletonHelper.bones[step[i].boneId];
+                                bone.position.fromArray( step[i].pos );
+                                bone.quaternion.fromArray( step[i].quat );
+                            }
+                        }
                         this.updateBones();
                     }
-                    else
+                    else{
                         transform.showZ = ! transform.showZ;
+                    }
                     break;
             }
 
@@ -235,10 +380,16 @@ class Gizmo {
 
         if(state) this.updateBones(dt);
 
+        if ( this.ikSelectedChain ){
+            this.ikSolver.update(); 
+            this.updateBones();
+            this.editor.gui.updateBoneProperties();
+        }
+
         if(this.selectedBone == null || !this.mustUpdate)
         return;
 
-        this.transform.attach( this.skeletonHelper.bones[this.selectedBone] );
+        //this.transform.attach( this.skeletonHelper.bones[this.selectedBone] );
         this.mustUpdate = false; 
     }
 
@@ -323,16 +474,41 @@ class Gizmo {
         const boneId = this.skeletonHelper.bones.findIndex((bone) => bone.name == name);
         if(boneId > -1){
             this.selectedBone = boneId;
+            this.setTool( this.toolSelected );
             this.updateBoneColors();
         }
     }
 
     setMode( mode ) {
-        this.transform.setMode( mode );
+        if ( this.toolSelected == Gizmo.Tools.joint ){ 
+            this.mode = mode;
+            this.transform.setMode( mode );
+        }
     }
 
     setSpace( space ) {
         this.transform.setSpace( space );
+    }
+
+    setTool( tool ){
+        this.toolSelected = Gizmo.Tools.joint;
+
+        let ikResult = false;
+        if ( tool == Gizmo.Tools.ik ){
+            this.toolSelected = tool;
+            this.mode = "rotate";
+            this.transform.setMode( "translate" ); // ik moves target, but rotates joints
+            ikResult = this.ikSetBone( this.selectedBone );
+        }
+        if ( !ikResult ){
+            this.toolSelected = Gizmo.Tools.joint;
+            this.ikStop();
+            this.transform.setMode( this.mode );
+            this.transform.attach( this.skeletonHelper.bones[this.selectedBone] );
+        }
+
+        this.editor.gui.updateSidePanel(null, this.skeletonHelper.bones[ this.selectedBone ].name );
+
     }
 
     showOptions( inspector ) {
@@ -370,4 +546,8 @@ Gizmo.ModeToKeyType = {
     'Scale': 'scale'
 };
 
+Gizmo.Tools = {
+    joint : 0,
+    ik : 1
+}
 export { Gizmo };

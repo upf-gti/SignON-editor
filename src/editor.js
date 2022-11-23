@@ -593,8 +593,17 @@ class Editor {
         this.gizmo.mustUpdate = true;
     }
 
+    getGizmoTool() { 
+        return ( this.gizmo.toolSelected == Gizmo.Tools.ik ) ? "Follow" : "Joint"; 
+    }
+
+    setGizmoTool( tool ) { 
+        if ( tool == "Follow" ){ this.gizmo.setTool( Gizmo.Tools.ik ); }
+        else { this.gizmo.setTool( Gizmo.Tools.joint ); }
+    }
+
     getGizmoMode() {
-        return UTILS.firstToUpperCase( this.gizmo.transform.mode );
+        return UTILS.firstToUpperCase( this.gizmo.mode );
     }
 
     setGizmoMode( mode ) {
