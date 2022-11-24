@@ -20,6 +20,7 @@ class Gizmo {
         transform.addEventListener( 'change', editor.render );
 
         transform.addEventListener( 'objectChange', e => {
+            this.mustUpdate = true;
             this.updateBones();
 
             if(this.selectedBone != null) {
@@ -28,6 +29,8 @@ class Gizmo {
         });
 
         transform.addEventListener( 'mouseUp', e => {
+            this.mustUpdate = false;
+
             if(this.selectedBone === undefined)
             return;
             this.updateTracks();
@@ -58,10 +61,7 @@ class Gizmo {
                             quat: bone.quaternion.toArray(),
                         } );
                     }
-                    if ( step.length > 0 ){
-                        
-                        step.push( { ikpos: this.ikTarget.position.toArray() } );
-                        
+                    if ( step.length > 0 ){                      
                         this.undoSteps.push( step );
                     }
                 }else{
@@ -224,6 +224,12 @@ class Gizmo {
         }
     }
 
+    ikSetTargetToBone (){
+        if( !this.ikSelectedChain ){ return; }
+        this.skeletonHelper.bones[ this.selectedBone ].updateMatrixWorld();
+        this.skeletonHelper.bones[ this.selectedBone ].parent.updateMatrixWorld();
+        this.skeletonHelper.bones[ this.selectedBone ].getWorldPosition( this.ikTarget.position );
+    }
     ikSetBone( boneIdx ){
         this.ikSolver.setChainEnablerAll( false );
         this.transform.detach();
@@ -233,11 +239,8 @@ class Gizmo {
         if ( !enabled ){ return false; }
         
         this.ikSelectedChain = this.ikSolver.getChain( this.skeletonHelper.bones[ boneIdx ].name );
-        // position target on selected bone
-        let v = new THREE.Vector3();
-        this.skeletonHelper.skeleton.bones[ boneIdx ].getWorldPosition( v );
-        this.ikTarget.parent.worldToLocal( v );
-        this.ikTarget.position.copy( v );
+
+        this.ikSetTargetToBone();
         this.transform.attach( this.ikTarget );
         return true;
     }
@@ -345,16 +348,14 @@ class Gizmo {
                         
                         const step = this.undoSteps.pop();
                         for ( let i = 0; i < step.length; ++i){
-                            if ( step[i].ikpos ){
-                                this.ikTarget.position.fromArray( step[i].ikpos );
-                            }
-                            else{
-                                let bone = this.editor.skeletonHelper.bones[step[i].boneId];
-                                bone.position.fromArray( step[i].pos );
-                                bone.quaternion.fromArray( step[i].quat );
-                            }
+                            let bone = this.editor.skeletonHelper.bones[step[i].boneId];
+                            bone.position.fromArray( step[i].pos );
+                            bone.quaternion.fromArray( step[i].quat );
                         }
                         this.updateBones();
+                        if ( this.toolSelected == Gizmo.Tools.ik ){ // reset target position
+                            this.ikSetTargetToBone( );
+                        }
                     }
                     else{
                         transform.showZ = ! transform.showZ;
@@ -380,17 +381,23 @@ class Gizmo {
 
         if(state) this.updateBones(dt);
 
+        
+        if(this.selectedBone == null ){ return; }
+        
+        if ( !this.mustUpdate ){
+            if ( this.toolSelected == Gizmo.Tools.ik ){ // in case of dragging timeline, make target follow bone
+                this.ikSetTargetToBone();
+            }
+            return;
+        }
+        
         if ( this.ikSelectedChain ){
             this.ikSolver.update(); 
             this.updateBones();
             this.editor.gui.updateBoneProperties();
         }
-
-        if(this.selectedBone == null || !this.mustUpdate)
-        return;
-
         //this.transform.attach( this.skeletonHelper.bones[this.selectedBone] );
-        this.mustUpdate = false; 
+        //this.mustUpdate = false; 
     }
 
     updateBones( dt ) {
