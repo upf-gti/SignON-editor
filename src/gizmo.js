@@ -165,17 +165,17 @@ class Gizmo {
         this._ikCreateChains( "LeftToe_End", "LeftUpLeg" );
         this._ikCreateChains( "RightToe_End", "RightUpLeg" );
         
-        this._ikCreateChains( "LeftHandThumb4", "LeftShoulder" );
-        this._ikCreateChains( "LeftHandIndex4", "LeftShoulder" );
+        this._ikCreateChains( "LeftHandThumb4",  "LeftShoulder" );
+        this._ikCreateChains( "LeftHandIndex4",  "LeftShoulder" );
         this._ikCreateChains( "LeftHandMiddle4", "LeftShoulder" );
-        this._ikCreateChains( "LeftHandRing4", "LeftShoulder" );
-        this._ikCreateChains( "LeftHandPinky4", "LeftShoulder" );
+        this._ikCreateChains( "LeftHandRing4",   "LeftShoulder" );
+        this._ikCreateChains( "LeftHandPinky4",  "LeftShoulder" );
         
-        this._ikCreateChains( "RightHandThumb4", "RightShoulder" );
-        this._ikCreateChains( "RightHandIndex4", "RightShoulder" );
+        this._ikCreateChains( "RightHandThumb4",  "RightShoulder" );
+        this._ikCreateChains( "RightHandIndex4",  "RightShoulder" );
         this._ikCreateChains( "RightHandMiddle4", "RightShoulder" );
-        this._ikCreateChains( "RightHandRing4", "RightShoulder" );
-        this._ikCreateChains( "RightHandPinky4", "RightShoulder" );
+        this._ikCreateChains( "RightHandRing4",   "RightShoulder" );
+        this._ikCreateChains( "RightHandPinky4",  "RightShoulder" );
         
         this.ikSolver.setChainEnablerAll( false );
     }
@@ -185,7 +185,7 @@ class Gizmo {
         let effector = this.skeletonHelper.getBoneByName( effectorName );
         let root = this.skeletonHelper.getBoneByName( rootName );
         
-        if ( !effector ){ 
+        if ( !effector ){ // find similarly named bone
             for ( let i= 0; i < bones.length; ++i ){
                 if( bones[i].name.includes(effectorName) ){ 
                     effector = bones[i]; 
@@ -193,7 +193,7 @@ class Gizmo {
                 }
             } 
         }
-        if ( !root ){ 
+        if ( !root ){ // bind similarly named bone
             for ( let i= 0; i < bones.length; ++i ){
                 if( bones[i].name.includes(rootName) ){ 
                     root = bones[i]; 
@@ -205,12 +205,16 @@ class Gizmo {
 
         let chain = []
         
-        while ( effector != root ){
-            chain.push( bones.indexOf( effector ) );
-            if ( !effector.parent ){ debugger;}
+        while ( true ){
+            let i = bones.indexOf( effector );
+            if ( i < 0 ){ console.warn("IK chain: Skeleton root was reached before chain root "); break; }
+            
+            chain.push( i );
+            // TO DO : insert here a constraint, depending on the name of the bone 
+            if ( effector == root ){ break; }
             effector = effector.parent;
         }
-        chain.push( bones.indexOf( root ) );
+//        chain.push( bones.indexOf( root ) );
 
         
         effector = bones[ chain[0] ];

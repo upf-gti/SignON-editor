@@ -457,6 +457,9 @@ class Editor {
                     o.castShadow = true;
                     o.receiveShadow = true;
                     o.frustumCulled = false;
+                    if ( o.skeleton ){ 
+                        this.skeleton = o.skeleton;
+                    }
                 }
             } );
             
@@ -472,11 +475,11 @@ class Editor {
             updateThreeJSSkeleton(this.retargeting.tgtBindPose);
             this.skeletonHelper = this.retargeting.tgtSkeletonHelper;
             this.skeletonHelper.name = "SkeletonHelper";
-            this.skeletonHelper.skeleton = this.skeleton = createSkeleton();
+            this.skeletonHelper.skeleton = this.skeleton; //= createSkeleton();
             
             this.scene.add( model );
             this.scene.add( this.skeletonHelper );
-            this.scene.add(this.retargeting.srcSkeletonHelper)
+            this.scene.add( this.retargeting.srcSkeletonHelper );
             
             this.gui.loadClip(this.animationClip);
             this.gizmo.begin(this.skeletonHelper);
