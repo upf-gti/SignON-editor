@@ -54,7 +54,7 @@ class Gizmo {
                     let step = [];
                     let chain = this.ikSelectedChain.chain;
                     for ( let i = 1; i < chain.length; ++i){ // effector does not change
-                        const bone = this.editor.skeletonHelper.bones[chain[i]];
+                        const bone = this.skeleton.bones[chain[i]];
                         step.push( {
                             boneId: chain[i],
                             pos: bone.position.toArray(),
@@ -65,7 +65,7 @@ class Gizmo {
                         this.undoSteps.push( step );
                     }
                 }else{
-                    const bone = this.editor.skeletonHelper.bones[this.selectedBone];
+                    const bone = this.skeleton.bones[this.selectedBone];
             
                     this.undoSteps.push( [{
                         boneId: this.selectedBone,
@@ -85,6 +85,7 @@ class Gizmo {
         this.scene = scene;
         this.transform = transform;
 		this.raycaster = null;
+        this.skeleton = null;
         this.selectedBone = null;
         this.bonePoints = null;
         this.editor = editor;
@@ -98,7 +99,7 @@ class Gizmo {
 
     begin(skeletonHelper) {
         
-        this.skeletonHelper = skeletonHelper;
+        this.skeleton = skeletonHelper.skeleton;
         this.ikInit();
 
         // point cloud for bones
@@ -116,7 +117,7 @@ class Gizmo {
         
         let vertices = [];
         
-        for(let bone of skeletonHelper.bones) {
+        for(let bone of this.skeleton.bones) {
             let tempVec = new THREE.Vector3();
             bone.getWorldPosition(tempVec);
             vertices.push( tempVec );
@@ -156,7 +157,7 @@ class Gizmo {
         let scene = this.editor.scene;
         scene.add( this.ikTarget );
         
-        this.ikSolver = new FABRIKSolver( this.skeletonHelper.skeleton );
+        this.ikSolver = new FABRIKSolver( this.skeleton );
         this.ikSolver.setIterations( 1 );
         this.ikSolver.setSquaredDistanceThreshold( 0.000001 );
 
@@ -181,9 +182,9 @@ class Gizmo {
     }
 
     _ikCreateChains( effectorName, rootName ){
-        let bones = this.skeletonHelper.bones;
-        let effector = this.skeletonHelper.getBoneByName( effectorName );
-        let root = this.skeletonHelper.getBoneByName( rootName );
+        let bones = this.skeleton.bones;
+        let effector = this.skeleton.getBoneByName( effectorName );
+        let root = this.skeleton.getBoneByName( rootName );
         
         if ( !effector ){ // find similarly named bone
             for ( let i= 0; i < bones.length; ++i ){
@@ -230,19 +231,19 @@ class Gizmo {
 
     ikSetTargetToBone (){
         if( !this.ikSelectedChain ){ return; }
-        this.skeletonHelper.bones[ this.selectedBone ].updateMatrixWorld();
-        this.skeletonHelper.bones[ this.selectedBone ].parent.updateMatrixWorld();
-        this.skeletonHelper.bones[ this.selectedBone ].getWorldPosition( this.ikTarget.position );
+        this.skeleton.bones[ this.selectedBone ].updateMatrixWorld();
+        this.skeleton.bones[ this.selectedBone ].parent.updateMatrixWorld();
+        this.skeleton.bones[ this.selectedBone ].getWorldPosition( this.ikTarget.position );
     }
     ikSetBone( boneIdx ){
         this.ikSolver.setChainEnablerAll( false );
         this.transform.detach();
         this.ikSelectedChain = null;
         
-        let enabled = this.ikSolver.setChainEnabler( this.skeletonHelper.bones[ boneIdx ].name, true );
+        let enabled = this.ikSolver.setChainEnabler( this.skeleton.bones[ boneIdx ].name, true );
         if ( !enabled ){ return false; }
         
-        this.ikSelectedChain = this.ikSolver.getChain( this.skeletonHelper.bones[ boneIdx ].name );
+        this.ikSelectedChain = this.ikSolver.getChain( this.skeleton.bones[ boneIdx ].name );
 
         this.ikSetTargetToBone();
         this.transform.attach( this.ikTarget );
@@ -259,7 +260,7 @@ class Gizmo {
 
     bindEvents() {
 
-        if(!this.skeletonHelper)
+        if(!this.skeleton)
             throw("No skeleton");
 
         let transform = this.transform;
@@ -293,7 +294,7 @@ class Gizmo {
 
             if(intersection) {
                 this.selectedBone = intersection.index;
-                let boneName = this.skeletonHelper.bones[this.selectedBone].name;
+                let boneName = this.skeleton.bones[this.selectedBone].name;
 
                 this.setTool( this.toolSelected ); // updates panel already
 
@@ -317,7 +318,7 @@ class Gizmo {
                     break;
 
                 case 'w':
-                    const bone = this.editor.skeletonHelper.bones[this.selectedBone];
+                    const bone = this.skeleton.bones[this.selectedBone];
                     if(timeline.getNumTracks(bone) < 2) // only rotation
                         return;
                     this.setTool( Gizmo.Tools.joint );
@@ -352,7 +353,7 @@ class Gizmo {
                         
                         const step = this.undoSteps.pop();
                         for ( let i = 0; i < step.length; ++i){
-                            let bone = this.editor.skeletonHelper.bones[step[i].boneId];
+                            let bone = this.skeleton.bones[step[i].boneId];
                             bone.position.fromArray( step[i].pos );
                             bone.quaternion.fromArray( step[i].quat );
                         }
@@ -411,7 +412,7 @@ class Gizmo {
 
         let vertices = [];
 
-        for(let bone of this.skeletonHelper.bones) {
+        for(let bone of this.skeleton.bones) {
             let tempVec = new THREE.Vector3();
             bone.getWorldPosition(tempVec);
             vertices.push( tempVec );
@@ -453,7 +454,7 @@ class Gizmo {
         if(keyType != track.type)
         return;
 
-        let bone = this.skeletonHelper.getBoneByName(name);
+        let bone = this.skeleton.getBoneByName(name);
 
         let start = track.dim * keyFrameIndex;
         let values = bone[ track.type ].toArray();
@@ -476,13 +477,13 @@ class Gizmo {
 
     setBone( name ) {
 
-        let bone = this.skeletonHelper.skeleton.getBoneByName(name);
+        let bone = this.skeleton.getBoneByName(name);
         if(!bone) {
             console.warn("No bone with name " + name);
             return;
         }
 
-        const boneId = this.skeletonHelper.bones.findIndex((bone) => bone.name == name);
+        const boneId = this.skeleton.bones.findIndex((bone) => bone.name == name);
         if(boneId > -1){
             this.selectedBone = boneId;
             this.setTool( this.toolSelected );
@@ -515,10 +516,10 @@ class Gizmo {
             this.toolSelected = Gizmo.Tools.joint;
             this.ikStop();
             this.transform.setMode( this.mode );
-            this.transform.attach( this.skeletonHelper.bones[this.selectedBone] );
+            this.transform.attach( this.skeleton.bones[this.selectedBone] );
         }
 
-        this.editor.gui.updateSidePanel(null, this.skeletonHelper.bones[ this.selectedBone ].name );
+        this.editor.gui.updateSidePanel(null, this.skeleton.bones[ this.selectedBone ].name );
 
     }
 
