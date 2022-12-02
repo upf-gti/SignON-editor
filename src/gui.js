@@ -261,16 +261,17 @@ class Gui {
             if(bone_selected) {
 
                 const numTracks = this.timeline.getNumTracks(bone_selected);
-                const _Modes = numTracks > 1 ? ["Translate","Rotate"] : ["Rotate"];
-                const _Tools = ["Joint", "Follow"];
-
+                const _Tools = this.editor.hasGizmoSelectedBoneIk() ? ["Joint", "Follow"] : ["Joint"];
+                
                 widgets.addSection("Gizmo", { pretitle: makePretitle('gizmo'), settings: (e) => this.openSettings( 'gizmo' ), settings_title: "<i class='bi bi-gear-fill section-settings'></i>" });
                 
                 widgets.addButtons( "Tool", _Tools, { selected: this.editor.getGizmoTool(), name_width: "50%", width: "100%", callback: (v) => {
                     if(this.editor.getGizmoTool() != v) this.editor.setGizmoTool(v);
                 }});
-
+                
                 if( this.editor.getGizmoTool() == "Joint" ){
+                    const _Modes = numTracks > 1 ? ["Translate","Rotate"] : ["Rotate"];
+                    if( numTracks <= 1 ){ this.editor.setGizmoMode("Rotate"); }
                     widgets.addButtons( "Mode", _Modes, { selected: this.editor.getGizmoMode(), name_width: "50%", width: "100%", callback: (v) => {
                         if(this.editor.getGizmoMode() != v) this.editor.setGizmoMode(v);
                     }});
@@ -358,6 +359,7 @@ class Gui {
 
             for( let b of bone.children ) {
 
+                if ( ! b.isBone ){ continue; }
                 let child = {
                     id: b.name,
                     children: []

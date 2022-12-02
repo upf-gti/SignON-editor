@@ -1,7 +1,12 @@
 import * as THREE from './libs/three.module.js';
 import { ShaderChunk } from "./utils.js";
 import { TransformControls } from './controls/TransformControls.js';
-import { FABRIKSolver } from "./IKSolver.js"
+import { CCDIKSolver, FABRIKSolver } from "./IKSolver.js"
+import { IKHelper } from "./IKHelper.js"
+
+
+let DEG2RAD = Math.PI / 180;
+let RAD2DEG = 180 / Math.PI;
 
 class Gizmo {
 
@@ -157,12 +162,21 @@ class Gizmo {
         let scene = this.editor.scene;
         scene.add( this.ikTarget );
         
-        this.ikSolver = new FABRIKSolver( this.skeleton );
+        this.ikSolver = new CCDIKSolver( this.skeleton );
+        this.ikHelper = new IKHelper();
+        this.ikHelper.begin(this.ikSolver, scene);
+        this.ikHelper.setVisualisationScale( 2 );
+        this.ikHelper.setVisibilityFlags( IKHelper.VISIBILITYFLAGS.CONSTRAINTS );
+
         this.ikSolver.setIterations( 1 );
         this.ikSolver.setSquaredDistanceThreshold( 0.000001 );
 
+        window.ikSolver = this.ikSolver;
         this.ikSelectedChain = null;
-        this._ikCreateChains( "HeadTop_End", "Spine" );
+        this._ikCreateChains( "RightEye", "Head" );
+        this._ikCreateChains( "LeftEye", "Head" );
+        this._ikCreateChains( "HeadTop_End", "Neck" );
+        this._ikCreateChains( "Neck", "Spine" );
         this._ikCreateChains( "LeftToe_End", "LeftUpLeg" );
         this._ikCreateChains( "RightToe_End", "RightUpLeg" );
         
@@ -205,12 +219,44 @@ class Gizmo {
         if ( !effector || !root ){  return; }
 
         let chain = []
-        
+        let constraints = [];
         while ( true ){
             let i = bones.indexOf( effector );
             if ( i < 0 ){ console.warn("IK chain: Skeleton root was reached before chain root "); break; }
             
             chain.push( i );
+
+
+            if ( effector.name.includes("Shoulder") ){
+                if (effector.name.includes("Left") ){ constraints.push({ type: 2, axis:[0,0,1], polar:[0, 35 * DEG2RAD ], azimuth:[60 * DEG2RAD, 180 * DEG2RAD], twist:[0,0.001] } );  }
+                else{ constraints.push({ type: 2, axis:[0,0,1], polar:[0, 35 * DEG2RAD ], azimuth:[ 0 * DEG2RAD, 120 * DEG2RAD], twist:[0,0.001] } ); }
+            }
+            else if( effector.name.includes("Spine") ){
+                constraints.push({ type: 2, axis:[0,-0.2,1], polar:[0, 45 * DEG2RAD ], azimuth:[ 35 * DEG2RAD, 135 * DEG2RAD], twist:[0,0.001] } );
+            }
+            else if( effector.name.includes("Arm") ){
+                if ( effector.name.includes("Fore") ){ // forearm/elbow
+                    if ( effector.name.includes("Left") ){ constraints.push({ type: 1, axis:[1,1,0], min: (30 * DEG2RAD), max: (180 * DEG2RAD), twist:[0,0.001] } ); }
+                    else{ constraints.push({ type: 1, axis:[1,1,0], min: (0 * DEG2RAD), max: (150 * DEG2RAD), twist:[0,0.001] } ); }
+                }
+                else{ // arm
+                    if ( effector.name.includes("Left") ){ constraints.push({ type: 2, axis:[-0.9,-0.8,1], polar:[0, 80 * DEG2RAD ], azimuth:[ 0 * DEG2RAD, 359.999 * DEG2RAD], twist:[0,0.001] } );                    }
+                    else{ constraints.push({ type: 2, axis:[0.9,-0.8,1], polar:[0, 80 * DEG2RAD ], azimuth:[ 0 * DEG2RAD, 359.999 * DEG2RAD], twist:[0,0.001] } ); }
+                }
+
+            }
+            else if ( effector.name.includes("Head") ){ // headEnd will not have constraint. It is ignored during the createChain
+                // set the same constraint space regardless of different bind bones
+                if (effectorName.includes("LeftEye") ){ constraints.push({ type: 2, axis:[0.17,2.6,1], polar:[0, 50 * DEG2RAD ], azimuth:[200 * DEG2RAD, 290 * DEG2RAD], twist:[0,0.001] } );  }
+                else if (effectorName.includes("RightEye") ){ constraints.push({ type: 2, axis:[-0.2,2.6,1], polar:[0, 50 * DEG2RAD ], azimuth:[255 * DEG2RAD, 345 * DEG2RAD], twist:[0,0.001] } );  }
+                else{ constraints.push({ type: 2, axis:[0,0.5,1], polar:[0, 50 * DEG2RAD ], azimuth:[ 225 * DEG2RAD, 315 * DEG2RAD], twist:[0,0.001] } ); }
+            }
+            else if ( effector.name.includes("Neck") ){
+                constraints.push({ type: 2, axis:[0,0.6,1], polar:[0, 68 * DEG2RAD ], azimuth:[ 210 * DEG2RAD, 330 * DEG2RAD], twist:[0,0.001] } );
+            }
+            else{
+                constraints.push(null);
+            }
             // TO DO : insert here a constraint, depending on the name of the bone 
             if ( effector == root ){ break; }
             effector = effector.parent;
@@ -219,11 +265,12 @@ class Gizmo {
 
         
         effector = bones[ chain[0] ];
-        
+        constraints[0] = null;
         while ( effector != root ){
             if( ! this.ikSolver.getChain( effector.name ) ){
-                this.ikSolver.createChain( chain, null, this.ikTarget, effector.name );
+                this.ikSolver.createChain( chain, constraints, this.ikTarget, effector.name );
             }
+            constraints.splice(0,1);
             chain.splice(0,1);
             effector = bones[ chain[0] ];
         }
@@ -386,7 +433,8 @@ class Gizmo {
 
         if(state) this.updateBones(dt);
 
-        
+        this.ikHelper.update();
+
         if(this.selectedBone == null ){ return; }
         
         if ( !this.mustUpdate ){

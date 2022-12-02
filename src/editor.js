@@ -80,7 +80,7 @@ class Editor {
         scene.add( ground );
         
         // Lights
-        const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
+        const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444, 0.3 );
         hemiLight.position.set( 0, 20, 0 );
         scene.add( hemiLight );
 
@@ -95,7 +95,7 @@ class Editor {
         dirLight.shadow.camera.far = 200;
         scene.add( dirLight );
 
-        let spotLight = new THREE.SpotLight(0xffa95c, 1);
+        let spotLight = new THREE.SpotLight(0xffa95c, 0.7);
         spotLight.position.set(-50,50,50);
         spotLight.castShadow = true;
         spotLight.shadow.bias = -0.0001;
@@ -596,6 +596,10 @@ class Editor {
         this.gizmo.mustUpdate = true;
     }
 
+    hasGizmoSelectedBoneIk() { 
+        return !!this.gizmo.ikSolver && !!this.gizmo.ikSolver.getChain( this.gizmo.skeleton.bones[this.gizmo.selectedBone].name );
+    }
+    
     getGizmoTool() { 
         return ( this.gizmo.toolSelected == Gizmo.Tools.ik ) ? "Follow" : "Joint"; 
     }
