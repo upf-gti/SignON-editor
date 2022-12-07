@@ -610,7 +610,9 @@ function createAnimation(name, landmarks) {
 
 function createAnimationFromRotations(name, nn) {
 
-    var quatData = nn.getQuaternions();
+    var quatData = nn.getQuaternions(); // ML regression of the quaternions
+    
+    // clean data
     var names = quatData[quatData.length - 1];
     if(typeof(names[0]) != "string")
         names = ["mixamorigHips.position","mixamorigHips.quaternion","mixamorigSpine.quaternion","mixamorigSpine1.quaternion","mixamorigSpine2.quaternion","mixamorigNeck.quaternion","mixamorigHead.quaternion","mixamorigLeftShoulder.quaternion","mixamorigLeftArm.quaternion","mixamorigLeftForeArm.quaternion","mixamorigLeftHand.quaternion","mixamorigLeftHandThumb1.quaternion","mixamorigLeftHandThumb2.quaternion","mixamorigLeftHandThumb3.quaternion","mixamorigLeftHandIndex1.quaternion","mixamorigLeftHandIndex2.quaternion","mixamorigLeftHandIndex3.quaternion","mixamorigLeftHandMiddle1.quaternion","mixamorigLeftHandMiddle2.quaternion","mixamorigLeftHandMiddle3.quaternion","mixamorigLeftHandRing1.quaternion","mixamorigLeftHandRing2.quaternion","mixamorigLeftHandRing3.quaternion","mixamorigLeftHandPinky1.quaternion","mixamorigLeftHandPinky2.quaternion","mixamorigLeftHandPinky3.quaternion","mixamorigRightShoulder.quaternion","mixamorigRightArm.quaternion","mixamorigRightForeArm.quaternion","mixamorigRightHand.quaternion","mixamorigRightHandThumb1.quaternion","mixamorigRightHandThumb2.quaternion","mixamorigRightHandThumb3.quaternion","mixamorigRightHandIndex1.quaternion","mixamorigRightHandIndex2.quaternion","mixamorigRightHandIndex3.quaternion","mixamorigRightHandMiddle1.quaternion","mixamorigRightHandMiddle2.quaternion","mixamorigRightHandMiddle3.quaternion","mixamorigRightHandRing1.quaternion","mixamorigRightHandRing2.quaternion","mixamorigRightHandRing3.quaternion","mixamorigRightHandPinky1.quaternion","mixamorigRightHandPinky2.quaternion","mixamorigRightHandPinky3.quaternion"];
@@ -647,6 +649,7 @@ function createAnimationFromRotations(name, nn) {
         }
 
         var data = null;
+        var nameBone = names[Math.ceil(quatIdx/amount)];
         if(isPosition) {
             data = new THREE.VectorKeyframeTrack(names[Math.ceil(quatIdx / amount)], times, quatValues);
             amount = 3;
@@ -658,7 +661,7 @@ function createAnimationFromRotations(name, nn) {
             quatIdx += amount;
         }
 
-        tracks.push(data);
+        if (!nameBone.includes("mixamorigHips.quaternion")) tracks.push(data); // set the hip static
     }
 
     // use -1 to automatically calculate

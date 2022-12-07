@@ -116,9 +116,9 @@ class Editor {
 
         // Camera
         let camera = new THREE.PerspectiveCamera(60, pixelRatio, 0.1, 1000);
+        camera.position.set(0.023, 1.387, 2.276);
         window.camera = camera;
         let controls = new OrbitControls(camera, renderer.domElement);
-        camera.position.set(0, 1, 2);
         controls.minDistance = 0.5;
         controls.maxDistance = 5;
         controls.target.set(0, 1, 0);
@@ -227,18 +227,6 @@ class Editor {
 
         // Trim
         this.landmarksArray = this.processLandmarks( landmarks );
-
-        // DELETE
-        // function download(content, fileName, contentType) {
-        //     let a = document.createElement("a");
-        //     let file = new Blob([content], {type: contentType});
-        //     a.href = URL.createObjectURL(file);
-        //     a.download = fileName;
-        //     a.click();
-        // };
-
-        // let aa = JSON.stringify(this.nn.landmarksNN);
-        // download(aa, 'processedLandmarks.json', 'application/json');
 
         // Canvas UI buttons
         this.createSceneUI();

@@ -1,3 +1,4 @@
+import mlSavitzkyGolay from 'https://cdn.skypack.dev/ml-savitzky-golay';
 import { TFModel } from "./libs/tensorFlowWrap.module.js";
 import * as THREE from "./libs/three.module.js";
 import { UTILS } from "./utils.js"
@@ -95,7 +96,6 @@ class NN {
                                         
         // Linear interpolation to solves blank frames
         blankFrames = UTILS.consecutiveRanges(blankFrames);
-
         for (let range of blankFrames) {
             if (typeof range == 'number') {
                 let frame = quatData[range];
@@ -124,6 +124,15 @@ class NN {
                     divisions += divisions;
                 }
             }
+        }
+
+        // Noise correction (Savitzky Golay filter)
+        let aux = quatData;
+        for (let coord = 3; coord < aux[0].length; coord++) {
+            let data = [];
+            aux.forEach( (frame) => { data.push(frame[coord]); }); // get the data of each coord per frame
+            let ans = mlSavitzkyGolay(data, 1, { windowSize: 9, polynomial: 3, derivative: 0, pad: 'post', padValue: 'symmetric' }); //https://www.skypack.dev/view/ml-savitzky-golay
+            quatData.forEach( (frame, idx) => { frame[coord] = ans[idx]; }); // replace with the posto data
         }
 
         return quatData;
