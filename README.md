@@ -2,18 +2,17 @@
 
 This web application estimates computer animations from a single-camera input video. It is hosted in this [link](https://webglstudio.org/projects/signon/animations_editor/).
 
----
 ## Description
 
 The first view of the application is a selector of the provided input. It supports pre-recorded videos or the video stream from the webcam, and it can also load previous created animations for editing purposes.
 
-![Input Selector](./data/imgs/inputSelector.png)
+<img src="./data/imgs/inputSelector.png" width="500">
 
 In the following station, the user can trim the video if desired, or select the option "redo" to record/upload the video again. Once the user is fine with the result, the option "Convert Data to 3D Animation" moves the application to the last view.
 
 The last station is a viewer and an editor of the final estimated animation. User can edit/correct as desired the animation with the help of a timeline and an GUI to move the joints of the skeleton.
 
-![Edit Station](./data/imgs/editStation.png)
+<img src="./data/imgs/editStation.png" width="800">
 
 Finally, user can download the animation as a BVH format file to use it in any other applications with different purposes.
 
@@ -27,10 +26,10 @@ Finally, user can download the animation as a BVH format file to use it in any o
 
 ## Authors
 
-Víctor Ubieto (victorubieto)
-Pablo García (PZerua)
-Eva Valls (evallsg)
-Alex Rodríguez (jxarco)
-Jaume Pozo (japopra)
+Víctor Ubieto (victorubieto) <br>
+Pablo García (PZerua) <br>
+Eva Valls (evallsg) <br>
+Alex Rodríguez (jxarco) <br>
+Jaume Pozo (japopra) <br>
 
 This application was created with the budget from the European project SignON (https://signon-project.eu/). And it is planned to be a tool for creating animations that will be used in the project.
