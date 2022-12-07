@@ -26,29 +26,38 @@ class Gizmo {
 
         transform.addEventListener( 'objectChange', e => {
             this.mustUpdate = true;
-            this.updateBones();
+            
+            if(this.selectedBone != null) {    
+                
+                // This should be in update. However transform glitches for some reason
+                if ( this.toolSelected == Gizmo.Tools.joint && this.jointRestrictionChain ){ // enforce constraint even with joint tool
+                   this.ikSolver._applyConstraint( this.jointRestrictionChain, 1, this.skeleton.bones[this.selectedBone].quaternion ); // a bit illegal
+                }
 
-            if(this.selectedBone != null) {
+                // ik tool update on this.update. Compute ik once per frame only
+
                 editor.gui.updateBoneProperties();
             }
+            this.updateBones();
         });
 
         transform.addEventListener( 'mouseUp', e => {
             this.mustUpdate = false;
 
-            if(this.selectedBone === undefined)
-            return;
+            if(this.selectedBone === null || this.selectedBone === undefined){
+                return;
+            }
             this.updateTracks();
         } );
 
         transform.addEventListener( 'dragging-changed', e => {
             const enabled = e.value;
-            editor.controls.enabled = !enabled;
+            this.editor.controls.enabled = !enabled;
             this.raycastEnabled = !enabled;//!this.raycastEnabled;
             
-            if(this.selectedBone == null)
-            return;
-
+            if(this.selectedBone == null){
+                return;
+            }
             
             if(enabled) {
                 if ( this.toolSelected == Gizmo.Tools.ik ){
@@ -94,6 +103,16 @@ class Gizmo {
         this.selectedBone = null;
         this.bonePoints = null;
         this.editor = editor;
+
+        // joint tool
+        this.jointRestrictionChain = null; // when restricting joint rotation, call ikSolver._applyConstraint( chain, 1, bone.quaternion )
+
+        //ik tool 
+        this.ikSelectedChain = null;
+        this.ikTarget = null;
+        this.ikSolver = null;
+        this.ikHelper = null;
+
 
         // Update in first iteration
         this.mustUpdate = true; 
@@ -161,15 +180,19 @@ class Gizmo {
         this.ikTarget.name = "ikTarget";
         let scene = this.editor.scene;
         scene.add( this.ikTarget );
-        
+
         this.ikSolver = new CCDIKSolver( this.skeleton );
+        this.ikSolver.setIterations( 1 );
+        this.ikSolver.setSquaredDistanceThreshold( 0.000001 );
+
         this.ikHelper = new IKHelper();
         this.ikHelper.begin(this.ikSolver, scene);
         this.ikHelper.setVisualisationScale( 2 );
         this.ikHelper.setVisibilityFlags( IKHelper.VISIBILITYFLAGS.CONSTRAINTS );
+        window.ikSolver = this.ikSolver;
+        window.ikHelper = this.ikHelper;
+        window.addEventListener( "keydown", (e) => { if (e.key == "a"){ this.ikHelper.setVisibility( !this.ikHelper.visible ); }});
 
-        this.ikSolver.setIterations( 1 );
-        this.ikSolver.setSquaredDistanceThreshold( 0.000001 );
 
         this.ikSelectedChain = null;
         this._ikCreateChains( "LeftEye", "Head" );
@@ -232,52 +255,52 @@ class Gizmo {
             let sign = bone.name.includes("Left") ? 1 : (-1);
 
             if ( bone.name.includes("Shoulder") ){ // clavicula
-                /*Left */ if ( sign > 0 ){ constraints.push({ type: 2, axis:[0,0,1], polar:[0, 35 * DEG2RAD ], azimuth:[60 * DEG2RAD, 180 * DEG2RAD], twist:[0,0.001] } );  }
-                /*Right*/ else{ constraints.push({ type: 2, axis:[0,0,1], polar:[0, 35 * DEG2RAD ], azimuth:[ 0 * DEG2RAD, 120 * DEG2RAD], twist:[0,0.001] } ); }
+                /*Left */ if ( sign > 0 ){ constraints.push({ type: 2, axis:[0,0,1], polar:[0, 35 * DEG2RAD ], azimuth:[60 * DEG2RAD, 180 * DEG2RAD], twist:[0 * DEG2RAD, 0.001 * DEG2RAD] } );  }
+                /*Right*/ else{ constraints.push({ type: 2, axis:[0,0,1], polar:[0, 35 * DEG2RAD ], azimuth:[ 0 * DEG2RAD, 120 * DEG2RAD], twist:[0 * DEG2RAD, 0.001 * DEG2RAD] } ); }
             }
             else if ( bone.name.includes("ForeArm") ){ // forearm/elbow
-                constraints.push({ type: 1, axis:[1, sign * 1,0], min: (30 * DEG2RAD), max: (180 * DEG2RAD), twist:[0,0.001] } );
+                constraints.push({ type: 1, axis:[1, sign * 1,0], min: (30 * DEG2RAD), max: (180 * DEG2RAD), twist:[290 * DEG2RAD, 90 * DEG2RAD] } );
             }
             else if( bone.name.includes("Arm") ){ // actual shoulder
-                constraints.push({ type: 2, axis:[ sign * (-0.9),-0.8,1], polar:[0, 80 * DEG2RAD ], azimuth:[ 0 * DEG2RAD, 359.999 * DEG2RAD], twist:[0,0.001] });
+                constraints.push({ type: 2, axis:[ sign * (-0.9),-0.8,1], polar:[0, 80 * DEG2RAD ], azimuth:[ 0 * DEG2RAD, 359.999 * DEG2RAD], twist:[-45 * DEG2RAD, 45 * DEG2RAD] });
             }
             else if ( bone.name.includes("Pinky") || bone.name.includes("Ring") || bone.name.includes("Middle") || bone.name.includes("Index") ){
-                if ( bone.name.includes("2") ){ constraints.push( { type: 1, axis:[-1,0,0], min: (240 * DEG2RAD), max: (360 * DEG2RAD), twist:[0,0.001] } ); }
-                else{ constraints.push( { type: 1, axis:[-1,0,0], min: (270 * DEG2RAD), max: (360 * DEG2RAD), twist:[0,0.001] } ); }
+                if ( bone.name.includes("2") ){ constraints.push( { type: 1, axis:[-1,0,0], min: (240 * DEG2RAD), max: (360 * DEG2RAD), twist:[0 * DEG2RAD, 0.001 * DEG2RAD] } ); }
+                else{ constraints.push( { type: 1, axis:[-1,0,0], min: (270 * DEG2RAD), max: (360 * DEG2RAD), twist:[0 * DEG2RAD, 0.001 * DEG2RAD] } ); }
             }
             else if ( bone.name.includes("Thumb") ){
-                if ( bone.name.includes("1")){ constraints.push( { type: 1, axis:[-0.2, sign * (-1),0], min: (310 * DEG2RAD), max: ( 10* DEG2RAD), twist:[0,0.001] } ); }
-                else{ constraints.push( { type: 1, axis:[-0.2, sign * (-1),0],  min: (280 * DEG2RAD), max: (360 * DEG2RAD), twist:[0,0.001] } ); }
+                if ( bone.name.includes("1")){ constraints.push( { type: 1, axis:[-0.2, sign * (-1),0], min: (310 * DEG2RAD), max: ( 10* DEG2RAD), twist:[0 * DEG2RAD, 0.001 * DEG2RAD] } ); }
+                else{ constraints.push( { type: 1, axis:[-0.2, sign * (-1),0],  min: (280 * DEG2RAD), max: (360 * DEG2RAD), twist:[0 * DEG2RAD, 0.001 * DEG2RAD] } ); }
             }
             else if ( bone.name.includes("Hand") ){ // fingers are tested before
-                /*Left */ if ( sign > 0 ){ constraints.push( { type: 2, axis:[0,-1,0], polar:[25 * DEG2RAD, 155 * DEG2RAD], azimuth: [60 * DEG2RAD, 140 * DEG2RAD], twist:[0,0.001] });}
-                /*Right*/ else{ constraints.push( { type: 2, axis:[0,-1,0], polar:[25 * DEG2RAD, 155 * DEG2RAD], azimuth: [45 * DEG2RAD, 125 * DEG2RAD], twist:[0,0.001] }); }
+                /*Left */ if ( sign > 0 ){ constraints.push( { type: 2, axis:[0,-1,0], polar:[25 * DEG2RAD, 155 * DEG2RAD], azimuth: [60 * DEG2RAD, 140 * DEG2RAD], twist:[0 * DEG2RAD, 0.001 * DEG2RAD] });}
+                /*Right*/ else{ constraints.push( { type: 2, axis:[0,-1,0], polar:[25 * DEG2RAD, 155 * DEG2RAD], azimuth: [45 * DEG2RAD, 125 * DEG2RAD], twist:[0 * DEG2RAD, 0.001 * DEG2RAD] }); }
             }
 
             else if ( bone.name.includes("Head") ){ // headEnd will not have constraint. It is ignored during the createChain
                 // set the same constraint space regardless of different bind bones
-                if (effectorName.includes("Eye") ){ constraints.push( { type: 2, axis:[0,0.5,1], polar:[0, 60 * DEG2RAD ], azimuth:[185 * DEG2RAD, 345 * DEG2RAD], twist:[0,0.0001] } );  }
-                else{ constraints.push({ type: 2, axis:[0,0.5,1], polar:[0, 60 * DEG2RAD ], azimuth:[ 225 * DEG2RAD, 315 * DEG2RAD], twist:[0,0.001] } ); }
+                if (effectorName.includes("Eye") ){ constraints.push( { type: 2, axis:[0,0.5,1], polar:[0, 60 * DEG2RAD ], azimuth:[185 * DEG2RAD, 345 * DEG2RAD], twist:[-45 * DEG2RAD, 45 * DEG2RAD] } );  }
+                else{ constraints.push({ type: 2, axis:[0,0.5,1], polar:[0, 60 * DEG2RAD ], azimuth:[ 225 * DEG2RAD, 315 * DEG2RAD], twist:[-67 * DEG2RAD, 67 * DEG2RAD] } ); }
             }
             else if ( bone.name.includes("Neck") ){
-                constraints.push({ type: 2, axis:[0,0.6,1], polar:[0, 68 * DEG2RAD ], azimuth:[ 210 * DEG2RAD, 330 * DEG2RAD], twist:[0,0.001] } );
+                constraints.push({ type: 2, axis:[0,0.6,1], polar:[0, 68 * DEG2RAD ], azimuth:[ 210 * DEG2RAD, 330 * DEG2RAD], twist:[0 * DEG2RAD, 0.001 * DEG2RAD] } );
             }
             else if( bone.name.includes("Spine") ){
-                constraints.push({ type: 2, axis:[0,-0.2,1], polar:[0, 45 * DEG2RAD ], azimuth:[ 35 * DEG2RAD, 135 * DEG2RAD], twist:[0,0.001] } );
+                constraints.push({ type: 2, axis:[0,-0.2,1], polar:[0, 45 * DEG2RAD ], azimuth:[ 35 * DEG2RAD, 135 * DEG2RAD], twist:[-30 * DEG2RAD, 30 * DEG2RAD] } );
             }
 
             else if( bone.name.includes("UpLeg") ){ //leg-hip
-                /*Left */ if ( sign > 0 ) { constraints.push( { type: 2, axis:[0,1,0], polar:[40 * DEG2RAD, 123 * DEG2RAD ], azimuth:[ 160 * DEG2RAD, 300 * DEG2RAD], twist:[0,0.001] } ); }
-                /*Right*/ else { constraints.push({ type: 2, axis:[-1,0.7,0], polar:[40 * DEG2RAD, 123 * DEG2RAD ], azimuth:[ -30 * DEG2RAD, 112 * DEG2RAD], twist:[0,0.001] } ); }
+                /*Left */ if ( sign > 0 ) { constraints.push( { type: 2, axis:[0,1,0], polar:[40 * DEG2RAD, 123 * DEG2RAD ], azimuth:[ 160 * DEG2RAD, 300 * DEG2RAD], twist:[-45 * DEG2RAD, 45 * DEG2RAD] } ); }
+                /*Right*/ else { constraints.push({ type: 2, axis:[-1,0.7,0], polar:[40 * DEG2RAD, 123 * DEG2RAD ], azimuth:[ -30 * DEG2RAD, 112 * DEG2RAD], twist:[-45 * DEG2RAD, 45 * DEG2RAD] } ); }
             }
             else if( bone.name.includes("Leg") ){ // knee
-                constraints.push({ type: 1, axis:[1,0,0], min: (40 * DEG2RAD), max: (180 * DEG2RAD), twist:[0,0.001] } ); 
+                constraints.push({ type: 1, axis:[1,0,0], min: (40 * DEG2RAD), max: (180 * DEG2RAD), twist:[0 * DEG2RAD, 0.001 * DEG2RAD] } ); 
             }
             else if (bone.name.includes("Foot") ){ // ankle
-                constraints.push({ type: 2, axis:[0,-1,0], polar:[35 * DEG2RAD, 116 * DEG2RAD ], azimuth:[ 62 * DEG2RAD, 115 * DEG2RAD], twist:[0,0.001] } );   
+                constraints.push({ type: 2, axis:[0,-1,0], polar:[35 * DEG2RAD, 116 * DEG2RAD ], azimuth:[ 62 * DEG2RAD, 115 * DEG2RAD], twist:[0 * DEG2RAD, 0.001 * DEG2RAD] } );   
             }
             else if (bone.name.includes("ToeBase") ){ // toe articulation
-                constraints.push({ type: 1, axis:[1,0,0], min: (145 * DEG2RAD), max: (180 * DEG2RAD), twist:[0,0.001] } ); 
+                constraints.push({ type: 1, axis:[1,0,0], min: (145 * DEG2RAD), max: (190 * DEG2RAD), twist:[0 * DEG2RAD, 0.001 * DEG2RAD] } ); 
             }
             else{
                 constraints.push(null);
@@ -365,13 +388,10 @@ class Gizmo {
             const intersection = intersections.length > 0 ? intersections[ 0 ] : null;
 
             if(intersection) {
-                this.selectedBone = intersection.index;
+                this._setBoneById( intersection.index );
+                
                 let boneName = this.skeleton.bones[this.selectedBone].name;
-
-                this.setTool( this.toolSelected ); // updates panel already
-
                 this.editor.gui.timeline.setSelectedBone( boneName );
-                this.updateBoneColors();
             }
         });
 
@@ -463,12 +483,12 @@ class Gizmo {
         if(this.selectedBone == null ){ return; }
         
         if ( !this.mustUpdate ){
-            if ( this.toolSelected == Gizmo.Tools.ik ){ // in case of dragging timeline, make target follow bone
+            if ( this.toolSelected == Gizmo.Tools.ik ){ // make target follow bone when not directly using it
                 this.ikSetTargetToBone();
             }
             return;
         }
-        
+
         if ( this.ikSelectedChain ){
             this.ikSolver.update(); 
             this.updateBones();
@@ -558,12 +578,46 @@ class Gizmo {
 
         const boneId = this.skeleton.bones.findIndex((bone) => bone.name == name);
         if(boneId > -1){
-            this.selectedBone = boneId;
-            this.setTool( this.toolSelected );
-            this.updateBoneColors();
+            this._setBoneById( boneId );
         }
     }
+    _setBoneById( boneId ){
+        this.selectedBone = boneId;
 
+        this.jointRestrictionChain = null;
+        if ( this.ikSolver ){
+            // joint Tool setup - find ikChain that restricts this bone (first child)
+            let bone = this.skeleton.bones[ this.selectedBone ];
+            if (bone.parent.name.includes("ForeArm")){ // when hand, use thumb as rotation restrictor
+                for (let i = 0; i < bone.children.length; ++i ){
+                    if ( ! bone.children[i].isBone ){ continue; }                    
+                    if ( bone.children[i].name.includes("Thumb")){
+                        this.jointRestrictionChain = this.ikSolver.getChain( bone.children[i].name );
+                        break;
+                    }
+                }
+            }
+            else if (bone.parent.name.includes("Neck")){ // when head, use headEnd as rotation restrictor
+                for (let i = 0; i < bone.children.length; ++i ){
+                    if ( ! bone.children[i].isBone ){ continue; }                    
+                    if ( bone.children[i].name.includes("HeadTop_End")){
+                        this.jointRestrictionChain = this.ikSolver.getChain( bone.children[i].name );
+                        break;
+                    }
+                }
+            }
+            else{ // otherwise, fetch first available chain from children
+                for (let i = 0; i < bone.children.length; ++i ){
+                    if ( ! bone.children[i].isBone ){ continue; }
+                    this.jointRestrictionChain = this.ikSolver.getChain( bone.children[i].name );
+                    if ( this.jointRestrictionChain ){ break; }
+                }
+            }
+        }
+
+        this.setTool( this.toolSelected );
+        this.updateBoneColors();
+    }
     setMode( mode ) {
         if ( this.toolSelected == Gizmo.Tools.joint ){ 
             this.mode = mode;

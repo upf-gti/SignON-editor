@@ -473,13 +473,14 @@ class Editor {
             
             // guizmo stuff
             updateThreeJSSkeleton(this.retargeting.tgtBindPose);
+
             this.skeletonHelper = this.retargeting.tgtSkeletonHelper;
             this.skeletonHelper.name = "SkeletonHelper";
             this.skeletonHelper.skeleton = this.skeleton; //= createSkeleton();
             
             this.scene.add( model );
             this.scene.add( this.skeletonHelper );
-            this.scene.add( this.retargeting.srcSkeletonHelper );
+            //this.scene.add( this.retargeting.srcSkeletonHelper );
             
             this.gui.loadClip(this.animationClip);
             this.gizmo.begin(this.skeletonHelper);
