@@ -32,7 +32,7 @@ class Gui {
         this.timeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
         this.timeline.onSelectKeyFrame = (e, info, index) => {
             if(e.button != 2) {
-                this.editor.gizmo.mustUpdate = true
+                //this.editor.gizmo.mustUpdate = true
                 this.editor.gizmo.update(true);
                 return false;
             }

@@ -25,7 +25,6 @@ class Gizmo {
         transform.addEventListener( 'change', editor.render );
 
         transform.addEventListener( 'objectChange', e => {
-            this.mustUpdate = true;
             
             if(this.selectedBone != null) {    
                 
@@ -42,8 +41,6 @@ class Gizmo {
         });
 
         transform.addEventListener( 'mouseUp', e => {
-            this.mustUpdate = false;
-
             if(this.selectedBone === null || this.selectedBone === undefined){
                 return;
             }
@@ -55,9 +52,12 @@ class Gizmo {
             this.editor.controls.enabled = !enabled;
             this.raycastEnabled = !enabled;//!this.raycastEnabled;
             
-            if(this.selectedBone == null){
+            this.mustUpdate = enabled;
+            
+            if(this.selectedBone === null || this.selectedBone === undefined){
                 return;
             }
+
             
             if(enabled) {
                 if ( this.toolSelected == Gizmo.Tools.ik ){
@@ -81,11 +81,11 @@ class Gizmo {
                 }else{
                     const bone = this.skeleton.bones[this.selectedBone];
             
-                    this.undoSteps.push( [{
+                    this.undoSteps.push( [ {
                         boneId: this.selectedBone,
                         pos: bone.position.toArray(),
                         quat: bone.quaternion.toArray(),
-                    }] );
+                    } ] );
                 }
             }
 
@@ -115,7 +115,7 @@ class Gizmo {
 
 
         // Update in first iteration
-        this.mustUpdate = true; 
+        this.mustUpdate = false; //true; 
 
         this.toolSelected = Gizmo.Tools.joint;
         this.mode = "rotate";
@@ -529,6 +529,7 @@ class Gizmo {
         geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 3 ) );
     }
 
+
     updateTracks() {
 
         let timeline = this.editor.gui.timeline;
@@ -547,25 +548,77 @@ class Gizmo {
         if(keyType != track.type)
         return;
 
-        let bone = this.skeleton.getBoneByName(name);
+        if ( this.skeleton.bones[this.selectedBone].name != name ) { return; } 
+        let bone = this.skeleton.bones[this.selectedBone]; 
+        
+       
+        if ( this.toolSelected == Gizmo.Tools.ik ){
+            if ( !this.ikSelectedChain ){ return; }
+            
+            const effectorFrameTime = this.editor.animationClip.tracks[ track.clip_idx ].times[ keyFrameIndex ];
+            const timeThreshold = ( timeline.framerate < 60 ) ? 0.008 : ( 0.5 * 1.0 / timeline.framerate );
+            
+            const chain = this.ikSelectedChain.chain;
+            
+            for( let i = 0; i < chain.length; ++i ){
+                const boneToProcess = this.skeleton.bones[chain[i]];
+                const quaternionTrackIdx = ( timeline.getNumTracks(boneToProcess) > 1 ) ? 1 : 0;
+                
+                let track = timeline.getTrack([boneToProcess.name, quaternionTrackIdx]);
+                if ( track.dim != 4 ){ continue; }
+                
+                let values = boneToProcess[ track.type ].toArray();
+                if( !values ){ continue; }
 
-        let start = track.dim * keyFrameIndex;
-        let values = bone[ track.type ].toArray();
+                let nearestTime = timeline.getNearestKeyFrame( this.editor.animationClip.tracks[ track.clip_idx ], effectorFrameTime );
+                let keyframe = null;
+                
+                // find nearest frame or create one if too far
+                if ( Math.abs( nearestTime - effectorFrameTime ) > 0.008 ){ 
+                    const currentTime = timeline.current_time;
+                    timeline.current_time = effectorFrameTime;
+                    keyframe = timeline.addKeyFrame( track ); //Works with current time.  current_time and selected frame time might not be the same
+                    timeline.current_time = currentTime;
+                }
+                else{ 
+                    keyframe = timeline.getCurrentKeyFrame( this.editor.animationClip.tracks[ track.clip_idx ], nearestTime, 0.0001 );
+                }
+                if ( isNaN(keyframe) ){ continue; }
+                
+                let start = 4 * keyframe;
+                for( let j = 0; j < values.length; ++j ) {
+                    this.editor.animationClip.tracks[ track.clip_idx ].values[ start + j ] = values[j];
+                }
 
-        if(!values)
-            return;
+                track.edited[ keyframe ] = true;
 
-        const idx = track.clip_idx;
-        track.edited[ keyFrameIndex ] = true;
+                // Update animation interpolants
+                this.editor.updateAnimationAction( track.clip_idx );
+                timeline.onSetTime( timeline.current_time );
 
-        // supports position and quaternion types
-        for( let i = 0; i < values.length; ++i ) {
-            this.editor.animationClip.tracks[ idx ].values[ start + i ] = values[i];
+            }
+        }
+        else{
+            let start = track.dim * keyFrameIndex;
+            let values = bone[ track.type ].toArray();
+    
+            if(!values)
+                return;
+    
+            const idx = track.clip_idx;
+            track.edited[ keyFrameIndex ] = true;
+
+            // supports position and quaternion types
+            for( let i = 0; i < values.length; ++i ) {
+                this.editor.animationClip.tracks[ idx ].values[ start + i ] = values[i];
+            }
+
+            // Update animation interpolants
+            this.editor.updateAnimationAction( idx );
+            timeline.onSetTime( timeline.current_time );
+
         }
 
-        // Update animation interpolants
-        this.editor.updateAnimationAction( idx );
-        timeline.onSetTime( timeline.current_time );
     }
 
     setBone( name ) {
@@ -588,34 +641,22 @@ class Gizmo {
         if ( this.ikSolver ){
             // joint Tool setup - find ikChain that restricts this bone (first child)
             let bone = this.skeleton.bones[ this.selectedBone ];
-            if (bone.parent.name.includes("ForeArm")){ // when hand, use thumb as rotation restrictor
-                for (let i = 0; i < bone.children.length; ++i ){
-                    if ( ! bone.children[i].isBone ){ continue; }                    
-                    if ( bone.children[i].name.includes("Thumb")){
-                        this.jointRestrictionChain = this.ikSolver.getChain( bone.children[i].name );
-                        break;
-                    }
+            let nameToFetch = null; 
+            if ( bone.parent.name.includes("ForeArm") )   { nameToFetch = "Middle";        } // when hand, use middle finger as rotation restrictor
+            else if ( bone.parent.name.includes("Neck") ) { nameToFetch = "HeadTop_End";   } // when head, use headEnd as rotation restrictor
+
+            for (let i = 0; i < bone.children.length; ++i ){
+                if ( ! bone.children[i].isBone ){ continue; }
+                if ( nameToFetch ){
+                    if ( ! bone.children[i].name.includes( nameToFetch ) ){ continue; }
                 }
+                this.jointRestrictionChain = this.ikSolver.getChain( bone.children[i].name );
+                if ( this.jointRestrictionChain ){ break; }
             }
-            else if (bone.parent.name.includes("Neck")){ // when head, use headEnd as rotation restrictor
-                for (let i = 0; i < bone.children.length; ++i ){
-                    if ( ! bone.children[i].isBone ){ continue; }                    
-                    if ( bone.children[i].name.includes("HeadTop_End")){
-                        this.jointRestrictionChain = this.ikSolver.getChain( bone.children[i].name );
-                        break;
-                    }
-                }
-            }
-            else{ // otherwise, fetch first available chain from children
-                for (let i = 0; i < bone.children.length; ++i ){
-                    if ( ! bone.children[i].isBone ){ continue; }
-                    this.jointRestrictionChain = this.ikSolver.getChain( bone.children[i].name );
-                    if ( this.jointRestrictionChain ){ break; }
-                }
-            }
+            
         }
 
-        this.setTool( this.toolSelected );
+        this.setTool( this.toolSelected ); // attach and prepare bone
         this.updateBoneColors();
     }
     setMode( mode ) {

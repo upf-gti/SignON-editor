@@ -438,14 +438,16 @@ Timeline.prototype.deleteKeyFrame = function (e, track, index) {
 	else{
 
 		// Key pressed
-		if(!track) {
+		if(!track && this._lastKeyFramesSelected.length > 0) {
 			const [boneName, trackIndex, keyIndex] = this._lastKeyFramesSelected[0];
 			track = this.tracksPerBone[boneName][trackIndex];
 			index = keyIndex;
 		}
 
-		this.saveState(track.clip_idx);
-		this._delete( track, index );
+		if ( track ){
+			this.saveState(track.clip_idx);
+			this._delete( track, index );
+		}
 	}
 
 	this.unSelectAllKeyFrames();

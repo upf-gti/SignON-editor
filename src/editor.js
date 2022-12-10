@@ -594,7 +594,7 @@ class Editor {
         throw("No gizmo attached to scene");
 
         this.gizmo.setBone(name);
-        this.gizmo.mustUpdate = true;
+        //this.gizmo.mustUpdate = true;
     }
 
     hasGizmoSelectedBoneIk() { 
