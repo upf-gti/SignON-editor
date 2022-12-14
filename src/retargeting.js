@@ -260,36 +260,28 @@ class AnimationRetargeting {
             let parent = skeleton.bones[i].parent;
             bone.parent = (parent) ? bones[map[parent.name]] : null;
             // If no parent bone, The inverse is enough
+
             let bindMatInverse = skeleton.boneInverses[i];
-            let mat = new THREE.Matrix4();
-            mat.fromArray(bindMatInverse);
-            mat = bindMatInverse.clone();
-            mat.elements = new Float32Array(mat.elements);
+            let mat = bindMatInverse.clone();
             mat.invert(); // Child Bone UN-Inverted
 
             // if parent exists, keep it parent inverted since thats how it exists in gltf
             // BUT invert the child bone then multiple to get local space matrix.
             // parent_worldspace_mat4_invert * child_worldspace_mat4 = child_localspace_mat4
             //  child_worldspace_mat4 = parent_worldspace_mat4 *child_localspace_mat4
-            if (parent && !parent.name.toUpperCase().includes("ARMATURE")) { 
+            if (parent && parent.isBone) { 
                 let pBindMatInverse = skeleton.boneInverses[map[parent.name]];
-                let pmat = new THREE.Matrix4();
-                pmat.fromArray(pBindMatInverse); // Parent Bone Inverted
-                pmat = pBindMatInverse.clone();
-                pmat.elements = new Float32Array(pmat.elements);
-                mat.multiplyMatrices(pmat,mat);	
+                let pmat = pBindMatInverse.clone();
+                mat.multiplyMatrices(pmat,mat);	// childLocal = inv(ParentWorld) * ChildWorld  
             } 
-            else if(parent && parent.name.toUpperCase().includes("ARMATURE"))
-            {
+            else if(parent && !parent.isBone) {
                 bone.parent = parent;
             }
 
             bone.matrix.copy(mat)
 
             //Assign local position
-            let pos = new THREE.Vector3();
-            pos.setFromMatrixPosition(mat);
-            bone.position.copy(pos);
+            bone.position.setFromMatrixPosition(mat);
             bone.position.round2zero();
             //Assign local rotation
             let matAux = mat.clone();
@@ -319,7 +311,7 @@ class AnimationRetargeting {
                 rot : new THREE.Quaternion(),
                 scl : new THREE.Vector3()
             }
-        if( b.parent != null && !b.parent.name.toUpperCase().includes("ARMATURE")){
+            if( b.parent && b.parent.isBone ){
                 p = bones[ map[b.parent.name] ];
                 
                 //------------------------------------------
@@ -338,10 +330,6 @@ class AnimationRetargeting {
                 //this.rot.from_mul( tp.rot, tc.rot );
                 b.world.rot.multiplyQuaternions(p.world.rot, b.quaternion)
 
-            /* b.world.pos.addVectors(p.wolrd.pos, b.position);
-                b.world.rot.addQuaternions(p.wolrd.pos, b.position);
-                b.world.scl.addVectors(p.wolrd.pos, b.position);
-                b.world.from_add( p.world, b.local );*/
             } else if (b.parent) {
                 b.world.pos.copy(b.parent.position);
                 b.world.scl.copy(b.parent.scale);
@@ -353,9 +341,9 @@ class AnimationRetargeting {
             }
         
         }
+
         if(updateWorld) {
-            for( b of bones ) {
-            
+            for( b of bones ) {    
                 b.updateMatrix();
                 b.updateWorldMatrix();
                 b.getWorldPosition(b.world.pos); 
@@ -366,7 +354,7 @@ class AnimationRetargeting {
     }
 
     //Transform source and target bones rotations into world space
-    retargetAnimation(anim, onlyY = false, changeAxis = false) {
+    retargetAnimation(anim, onlyY = false) {
 
         let src_tbones = this.srcBindPose;
         let tgt_tbones = this.tgtBindPose;
@@ -395,7 +383,7 @@ class AnimationRetargeting {
             let src_parent_bind_rot = new THREE.Quaternion();
             if(!src_bind.parent)
                 src_parent_bind_rot.copy(src_bind_world);
-            else if(src_bind.parent.name == "" || src_bind.parent.name.toUpperCase().includes("ARMATURE"))
+            else if(src_bind.parent.name == "" || !src_bind.parent.isBone)
                 src_parent_bind_rot = src_bind.parent.quaternion.clone();
             else
                 src_parent_bind_rot = src_bind.parent.world.rot.clone(); //src_bind.parent.getWorldQuaternion(src_parent_bind_rot); //World space parent bone rot
@@ -403,7 +391,7 @@ class AnimationRetargeting {
             let tgt_parent_bind_rot = new THREE.Quaternion();
             if(!tgt_bind.parent)
                 tgt_parent_bind_rot.copy(tgt_bind_world);
-            if(tgt_bind.parent.name == "" || tgt_bind.parent.name.toUpperCase().includes("ARMATURE"))
+            if(tgt_bind.parent.name == "" || !tgt_bind.parent.isBone)
                 tgt_parent_bind_rot = tgt_parent_bind_rot//tgt_bind.parent.quaternion.clone();
             else
                 tgt_parent_bind_rot = tgt_bind.parent.world.rot.clone(); //tgt_bind.parent.getWorldQuaternion(tgt_parent_bind_rot); //World space parent bone rot
@@ -427,22 +415,6 @@ class AnimationRetargeting {
             }
             let tgt_bind_inv = tgt_parent_bind_rot.clone();
             diff.multiply(convert).premultiply(tgt_bind_inv.invert());
-            //diff.multiply(convert).premultiply(tgt_bind_inv.invert());
-            if(changeAxis){
-                if((tgt_bind.name.includes("Arm") || tgt_bind.name.includes("Hand"))){
-
-                    let e = new THREE.Euler().setFromQuaternion(diff);
-                    e.x =  - e.x;
-                    //e.z =  - e.z;
-                    //e.y =  - e.y;
-                    //diff.setFromEuler(e) ;
-                }
-                else if ( tgt_bind.name.includes("Shoulder") ) {
-                    // let e = new THREE.Euler().setFromQuaternion(diff);
-                    // e.z = - e.z;
-                    // diff.setFromEuler(e) ;
-                }
-            }
             tgt_pose.quaternion.copy(diff);
 
             //upload quaternion bone to animation
@@ -505,17 +477,29 @@ class AnimationRetargeting {
 
         this.animName = animClip.name;
 
+        let srcpose = model;
         // find bind skeleton
-        let srcpose = [];
-        model.traverse( (object) => {
-            if (object.isSkinnedMesh) {
-                srcpose = object.skeleton;
-                return;
-            }
-        } );
+        if ( !model.bones || !model.boneInverses ){
+            model.traverse( (object) => {
+                if (object.isSkinnedMesh) {
+                    srcpose = object.skeleton;
+                    return;
+                }
+            } );
+        }
 
-        // solve the initial rotation of Kate
-        model.children[0].setRotationFromQuaternion(new THREE.Quaternion());
+
+        srcpose = srcpose.clone();
+        // Clean ENDSITES
+        for (let i = 0; i < srcpose.bones.length; i++) {
+            if (srcpose.bones[i].name.includes("ENDSITE")) {
+                srcpose.bones[i].removeFromParent();
+                srcpose.bones.splice(i,1);
+                srcpose.boneInverses.splice(i,1);
+            }
+        }
+        srcpose.boneMatrices = new Float32Array(srcpose.bones.length * 16);
+        srcpose.boneMatrices.fill(0);
 
         // get bones in bind pose
         this.srcBindPose = this.getBindPose(srcpose, true);
@@ -524,43 +508,20 @@ class AnimationRetargeting {
         for(let i = 0; i < this.srcBindPose.length; i++)
         {
             let bone = this.srcBindPose[i];
-            let o = model.getObjectByName(bone.name);
+            let o = srcpose.getBoneByName(bone.name);
             o.position.copy(bone.position);
             bone.scale.copy(o.scale);
             o.quaternion.copy(bone.quaternion);
             o.updateWorldMatrix();
         }
 
-        this.srcSkeletonHelper = new THREE.SkeletonHelper( model );
-        
-        this.srcMixer = new THREE.AnimationMixer(model);
-        this.srcMixer.clipAction(animClip).setEffectiveWeight(1.0).play();
-    }
-
-    loadAnimationFromSkeleton(srcpose, animClip) {
-
-        this.animName = animClip.name;
-
-        // get bones in bind pose
-        this.srcBindPose = this.getBindPose(srcpose, true);
-
-        // // set model in bind pose
-        // for(let i = 0; i < this.srcBindPose.length; i++)
-        // {
-        //     let bone = this.srcBindPose[i];
-        //     let o = model.getObjectByName(bone.name);
-        //     o.position.copy(bone.position);
-        //     bone.scale.copy(o.scale);
-        //     o.quaternion.copy(bone.quaternion);
-        //     o.updateWorldMatrix();
-        // }
-
         this.srcSkeletonHelper = new THREE.SkeletonHelper( srcpose.bones[0] );
         this.srcSkeletonHelper.skeleton = srcpose;
-        this.srcMixer = new THREE.AnimationMixer(this.srcSkeletonHelper );
+        
+        this.srcMixer = new THREE.AnimationMixer(this.srcSkeletonHelper);
         this.srcMixer.clipAction(animClip).setEffectiveWeight(1.0).play();
     }
-    
+
     createAnimation(model, animationName) {
 
         model.traverse( (object) => {

@@ -33,8 +33,6 @@ class Editor {
         this.animLoop = true;
         this.character = "";
         
-        this.spotLight = null;
-
         this.skeletonHelper = null;
         this.skeleton = null;
         this.mixer = null;
@@ -69,39 +67,53 @@ class Editor {
         let scene = new THREE.Scene();
         scene.background = new THREE.Color( 0xa0a0a0 );
         scene.fog = new THREE.Fog( 0xa0a0a0, 10, 50 );
+        window.scene = scene;
         
-        const grid = new THREE.GridHelper(300, 50);
+        const grid = new THREE.GridHelper(300, 300, 0x101010, 0x555555 );
         grid.name = "Grid";
         scene.add(grid);
+        window.GridHelper = THREE.GridHelper;
 
-        const ground = new THREE.Mesh( new THREE.PlaneGeometry( 100, 100 ), new THREE.MeshPhongMaterial( { color: 0x999999, depthWrite: false } ) );
+        const ground = new THREE.Mesh( new THREE.PlaneGeometry( 100, 100 ), new THREE.MeshPhongMaterial( { color: 0x353535, depthWrite: false } ) );
         ground.rotation.x = - Math.PI / 2;
         ground.receiveShadow = true;
         scene.add( ground );
         
         // Lights
-        const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
+        const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444, 0.3 );
         hemiLight.position.set( 0, 20, 0 );
         scene.add( hemiLight );
 
-        const dirLight = new THREE.DirectionalLight( 0xffffff, 0.5 );
+        const dirLight = new THREE.DirectionalLight( 0xffffff, 0.1 );
         dirLight.position.set( 3, 30, -50 );
         dirLight.castShadow = false;
-        dirLight.shadow.camera.top = 2;
-        dirLight.shadow.camera.bottom = -2;
-        dirLight.shadow.camera.left = - 2;
-        dirLight.shadow.camera.right = 2;
-        dirLight.shadow.camera.near = 1;
-        dirLight.shadow.camera.far = 200;
         scene.add( dirLight );
 
-        let spotLight = new THREE.SpotLight(0xffa95c, 1);
-        spotLight.position.set(-50,50,50);
+        // Left spotlight
+        let spotLight = new THREE.SpotLight(0xffffff, 0.5 );
+        spotLight.position.set(-2,2,2);
+        spotLight.penumbra = 1;
         spotLight.castShadow = true;
         spotLight.shadow.bias = -0.0001;
         spotLight.shadow.mapSize.width = 2048;
         spotLight.shadow.mapSize.height = 2048;
         scene.add( spotLight );
+        
+        // Right spotlight
+        let spotLight2 = new THREE.SpotLight(0xffffff, 0.5 );
+        spotLight2.position.set(2,3,3);
+        spotLight2.penumbra = 1;
+        spotLight2.castShadow = true;
+        spotLight2.shadow.bias = -0.0001;
+        spotLight2.shadow.mapSize.width = 2048;
+        spotLight2.shadow.mapSize.height = 2048;
+        scene.add( spotLight2 );
+        
+        let spotLightTarget = new THREE.Object3D();
+        spotLightTarget.position.set(0,1.5,0); 
+        scene.add( spotLightTarget );
+        spotLight.target = spotLightTarget;
+        spotLight2.target = spotLightTarget;
 
         // Create 3D renderer
         const pixelRatio = CANVAS_WIDTH / CANVAS_HEIGHT;
@@ -109,6 +121,10 @@ class Editor {
         renderer.setPixelRatio(pixelRatio);
         renderer.setSize(CANVAS_WIDTH, CANVAS_HEIGHT);
         renderer.outputEncoding = THREE.sRGBEncoding;
+        renderer.gammaInput = true; // applies degamma to textures ( not applied to material.color and roughness, metalnes, etc. Only to colour textures )
+        renderer.gammaOutput = true; // applies gamma after all lighting operations ( which are done in linear space )
+        renderer.shadowMap.enabled = true;
+
         canvasArea.appendChild(renderer.domElement);
 
         renderer.domElement.id = "webgl-canvas";
@@ -143,7 +159,6 @@ class Editor {
         this.camera = camera;
         this.renderer = renderer;
         this.controls = controls;
-        this.spotLight = spotLight;
         this.orientationHelper = orientationHelper;
 
         this.video = document.getElementById("recording");
@@ -289,8 +304,7 @@ class Editor {
             
             } );
 
-        } else if ( urlParams.get('load') == 'TFM' ) {
-
+        } else {// -- default -- if ( urlParams.get('load') == 'NN' ) {
             this.animationClip = createAnimationFromRotations(this.clipName, this.nn);
             if(urlParams.get('skin') && urlParams.get('skin') == 'true') {
                 this.loader.load( 'models/create_db_m.bvh' , (result) => {
@@ -300,53 +314,7 @@ class Editor {
             }
             else
                 this.loadAnimationWithSkeleton(this.animationClip);
-          
-
         
-        } else if ( urlParams.get('load') == 'NN' || urlParams.get('load') == undefined ) {
-
-            // Load the source model
-            UTILS.loadGLTF("models/test1.glb", (gltf) => {
-                
-                let auxModel = gltf.scene;
-                auxModel.visible = true; // change to false
-                this.scene.add( auxModel );
-                
-                // Convert landmarks into an animation
-                let auxAnimation = createAnimationFromRotations(this.clipName, this.nn);
-                this.retargeting.loadAnimation(auxModel, auxAnimation);
-                
-                // Load the target model (Eva) 
-                UTILS.loadGLTF("models/Eva_Y.glb", (gltf) => {
-                    
-                    let model = gltf.scene;
-                    model.visible = true;
-                    model.castShadow = true;
-                    
-                    // correct model
-                    model.position.set(0,0.85,0);
-                    model.rotateOnAxis(new THREE.Vector3(1,0,0), -Math.PI/2);
-                    
-                    this.animationClip = this.retargeting.createAnimation(model);
-                    this.mixer = new THREE.AnimationMixer(model);
-                    this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
-                    
-                    // guizmo stuff
-                    updateThreeJSSkeleton(this.retargeting.tgtBindPose);
-                    this.skeletonHelper = this.retargeting.tgtSkeletonHelper;
-                    this.skeletonHelper.name = "SkeletonHelper";
-                    this.skeletonHelper.skeleton = this.skeleton = createSkeleton();
-
-                    this.scene.add( model );
-                    this.scene.add( this.skeletonHelper );
-
-                    this.gui.loadClip(this.animationClip);
-                    this.gizmo.begin(this.skeletonHelper);
-                    this.setBoneSize(0.2);
-                    this.animate();
-                    $('#loading').fadeOut();
-                });
-            });
         }
     }
 
@@ -423,7 +391,7 @@ class Editor {
         
         result.clip.name = UTILS.removeExtension(this.clipName || result.clip.name);
         this.animationClip = result.clip;
-        let skinnedMesh = result.skeleton;
+        let srcSkeleton = result.skeleton; 
         let tracks = [];
         
         for (let i = 0; i < this.animationClip.tracks.length; i++) {
@@ -433,7 +401,9 @@ class Editor {
             tracks.push( this.animationClip.tracks[i] );
         }
         this.animationClip.tracks = tracks;
-        this.retargeting.loadAnimationFromSkeleton(skinnedMesh, this.animationClip);
+        //this.retargeting.loadAnimationFromSkeleton(skinnedMesh, this.animationClip);
+        this.retargeting.loadAnimation(srcSkeleton, this.animationClip);
+        
         // Load the target model (Eva) 
         UTILS.loadGLTF("models/Eva_Y.glb", (gltf) => {
             
@@ -445,6 +415,7 @@ class Editor {
                     o.castShadow = true;
                     o.receiveShadow = true;
                     o.frustumCulled = false;
+                    o.material.side = THREE.FrontSide;
                 }
             } );
             
@@ -455,7 +426,7 @@ class Editor {
             this.animationClip = this.retargeting.createAnimation(model);
             this.mixer = new THREE.AnimationMixer(model);
             this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
-            
+
             // guizmo stuff
             updateThreeJSSkeleton(this.retargeting.tgtBindPose);
             this.skeletonHelper = this.retargeting.tgtSkeletonHelper;
@@ -464,7 +435,7 @@ class Editor {
             
             this.scene.add( model );
             this.scene.add( this.skeletonHelper );
-            this.scene.add(this.retargeting.srcSkeletonHelper)
+            //this.scene.add(this.retargeting.srcSkeletonHelper)
             
             this.gui.loadClip(this.animationClip);
             this.gizmo.begin(this.skeletonHelper);
@@ -735,11 +706,6 @@ class Editor {
         this.render();
         this.update(this.clock.getDelta());
 
-        this.spotLight.position.set( 
-            this.camera.position.x + 10,
-            this.camera.position.y + 10,
-            this.camera.position.z + 10,
-        );
     }
 
     render() {
