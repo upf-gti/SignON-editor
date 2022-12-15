@@ -262,7 +262,11 @@ class AnimationRetargeting {
             // If no parent bone, The inverse is enough
 
             let bindMatInverse = skeleton.boneInverses[i];
-            let mat = bindMatInverse.clone();
+            //let mat = bindMatInverse.clone();
+            let mat = new THREE.Matrix4();
+            mat.fromArray(bindMatInverse);
+            mat = bindMatInverse.clone();
+            mat.elements = new Float32Array(mat.elements);
             mat.invert(); // Child Bone UN-Inverted
 
             // if parent exists, keep it parent inverted since thats how it exists in gltf
@@ -271,7 +275,11 @@ class AnimationRetargeting {
             //  child_worldspace_mat4 = parent_worldspace_mat4 *child_localspace_mat4
             if (parent && parent.isBone) { 
                 let pBindMatInverse = skeleton.boneInverses[map[parent.name]];
-                let pmat = pBindMatInverse.clone();
+                //let pmat = pBindMatInverse.clone();
+                let pmat = new THREE.Matrix4();
+                pmat.fromArray(pBindMatInverse); // Parent Bone Inverted
+                pmat = pBindMatInverse.clone();
+                pmat.elements = new Float32Array(pmat.elements);
                 mat.multiplyMatrices(pmat,mat);	// childLocal = inv(ParentWorld) * ChildWorld  
             } 
             else if(parent && !parent.isBone) {
@@ -311,7 +319,7 @@ class AnimationRetargeting {
                 rot : new THREE.Quaternion(),
                 scl : new THREE.Vector3()
             }
-            if( b.parent && b.parent.isBone ){
+            if( b.parent && b.parent.isBone ) {
                 p = bones[ map[b.parent.name] ];
                 
                 //------------------------------------------
@@ -479,7 +487,7 @@ class AnimationRetargeting {
 
         let srcpose = model;
         // find bind skeleton
-        if ( !model.bones || !model.boneInverses ){
+        if ( !model.bones || !model.boneInverses ) {
             model.traverse( (object) => {
                 if (object.isSkinnedMesh) {
                     srcpose = object.skeleton;
@@ -487,7 +495,6 @@ class AnimationRetargeting {
                 }
             } );
         }
-
 
         srcpose = srcpose.clone();
         // Clean ENDSITES
@@ -505,12 +512,11 @@ class AnimationRetargeting {
         this.srcBindPose = this.getBindPose(srcpose, true);
 
         // set model in bind pose
-        for(let i = 0; i < this.srcBindPose.length; i++)
-        {
+        for(let i = 0; i < this.srcBindPose.length; i++) {
             let bone = this.srcBindPose[i];
             let o = srcpose.getBoneByName(bone.name);
             o.position.copy(bone.position);
-            bone.scale.copy(o.scale);
+            o.scale.copy(bone.scale);
             o.quaternion.copy(bone.quaternion);
             o.updateWorldMatrix();
         }
@@ -525,14 +531,7 @@ class AnimationRetargeting {
     createAnimation(model, animationName) {
 
         model.traverse( (object) => {
-            if (object.isMesh || object.isSkinnedMesh) {
-                object.castShadow = true;
-                object.receiveShadow = true;
-                object.frustumCulled = false;
-                
-                if (object.material.map)
-                    object.material.map.anisotropy = 16; 
-                    
+            if (object.isSkinnedMesh) {
                 // find bind skeleton (bind matrices)
                 this.tgtBindPose = object.skeleton;
             }
@@ -541,9 +540,9 @@ class AnimationRetargeting {
             }
             if (!this.tgtBindPose) {
                 // find bind skeleton on children
-                object.traverse((o) => {
-                    if (o.isSkinnedMesh) {
-                        this.tgtBindPose = o.skeleton;
+                object.traverse((o_child) => {
+                    if (o_child.isSkinnedMesh) {
+                        this.tgtBindPose = o_child.skeleton;
                     }
                 })
             }

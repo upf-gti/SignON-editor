@@ -306,15 +306,15 @@ class Editor {
 
         } else {// -- default -- if ( urlParams.get('load') == 'NN' ) {
             this.animationClip = createAnimationFromRotations(this.clipName, this.nn);
-            if(urlParams.get('skin') && urlParams.get('skin') == 'true') {
-                this.loader.load( 'models/create_db_m.bvh' , (result) => {
+            if (urlParams.get('skin') && urlParams.get('skin') == 'false') {
+                this.loadAnimationWithSkeleton(this.animationClip);
+            }
+            else {
+                this.loader.load( 'models/kateBVH.bvh' , (result) => {
                     result.clip = this.animationClip;
                     this.loadAnimationWithSkin(result);
                 });
             }
-            else
-                this.loadAnimationWithSkeleton(this.animationClip);
-        
         }
     }
 
@@ -394,19 +394,20 @@ class Editor {
         let srcSkeleton = result.skeleton; 
         let tracks = [];
         
+        // remove position changes (only keep i == 0, hips)
         for (let i = 0; i < this.animationClip.tracks.length; i++) {
-            if( i && this.animationClip.tracks[i].name.includes('position')) {
+            if(i && this.animationClip.tracks[i].name.includes('position')) {
                 continue;
             }
             tracks.push( this.animationClip.tracks[i] );
         }
+
         this.animationClip.tracks = tracks;
-        //this.retargeting.loadAnimationFromSkeleton(skinnedMesh, this.animationClip);
         this.retargeting.loadAnimation(srcSkeleton, this.animationClip);
+        //this.retargeting.loadAnimationFromSkeleton(skinnedMesh, this.animationClip);
         
         // Load the target model (Eva) 
         UTILS.loadGLTF("models/Eva_Y.glb", (gltf) => {
-            
             let model = gltf.scene;
             model.visible = true;
             
@@ -447,7 +448,7 @@ class Editor {
 
     loadAnimationWithSkeleton(animation) {
         this.animationClip = animation.clip || animation || this.animationClip;
-        this.loader.load( 'models/create_db_m.bvh' , (result) => {
+        this.loader.load( 'models/kateBVH.bvh' , (result) => {
     
             let skinnedMesh = result.skeleton;
             this.skeletonHelper = new THREE.SkeletonHelper( skinnedMesh.bones[0] );
