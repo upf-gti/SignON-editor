@@ -499,6 +499,9 @@ class AnimationRetargeting {
         srcpose = srcpose.clone();
         // Clean ENDSITES
         for (let i = 0; i < srcpose.bones.length; i++) {
+            if(!srcpose.bones[i])
+                continue;
+            srcpose.bones[i].name = srcpose.bones[i].name.replaceAll(/[`~!@#$%^&*()_|+\-=?;:'"<>\{\}\[\]\\\/]/gi, '');
             if (srcpose.bones[i].name.includes("ENDSITE")) {
                 srcpose.bones[i].removeFromParent();
                 srcpose.bones.splice(i,1);
