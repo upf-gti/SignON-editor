@@ -90,7 +90,7 @@ class Editor {
         scene.add( dirLight );
 
         // Left spotlight
-        let spotLight = new THREE.SpotLight(0xffffff, 0.5 );
+        let spotLight = new THREE.SpotLight( 0xffffff, 0.5 );
         spotLight.position.set(-2,2,2);
         spotLight.penumbra = 1;
         spotLight.castShadow = true;
@@ -100,8 +100,8 @@ class Editor {
         scene.add( spotLight );
         
         // Right spotlight
-        let spotLight2 = new THREE.SpotLight(0xffffff, 0.5 );
-        spotLight2.position.set(2,3,3);
+        let spotLight2 = new THREE.SpotLight( 0xffffff, 0.5 );
+        spotLight2.position.set(2, 3, 3);
         spotLight2.penumbra = 1;
         spotLight2.castShadow = true;
         spotLight2.shadow.bias = -0.0001;
@@ -110,7 +110,7 @@ class Editor {
         scene.add( spotLight2 );
         
         let spotLightTarget = new THREE.Object3D();
-        spotLightTarget.position.set(0,1.5,0); 
+        spotLightTarget.position.set(0, 1.5, 0); 
         scene.add( spotLightTarget );
         spotLight.target = spotLightTarget;
         spotLight2.target = spotLightTarget;

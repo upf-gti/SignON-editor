@@ -675,8 +675,8 @@ function createAnimationFromRotations(name, nn) {
             amount = 4;
             quatIdx += amount;
         }
-        tracks.push(data);
-        //if (!nameBone.includes("mixamorigHips.quaternion")) tracks.push(data); // set the hip static
+
+        if (!nameBone.includes("mixamorigHips.quaternion")) tracks.push(data); // set the hip static
     }
 
     // use -1 to automatically calculate
