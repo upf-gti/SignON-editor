@@ -185,13 +185,13 @@ class Gizmo {
         this.ikSolver.setIterations( 1 );
         this.ikSolver.setSquaredDistanceThreshold( 0.000001 );
 
-        this.ikHelper = new IKHelper();
-        this.ikHelper.begin(this.ikSolver, scene);
-        this.ikHelper.setVisualisationScale( 2 );
-        this.ikHelper.setVisibilityFlags( IKHelper.VISIBILITYFLAGS.CONSTRAINTS );
-        window.ikSolver = this.ikSolver;
-        window.ikHelper = this.ikHelper;
-        window.addEventListener( "keydown", (e) => { if (e.key == "a"){ this.ikHelper.setVisibility( !this.ikHelper.visible ); }});
+        // this.ikHelper = new IKHelper();
+        // this.ikHelper.begin(this.ikSolver, scene);
+        // this.ikHelper.setVisualisationScale( 2 );
+        // this.ikHelper.setVisibilityFlags( IKHelper.VISIBILITYFLAGS.CONSTRAINTS );
+        // window.ikSolver = this.ikSolver;
+        // window.ikHelper = this.ikHelper;
+        // window.addEventListener( "keydown", (e) => { if (e.key == "a"){ this.ikHelper.setVisibility( !this.ikHelper.visible ); }});
 
 
         this.ikSelectedChain = null;
@@ -478,7 +478,7 @@ class Gizmo {
 
         if(state) this.updateBones(dt);
 
-        this.ikHelper.update();
+        //this.ikHelper.update();
 
         if(this.selectedBone == null ){ return; }
         
