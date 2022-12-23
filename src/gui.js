@@ -53,6 +53,8 @@ class Gui {
         let canvasArea = document.getElementById("canvasarea");
         this.editor.resize(canvasArea.clientWidth, canvasArea.clientHeight);
 
+        // automatic optimization of keyframes
+        this.editor.optimizeTracks();
         this.render();
     }
 

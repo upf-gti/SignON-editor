@@ -46,7 +46,7 @@ class Editor {
 	    this.onDrawSettings = null;
         this.gui = new Gui(this);
 
-        this.optimizeThreshold = 0.025;
+        this.optimizeThreshold = 0.01;
         this.defaultTranslationSnapValue = 1;
         this.defaultRotationSnapValue = 30; // Degrees
 
@@ -93,15 +93,12 @@ class Editor {
         let spotLight = new THREE.SpotLight( 0xffffff, 0.5 );
         spotLight.position.set(-2,2,2);
         spotLight.penumbra = 1;
-        spotLight.castShadow = true;
-        spotLight.shadow.bias = -0.0001;
-        spotLight.shadow.mapSize.width = 2048;
-        spotLight.shadow.mapSize.height = 2048;
+        spotLight.castShadow = false;
         scene.add( spotLight );
         
         // Right spotlight
         let spotLight2 = new THREE.SpotLight( 0xffffff, 0.5 );
-        spotLight2.position.set(2, 3, 3);
+        spotLight2.position.set(1, 3, 1.5);
         spotLight2.penumbra = 1;
         spotLight2.castShadow = true;
         spotLight2.shadow.bias = -0.0001;
@@ -132,12 +129,12 @@ class Editor {
 
         // Camera
         let camera = new THREE.PerspectiveCamera(60, pixelRatio, 0.1, 1000);
-        camera.position.set(0.023, 1.387, 2.276);
+        camera.position.set(-0.1175218614251044, 1.303585797450244, 1.4343282767035261);
         window.camera = camera;
         let controls = new OrbitControls(camera, renderer.domElement);
         controls.minDistance = 0.5;
         controls.maxDistance = 5;
-        controls.target.set(0, 1, 0);
+        controls.target.set(-0.20428114060514568, 1.0667066120801934, -0.017019104933513607);
         controls.update();  
 
         // Orientation helper
