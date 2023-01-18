@@ -338,10 +338,16 @@ class AnimationRetargeting {
                 //this.rot.from_mul( tp.rot, tc.rot );
                 b.world.rot.multiplyQuaternions(p.world.rot, b.quaternion)
 
+                /* b.world.pos.addVectors(p.wolrd.pos, b.position);
+                b.world.rot.addQuaternions(p.wolrd.pos, b.position);
+                b.world.scl.addVectors(p.wolrd.pos, b.position);
+                b.world.from_add( p.world, b.local );*/
+
             } else if (b.parent) {
                 b.world.pos.copy(b.parent.position);
                 b.world.scl.copy(b.parent.scale);
                 b.world.rot.copy(b.quaternion);
+                
             } else {
                 b.world.pos.copy(b.position);
                 b.world.scl.copy(b.scale);
