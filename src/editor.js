@@ -11,10 +11,12 @@ import { OrientationHelper } from "./libs/OrientationHelper.js";
 import { CanvasButtons } from "./ui.config.js";
 import { AnimationRetargeting } from './retargeting.js'
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
+
+
 class Editor {
-
+    
     constructor(app) {
-
+        
         this.clock = new THREE.Clock();
         this.loader = new BVHLoader();
         this.loader2 = new GLTFLoader();
@@ -26,6 +28,8 @@ class Editor {
         this.gizmo = null;
         this.renderer = null;
         this.state = false; // defines how the animation starts (moving/static)
+        this.eModes = {MF: "MF Editor", NMF: "NMF Editor", MOUTHING: "Mouthing Editor"};
+        this.mode = this.eModes.MF;
 
         this.boneUseDepthBuffer = false;
         this.showHUD = true;

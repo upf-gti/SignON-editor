@@ -439,10 +439,10 @@ class Gizmo {
                     break;
 
                 case 'z':
-                    if(e.ctrlKey){
+                    if(e.ctrlKey && this.editor.mode == this.editor.eModes.MF){
 
                         if(!this.undoSteps.length)
-                        return;
+                            return;
                         
                         const step = this.undoSteps.pop();
                         for ( let i = 0; i < step.length; ++i){
@@ -474,7 +474,7 @@ class Gizmo {
             }
         });
     }
-
+    
     update(state, dt) {
 
         if(state) this.updateBones(dt);

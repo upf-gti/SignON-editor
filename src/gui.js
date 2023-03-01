@@ -13,6 +13,7 @@ class Gui {
 
         this.boneProperties = {};
 
+        this.NMFtimeline = new Timeline(null, "nmf");
         this.create();
     }
 
@@ -64,7 +65,7 @@ class Gui {
 	
         // Create menu bar
         this.createMenubar();
-
+        
         // Create main area
         this.mainArea = new LiteGUI.Area({id: "mainarea", content_id:"canvasarea", height: "calc( 100% - 31px )", main: true});
         LiteGUI.add( this.mainArea );
@@ -145,11 +146,19 @@ class Gui {
         menubar.add("Timeline/");
         menubar.add("Timeline/Empty tracks", { callback: () => this.editor.cleanTracks() });
         menubar.add("Timeline/Optimize tracks", { callback: () => this.editor.optimizeTracks() });
-
+       
         this.appendButtons( menubar );
+        this.appendCombo( menubar, { hidden: true} );
     }
 
     createSidePanel() {
+
+        let mode = document.querySelector('select[name="editor-mode"]')
+        mode.hidden = false;
+        mode.addEventListener("change", (v) => {
+            this.editor.mode = v
+            console.log(v)
+        });
 
         this.mainArea.split("horizontal", [null,"300px"], true);
         var docked = new LiteGUI.Panel("sidePanel", {title: 'Skeleton', scroll: true});
@@ -382,6 +391,34 @@ class Gui {
     setBoneInfoState( enabled ) {
         for(const ip of $(".bone-position input, .bone-euler input, .bone-quaternion input"))
             enabled ? ip.removeAttribute('disabled') : ip.setAttribute('disabled', !enabled);
+    }
+
+    appendCombo(menubar, options) {
+        options = options || {};
+
+        const comboContainer = document.createElement('div');
+        comboContainer.style.margin = "0 10px";
+        comboContainer.style.display = "flex";
+        comboContainer.style.alignItems = "center";
+        comboContainer.className = "inspector";
+        comboContainer.hidden = options.hidden
+
+        menubar.root.appendChild(comboContainer);
+
+        let content = document.createElement('div');
+        content.className = "wcontent";
+        content.style.width = "auto";
+
+        let element = document.createElement("span");
+        element.className ='inputcombo';
+
+        let combo = "<select name='editor-mode' class=''></select>"
+        element.innerHTML = combo;
+        let values = '<option value="MF" selected>' + this.editor.eModes.MF + '</option>' + '<option value="NMF" >' + this.editor.eModes.NMF + '</option>' + '<option value="MOUTHING">' + this.editor.eModes.MOUTHING + '</option>'
+        element.querySelector("select").innerHTML = values;
+        
+        content.appendChild(element);
+        comboContainer.appendChild(content);
     }
 
     appendButtons(menubar) {
