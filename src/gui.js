@@ -13,7 +13,6 @@ class Gui {
 
         this.boneProperties = {};
 
-        this.NMFtimeline = new Timeline(null, "nmf");
         this.create();
     }
 
@@ -153,12 +152,8 @@ class Gui {
 
     createSidePanel() {
 
-        let mode = document.querySelector('select[name="editor-mode"]')
-        mode.hidden = false;
-        mode.addEventListener("change", (v) => {
-            this.editor.mode = v
-            console.log(v)
-        });
+        let mode = document.querySelector('#mode-selector')
+        mode.style.display = "flex";
 
         this.mainArea.split("horizontal", [null,"300px"], true);
         var docked = new LiteGUI.Panel("sidePanel", {title: 'Skeleton', scroll: true});
@@ -397,11 +392,11 @@ class Gui {
         options = options || {};
 
         const comboContainer = document.createElement('div');
+        comboContainer.id = "mode-selector"
         comboContainer.style.margin = "0 10px";
-        comboContainer.style.display = "flex";
+        comboContainer.style.display = options.hidden? "none" : "flex";
         comboContainer.style.alignItems = "center";
         comboContainer.className = "inspector";
-        comboContainer.hidden = options.hidden
 
         menubar.root.appendChild(comboContainer);
 
@@ -415,8 +410,53 @@ class Gui {
         let combo = "<select name='editor-mode' class=''></select>"
         element.innerHTML = combo;
         let values = '<option value="MF" selected>' + this.editor.eModes.MF + '</option>' + '<option value="NMF" >' + this.editor.eModes.NMF + '</option>' + '<option value="MOUTHING">' + this.editor.eModes.MOUTHING + '</option>'
-        element.querySelector("select").innerHTML = values;
-        
+        let select = element.querySelector("select");
+        select.innerHTML = values;
+        select.addEventListener("change", (v) => {
+            this.editor.mode = this.editor.eModes[select.value];
+            if(this.editor.mode == this.editor.eModes.NMF){
+               
+                if(!this.NMFtimeline) {
+
+                    
+                    this.NMFtimeline = new Timeline(null, null, "clips", this.timeline.size);
+                    this.NMFtimeline.clip = {
+                        duration : this.duration || 1,
+                        tracks: [{clip_idx: 0, clips: [new ANIM.FaceLexemeClip()]}]
+                    }
+                    this.NMFtimeline.framerate = 30;
+                    this.NMFtimeline.setScale(400);
+                    this.NMFtimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
+                    // this.NMFtimeline.onSelectKeyFrame = (e, info, index) => {
+                    //     if(e.button != 2) {
+                    //         //this.editor.gizmo.mustUpdate = true
+                    //         this.editor.gizmo.update(true);
+                    //         return false;
+                    //     }
+
+                    //     // Change gizmo mode and dont handle
+                    //     // return false;
+
+                    //     this.showKeyFrameOptions(e, info, index);
+                    //     return true; // Handled
+                    // };
+                    this.timeline.onUpdateTrack = (idx) => this.editor.updateAnimationAction(idx);
+
+                    //this.createSidePanel();
+
+                    let canvasArea = document.getElementById("canvasarea");
+                    this.editor.resize(canvasArea.clientWidth, canvasArea.clientHeight);
+                    
+                    let c = document.getElementById("timelineCanvas")
+                    c.style.height =  this.timelineCTX.canvas.height*2 + 'px';
+                    this.timelineCTX.canvas.height = this.timelineCTX.canvas.clientHeight;
+                    //this.timelineCTX.canvas.height = this.timelineCTX.canvas.height*2;
+
+                }
+            }
+          
+        });
+
         content.appendChild(element);
         comboContainer.appendChild(content);
     }
@@ -483,7 +523,24 @@ class Gui {
             this.editor.onAnimationEnded();
         }
 
-        this.timeline.draw(this.timelineCTX, this.current_time, [0, 0, canvas.width, canvas.height]);
+        if(this.NMFtimeline)
+        {
+            this.timeline.draw(this.timelineCTX, this.current_time, [0, 0, canvas.width, canvas.height]);
+            //time in the left side (current time is always in the middle)
+            //seconds markers
+            var w = canvas.width;
+            var seconds_full_window = (w * this.NMFtimeline._pixels_to_seconds); //how many seconds fit in the current window
+            var seconds_half_window = seconds_full_window * 0.5;
+	        var time_start = this.current_time - seconds_half_window;
+            //time in the right side
+            var time_end = this.current_time + seconds_half_window;
+            this.NMFtimeline.onDrawContent( this.timelineCTX, time_start, time_end,  this.NMFtimeline );
+            
+        }
+        else{
+            this.timeline.draw(this.timelineCTX, this.current_time, [0, 0, canvas.width, canvas.height]);
+
+        }
     }
 
     showKeyFrameOptions(e, info, index) {

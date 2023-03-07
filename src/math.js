@@ -1,4 +1,4 @@
-import * as THREE from "./libs/three.module.js";
+import * as THREE from "three";
 
 let FLT_EPSILON = 1.192092896e-07;
 

@@ -3,7 +3,7 @@ import { UTILS, CompareThreshold } from '../utils.js';
 // Agnostic timeline, do nos impose any timeline content
 // It renders to a canvas
 
-function Timeline( clip, bone_name ) {
+function Timeline( clip, bone_name, timeline_mode = "tracks" , position = [0,0]) {
 
 	this.current_time = 0;
 	this.framerate = 30;
@@ -14,12 +14,12 @@ function Timeline( clip, bone_name ) {
 
 	//do not change, it will be updated when called draw
 	this.duration = 100;
-	this.position = [0,0];
+	this.position = position;
 	this.size = [300, 150];
 
 	this.current_scroll = 0; //in percentage
 	this.current_scroll_in_pixels = 0; //in pixels
-	this.scrollable_height = 0; //true height of the timeline content
+	this.scrollable_height = this.size[1]; //true height of the timeline content
 
 	this._seconds_to_pixels = 100;
 	this._pixels_to_seconds = 1 / this._seconds_to_pixels;
@@ -40,21 +40,38 @@ function Timeline( clip, bone_name ) {
 	this.selected_bone = bone_name;
 	this.snappedKeyFrameIndex = -1;
 	this.autoKeyEnabled = false;
-
-	this.processTracks();
+	
+	this.track_height = 15;
+	this.timeline_mode = timeline_mode;
+	if(clip)
+		this.processTracks();
 
 	this.onDrawContent = ( ctx, time_start, time_end, timeline ) => {
+		if(this.timeline_mode == "tracks") {
 
-		if(this.selected_bone == null)
-		return;
-
-		let tracks = this.tracksPerBone[this.selected_bone];
-		if(!tracks) return;
-
-		const height = 15;
-		for(let i = 0; i < tracks.length; i++) {
-			let track = tracks[i];
-			this.drawTrackWithKeyframes(ctx, (i+1) * height, height, track.name + " (" + track.type + ")", track, i);
+			if(this.selected_bone == null)
+			return;
+			
+			let tracks = this.tracksPerBone[this.selected_bone];
+			if(!tracks) return;
+			
+			const height = this.track_height;
+			for(let i = 0; i < tracks.length; i++) {
+				let track = tracks[i];
+				this.drawTrackWithKeyframes(ctx, (i+1) * height, height, track.name + " (" + track.type + ")", track, i);
+			}
+		}
+		else if( this.timeline_mode == "clips")
+		{
+			
+			let tracks = this.clip.tracks|| [{name: "NMF", clips: []}];
+			if(!tracks) return;
+			
+			const height = this.track_height;
+			for(let i = 0; i < tracks.length; i++) {
+				let track = tracks[i];
+				this.drawTrackWithBoxes(ctx, (i+1) * height, height, track.name || "", track, i);
+			}
 		}
 	};
 
@@ -74,6 +91,13 @@ function Timeline( clip, bone_name ) {
 	this._buttons_drawn.push( [this.unSelectAllKeyFramesImg, "unselectAll", 9 + offset * this._buttons_drawn.length, -this.top_margin + 1, 22, 22, (e) => {
 		this.unSelectAllKeyFrames();
 	}] );
+	
+	if(this.timeline_mode == "clips")
+	{
+		let btn = document.createElement("img");
+		btn.innerText = "Add NMF";
+		this._buttons_drawn.push( [btn, "addNMF", 9 + offset * this._buttons_drawn.length, -this.top_margin + 1, 22, 22, (v) =>{ console.log(v)} ]);
+	}
 }
 
 Timeline.prototype.onUpdateTracks = function ( keyType ) {
@@ -901,7 +925,9 @@ Timeline.prototype.draw = function (ctx, current_time, rect) {
 	var timeline_height = this.size[1];
 
 	this.current_time = current_time;
-	var duration = this.duration = this.clip.duration;
+	if(this.clip)
+		this.duration = this.clip.duration;
+	var duration = this.duration;
 	this.current_scroll_in_pixels = this.scrollable_height <= h ? 0 : (this.current_scroll * (this.scrollable_height - timeline_height));
 
 	ctx.save();
@@ -1155,6 +1181,77 @@ Timeline.prototype.drawTrackWithKeyframes = function (ctx, y, track_height, titl
 	ctx.globalAlpha = 1;
 }
 
+Timeline.prototype.drawTrackWithBoxes = function (ctx, y, track_height, title, track, track_index)
+{
+
+	if(track.enabled === false)
+		ctx.globalAlpha = 0.4;
+
+	this._tracks_drawn.push([this.clip.tracks[track.clip_idx],y+this.top_margin,track_height]);
+	this._canvas = this._canvas || ctx.canvas;
+	ctx.font = Math.floor( track_height * 0.8) + "px Arial";
+	ctx.textAlign = "left";
+	ctx.fillStyle = "rgba(255,255,255,0.8)";
+
+	if(title != null)
+	{
+		// var info = ctx.measureText( title );
+		ctx.fillStyle = "rgba(255,255,255,0.9)";
+		ctx.fillText( title, 25, y + track_height * 0.75 );
+	}
+
+	ctx.fillStyle = "rgba(10,200,200,1)";
+	var clips = this.clip.tracks[track.clip_idx].clips;
+	let track_alpha = 1;
+	if(clips) {
+		
+		for(var j = 0; j < clips.length; ++j)
+		{
+			let clip = clips[j];
+			let framerate = this.framerate;
+			//let selected = track.selected[j];
+			var frame_num = Math.floor( clip.start * framerate );
+			var x = Math.floor( this.timeToX( frame_num / framerate) ) + 0.5;
+			frame_num = Math.floor( (clip.start + clip.duration) * framerate );
+			var x2 = Math.floor( this.timeToX( frame_num / framerate) ) + 0.5;
+			var w = x2-x;
+
+			if( x2 < 0 || x > this._canvas.width )
+				continue;
+
+			//background rect
+			ctx.globalAlpha = track_alpha;
+			ctx.fillStyle = clip.constructor.clip_color || "#333";
+			ctx.fillRect(x,y,w,track_height);
+
+			//draw clip content
+			if( clip.drawTimeline )
+			{
+				ctx.save();
+				ctx.translate(x,y);
+				ctx.strokeStyle = "#AAA";
+				ctx.fillStyle = "#AAA";
+				clip.drawTimeline( ctx, x2-x,track_height, this.selected_clip == clip, this );
+				ctx.restore();
+			}
+			//draw clip outline
+			if(clip.hidden)
+				ctx.globalAlpha = track_alpha * 0.5;
+			
+				var safex = Math.max(-2, x );
+			var safex2 = Math.min( this._canvas.width + 2, x2 );
+			ctx.lineWidth = 0.5;
+			ctx.strokeStyle = clip.constructor.color || "black";
+			ctx.strokeRect( safex, y, safex2-safex, track_height );
+			ctx.globalAlpha = track_alpha;
+			if(this.selected_clip == clip)
+				selected_clip_area = [x,y,x2-x,track_height ]
+		}
+	}
+
+	ctx.restore();
+	
+}
 /**
  * Draws a rounded rectangle using the current state of the canvas.
  * If you omit the last three params, it will draw a rectangle

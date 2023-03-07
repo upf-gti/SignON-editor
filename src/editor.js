@@ -1,4 +1,4 @@
-import * as THREE from "./libs/three.module.js";
+import * as THREE from "three";
 import { OrbitControls } from "./controls/OrbitControls.js";
 import { BVHLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/BVHLoader.js';
 import { BVHExporter } from "./exporters/BVHExporter.js";
@@ -11,7 +11,7 @@ import { OrientationHelper } from "./libs/OrientationHelper.js";
 import { CanvasButtons } from "./ui.config.js";
 import { AnimationRetargeting } from './retargeting.js'
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
-
+import {Controller} from "./controller.js"
 
 class Editor {
     
@@ -30,6 +30,7 @@ class Editor {
         this.state = false; // defines how the animation starts (moving/static)
         this.eModes = {MF: "MF Editor", NMF: "NMF Editor", MOUTHING: "Mouthing Editor"};
         this.mode = this.eModes.MF;
+        this.NMFController = null;
 
         this.boneUseDepthBuffer = false;
         this.showHUD = true;
@@ -165,6 +166,7 @@ class Editor {
         this.video = document.getElementById("recording");
         this.video.startTime = 0;
         this.gizmo = new Gizmo(this);
+        this.NMFController = new Controller(this);
 
         renderer.domElement.addEventListener( 'keydown', (e) => {
             switch ( e.key ) {
@@ -204,6 +206,9 @@ class Editor {
         if(this.state) {
             this.mixer._actions[0].paused = false;
             this.gizmo.stop();
+            if(this.NMFController)
+                this.NMFController.stop();
+            
             this.gui.setBoneInfoState( false );
             (this.video.paused && this.video.sync) ? this.video.play() : 0;    
         } else{
@@ -748,6 +753,8 @@ class Editor {
         }
 
         this.gizmo.update(this.state, dt);
+        if(this.NMFController)
+            this.NMFController.update(this.state, dt);
     }
 
     resize(width, height) {

@@ -1,4 +1,4 @@
-import * as THREE from './libs/three.module.js';
+import * as THREE from 'three';
 import { ShaderChunk } from "./utils.js";
 import { TransformControls } from './controls/TransformControls.js';
 import { CCDIKSolver, FABRIKSolver } from "./IKSolver.js"
