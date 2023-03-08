@@ -1,4 +1,4 @@
-import * as THREE from "./three.module.js";
+import * as THREE from "three";
 import { CompareThreshold } from "../utils.js"
 
 // Overwrite/add methods

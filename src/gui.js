@@ -71,12 +71,12 @@ class Gui {
         
         const canvasArea = document.getElementById("canvasarea");
         canvasarea.appendChild( document.getElementById("timeline") );
-
+        let c = document.getElementById("timeline")
+        c.style.display = "block"
         this.mainArea.onresize = window.onresize;
 
         let timelineCanvas = document.getElementById("timelineCanvas");
         timelineCanvas.width = canvasArea.clientWidth;
-        timelineCanvas.height = 115;
         this.timelineCTX = timelineCanvas.getContext("2d");
 
         timelineCanvas.addEventListener("mouseup", this.onMouse.bind(this));
@@ -86,6 +86,28 @@ class Gui {
         timelineCanvas.addEventListener('contextmenu', (e) => e.preventDefault(), false);
 
         timelineCanvas.addEventListener( 'keydown', (e) => {
+            switch ( e.key ) {
+                case " ": // Spacebar
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    const stateBtn = document.getElementById("state_btn");
+                    stateBtn.click();
+                    break;
+            }
+        });
+
+        let timelineNMFCanvas = document.getElementById("timelineNMFCanvas");
+        timelineNMFCanvas.width = canvasArea.clientWidth;
+        timelineNMFCanvas.style.display = "none";
+        this.timelineNMFCTX = timelineNMFCanvas.getContext("2d");
+
+        timelineNMFCanvas.addEventListener("mouseup", this.onMouse.bind(this));
+        timelineNMFCanvas.addEventListener("mousedown", this.onMouse.bind(this));
+        timelineNMFCanvas.addEventListener("mousemove", this.onMouse.bind(this));
+        timelineNMFCanvas.addEventListener("wheel", this.onMouse.bind(this));
+        timelineNMFCanvas.addEventListener('contextmenu', (e) => e.preventDefault(), false);
+        timelineNMFCanvas.addEventListener("dblclick", this.onMouse.bind(this));
+        timelineNMFCanvas.addEventListener( 'keydown', (e) => {
             switch ( e.key ) {
                 case " ": // Spacebar
                     e.preventDefault();
@@ -322,6 +344,89 @@ class Gui {
         element.scrollTop = options.maxScroll ? maxScroll : (options.scroll ? options.scroll : 0);
     }
 
+    showClipInfo(clip)
+    {
+        this.clip_in_panel = clip;
+        
+        var inspector = new LiteGUI.Inspector();
+        inspector.widgets_per_row = 1;
+        inspector.addTitle( clip.constructor.name );
+        inspector.addString("Id", clip.id, {callback: function(v)
+        {
+        this.clip_in_panel.id = v;
+        }.bind(this)})
+        inspector.addSection("Time");
+        inspector.addNumber("Start", clip.start, {min:0, callback: function(v)
+        {
+        
+        /*var dt = v - this.clip_in_panel.start;
+        if(clip.properties.ready) clip.properties.ready += dt;
+        if(clip.properties.strokeStart) clip.properties.strokeStart += dt;
+        if(clip.properties.stroke) clip.properties.stroke += dt;
+        if(clip.properties.attackPeak) clip.properties.attackPeak += dt;
+        if(clip.properties.strokeEnd) clip.properties.strokeEnd += dt;
+        if(clip.properties.relax) clip.properties.relax += dt;*/
+        
+
+        this.clip_in_panel.start = v;
+        /*this.showClipInfo(clip)*/
+        }.bind(this)})
+        inspector.addNumber("Duration", clip.duration, {min:0, callback: function(v)
+        {
+        this.clip_in_panel.duration = v;
+        }.bind(this)})
+        inspector.addSection("Content");
+        
+        if(clip.showInfo)
+        {
+            clip.showInfo(inspector);
+        }
+        else{
+            for(var i in clip.properties)
+            {
+                var property = clip.properties[i];
+                switch(property.constructor)
+                {
+
+                    case String:
+                        inspector.addString(i, property, {callback: function(i,v)
+                    {
+                        this.clip_in_panel.properties[i] = v;
+                    }.bind(this, i)});
+                    break;
+                    case Number:
+                    if(i=="amount")
+                    {
+                        inspector.addNumber(i, property, {min:0, max:1,callback: function(i,v)
+                        {
+                        this.clip_in_panel.properties[i] = v;
+                        }.bind(this,i)});
+                    }
+                    else{
+                        inspector.addNumber(i, property, {callback: function(i,v)
+                        {
+                        this.clip_in_panel.properties[i] = v;
+                        }.bind(this,i)});
+                    }
+                    break;
+                    case Boolean:
+                        inspector.addCheckbox(i, property, {callback: function(i,v)
+                    {
+                        this.clip_in_panel.properties[i] = v;
+                    }.bind(this,i)});
+                        break;
+                    case Array:
+                        inspector.addArray(i, property, {callback: function(i,v)
+                    {
+                        this.clip_in_panel.properties[i] = v;
+                    }.bind(this,i)});
+                        break;
+                }
+            }
+        }
+      
+        this.sidePanel.content.replaceChild(inspector.root, this.sidePanel.content.getElementsByClassName("inspector")[0]);
+    }
     // Listed with __ at the beggining
     updateBoneProperties() {
 
@@ -419,7 +524,7 @@ class Gui {
                 if(!this.NMFtimeline) {
 
                     
-                    this.NMFtimeline = new Timeline(null, null, "clips", this.timeline.size);
+                    this.NMFtimeline = new Timeline(null, null, "clips", [this.timeline.size[0], this.timeline.size[1]]);
                     this.NMFtimeline.clip = {
                         duration : this.duration || 1,
                         tracks: [{clip_idx: 0, clips: [new ANIM.FaceLexemeClip()]}]
@@ -427,6 +532,7 @@ class Gui {
                     this.NMFtimeline.framerate = 30;
                     this.NMFtimeline.setScale(400);
                     this.NMFtimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
+                    this.NMFtimeline.onSelectClip = this.showClipInfo.bind(this);
                     // this.NMFtimeline.onSelectKeyFrame = (e, info, index) => {
                     //     if(e.button != 2) {
                     //         //this.editor.gizmo.mustUpdate = true
@@ -440,19 +546,30 @@ class Gui {
                     //     this.showKeyFrameOptions(e, info, index);
                     //     return true; // Handled
                     // };
-                    this.timeline.onUpdateTrack = (idx) => this.editor.updateAnimationAction(idx);
+                    // this.timeline.onUpdateTrack = (idx) => this.editor.updateAnimationAction(idx);
 
                     //this.createSidePanel();
-
-                    let canvasArea = document.getElementById("canvasarea");
-                    this.editor.resize(canvasArea.clientWidth, canvasArea.clientHeight);
-                    
-                    let c = document.getElementById("timelineCanvas")
-                    c.style.height =  this.timelineCTX.canvas.height*2 + 'px';
-                    this.timelineCTX.canvas.height = this.timelineCTX.canvas.clientHeight;
+                    // let c = document.getElementById("timelineCanvas")
+                    // c.style.height =  this.timelineCTX.canvas.height*2 + 'px';
+                    // this.timelineCTX.canvas.height = this.timelineCTX.canvas.clientHeight;
                     //this.timelineCTX.canvas.height = this.timelineCTX.canvas.height*2;
-
+                    
                 }
+
+                // let canvasArea = document.getElementById("canvasarea");
+                // this.editor.resize(canvasArea.clientWidth, canvasArea.clientHeight);
+                console.log(this.timeline.size)
+                let c = document.getElementById("timeline")
+                c.style.height =  this.timelineCTX.canvas.height*2 + 'px';
+                let canvas = document.getElementById("timelineNMFCanvas")
+                canvas.style.display =  'block';
+                console.log(this.timeline.size)
+            }
+            else{
+                let c = document.getElementById("timeline")
+                c.style.height =  this.timelineCTX.canvas.height + 'px';
+                let canvas = document.getElementById("timelineNMFCanvas")
+                canvas.style.display =  'none';
             }
           
         });
@@ -523,24 +640,25 @@ class Gui {
             this.editor.onAnimationEnded();
         }
 
+        this.timeline.draw(this.timelineCTX, this.current_time, [0, 0, canvas.width, canvas.height]);
         if(this.NMFtimeline)
         {
-            this.timeline.draw(this.timelineCTX, this.current_time, [0, 0, canvas.width, canvas.height]);
             //time in the left side (current time is always in the middle)
             //seconds markers
-            var w = canvas.width;
-            var seconds_full_window = (w * this.NMFtimeline._pixels_to_seconds); //how many seconds fit in the current window
-            var seconds_half_window = seconds_full_window * 0.5;
-	        var time_start = this.current_time - seconds_half_window;
-            //time in the right side
-            var time_end = this.current_time + seconds_half_window;
-            this.NMFtimeline.onDrawContent( this.timelineCTX, time_start, time_end,  this.NMFtimeline );
+            this.NMFtimeline.draw(this.timelineNMFCTX, this.current_time, [0, 0, canvas.width, canvas.height]);
+            // var w = canvas.width;
+            // var seconds_full_window = (w * this.NMFtimeline._pixels_to_seconds); //how many seconds fit in the current window
+            // var seconds_half_window = seconds_full_window * 0.5;
+	        // var time_start = this.current_time - seconds_half_window;
+            // //time in the right side
+            // var time_end = this.current_time + seconds_half_window;
+            // this.timelineCTX.save();
+	        // this.timelineCTX.translate( 0, canvas.height ); //20 is
+            // this.NMFtimeline.onDrawContent( this.timelineCTX, time_start, time_end,  this.NMFtimeline );
+            // this.timelineCTX.restore();
             
         }
-        else{
-            this.timeline.draw(this.timelineCTX, this.current_time, [0, 0, canvas.width, canvas.height]);
-
-        }
+        
     }
 
     showKeyFrameOptions(e, info, index) {
@@ -594,6 +712,8 @@ class Gui {
 
         e.preventDefault();
         this.timeline.processMouse(e);
+        if(this.NMFtimeline)
+            this.NMFtimeline.processMouse(e);
     }
 
     resize() {
