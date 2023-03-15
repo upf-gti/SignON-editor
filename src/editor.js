@@ -11,6 +11,7 @@ import { OrientationHelper } from "./libs/OrientationHelper.js";
 import { CanvasButtons } from "./ui.config.js";
 import { AnimationRetargeting } from './retargeting.js'
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
+import { GLTFExporter } from './exporters/GLTFExporoter.js' 
 import {Controller} from "./controller.js"
 
 class Editor {
@@ -20,6 +21,8 @@ class Editor {
         this.clock = new THREE.Clock();
         this.loader = new BVHLoader();
         this.loader2 = new GLTFLoader();
+
+        this.GLTFExporter = new GLTFExporter();
         this.help = null;
         
         this.camera = null;
@@ -42,6 +45,8 @@ class Editor {
         this.skeleton = null;
         this.mixer = null;
         
+        this.morphTargets = null;
+
         this.retargeting = new AnimationRetargeting();
 
         this.nn = new NN("data/ML/model.json");
@@ -166,7 +171,6 @@ class Editor {
         this.video = document.getElementById("recording");
         this.video.startTime = 0;
         this.gizmo = new Gizmo(this);
-        this.NMFController = new Controller(this);
 
         renderer.domElement.addEventListener( 'keydown', (e) => {
             switch ( e.key ) {
@@ -276,6 +280,8 @@ class Editor {
                         if(object.material.map)
                             object.material.map.anisotropy = 16; 
                         this.help = object.skeleton;
+                        if(object.morphTargetDictionary)
+                            this.morphTargets = object.morphTargetDictionary;
                         
                     } else if (object.isBone) {
                         object.scale.set(1.0, 1.0, 1.0);
@@ -292,6 +298,12 @@ class Editor {
                 this.scene.add(this.skeletonHelper);
                 this.scene.add(model);
                 
+                this.NMFController = new Controller(this);
+                this.NMFController.onUpdateTracks = () => {
+                    if(this.mixer._actions.length > 1) this.mixer._actions.pop();
+                    this.mixer.clipAction( this.NMFclip ).setEffectiveWeight( 1.0 ).play();
+                }
+                this.NMFController.begin();
                 // load the actual animation to play
                 this.mixer = new THREE.AnimationMixer( model );
                 this.loader.load( 'models/ISL Thanks final.bvh' , (result) => {
@@ -303,11 +315,10 @@ class Editor {
                     this.mixer.clipAction( this.animationClip ).setEffectiveWeight( 1.0 ).play();
                     this.mixer.update(0);
                     this.gizmo.begin(this.skeletonHelper);
-                    this.setBoneSize(0.2);
+                    this.setBoneSize(0.05);
                     this.animate();
                     $('#loading').fadeOut();
                 } );
-            
             } );
 
         } else {// -- default -- if ( urlParams.get('load') == 'NN' ) {
@@ -425,6 +436,8 @@ class Editor {
                     if ( o.skeleton ){ 
                         this.skeleton = o.skeleton;
                     }
+                    if(o.morphTargetDictionary)
+                        this.morphTargets = o.morphTargetDictionary;
                     o.material.side = THREE.FrontSide;
                 }
             } );
@@ -450,9 +463,15 @@ class Editor {
             
             this.gui.loadClip(this.animationClip);
             this.gizmo.begin(this.skeletonHelper);
-            this.setBoneSize(0.2);
+            this.setBoneSize(0.05);
             this.animate();
             $('#loading').fadeOut();
+            this.NMFController = new Controller(this);
+            this.NMFController.onUpdateTracks = () => {
+                if(this.mixer._actions.length > 1) this.mixer._actions.pop();
+                this.mixer.clipAction( this.NMFclip  ).setEffectiveWeight( 1.0 ).play();
+            }
+            this.NMFController.begin();
         });   
     }
 
@@ -487,7 +506,7 @@ class Editor {
             
             this.mixer.update(0);
             this.gizmo.begin(this.skeletonHelper);
-            this.setBoneSize(0.2);
+            this.setBoneSize(0.05);
             this.animate();
             $('#loading').fadeOut();
         } );
@@ -553,6 +572,10 @@ class Editor {
         const positionAttribute = geometry.getAttribute( 'position' );
         this.gizmo.bonePoints.geometry.setAttribute( 'size', new THREE.Float32BufferAttribute( new Array(positionAttribute.count).fill(newSize), 1 ) );
         this.gizmo.raycaster.params.Points.threshold = newSize/10;
+    }
+    getBoneSize() {
+        const geometry = this.gizmo.bonePoints.geometry;
+        return geometry.getAttribute('size').array[0];
     }
 
     setSelectedBone( name ) {
@@ -767,15 +790,51 @@ class Editor {
         this.gui.resize();
     }
 
-    export() {
-        BVHExporter.export(this.mixer, this.skeletonHelper, this.animationClip);
+    export(type = null) {
+        switch(type){
+            case 'BVH':
+                BVHExporter.export(this.mixer._actions[0], this.skeletonHelper, this.animationClip);
+                break;
+            case 'GLB':
+                let options = {
+                    binary: true,
+                    animations: []
+                };
+                for(let i = 0; i < this.mixer._actions.length; i++) {
+                    options.animations.push(this.mixer._actions[i]._clip);
+                }
+                let model = this.mixer._root.getChildByName("Armature");
+                this.GLTFExporter.parse(model, 
+                    ( gltf ) => this.downloadFile("animation.glb", gltf ), // called when the gltf has been generated
+                    ( error ) => { console.log( 'An error happened:', error ); }, // called when there is an error in the generation
+                options
+            );
+                break;
+            case 'BVH extended':
+                BVHExporter.exportMorphTargets(this.mixer._actions[1], this.morphTargets, this.NMFclip);
+                break;
+            default:
+                console.log(type + " ANIMATION EXPORTATION IS NOT YET SUPPORTED");
+                break;
+        }
     }
 
     showPreview() {
         
-        BVHExporter.copyToLocalStorage(this.mixer, this.skeletonHelper, this.animationClip);
+        BVHExporter.copyToLocalStorage(this.mixer._actions[0], this.skeletonHelper, this.animationClip);
         const url = "https://webglstudio.org/users/arodriguez/demos/animationLoader/?load=three_webgl_bvhpreview";
         window.open(url, '_blank').focus();
+    }
+
+    downloadFile(filename, data) {
+        let extension = filename.split(".");
+        switch(extension[2])
+        {
+            case 'glb':
+                require('fs').writeFileSync(filename, Buffer.from(data));
+
+                break;
+        }
     }
 };
 

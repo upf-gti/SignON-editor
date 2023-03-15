@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import {BehaviourManager} from './libs/BehaviourManager.js'
+import {FacialExpr} from './libs/BehaviourRealizer.js'
 
 class Controller {
 
@@ -15,14 +17,21 @@ class Controller {
         this.scene = scene;
 
         this.editor = editor;
-
+        
+        this.bmlManager = new BehaviourManager();
         // Update in first iteration
         this.mustUpdate = false; //true; 
+        if(!editor.morphTargets)
+            console.warn("No morph targets to attach Controller!");
+        this.morphDictionary = editor.morphTargets;
+        this.morphTargets = [];
+        this.morphTargets.length = Object.keys(this.morphDictionary).length; 
+
     }
 
-    begin() {
+    begin(timeline) {
         
-        this.bindEvents();
+        this.bindEvents(timeline);
         
         // First update to get bones in place
         this.update(true, 0.0);
@@ -33,14 +42,17 @@ class Controller {
 
     }
 
-    bindEvents() {
+    bindEvents(timeline) {
 
-        
-        let timeline = this.editor.gui.timeline;
+        timeline = timeline || this.editor.gui.NMFtimeline;
+        if(!timeline)
+            return;
 
-        const canvas = document.getElementById("webgl-canvas");
+        let canvas = timeline._canvas;
+        if(!canvas)
+            canvas = this.editor.gui.timelineNMFCTX.canvas;
 
-        canvas.addEventListener( 'keydown', e => {
+        canvas.onkeyup = (e) => {
 
             switch ( e.key ) {
 
@@ -58,87 +70,114 @@ class Controller {
                         
                     }
                     break;
+                case 'Delete':
+                    timeline.deleteClip();
+                    break;
             }
 
-        });
+        };
     }
 
     update(state, dt) {
 
-        if(state) this.updateBlendShapes(dt);
+        //if(state) this.updateBlendShapes(dt);
 
     }
 
     updateBlendShapes( dt ) {
+         // FacialExpr lexemes
+         for (let k = 0; k < this.lexemes.length; k++) {
+            let lexeme = this.lexemes[k];
+            if (lexeme.transition) {
+                lexeme.updateLexemesBSW(dt);
+                // accumulate blendshape values
+                for (let i = 0; i < lexeme.indicesLex.length; i++) {
+                    for (let j = 0; j < lexeme.indicesLex[i].length; j++) {
+                        let value = lexeme.currentLexBSW[i][j];
+                        let index = lexeme.indicesLex[i][j];
+                        this.morphTargets[index] += Math.abs(value); // denominator of biased average
+                    }
+                }
+            }
 
-       
+            // remove lexeme if finished
+            if (lexeme && !lexeme.transition) {
+                this.lexemes.splice(k, 1);
+                --k;
+            }
+        }
+             
     }
 
     updateTracks() {
 
         let timeline = this.editor.gui.NMFtimeline;
+        
+        // if(timeline.onUpdateTracks( keyType ))
+        // return; // Return if event handled
 
-        if(timeline.onUpdateTracks( keyType ))
-        return; // Return if event handled
+        // if(!timeline.clip_selected)
+        // return;
+        
+        //convert each clip to BML json format
+        let json = { faceLexeme: []};;
 
-        if(!timeline.getNumKeyFramesSelected())
-        return;
+        for(let i = 0; i < timeline.clip.tracks.length; i++){
+            let track = timeline.clip.tracks[i];
+            for(let j = 0; j < track.clips.length; j++){
+                let clip = track.clips[j];
+                var data = ANIM.clipToJSON( clip );
+                if(data)
+                {
+                    data[3].end = data[3].end || data[3].start + data[3].duration;
+                    json.faceLexeme.push( data[3] );
+                }
+            }
+        }
+        if(!json.faceLexeme.length) return;
 
-        let [name, trackIndex, keyFrameIndex] = timeline._lastKeyFramesSelected[0];
-        let track = timeline.getTrack(timeline._lastKeyFramesSelected[0]);
+        this.lexemes = [];
+        //manage bml blocks sync
+        this.bmlManager.newBlock(json, 0);
+        let dt = 1.0/timeline.framerate;
+        let times = [];
+        let values = [];
+        for(let time = 0; time < timeline.duration; time+= dt){
+            this.morphTargets.fill(0);
+            times.push(time);
+            //update blendshapes weights based on lexemes
+            this.updateBlendShapes(dt);
+            let bs = [];
+            this.morphTargets.map((x) => bs.push(x));
+            values.push(bs);
+            //update bml blocks sync
+            this.bmlManager.update((type,faceData) => this.lexemes.push(new FacialExpr(faceData, false, this.morphTargets)), time);
+        }
+        let tracks = [];
+        //convert blendshapes weights to animation clip
+        for(let morph in this.morphDictionary){
+            let i = this.morphDictionary[morph];
+            let v = [];
+            values.forEach(element => {
+                v.push(element[i]);
+            });
+            tracks.push(new THREE.NumberKeyframeTrack('Body.morphTargetInfluences['+ morph +']', times, v));
+            tracks.push(new THREE.NumberKeyframeTrack('Eyelashes.morphTargetInfluences['+ morph +']', times, v));
+        }
+        this.editor.NMFclip = new THREE.AnimationClip("nmf", timeline.duration, tracks);
+        console.log(this.editor.NMFclip )
+        if(this.onUpdateTracks)
+            this.onUpdateTracks();
+        // let [name, trackIndex, keyFrameIndex] = timeline._lastKeyFramesSelected[0];
+        // let track = timeline.getTrack(timeline._lastKeyFramesSelected[0]);
 
-        // Don't store info if we are using wrong mode for that track
-        if(keyType != track.type)
-        return;
+        // // Don't store info if we are using wrong mode for that track
+        // if(keyType != track.type)
+        // return;
        
        
-        // if ( this.toolSelected == Gizmo.Tools.ik ){
-        //     if ( !this.ikSelectedChain ){ return; }
-            
-        //     const effectorFrameTime = this.editor.animationClip.tracks[ track.clip_idx ].times[ keyFrameIndex ];
-        //     const timeThreshold = ( timeline.framerate < 60 ) ? 0.008 : ( 0.5 * 1.0 / timeline.framerate );
-            
-        //     const chain = this.ikSelectedChain.chain;
-            
-        //     for( let i = 0; i < chain.length; ++i ){
-        //         const boneToProcess = this.skeleton.bones[chain[i]];
-        //         const quaternionTrackIdx = ( timeline.getNumTracks(boneToProcess) > 1 ) ? 1 : 0;
-                
-        //         let track = timeline.getTrack([boneToProcess.name, quaternionTrackIdx]);
-        //         if ( track.dim != 4 ){ continue; }
-                
-        //         let values = boneToProcess[ track.type ].toArray();
-        //         if( !values ){ continue; }
-
-        //         let nearestTime = timeline.getNearestKeyFrame( this.editor.animationClip.tracks[ track.clip_idx ], effectorFrameTime );
-        //         let keyframe = null;
-                
-        //         // find nearest frame or create one if too far
-        //         if ( Math.abs( nearestTime - effectorFrameTime ) > 0.008 ){ 
-        //             const currentTime = timeline.current_time;
-        //             timeline.current_time = effectorFrameTime;
-        //             keyframe = timeline.addKeyFrame( track ); //Works with current time.  current_time and selected frame time might not be the same
-        //             timeline.current_time = currentTime;
-        //         }
-        //         else{ 
-        //             keyframe = timeline.getCurrentKeyFrame( this.editor.animationClip.tracks[ track.clip_idx ], nearestTime, 0.0001 );
-        //         }
-        //         if ( isNaN(keyframe) ){ continue; }
-                
-        //         let start = 4 * keyframe;
-        //         for( let j = 0; j < values.length; ++j ) {
-        //             this.editor.animationClip.tracks[ track.clip_idx ].values[ start + j ] = values[j];
-        //         }
-
-        //         track.edited[ keyframe ] = true;
-
-        //         // Update animation interpolants
-        //         this.editor.updateAnimationAction( track.clip_idx );
-        //         timeline.onSetTime( timeline.current_time );
-
-        //     }
-        // }
-        // else{
+       
+       
         //     let start = track.dim * keyFrameIndex;
         //     let values = bone[ track.type ].toArray();
     
@@ -157,7 +196,7 @@ class Controller {
         //     this.editor.updateAnimationAction( idx );
         //     timeline.onSetTime( timeline.current_time );
 
-        // }
+       
 
     }
 
@@ -183,7 +222,8 @@ class Controller {
         // const depthTestEnabled = this.bonePoints.material.depthTest;
         // inspector.addCheckbox( "Depth test", depthTestEnabled, (v) => { this.bonePoints.material.depthTest = v; })
     }
-
+    
+    //on update values on gui inspector
     onGUI() {
 
         this.updateBlendShapes();

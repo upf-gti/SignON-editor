@@ -556,27 +556,30 @@ FaceLexemeClip.lexemes = ["LIP_CORNER_DEPRESSOR", "LIP_CORNER_DEPRESSOR_LEFT","L
 	"EYES_CLOSED","BLINK","WINK","NOSE_WRINKLER","UPPER_LIP_RAISER","DIMPLER","JAW_DROP","MOUTH_STRETCH"];
 
 
-function FaceLexemeClip()
+function FaceLexemeClip(o)
 {
-	this.id= "faceLexeme-"+Math.ceil(getTime());;
-
-	this.start = 0
+	let lexeme = FaceLexemeClip.lexemes[0];
+	this.start = 0;
 	this.duration = 1;
-
+	
 	this._width = 0;
-
+	
 	this.properties = {
 		amount : 0.5,
 		attackPeak : 0.25,
 		relax : 0.75,
-		lexeme : FaceLexemeClip.lexemes[0]
+		lexeme : lexeme
 		/*permanent : false,*/
 	}
-
+	
+	this.id = lexeme + "-" + Math.ceil(getTime());
+	
 	this.color = "black";
 	this.font = "40px Arial";
+	this.clip_color = "cyan";
 
-  this.clip_color = "#94e9d9";
+	if(o)
+		this.configure(o);
   //this.icon_id = 37;
 }
 FaceLexemeClip.type = "faceLexeme";
@@ -584,6 +587,17 @@ FaceLexemeClip.id = ANIM.FACELEXEME? ANIM.FACELEXEME:2;
 FaceLexemeClip.clip_color = "cyan";
 ANIM.registerClipType( FaceLexemeClip );
 
+FaceLexemeClip.prototype.configure = function(o)
+{
+	this.start = o.start | 0;
+	this.duration = o.duration | 1;
+	if(o.properties)
+	{
+		this.properties = o.properties;
+		lexeme = o.properties.lexeme;
+		this.id = lexeme + "-" + Math.ceil(getTime());
+	}
+}
 FaceLexemeClip.prototype.toJSON = function()
 {
 	var json = {
@@ -619,7 +633,7 @@ FaceLexemeClip.prototype.drawTimeline = function( ctx, w,h, selected )
 	if( text_info.width < (w - 24) )
 		ctx.fillText( this.id, 24,h * 0.7 );
 }
-FaceLexemeClip.prototype.showInfo = function(panel)
+FaceLexemeClip.prototype.showInfo = function(panel, callback)
 {
 	for(var i in this.properties)
 	{
@@ -627,7 +641,21 @@ FaceLexemeClip.prototype.showInfo = function(panel)
 		if(i=="lexeme"){
 			panel.addCombo(i, property,{values: FaceLexemeClip.lexemes, callback: function(i,v)
 			{
+				if(v.includes("LIP") || v.includes("MOUTH") || v.includes("DIMPLER"))
+					this.clip_color = 'cyan';
+				else if(v.includes("BROW"))
+					this.clip_color = 'orange';
+				else if(v.includes("CHIN") || v.includes("JAW"))
+					this.clip_color = 'purple';
+				else if(v.includes("NOSE"))
+					this.clip_color = 'yellow';
+				else
+					this.clip_color = 'green';
+
 				this.properties[i] = v;
+				this.id = v + "-" + Math.ceil(getTime());
+				if(callback)
+					callback();
 			}.bind(this, i)});
 		}
 		else
@@ -639,6 +667,8 @@ FaceLexemeClip.prototype.showInfo = function(panel)
 					panel.addString(i, property, {callback: function(i,v)
 					{
 						this.properties[i] = v;
+						if(callback)
+							callback();
 					}.bind(this, i)});
 					break;
 				case Number:
@@ -647,6 +677,8 @@ FaceLexemeClip.prototype.showInfo = function(panel)
 						panel.addNumber(i, property, {min:0, max:1,callback: function(i,v)
 						{
 							this.properties[i] = v;
+							if(callback)
+								callback();
 						}.bind(this,i)});
 					}
 					else{
@@ -658,6 +690,8 @@ FaceLexemeClip.prototype.showInfo = function(panel)
 								this.properties.relax += dt;
 							}
 							this.properties[i] = v;
+							if(callback)
+								callback();
 						}.bind(this,i)});
 					}
 					break;
@@ -665,12 +699,16 @@ FaceLexemeClip.prototype.showInfo = function(panel)
 					panel.addCheckbox(i, property, {callback: function(i,v)
 					{
 						this.properties[i] = v;
+						if(callback)
+							callback();
 					}.bind(this,i)});
 						break;
 				case Array:
 					panel.addArray(i, property, {callback: function(i,v)
 					{
 						this.properties[i] = v;
+						if(callback)
+							callback();
 					}.bind(this,i)});
 						break;
 			}
@@ -866,7 +904,7 @@ FaceEmotionClip.prototype.drawTimeline = function( ctx, w,h, selected )
 	if( text_info.width < (w - 24) )
 		ctx.fillText( this.id, 24,h * 0.7 );
 }
-FaceEmotionClip.prototype.showInfo = function(panel)
+FaceEmotionClip.prototype.showInfo = function(panel, callback)
 {
 	for(var i in this.properties)
 	{
@@ -875,6 +913,8 @@ FaceEmotionClip.prototype.showInfo = function(panel)
 			panel.addCombo(i, property,{values: FaceEmotionClip.emotions, callback: function(i,v)
 			{
 				this.properties[i] = v;
+				if(callback)
+					callback();
 			}.bind(this, i)});
 		}
 		else
@@ -886,6 +926,8 @@ FaceEmotionClip.prototype.showInfo = function(panel)
 					panel.addString(i, property, {callback: function(i,v)
 					{
 						this.properties[i] = v;
+						if(callback)
+							callback();
 					}.bind(this, i)});
 					break;
 				case Number:
@@ -894,6 +936,8 @@ FaceEmotionClip.prototype.showInfo = function(panel)
 						panel.addNumber(i, property, {min:0, max:1,callback: function(i,v)
 						{
 							this.properties[i] = v;
+							if(callback)
+								callback();
 						}.bind(this,i)});
 					}
 					else{
@@ -905,6 +949,8 @@ FaceEmotionClip.prototype.showInfo = function(panel)
 								this.properties.relax += dt;
 							}
 							this.properties[i] = v;
+							if(callback)
+								callback();
 						}.bind(this,i)});
 					}
 				break;
@@ -912,12 +958,16 @@ FaceEmotionClip.prototype.showInfo = function(panel)
 					panel.addCheckbox(i, property, {callback: function(i,v)
 					{
 						this.properties[i] = v;
+						if(callback)
+							callback();
 					}.bind(this,i)});
 						break;
 				case Array:
 					panel.addArray(i, property, {callback: function(i,v)
 					{
 						this.properties[i] = v;
+						if(callback)
+							callback();
 					}.bind(this,i)});
 						break;
 			}

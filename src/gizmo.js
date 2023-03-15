@@ -705,7 +705,7 @@ class Gizmo {
             this.editor.setGizmoSize(v);
         }});
         inspector.addTitle("Bone markers")
-        inspector.addSlider( "Size", this.editor.getGizmoSize(), { min: 0.01, max: 1, step: 0.01, callback: (v) => {
+        inspector.addSlider( "Size", this.editor.getBoneSize(), { min: 0.01, max: 1, step: 0.01, callback: (v) => {
             this.editor.setBoneSize(v);
         }});
 

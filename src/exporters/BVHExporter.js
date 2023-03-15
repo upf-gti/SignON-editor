@@ -86,7 +86,7 @@ const BVHExporter = {
         return p.x.toFixed(6) + " " + p.y.toFixed(6) + " " + p.z.toFixed(6) + " ";
     },
 
-    export: function(mixer, skeletonHelper, clip, mode) {
+    export: function(action, skeletonHelper, clip, mode) {
 
         var bvh = "";
         const framerate = 1 / 30;
@@ -107,7 +107,7 @@ const BVHExporter = {
         bvh += "Frames: " + numFrames + "\n";
         bvh += "Frame Time: " + framerate + "\n";
 
-        const interpolants = mixer._actions[0]._interpolants;
+        const interpolants = action._interpolants;
 
         const getBoneFrameData = (time, bone) => {
 
@@ -172,7 +172,7 @@ const BVHExporter = {
         this.skeletonHelper = null;
     },
 
-    exportCustom: function(mixer, skeletonHelper, clip, mode) {
+    exportCustom: function(action, skeletonHelper, clip, mode) {
 
         var bvh = "";
 
@@ -189,7 +189,7 @@ const BVHExporter = {
         
         bvh += "MOTION\n";
 
-        const interpolants = mixer._actions[0]._interpolants;
+        const interpolants = action._interpolants;
 
         const getBoneFrameData = (bone) => {
 
@@ -241,9 +241,73 @@ const BVHExporter = {
         this.skeletonHelper = null;
     },
 
-    copyToLocalStorage: function(mixer, skeletonHelper, clip) {
-        this.export(mixer, skeletonHelper, clip, LOCAL_STORAGE);
-    }
+    copyToLocalStorage: function(action, skeletonHelper, clip) {
+        this.export(action, skeletonHelper, clip, LOCAL_STORAGE);
+    },
+
+    exportMorphTargets: function(action, morphTargetDictionary, clip, mode) {
+
+        var bvh = "";
+        const framerate = 1 / 30;
+        const numFrames = 1 + Math.floor(clip.duration / framerate);
+
+        bvh += "BLENDSHAPES\n";
+        bvh += '{\n';
+        if (morphTargetDictionary == undefined) {
+            console.error("Can not export animation with morph targets");
+            return;
+        }
+        let morphTargets = Object.keys(morphTargetDictionary);
+        morphTargets.map((v) => {bvh += "\t" + v + "\n"});
+        bvh += "}\n";
+        bvh += "MOTION\n";
+        bvh += "Frames: " + numFrames + "\n";
+        bvh += "Frame Time: " + framerate + "\n";
+
+        const interpolants = action._interpolants;
+
+        const getMorphTargetFrameData = (time, morphTarget) => {
+
+            var data = "";
+            for(let idx = 0; idx < morphTarget.length; idx++)
+            {
+                const tracks = clip.tracks.filter( t => t.name.includes('[' + morphTarget[idx] + ']') );
+                // No animation info            
+                if(!tracks.length)
+                    console.warn("No tracks for " + morphTarget)
+                else {
+                    for(var i = 0; i < tracks.length; ++i) {
+    
+                        const t = tracks[i];
+                        const trackIndex = clip.tracks.indexOf( t );
+                        const interpolant = interpolants[ trackIndex ];
+                        const values = interpolant.evaluate(time);
+                        data += values[0] + " ";
+                    }
+                }
+            }
+
+            return data;
+        }
+
+        for( var frameIdx = 0; frameIdx < numFrames; ++frameIdx ) {
+            bvh += getMorphTargetFrameData(frameIdx * framerate, morphTargets);
+            bvh += "\n";
+        }
+
+        switch(mode) {
+            
+            case LOCAL_STORAGE:
+                window.localStorage.setItem('three_webgl_bvhpreview', bvh);
+                break;
+            case LOG:
+                console.log(bvh);
+                break;
+            default:
+                this.download(bvh, 'NMFsign.bvh', 'text/plain');
+                break;
+        }
+    },
 };
 
 export { BVHExporter }
