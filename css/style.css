@@ -356,7 +356,7 @@ canvas {
   }
 
 /* Header buttons */
-.btn {
+.onEndBtn {
 	height: 100%;
     display: flex;
     justify-content: center;
@@ -368,7 +368,19 @@ canvas {
 	background-color: var(--global-color-secondary);
 }
 
-/* Darker background on mouse-over */
-.btn:hover {
+.onEndBtn:hover {
 	background-color: var(--global-color-highlight) !important;
+}
+
+.icon-link {
+	margin-right: 1rem;
+	color: var(--global-color-highlight) !important;
+}
+
+.icon-link:hover{
+	color: var(--global-color-selected) !important;
+}
+
+#endOfCapture span{
+	color: whitesmoke;
 }
