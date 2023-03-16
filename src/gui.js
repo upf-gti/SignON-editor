@@ -117,7 +117,7 @@ class Gui {
             if(this.NMFtimeline.selected_clip) {
                 actions.push(
                     {
-                        title: "Copy" + " <i class='bi clipboard-fill float-right'></i>",
+                        title: "Copy" + " <i class='bi bi-clipboard-fill float-right'></i>",
                         callback: () => {this.clip_to_copy = this.NMFtimeline.selected_clip;}
                     }
                 )
@@ -131,20 +131,24 @@ class Gui {
             else{
                 actions.push(
                     {
-                        title: "Paste" + " <i class='bi clipboard-fill float-right'></i>",
-                        callback: () => {
-                            let clip = new ANIM.FaceLexemeClip(this.clip_to_copy);
-                            this.clip_to_copy = null;
-                            this.NMFtimeline.addClip(clip, this.editor.NMFController.updateTracks.bind(this.editor.NMFController)); 
-                        }
-                    }
-                )
-                actions.push(
-                    {
                         title: "Add" + " <i class='bi bi-plus float-right'></i>",
                         callback: () => {this.NMFtimeline.addClip( new ANIM.FaceLexemeClip(), this.editor.NMFController.updateTracks.bind(this.editor.NMFController) );}
                     }
-                    );
+                );
+                if(this.clip_to_copy)
+                {
+                    actions.push(
+                        {
+                            title: "Paste" + " <i class='bi bi-clipboard-fill float-right'></i>",
+                            callback: () => {
+                                let clip = new ANIM.FaceLexemeClip(this.clip_to_copy);
+                                this.clip_to_copy = null;
+                                this.NMFtimeline.addClip(clip, this.editor.NMFController.updateTracks.bind(this.editor.NMFController)); 
+                            }
+                        }
+                    )
+                }
+                
             }
             new LiteGUI.ContextMenu( actions, { event: e });
         }, false);
@@ -414,31 +418,52 @@ class Gui {
             inspector.addSection("Time");
             const updateTracks = () => {
                 this.showClipInfo(clip);
+                if(clip.start + clip.duration > this.NMFtimeline) {
+                    this.NMFtimeline.onSetDuration(clip.start + clip.duration);
+                }
                 this.editor.NMFController.updateTracks(); 
             }
-            inspector.addNumber("Start", clip.start, {min:0, callback: (v) =>
-            {
-            
-                /*var dt = v - this.clip_in_panel.start;
-                if(clip.properties.ready) clip.properties.ready += dt;
-                if(clip.properties.strokeStart) clip.properties.strokeStart += dt;
-                if(clip.properties.stroke) clip.properties.stroke += dt;
-                if(clip.properties.attackPeak) clip.properties.attackPeak += dt;
-                if(clip.properties.strokeEnd) clip.properties.strokeEnd += dt;
-                if(clip.properties.relax) clip.properties.relax += dt;*/
-                
-                
+            inspector.addNumber("Start", clip.start, {min:0, step:0.01, callback: (v) =>
+            {              
+                // var dt = v - this.clip_in_panel.start;
+                // if(clip.ready) clip.ready += dt;
+                // if(clip.strokeStart) clip.strokeStart += dt;
+                // if(clip.stroke) clip.stroke += dt;
+                // if(clip.attackPeak) clip.attackPeak += dt;
+                // if(clip.strokeEnd) clip.strokeEnd += dt;
+                // if(clip.relax) clip.relax += dt;
                 this.clip_in_panel.start = v;
+                clip.start = v;
                 updateTracks();
                 
                 /*this.showClipInfo(clip)*/
             }})
-            inspector.addNumber("Duration", clip.duration, {min:0, callback: (v) =>
+            inspector.addNumber("Duration", clip.duration, {min:0.01, step:0.01, callback: (v) =>
             {
                 this.clip_in_panel.duration = v;
+                clip.relax = Math.min(v, clip.relax);
+                clip.attackPeak = Math.min(v, clip.attackPeak);
                 updateTracks();
             }})
-            
+            inspector.addSection("Sync points");
+            if(clip.attackPeak != undefined)
+            {
+                inspector.addNumber("Attack Peak", clip.attackPeak, {min:0, max: clip.duration, step:0.01, callback: (v) =>
+                    {              
+                       clip.attackPeak = v;
+                       updateTracks();
+                    }})
+            }
+            if(clip.relax != undefined) 
+            {
+                inspector.addNumber("Relax", clip.relax, {min: clip.attackPeak, max: clip.duration, step:0.01, callback: (v) =>
+                    {              
+                       clip.relax = v;
+                       clip.attackPeak = Math.min(v, clip.attackPeak);
+                       updateTracks();
+                    }})
+            }
+
             inspector.addSection("Content");
             if(clip.showInfo)
             {
@@ -460,7 +485,7 @@ class Gui {
                         case Number:
                             if(i=="amount")
                             {
-                                inspector.addNumber(i, property, {min:0, max:1,callback: function(i,v)
+                                inspector.addNumber(i, property, {min:0, max:1, step:0.01, callback: function(i,v)
                                 {
                                     this.clip_in_panel.properties[i] = v;
                                     updateTracks();
@@ -597,7 +622,7 @@ updateBoneProperties() {
                     this.NMFtimeline.framerate = 30;
                     this.NMFtimeline.setScale(400);
                     this.NMFtimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
-                    this.NMFtimeline.onSetDuration = (t) => {this.NMFtimeline.duration = this.NMFtimeline.clip.duration = t};
+                    this.NMFtimeline.onSetDuration = (t) => {this.timeline.duration = this.timeline.clip.duration = t};
                     this.NMFtimeline.onSelectClip = this.showClipInfo.bind(this);
                     this.NMFtimeline.onClipMoved = ()=> this.editor.NMFController.updateTracks.bind(this.editor.NMFController);
                     this.NMFtimeline.clip = {duration: this.timeline.duration, tracks: []};

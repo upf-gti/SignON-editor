@@ -803,9 +803,9 @@ class Editor {
                 for(let i = 0; i < this.mixer._actions.length; i++) {
                     options.animations.push(this.mixer._actions[i]._clip);
                 }
-                let model = this.mixer._root.getChildByName("Armature");
+                let model = this.mixer._root.getChildByName('Armature');
                 this.GLTFExporter.parse(model, 
-                    ( gltf ) => this.downloadFile("animation.glb", gltf ), // called when the gltf has been generated
+                    ( gltf ) => BVHExporter.download(gltf, 'animation.glb', 'arraybuffer' ), // called when the gltf has been generated
                     ( error ) => { console.log( 'An error happened:', error ); }, // called when there is an error in the generation
                 options
             );
@@ -824,17 +824,6 @@ class Editor {
         BVHExporter.copyToLocalStorage(this.mixer._actions[0], this.skeletonHelper, this.animationClip);
         const url = "https://webglstudio.org/users/arodriguez/demos/animationLoader/?load=three_webgl_bvhpreview";
         window.open(url, '_blank').focus();
-    }
-
-    downloadFile(filename, data) {
-        let extension = filename.split(".");
-        switch(extension[2])
-        {
-            case 'glb':
-                require('fs').writeFileSync(filename, Buffer.from(data));
-
-                break;
-        }
     }
 };
 

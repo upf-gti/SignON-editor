@@ -66,20 +66,20 @@ const MediaPipe = {
             canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
 
             canvasCtx.globalCompositeOperation = 'source-over';
-            drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,
-                            {color: '#00FF00', lineWidth: 4});
-            drawLandmarks(canvasCtx, results.poseLandmarks,
-                            {color: '#FF0000', lineWidth: 2});
-            drawConnectors(canvasCtx, results.faceLandmarks, FACEMESH_TESSELATION,
-                            {color: '#C0C0C070', lineWidth: 1});
-            drawConnectors(canvasCtx, results.leftHandLandmarks, HAND_CONNECTIONS,
-                            {color: '#CC0000', lineWidth: 5});
-            drawLandmarks(canvasCtx, results.leftHandLandmarks,
-                            {color: '#00FF00', lineWidth: 2});
-            drawConnectors(canvasCtx, results.rightHandLandmarks, HAND_CONNECTIONS,
-                            {color: '#00CC00', lineWidth: 5});
-            drawLandmarks(canvasCtx, results.rightHandLandmarks,
-                            {color: '#FF0000', lineWidth: 2});
+            // drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,
+            //                 {color: '#00FF00', lineWidth: 4});
+            // drawLandmarks(canvasCtx, results.poseLandmarks,
+            //                 {color: '#FF0000', lineWidth: 2});
+            // // drawConnectors(canvasCtx, results.faceLandmarks, FACEMESH_TESSELATION,
+            // //                 {color: '#C0C0C070', lineWidth: 1});
+            // drawConnectors(canvasCtx, results.leftHandLandmarks, HAND_CONNECTIONS,
+            //                 {color: '#CC0000', lineWidth: 5});
+            // drawLandmarks(canvasCtx, results.leftHandLandmarks,
+            //                 {color: '#00FF00', lineWidth: 2});
+            // drawConnectors(canvasCtx, results.rightHandLandmarks, HAND_CONNECTIONS,
+            //                 {color: '#00CC00', lineWidth: 5});
+            // drawLandmarks(canvasCtx, results.rightHandLandmarks,
+                            // {color: '#FF0000', lineWidth: 2});
             canvasCtx.restore();
 
         }).bind(this));

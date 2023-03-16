@@ -561,19 +561,17 @@ function FaceLexemeClip(o)
 	let lexeme = FaceLexemeClip.lexemes[0];
 	this.start = 0;
 	this.duration = 1;
+	this.attackPeak = 0.25;
+	this.relax = 0.75;
 	
-	this._width = 0;
-	
-	this.properties = {
-		amount : 0.5,
-		attackPeak : 0.25,
-		relax : 0.75,
-		lexeme : lexeme
-		/*permanent : false,*/
-	}
+	this.properties = {};
+	this.properties.amount = 0.5;
+	this.properties.lexeme = lexeme;
+	/*permanent : false,*/
 	
 	this.id = lexeme + "-" + Math.ceil(getTime());
 	
+	this._width = 0;
 	this.color = "black";
 	this.font = "40px Arial";
 	this.clip_color = "cyan";
@@ -591,11 +589,13 @@ FaceLexemeClip.prototype.configure = function(o)
 {
 	this.start = o.start | 0;
 	this.duration = o.duration | 1;
+	this.attackPeak = o.attackPeak | 0.25;
+	this.relax = o.relax | 0.75;
+
 	if(o.properties)
 	{
-		this.properties = o.properties;
-		lexeme = o.properties.lexeme;
-		this.id = lexeme + "-" + Math.ceil(getTime());
+		Object.assign(this.properties, o.properties);
+		this.id = this.properties.lexeme + "-" + Math.ceil(getTime());
 	}
 }
 FaceLexemeClip.prototype.toJSON = function()
@@ -604,6 +604,8 @@ FaceLexemeClip.prototype.toJSON = function()
 		id: this.id,
 		start: this.start,
 		duration: this.duration,
+		attackPeak: this.attackPeak,
+		relax : this.relax
 	}
 	for(var i in this.properties)
 	{
@@ -617,21 +619,79 @@ FaceLexemeClip.prototype.fromJSON = function( json )
 	this.id = json.id;
 	this.properties.amount = json.amount;
 	this.start = json.start;
-	this.properties.attackPeak = json.attackPeak;
-	this.properties.relax = json.relax;
+	this.attackPeak = json.attackPeak;
+	this.relax = json.relax;
 	this.duration = json.duration;
 	this.properties.lexeme = json.lexeme;
 	/*this.properties.permanent = json.permanent;*/
 
 }
-
-FaceLexemeClip.prototype.drawTimeline = function( ctx, w,h, selected )
+function roundedRect(ctx, x, y, width, height, radius, fill = true) {
+	ctx.beginPath();
+	ctx.moveTo(x, y + radius);
+	ctx.arcTo(x, y + height, x + radius, y + height, radius);
+	ctx.arcTo(x + width, y + height, x + width, y + height - radius, radius);
+	ctx.arcTo(x + width, y, x + width - radius, y, radius);
+	ctx.arcTo(x, y, x, y + radius, radius);
+	if(fill)
+		ctx.fill();
+	else
+		ctx.stroke();
+}
+FaceLexemeClip.prototype.drawTimeline = function( ctx, w,h, selected, timeline )
 {
 	//ctx.globalCompositeOperation =  "source-over";
 	var text_info = ctx.measureText( this.id );
+	if(timeline && timeline.timeToX)
+	{
+		var gradient = ctx.createLinearGradient(0, 0, w, h);
+		
+		ctx.fillStyle = "white";
+		ctx.globalCompositeOperation = "darken";
+		let attack_x = timeline._seconds_to_pixels * this.attackPeak;
+		let relax_x = timeline._seconds_to_pixels * this.relax ;
+		// Add three color stops
+		gradient.addColorStop(0, "gray");
+		gradient.addColorStop(attack_x/w, this.clip_color);
+		gradient.addColorStop(relax_x/w, this.clip_color);
+		gradient.addColorStop(1, "gray");
+		// ctx.beginPath();
+		// ctx.rect(x, 0, timeline._seconds_to_pixels * this.relax - x, h);
+		// // ctx.rect(0, 0, x, h);
+		// // ctx.fill();
+		// // x = timeline._seconds_to_pixels * this.relax ;
+		// // ctx.beginPath();
+		// // ctx.rect(x, 0, w - x, h);
+		// ctx.fill();
+		ctx.fillStyle = gradient;
+		
+		roundedRect(ctx, 0, 0, w, h, 5, true)
+		ctx.globalCompositeOperation = "source-over";
+		
+		ctx.fillStyle = "rgba(164, 74, 41, 1)";
+		// ctx.beginPath();
+		// ctx.rect(attack_x - 0.5, 0, 1.5, h);
+		// ctx.fill();
+		// ctx.beginPath();
+		// ctx.rect(relax_x, 0, 1.5, h);
+		// ctx.fill();
+		let margin = 0;
+		let size = h * 0.4;
+		ctx.save();
+		ctx.translate(attack_x, size * 2 + margin);
+		ctx.rotate(45 * Math.PI / 180);		
+		ctx.fillRect( -size, -size, size, size);
+		ctx.restore();
+		ctx.save();
+		ctx.translate(relax_x, size * 2 + margin);
+		ctx.rotate(45 * Math.PI / 180);		
+		ctx.fillRect( -size, -size, size, size);
+		ctx.restore();
+		
+	}
 	ctx.fillStyle = this.color;
 	if( text_info.width < (w - 24) )
-		ctx.fillText( this.id, 24,h * 0.7 );
+		ctx.fillText( this.id, 24, h * 0.7 );
 }
 FaceLexemeClip.prototype.showInfo = function(panel, callback)
 {

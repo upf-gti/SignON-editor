@@ -79,7 +79,7 @@ function Timeline( clip, bone_name, timeline_mode = "tracks" , position = [0,0],
 		let offset = 25;
 		ctx.fillStyle = 'white';
 		if(this.name)
-			ctx.fillText(this.name, 9 + offset * this._buttons_drawn.length, -this.top_margin + 10 );
+			ctx.fillText(this.name, 9 + offset * this._buttons_drawn.length, -this.top_margin*0.5 );
 	};
 
 	this.autoKeyButtonImg = document.createElement('img');
@@ -1032,6 +1032,7 @@ Timeline.prototype.processMouse = function (e) {
 					}
 					this.timeline_clicked_clip = null;
 					this.selected_clip = null;
+					this.onSelectClip(null);
 				}
 			}
 		}
@@ -1460,7 +1461,20 @@ Timeline.prototype.drawTrackWithBoxes = function (ctx, y, track_height, title, t
 	var clips = this.clip.tracks[track.clip_idx].clips;
 	let track_alpha = 1;
 	if(clips) {
-		
+		// A utility function to draw a rectangle with rounded corners.
+
+		function roundedRect(ctx, x, y, width, height, radius, fill = true) {
+			ctx.beginPath();
+			ctx.moveTo(x, y + radius);
+			ctx.arcTo(x, y + height, x + radius, y + height, radius);
+			ctx.arcTo(x + width, y + height, x + width, y + height - radius, radius);
+			ctx.arcTo(x + width, y, x + width - radius, y, radius);
+			ctx.arcTo(x, y, x, y + radius, radius);
+			if(fill)
+				ctx.fill();
+			else
+				ctx.stroke();
+		}
 		for(var j = 0; j < clips.length; ++j)
 		{
 			let clip = clips[j];
@@ -1478,7 +1492,8 @@ Timeline.prototype.drawTrackWithBoxes = function (ctx, y, track_height, title, t
 			//background rect
 			ctx.globalAlpha = track_alpha;
 			ctx.fillStyle = clip.clip_color || "#333";
-			ctx.fillRect(x,y,w,track_height);
+			//ctx.fillRect(x,y,w,track_height);
+			roundedRect(ctx, x, y, w, track_height, 5, true);
 
 			//draw clip content
 			if( clip.drawTimeline )
@@ -1496,9 +1511,9 @@ Timeline.prototype.drawTrackWithBoxes = function (ctx, y, track_height, title, t
 			
 				var safex = Math.max(-2, x );
 			var safex2 = Math.min( this._canvas.width + 2, x2 );
-			ctx.lineWidth = 0.5;
-			ctx.strokeStyle = clip.constructor.color || "black";
-			ctx.strokeRect( safex, y, safex2-safex, track_height );
+			// ctx.lineWidth = 0.5;
+			// ctx.strokeStyle = clip.constructor.color || "black";
+			// ctx.strokeRect( safex, y, safex2-safex, track_height );
 			ctx.globalAlpha = track_alpha;
 			if(this.selected_clip == clip)
 				selected_clip_area = [x,y,x2-x,track_height ]
@@ -1508,7 +1523,7 @@ Timeline.prototype.drawTrackWithBoxes = function (ctx, y, track_height, title, t
 		{
 			ctx.strokeStyle = "white";
 			ctx.lineWidth = 2;
-			ctx.strokeRect( selected_clip_area[0]-1,selected_clip_area[1]-1,selected_clip_area[2]+2,selected_clip_area[3]+2 );
+			roundedRect(ctx, selected_clip_area[0]-1,selected_clip_area[1]-1,selected_clip_area[2]+2,selected_clip_area[3]+2, 5, false);
 			ctx.strokeStyle = "#888";
 			ctx.lineWidth = 0.5;
 		}
