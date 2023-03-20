@@ -71,6 +71,39 @@ class Gui {
         LiteGUI.add( this.mainArea );
         
         const canvasArea = document.getElementById("canvasarea");
+        // Create capture info area
+
+        let captureArea = document.getElementById("capture");
+
+        let div = document.createElement("div");
+        div.id = "capture-info";
+        div.style = "hidden";
+        div.innerHTML = 
+            '<div id="text-info" class="header"> Position yourself centered on the image with the hands and troso visible. If the conditions are not met, reposition yourself or the camera. </div>\
+                <div id="warnings" style= "display:flex;     justify-content: center;"> \
+                    <div id="distance-info" class="alert alert-primary"> \
+                        <div class="icon__wrapper"> \
+                            <i class="fas fa-solid fa-check check"></i> \
+                        <!--<span class="mdi mdi-alert-outline"></span>--> \
+                        </div> \
+                        <p>Distance to the camera looks good</p> \
+                        <!-- <span class="mdi mdi-open-in-new open"></span> -->\
+                    </div> \
+                    <div id="hands-info" class="alert alert-primary"> \
+                        <div class="icon__wrapper"> \
+                            <i class="fas fa-solid fa-check check"></i> \
+                        <!--<span class="mdi mdi-alert-outline"></span>--> \
+                        </div> \
+                        <p>Hands visible</p> \
+                        <!--<span class="mdi mdi-open-in-new open"></span>--> \
+                    </div>\
+                </div>\
+            </div>'
+            
+       // div.getElementById("warnings").appendChild(button);
+       captureArea.appendChild( div );
+        //
+
         canvasarea.appendChild( document.getElementById("timeline") );
         let c = document.getElementById("timeline")
         c.style.display = "block"
@@ -229,6 +262,64 @@ class Gui {
         this.appendCombo( menubar, { hidden: true} );
     }
 
+    createCaptureGUI(landmarksResults, isRecording) {
+        
+        if(isRecording){
+            document.getElementById("capture-info").classList.add("hidden");
+            return;
+        }
+        else {
+            document.getElementById("capture-info").classList.remove("hidden");
+        }
+        if(!landmarksResults || !landmarksResults.poseLandmarks) return;
+        
+        let infoDistance = document.getElementById("distance-info");
+        let infoHands = document.getElementById("hands-info");
+        const { poseLandmarks } = landmarksResults;
+        
+        let validRange = 0.5,//Math.max(0,Math.min(100, 100 - center.w*400)),
+        warningRange = 0.3,//Math.max(0,Math.min(100, center.w*100)),
+        dangerRange = validRange - warningRange;// Math.max(0,Math.min(100, 100 - validRange - warningRange));
+        // Intro message for the pose detection assesment step
+        let torsoCondition = poseLandmarks[23].visibility < .5 || poseLandmarks[24].visibility < .5;
+        let handsCondition = poseLandmarks[15].visibility < .5 || poseLandmarks[16].visibility < .5 || poseLandmarks[19].visibility < .5 || poseLandmarks[17].visibility < .5 || poseLandmarks[18].visibility < .5 || poseLandmarks[20].visibility < .5;
+       
+        infoDistance.getElementsByTagName("p")[0].innerText = (torsoCondition) ? 'You are too close to the camera' : 'Distance to the camera looks good';
+        infoDistance.className = (torsoCondition) ? "alert alert-warning" : "alert alert-success";
+        
+        infoHands.getElementsByTagName("p")[0].innerText = (handsCondition) ? 'Your hands are not visible' : 'Hands visible';
+        infoHands.className = (handsCondition) ? "alert alert-warning" : "alert alert-success";
+
+        if(torsoCondition) 
+        {
+            infoDistance.getElementsByTagName("i")[0].classList.remove("fa-check");
+            infoDistance.getElementsByTagName("i")[0].classList.add("fa-exclamation-triangle");
+        } else {
+            infoDistance.getElementsByTagName("i")[0].classList.add("fa-exclamation-triangle");
+            infoDistance.getElementsByTagName("i")[0].classList.remove("fa-check");
+        }
+        if(handsCondition) 
+        {
+            infoHands.getElementsByTagName("i")[0].classList.remove("fa-check");
+            infoHands.getElementsByTagName("i")[0].classList.add("fa-exclamation-triangle");
+        }else{
+            infoHands.getElementsByTagName("i")[0].classList.add("fa-exclamation-triangle");
+            infoHands.getElementsByTagName("i")[0].classList.remove("fa-check");
+        } 
+        // let message = `
+        // ${(torsoCondition) ? 'You are too close to the camera.\n': ''}
+        // ${(handsCondition) ? 'Your hands are too near to the bottom margin.\n': ''}
+        // `;
+        // console.log(message)
+        // canvasCtx.fillStyle = 'rgba(125,125,0, 0.6)';
+        // //canvasCtx.scale(-1, 1);
+        // canvasCtx.fillRect(0, 0, canvasElement.width, 80);   
+        // canvasCtx.fillStyle = 'white';
+        // // canvasCtx.translate(0, canvasElement.width);
+        // canvasCtx.font = "20px serif";
+        // canvasCtx.fillText( message, 10,  40);
+        
+    }
     createSidePanel() {
 
         let mode = document.querySelector('#mode-selector')

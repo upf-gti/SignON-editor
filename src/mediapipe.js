@@ -12,13 +12,13 @@ const MediaPipe = {
     previousTime: 0,
     landmarks: [],
 
-    async start( live, onload ) {
+    async start( live, onload, onresults ) {
 
         UTILS.makeLoading("Loading MediaPipe...");
 
         this.landmarks = [];
         this.onload = onload;
-
+        this.onresults = onresults;
         // Webcam and MediaPipe Set-up
         const videoElement = document.getElementById("inputVideo");
         const canvasElement = document.getElementById("outputVideo");
@@ -47,7 +47,6 @@ const MediaPipe = {
                 this.fillLandmarks(results, dt);
                 this.previousTime = this.currentTime;
             }
-
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
             // Only overwrite existing pixels.
@@ -64,23 +63,33 @@ const MediaPipe = {
             // -------------
 
             canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-
             canvasCtx.globalCompositeOperation = 'source-over';
-            // drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,
-            //                 {color: '#00FF00', lineWidth: 4});
-            // drawLandmarks(canvasCtx, results.poseLandmarks,
-            //                 {color: '#FF0000', lineWidth: 2});
-            // // drawConnectors(canvasCtx, results.faceLandmarks, FACEMESH_TESSELATION,
-            // //                 {color: '#C0C0C070', lineWidth: 1});
-            // drawConnectors(canvasCtx, results.leftHandLandmarks, HAND_CONNECTIONS,
-            //                 {color: '#CC0000', lineWidth: 5});
-            // drawLandmarks(canvasCtx, results.leftHandLandmarks,
-            //                 {color: '#00FF00', lineWidth: 2});
-            // drawConnectors(canvasCtx, results.rightHandLandmarks, HAND_CONNECTIONS,
-            //                 {color: '#00CC00', lineWidth: 5});
-            // drawLandmarks(canvasCtx, results.rightHandLandmarks,
-                            // {color: '#FF0000', lineWidth: 2});
+            let recording = window.globals.app.isRecording();
+            if(!recording) {
+            
+                // const image = document.getElementById("source");
+                // canvasCtx.globalAlpha = 0.6;
+                // canvasCtx.drawImage(image, 0, 0, canvasElement.width, canvasElement.height);
+                // canvasCtx.globalAlpha = 1;
+                drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,
+                                {color: '#00FF00', lineWidth: 4});
+                drawLandmarks(canvasCtx, results.poseLandmarks,
+                                {color: '#FF0000', lineWidth: 2});
+                // drawConnectors(canvasCtx, results.faceLandmarks, FACEMESH_TESSELATION,
+                //                 {color: '#C0C0C070', lineWidth: 1});
+                drawConnectors(canvasCtx, results.leftHandLandmarks, HAND_CONNECTIONS,
+                                {color: '#CC0000', lineWidth: 5});
+                drawLandmarks(canvasCtx, results.leftHandLandmarks,
+                                {color: '#00FF00', lineWidth: 2});
+                drawConnectors(canvasCtx, results.rightHandLandmarks, HAND_CONNECTIONS,
+                                {color: '#00CC00', lineWidth: 5});
+                drawLandmarks(canvasCtx, results.rightHandLandmarks,
+                                {color: '#FF0000', lineWidth: 2});
+                               
+            }
             canvasCtx.restore();
+            if(this.onresults)
+                this.onresults(results, recording);
 
         }).bind(this));
 

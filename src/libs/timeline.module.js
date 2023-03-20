@@ -399,6 +399,8 @@ Timeline.prototype.addKeyFrame = function( track ) {
 
 	return newIdx;
 }
+Timeline.prototype.setDuration = function (t) { this.duration = this.clip.duration = t; if( this.onSetDuration ) this.onSetDuration( t );	 }
+
 Timeline.prototype.addClip = function( clip , callback = null) {
 
 	// Update clip information
@@ -466,15 +468,14 @@ Timeline.prototype.addClip = function( clip , callback = null) {
 	// if(this.onSetTime)
 	// 	this.onSetTime(this.current_time);
 	let end = clip.start + clip.duration;
-	const setDuration = (t) => { this.duration = this.clip.duration = t; if( this.onSetDuration ) this.onSetDuration( t );	 }
+	
 	if( end > this.duration)
-		setDuration(end);
+		this.setDuration(end);
 
 	if(callback)
 		callback();
 	return newIdx;
 }
-
 Timeline.prototype.deleteClip = function (clip, callback) {
 
 	let index = -1;
@@ -1004,6 +1005,8 @@ Timeline.prototype.processMouse = function (e) {
 						var ending_x = this.timeToX( clip.start + clip.duration );
 						var dist_to_start = Math.abs( this.timeToX( clip.start ) - x );
 						var dist_to_end = Math.abs( this.timeToX( clip.start + clip.duration ) - e.offsetX );
+						if(this.duration < clip.start + clip.duration  )
+							this.setDuration(clip.start + clip.duration);
 						//this.addUndoStep( "clip_modified", clip );
 						if( (e.shiftKey && dist_to_start < 5) || (clip.fadein && Math.abs( this.timeToX( clip.start + clip.fadein ) - e.offsetX ) < 5) )
 							this.drag_clip_mode = "fadein";
@@ -1101,6 +1104,8 @@ Timeline.prototype.processMouse = function (e) {
 				else if( this.drag_clip_mode == "duration" )
 					clip.duration += diff;
 				this.clip_time = this.current_time;
+				if(this.duration < clip.start + clip.duration  )
+					this.setDuration(clip.start + clip.duration);
 				return true;
 			}
 				
@@ -1454,7 +1459,7 @@ Timeline.prototype.drawTrackWithBoxes = function (ctx, y, track_height, title, t
 	{
 		// var info = ctx.measureText( title );
 		ctx.fillStyle = "rgba(255,255,255,0.9)";
-		ctx.fillText( title, 25, y + track_height * 0.75 );
+		ctx.fillText( title, 25, y + track_height * 0.8 );
 	}
 
 	ctx.fillStyle = "rgba(10,200,200,1)";

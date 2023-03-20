@@ -558,7 +558,7 @@ FaceLexemeClip.lexemes = ["LIP_CORNER_DEPRESSOR", "LIP_CORNER_DEPRESSOR_LEFT","L
 
 function FaceLexemeClip(o)
 {
-	let lexeme = FaceLexemeClip.lexemes[0];
+	let lexeme = FaceLexemeClip.lexemes[6];
 	this.start = 0;
 	this.duration = 1;
 	this.attackPeak = 0.25;
@@ -578,8 +578,11 @@ function FaceLexemeClip(o)
 
 	if(o)
 		this.configure(o);
+
+	this.updateColor(this.properties.lexeme);
   //this.icon_id = 37;
 }
+
 FaceLexemeClip.type = "faceLexeme";
 FaceLexemeClip.id = ANIM.FACELEXEME? ANIM.FACELEXEME:2;
 FaceLexemeClip.clip_color = "cyan";
@@ -597,6 +600,20 @@ FaceLexemeClip.prototype.configure = function(o)
 		Object.assign(this.properties, o.properties);
 		this.id = this.properties.lexeme + "-" + Math.ceil(getTime());
 	}
+}
+
+FaceLexemeClip.prototype.updateColor = function(v) 
+{
+	if(v.includes("LIP") || v.includes("MOUTH") || v.includes("DIMPLER"))
+		this.clip_color = 'cyan';
+	else if(v.includes("BROW"))
+		this.clip_color = 'orange';
+	else if(v.includes("CHIN") || v.includes("JAW"))
+		this.clip_color = 'purple';
+	else if(v.includes("NOSE"))
+		this.clip_color = 'yellow';
+	else
+		this.clip_color = 'green';
 }
 FaceLexemeClip.prototype.toJSON = function()
 {
@@ -626,17 +643,29 @@ FaceLexemeClip.prototype.fromJSON = function( json )
 	/*this.properties.permanent = json.permanent;*/
 
 }
-function roundedRect(ctx, x, y, width, height, radius, fill = true) {
+function roundedRect(ctx, x, y, width, height, radiusStart, radiusEnd, fill = true) {
 	ctx.beginPath();
-	ctx.moveTo(x, y + radius);
-	ctx.arcTo(x, y + height, x + radius, y + height, radius);
-	ctx.arcTo(x + width, y + height, x + width, y + height - radius, radius);
-	ctx.arcTo(x + width, y, x + width - radius, y, radius);
-	ctx.arcTo(x, y, x, y + radius, radius);
+	ctx.moveTo(x, y + radiusStart);
+	ctx.arcTo(x, y + height, x + radiusStart, y + height, radiusStart);
+	ctx.arcTo(x + width, y + height, x + width, y + height - radiusEnd, radiusEnd);
+	ctx.arcTo(x + width, y, x + width - radiusEnd, y, radiusEnd);
+	ctx.arcTo(x, y, x, y + radiusStart, radiusStart);
 	if(fill)
 		ctx.fill();
 	else
 		ctx.stroke();
+}
+const HexToRgb = (hex) => {
+    var c;
+    if(/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)){
+        c= hex.substring(1).split('');
+        if(c.length== 3){
+            c= [c[0], c[0], c[1], c[1], c[2], c[2]];
+        }
+        c= '0x'+c.join('');
+        return [(c>>16)&255, (c>>8)&255, c&255];
+    }
+    throw new Error('Bad Hex');
 }
 FaceLexemeClip.prototype.drawTimeline = function( ctx, w,h, selected, timeline )
 {
@@ -644,17 +673,16 @@ FaceLexemeClip.prototype.drawTimeline = function( ctx, w,h, selected, timeline )
 	var text_info = ctx.measureText( this.id );
 	if(timeline && timeline.timeToX)
 	{
-		var gradient = ctx.createLinearGradient(0, 0, w, h);
+		// var gradient = ctx.createLinearGradient(0, 0, w, h);
 		
-		ctx.fillStyle = "white";
-		ctx.globalCompositeOperation = "darken";
+		// ctx.globalCompositeOperation = "darken";
 		let attack_x = timeline._seconds_to_pixels * this.attackPeak;
 		let relax_x = timeline._seconds_to_pixels * this.relax ;
 		// Add three color stops
-		gradient.addColorStop(0, "gray");
-		gradient.addColorStop(attack_x/w, this.clip_color);
-		gradient.addColorStop(relax_x/w, this.clip_color);
-		gradient.addColorStop(1, "gray");
+		// gradient.addColorStop(0, "gray");
+		// gradient.addColorStop(attack_x/w, this.clip_color);
+		// gradient.addColorStop(relax_x/w, this.clip_color);
+		// gradient.addColorStop(1, "gray");
 		// ctx.beginPath();
 		// ctx.rect(x, 0, timeline._seconds_to_pixels * this.relax - x, h);
 		// // ctx.rect(0, 0, x, h);
@@ -663,35 +691,39 @@ FaceLexemeClip.prototype.drawTimeline = function( ctx, w,h, selected, timeline )
 		// // ctx.beginPath();
 		// // ctx.rect(x, 0, w - x, h);
 		// ctx.fill();
-		ctx.fillStyle = gradient;
-		
-		roundedRect(ctx, 0, 0, w, h, 5, true)
+		//ctx.fillStyle = gradient;
+		ctx.fillStyle = this.clip_color;
+		let color = HexToRgb(ctx.fillStyle);
+		color = color.map(x => x*=0.8);
+		ctx.fillStyle = 'rgba(' + color.join(',') + ', 1)';
+		roundedRect(ctx, 0, 0, attack_x, h, 5, 0, true);
+		roundedRect(ctx, relax_x, 0, w - relax_x, h, 0, 5, true);
 		ctx.globalCompositeOperation = "source-over";
 		
-		ctx.fillStyle = "rgba(164, 74, 41, 1)";
+		// ctx.fillStyle = "rgba(164, 74, 41, 1)";
 		// ctx.beginPath();
 		// ctx.rect(attack_x - 0.5, 0, 1.5, h);
 		// ctx.fill();
 		// ctx.beginPath();
 		// ctx.rect(relax_x, 0, 1.5, h);
 		// ctx.fill();
-		let margin = 0;
-		let size = h * 0.4;
-		ctx.save();
-		ctx.translate(attack_x, size * 2 + margin);
-		ctx.rotate(45 * Math.PI / 180);		
-		ctx.fillRect( -size, -size, size, size);
-		ctx.restore();
-		ctx.save();
-		ctx.translate(relax_x, size * 2 + margin);
-		ctx.rotate(45 * Math.PI / 180);		
-		ctx.fillRect( -size, -size, size, size);
-		ctx.restore();
+		// let margin = 0;
+		// let size = h * 0.4;
+		// ctx.save();
+		// ctx.translate(attack_x, size * 2 + margin);
+		// ctx.rotate(45 * Math.PI / 180);		
+		// ctx.fillRect( -size, -size, size, size);
+		// ctx.restore();
+		// ctx.save();
+		// ctx.translate(relax_x, size * 2 + margin);
+		// ctx.rotate(45 * Math.PI / 180);		
+		// ctx.fillRect( -size, -size, size, size);
+		// ctx.restore();
 		
 	}
 	ctx.fillStyle = this.color;
 	if( text_info.width < (w - 24) )
-		ctx.fillText( this.id, 24, h * 0.7 );
+		ctx.fillText( this.id, 24, h * 0.6);
 }
 FaceLexemeClip.prototype.showInfo = function(panel, callback)
 {

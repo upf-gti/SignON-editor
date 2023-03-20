@@ -71,6 +71,9 @@ class App {
         let stopBtn = document.getElementById("stop_btn");
         stopBtn.style.display = "block";
 
+        let captureInfo = document.getElementById("capture-info");
+        captureInfo.classList.add("hidden");
+
         let timelineDiv = document.getElementById("timeline");
         timelineDiv.classList.remove("hidden");
     }
@@ -79,7 +82,7 @@ class App {
         // Run mediapipe to extract landmarks
         MediaPipe.start( true, () => {
             $('#loading').fadeOut();
-        } );
+        }, this.editor.gui.createCaptureGUI );
 
         // Show video
         let video = document.getElementById("recording");
