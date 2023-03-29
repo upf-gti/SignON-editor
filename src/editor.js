@@ -205,7 +205,7 @@ class Editor {
 
         this.state = !this.state;
         element.innerHTML = "<i class='bi bi-" + (this.state ? "pause" : "play") + "-fill'></i>";
-        element.style.border = "solid #268581";
+        //element.style.border = "solid #268581";
 
         if(this.state) {
             this.mixer._actions[0].paused = false;
@@ -234,7 +234,7 @@ class Editor {
 
         this.state = false;
         element.innerHTML = "<i class='bi bi-play-fill'></i>";
-        element.style.removeProperty("border");
+        //element.style.removeProperty("border");
         this.gui.setBoneInfoState( true );
         this.stopAnimation();
 

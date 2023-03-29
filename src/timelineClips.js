@@ -670,6 +670,7 @@ const HexToRgb = (hex) => {
 FaceLexemeClip.prototype.drawTimeline = function( ctx, w,h, selected, timeline )
 {
 	//ctx.globalCompositeOperation =  "source-over";
+	ctx.font = "11px Calibri";
 	var text_info = ctx.measureText( this.id );
 	if(timeline && timeline.timeToX)
 	{
@@ -722,8 +723,9 @@ FaceLexemeClip.prototype.drawTimeline = function( ctx, w,h, selected, timeline )
 		
 	}
 	ctx.fillStyle = this.color;
+	
 	if( text_info.width < (w - 24) )
-		ctx.fillText( this.id, 24, h * 0.6);
+		ctx.fillText( this.id, 24, h/2 + 11/2);
 }
 FaceLexemeClip.prototype.showInfo = function(panel, callback)
 {

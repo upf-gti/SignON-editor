@@ -1,6 +1,6 @@
 import { Timeline } from "./libs/timeline.module.js";
 import { UTILS } from "./utils.js";
-
+import { VideoUtils } from "./video.js"; 
 class Gui {
 
     constructor(editor) {
@@ -49,7 +49,9 @@ class Gui {
         this.timeline.onGetSelectedBone = () => { return this.editor.getSelectedBone(); };
         this.timeline.onGetOptimizeThreshold = () => { return this.editor.optimizeThreshold; }
 
+        this.updateMenubar();
         this.createSidePanel();
+        this.hiddeCaptureArea();
 
         let canvasArea = document.getElementById("canvasarea");
         this.editor.resize(canvasArea.clientWidth, canvasArea.clientHeight);
@@ -62,7 +64,8 @@ class Gui {
     create() {
 
         LiteGUI.init(); 
-	
+        
+        this.createCaptureGUI();
         // Create menu bar
         this.createMenubar();
         
@@ -71,38 +74,6 @@ class Gui {
         LiteGUI.add( this.mainArea );
         
         const canvasArea = document.getElementById("canvasarea");
-        // Create capture info area
-
-        let captureArea = document.getElementById("capture");
-
-        let div = document.createElement("div");
-        div.id = "capture-info";
-        div.style = "hidden";
-        div.innerHTML = 
-            '<div id="text-info" class="header"> Position yourself centered on the image with the hands and troso visible. If the conditions are not met, reposition yourself or the camera. </div>\
-                <div id="warnings" style= "display:flex;     justify-content: center;"> \
-                    <div id="distance-info" class="alert alert-primary"> \
-                        <div class="icon__wrapper"> \
-                            <i class="fas fa-solid fa-check check"></i> \
-                        <!--<span class="mdi mdi-alert-outline"></span>--> \
-                        </div> \
-                        <p>Distance to the camera looks good</p> \
-                        <!-- <span class="mdi mdi-open-in-new open"></span> -->\
-                    </div> \
-                    <div id="hands-info" class="alert alert-primary"> \
-                        <div class="icon__wrapper"> \
-                            <i class="fas fa-solid fa-check check"></i> \
-                        <!--<span class="mdi mdi-alert-outline"></span>--> \
-                        </div> \
-                        <p>Hands visible</p> \
-                        <!--<span class="mdi mdi-open-in-new open"></span>--> \
-                    </div>\
-                </div>\
-            </div>'
-            
-       // div.getElementById("warnings").appendChild(button);
-       captureArea.appendChild( div );
-        //
 
         canvasarea.appendChild( document.getElementById("timeline") );
         let c = document.getElementById("timeline")
@@ -210,7 +181,7 @@ class Gui {
 
         var menubar = new LiteGUI.Menubar("mainmenubar");
         LiteGUI.add( menubar );
-
+        
         window.menubar = menubar;
 
         const logo = document.createElement("img");
@@ -219,11 +190,16 @@ class Gui {
         logo.alt = "SignON"
         logo.addEventListener('click', () => window.open('https://signon-project.eu/'));
         menubar.root.prepend(logo);
+        this.appendButtons( menubar );
+    }
 
+    updateMenubar() 
+    {
+        let menubar = window.menubar;
         menubar.add("Project/Upload animation", {icon: "<i class='bi bi-upload float-right'></i>", callback: () => this.editor.getApp().storeAnimation() });
-        menubar.add("Project/Show video", { type: "checkbox", instance: this, property: "showVideo", callback: () => {
+        menubar.add("Project/Show video", { type: "checkbox", property: "showVideo", callback: () => {
             const tl = document.getElementById("capture");
-            tl.style.display = that.showVideo ? "flex": "none";
+            tl.style.display = this.showVideo ? "flex": "none";
         }});
         menubar.add("Project/");
         menubar.add("Project/Export MF Animation", {subtitle: true});
@@ -235,9 +211,9 @@ class Gui {
         menubar.add("Project/Export GLB", {icon: "<i class='bi bi-file-text float-right'></i>",  callback: () => this.editor.export('GLB') });
         menubar.add("Project/Open preview", {icon: "<i class='bi bi-file-earmark-play float-right'></i>",  callback: () => this.editor.showPreview() });
 
-        menubar.add("Timeline/Show", { type: "checkbox", instance: this, property: "showTimeline", callback: () => {
+        menubar.add("Timeline/Show", { type: "checkbox", property: "showTimeline", callback: () => {
             const tl = document.getElementById("timeline");
-            tl.style.display = that.showTimeline ? "block": "none";
+            tl.style.display = this.showTimeline ? "block": "none";
         }});
 
         menubar.add("Timeline/Shortcuts", { disabled: true });
@@ -258,18 +234,172 @@ class Gui {
         menubar.add("Timeline/Empty tracks", { callback: () => this.editor.cleanTracks() });
         menubar.add("Timeline/Optimize tracks", { callback: () => this.editor.optimizeTracks() });
        
-        this.appendButtons( menubar );
+       
         this.appendCombo( menubar, { hidden: true} );
     }
 
-    createCaptureGUI(landmarksResults, isRecording) {
+    createCaptureGUI()
+    {
+        // Create capture info area
+        let mainCapture = document.getElementById("capture");
+        let captureArea = document.getElementById("capture-area");
+        const buttonContainer = document.createElement('div');
+        //buttonContainer.style.margin = "0 auto";
+        buttonContainer.style.display = "flex";
+        const buttons = [
+            {
+                id: "capture_btn",
+                text: " <i class='bi bi-record-circle' style= 'margin:5px; font-size:initial;'></i> Start recording"
+            },
+            {
+                id: "trim_btn",
+                text: "Convert to animation",
+                display: "none",
+                callback: () => VideoUtils.unbind( (start, end) => window.globals.app.onRecordLandmarks(start, end) )
+            },
+            {
+                id: "redo_btn",
+                text: " <i class='fa fa-redo'></i>",
+                title: "Redo video",
+                display: "none",
+                callback: async () => {
+                        // Update header
+                        let capture = document.getElementById("capture_btn");
+                        capture.disabled = true;
+                        capture.style.display = "block";
+
+                        let trimBtn = document.getElementById("trim_btn");
+                        trimBtn.style.display = "none";
+
+                        // TRIM VIDEO - be sure that only the sign is recorded
+                        let canvas = document.getElementById("outputVideo");
+                        let video = document.getElementById("recording");
+                        let input = document.getElementById("inputVideo");
+                        let live = true;
+                        if(input.src)
+                        {
+                            window.globals.app.onLoadVideo(input.src);
+                        }
+                        else{
+
+                            window.globals.app.setEvents(live);
+                        }
+                       // await VideoUtils.unbind();
+                }
+            }
+        ];
+       for(let b of buttons) {
+            const button = document.createElement("button");
+            button.id = b.id;
+            button.title = b.title || "";
+            button.style.display = b.display || "block";
+            button.innerHTML = b.text;
+            button.classList.add("btn-primary", "captureButton");
+            if(b.styles) Object.assign(button.style, b.styles);
+            if(b.callback) button.addEventListener('click', b.callback);
+            buttonContainer.appendChild(button);
+        }
+        captureArea.appendChild(buttonContainer);
+
+
+        let div = document.createElement("div");
+        div.id = "capture-info";
+        div.className = "hidden";
+        div.innerHTML = 
+            '<div id="text-info" class="header"> Position yourself centered on the image with the hands and troso visible. If the conditions are not met, reposition yourself or the camera. </div>\
+                <div id="warnings" style= "display:flex;     justify-content: center;"> \
+                    <div id="distance-info" class="alert alert-primary"> \
+                        <div class="icon__wrapper"> \
+                            <i class="fas fa-solid fa-check check"></i> \
+                        <!--<span class="mdi mdi-alert-outline"></span>--> \
+                        </div> \
+                        <p>Distance to the camera looks good</p> \
+                        <!-- <span class="mdi mdi-open-in-new open"></span> -->\
+                    </div> \
+                    <div id="hands-info" class="alert alert-primary"> \
+                        <div class="icon__wrapper"> \
+                            <i class="fas fa-solid fa-check check"></i> \
+                        <!--<span class="mdi mdi-alert-outline"></span>--> \
+                        </div> \
+                        <p>Hands visible</p> \
+                        <!--<span class="mdi mdi-open-in-new open"></span>--> \
+                    </div>\
+                </div>\
+            </div>'
+            
+        // div.getElementById("warnings").appendChild(button);
+        //captureArea.appendChild( div );
+        let videoArea = document.getElementById("video-area");
+       videoArea.classList.add("video-area");
+
+        let i = document.createElement("i");
+        i.id = "expand-capture-gui";
+        i.style = "position: relative;top: 35px;left: -19px;"
+        i.className = "fas fa-solid fa-circle-chevron-left drop-icon";
+        i.addEventListener("click", () => this.changeCaptureGUIVisivility(i.classList.contains("fa-circle-chevron-right")) );
+        //videoArea.appendChild(i);
+
+        let inspector = new LiteGUI.Inspector("capture-inspector");
+        inspector.root.hidden = true;
+       // inspector.root.style.margin = "0px 25px";
+        inspector.addTitle("User positioning");
+        //inspector.addSection("User positioning");
+        inspector.addInfo(null, 'Position yourself centered on the image with the hands and troso visible. If the conditions are not met, reposition yourself or the camera.') 
+        inspector.addInfo(null, 'Distance to the camera');
+
+        let progressVar = document.createElement('div');
+        progressVar.className = "progress mb-3";
+        progressVar.innerHTML = 
+           '<div id="progressbar-torso" class="progress-bar bg-danger" role="progressbar" style="width: 50%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>'
+            // <div id="progressbar-torso-warning" class="progress-bar bg-warning" role="progressbar" style="width: 30%" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>\
+            // <div id="progressbar-torso-success" class="progress-bar bg-success" role="progressbar" style="width: 20%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>'
+
+        inspector.root.appendChild(progressVar);
+        inspector.addInfo(null, 'Left Hand visibility');
+        let progressVarLH = document.createElement('div');
+        progressVarLH.className = "progress mb-3";
+        progressVarLH.innerHTML = 
+           '<div id="progressbar-lefthand" class="progress-bar bg-danger" role="progressbar" style="width: 50%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>'
+            // <div id="progressbar-torso-warning" class="progress-bar bg-warning" role="progressbar" style="width: 30%" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>\
+            // <div id="progressbar-torso-success" class="progress-bar bg-success" role="progressbar" style="width: 20%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>'
+
+        inspector.root.appendChild(progressVarLH);
+
+        inspector.addInfo(null, 'Right hand visibility');
+        let progressVarRH = document.createElement('div');
+        progressVarRH.className = "progress mb-3";
+        progressVarRH.innerHTML = 
+           '<div id="progressbar-righthand" class="progress-bar bg-danger" role="progressbar" style="width: 50%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>'
+            // <div id="progressbar-torso-warning" class="progress-bar bg-warning" role="progressbar" style="width: 30%" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>\
+            // <div id="progressbar-torso-success" class="progress-bar bg-success" role="progressbar" style="width: 20%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>'
+
+        inspector.root.appendChild(progressVarRH);
+        mainCapture.appendChild(i);
+        mainCapture.appendChild(inspector.root)
+        videoArea.appendChild(buttonContainer);
+    }
+
+    changeCaptureGUIVisivility(hidde) {
+        document.getElementById("capture-inspector").hidden = hidde;
+        let i = document.getElementById("expand-capture-gui");
+        if(hidde) {
+            i.classList.remove("fa-circle-chevron-right") ;
+            i.classList.add("fa-circle-chevron-left");
+        }
+        else{
+            i.classList.remove("fa-circle-chevron-left"); 
+            i.classList.add("fa-circle-chevron-right");
+        }
+    }
+
+    updateCaptureGUI(landmarksResults, isRecording) {
         
         if(isRecording){
-            document.getElementById("capture-info").classList.add("hidden");
+            this.changeCaptureGUIVisivility(true);
             return;
         }
         else {
-            document.getElementById("capture-info").classList.remove("hidden");
+            //document.getElementById("capture-info").classList.remove("hidden");
         }
         if(!landmarksResults || !landmarksResults.poseLandmarks) return;
         
@@ -277,35 +407,70 @@ class Gui {
         let infoHands = document.getElementById("hands-info");
         const { poseLandmarks } = landmarksResults;
         
-        let validRange = 0.5,//Math.max(0,Math.min(100, 100 - center.w*400)),
-        warningRange = 0.3,//Math.max(0,Math.min(100, center.w*100)),
-        dangerRange = validRange - warningRange;// Math.max(0,Math.min(100, 100 - validRange - warningRange));
+        let distance = (poseLandmarks[23].visibility + poseLandmarks[24].visibility)*0.5;
+        let leftHand = (poseLandmarks[15].visibility + poseLandmarks[17].visibility + poseLandmarks[19].visibility)/3;
+        let rightHand = (poseLandmarks[16].visibility + poseLandmarks[18].visibility + poseLandmarks[20].visibility)/3;
+      
         // Intro message for the pose detection assesment step
         let torsoCondition = poseLandmarks[23].visibility < .5 || poseLandmarks[24].visibility < .5;
         let handsCondition = poseLandmarks[15].visibility < .5 || poseLandmarks[16].visibility < .5 || poseLandmarks[19].visibility < .5 || poseLandmarks[17].visibility < .5 || poseLandmarks[18].visibility < .5 || poseLandmarks[20].visibility < .5;
        
-        infoDistance.getElementsByTagName("p")[0].innerText = (torsoCondition) ? 'You are too close to the camera' : 'Distance to the camera looks good';
-        infoDistance.className = (torsoCondition) ? "alert alert-warning" : "alert alert-success";
+        // infoDistance.getElementsByTagName("p")[0].innerText = (torsoCondition) ? 'You are too close to the camera' : 'Distance to the camera looks good';
+        // infoDistance.className = (torsoCondition) ? "alert alert-warning" : "alert alert-success";
         
-        infoHands.getElementsByTagName("p")[0].innerText = (handsCondition) ? 'Your hands are not visible' : 'Hands visible';
-        infoHands.className = (handsCondition) ? "alert alert-warning" : "alert alert-success";
+        // infoHands.getElementsByTagName("p")[0].innerText = (handsCondition) ? 'Your hands are not visible' : 'Hands visible';
+        // infoHands.className = (handsCondition) ? "alert alert-warning" : "alert alert-success";
+        
 
-        if(torsoCondition) 
-        {
-            infoDistance.getElementsByTagName("i")[0].classList.remove("fa-check");
-            infoDistance.getElementsByTagName("i")[0].classList.add("fa-exclamation-triangle");
-        } else {
-            infoDistance.getElementsByTagName("i")[0].classList.add("fa-exclamation-triangle");
-            infoDistance.getElementsByTagName("i")[0].classList.remove("fa-check");
-        }
-        if(handsCondition) 
-        {
-            infoHands.getElementsByTagName("i")[0].classList.remove("fa-check");
-            infoHands.getElementsByTagName("i")[0].classList.add("fa-exclamation-triangle");
-        }else{
-            infoHands.getElementsByTagName("i")[0].classList.add("fa-exclamation-triangle");
-            infoHands.getElementsByTagName("i")[0].classList.remove("fa-check");
-        } 
+        let progressBarT = document.getElementById("progressbar-torso");
+        progressBarT.setAttribute("aria-valuenow", distance*100);
+        progressBarT.style.width = distance*100 + '%';
+        progressBarT.className = "progress-bar";
+        if(distance < 0.3) 
+            progressBarT.classList.add("bg-danger")
+        else if(distance > 0.3 && distance < 0.7) 
+            progressBarT.classList.add("bg-warning")
+        else 
+            progressBarT.classList.add("bg-success")
+        
+        let progressBarLH = document.getElementById("progressbar-lefthand");
+        progressBarLH.setAttribute("aria-valuenow", leftHand*100);
+        progressBarLH.style.width = leftHand*100 + '%';
+        progressBarLH.className = "progress-bar";
+        if(leftHand < 0.3) 
+            progressBarLH.classList.add("bg-danger")
+        else if(leftHand > 0.3 && leftHand < 0.7) 
+            progressBarLH.classList.add("bg-warning")
+        else 
+            progressBarLH.classList.add("bg-success")
+
+        let progressBarRH = document.getElementById("progressbar-righthand");
+        progressBarRH.setAttribute("aria-valuenow", rightHand*100);
+        progressBarRH.style.width = rightHand*100 + '%';
+        progressBarRH.className = "progress-bar";
+        if(leftHand < 0.3) 
+            progressBarRH.classList.add("bg-danger")
+        else if(leftHand > 0.3 && leftHand < 0.7) 
+            progressBarRH.classList.add("bg-warning")
+        else 
+            progressBarRH.classList.add("bg-success")
+
+        // if(torsoCondition) 
+        // {
+        //     infoDistance.getElementsByTagName("i")[0].classList.remove("fa-check");
+        //     infoDistance.getElementsByTagName("i")[0].classList.add("fa-exclamation-triangle");
+        // } else {
+        //     infoDistance.getElementsByTagName("i")[0].classList.add("fa-exclamation-triangle");
+        //     infoDistance.getElementsByTagName("i")[0].classList.remove("fa-check");
+        // }
+        // if(handsCondition) 
+        // {
+        //     infoHands.getElementsByTagName("i")[0].classList.remove("fa-check");
+        //     infoHands.getElementsByTagName("i")[0].classList.add("fa-exclamation-triangle");
+        // }else{
+        //     infoHands.getElementsByTagName("i")[0].classList.add("fa-exclamation-triangle");
+        //     infoHands.getElementsByTagName("i")[0].classList.remove("fa-check");
+        // } 
         // let message = `
         // ${(torsoCondition) ? 'You are too close to the camera.\n': ''}
         // ${(handsCondition) ? 'Your hands are too near to the bottom margin.\n': ''}
@@ -319,6 +484,14 @@ class Gui {
         // canvasCtx.font = "20px serif";
         // canvasCtx.fillText( message, 10,  40);
         
+    }
+
+    hiddeCaptureArea() {
+        let e = document.getElementById("video-area");
+        e.classList.remove("video-area");
+        
+        let i = document.getElementById("expand-capture-gui");
+        i.hidden = true;
     }
     createSidePanel() {
 
@@ -408,7 +581,7 @@ class Gui {
         var widgets = new LiteGUI.Inspector();
         $(root.content).append(widgets.root);
     
-        const makePretitle = (src) => { return "<img src='data/imgs/mini-icon-"+src+".png' style='margin-right: 4px;margin-top: 6px;'>"; }
+        const makePretitle = (src) => { return "<img src='data/imgs/mini-icon-"+src+".png' style='margin-right: 4px;'>"; }
 
         widgets.on_refresh = (o) => {
 
@@ -783,15 +956,15 @@ updateBoneProperties() {
                 text: "<i class='bi bi-skip-start-fill'></i>",
                 display: "none"
             },
-            {
-                id: "capture_btn",
-                text: "Capture" + " <i class='bi bi-record2'></i>"
-            },
-            {
-                id: "trim_btn",
-                text: "Convert data to 3D animation",
-                display: "none"
-            }
+            // {
+            //     id: "capture_btn",
+            //     text: "Capture" + " <i class='bi bi-record2'></i>"
+            // },
+            // {
+            //     id: "trim_btn",
+            //     text: "Convert to animation",
+            //     display: "none"
+            // }
         ];
 
         for(let b of buttons) {
@@ -799,7 +972,7 @@ updateBoneProperties() {
             button.id = b.id;
             button.style.display = b.display || "block";
             button.innerHTML = b.text;
-            button.classList.add( "litebutton", "menuButton" );
+            button.classList.add( "litebutton", "menuButton", "captureButton" );
             if(b.styles) Object.assign(button.style, b.styles);
             if(b.callback) button.addEventListener('click', b.callback);
             buttonContainer.appendChild(button);
@@ -898,13 +1071,22 @@ updateBoneProperties() {
     onMouse(e, nmf = null) {
 
         e.preventDefault();
-        if(this.NMFtimeline)
+        let rect = this.timeline._canvas.getBoundingClientRect();
+        if( e.x >= rect.left && e.x <= rect.right && e.y >= rect.top && e.y <= rect.bottom)
         {
-            this.NMFtimeline.processMouse(e);
-            if(this.NMFtimeline.selected_clip || this.NMFtimeline.timeline_clicked_clip)
-                return;
+            if(e.type == "mousedown" && this.NMFtimeline)
+                this.NMFtimeline.selected_clip = null;
+            this.timeline.processMouse(e);
+            return;
         }
-        this.timeline.processMouse(e);
+        else if(this.NMFtimeline)
+        {
+            // if(e.type == "mousedown")
+            //     this.timeline.deselectAll();
+            this.NMFtimeline.processMouse(e);
+
+        }
+        
     }
 
     resize() {

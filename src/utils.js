@@ -92,6 +92,7 @@ const UTILS = {
 	makeLoading( string, opacity = 1 ) {
 
 		$("#loading p").text( string );
+		$("#loading").removeClass("hidden");
 		$("#loading").css({ background: "rgba(17,17,17," + opacity + ")" })
 		$("#loading").fadeIn();
 	}

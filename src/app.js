@@ -62,6 +62,13 @@ class App {
         capture.disabled = true;
         capture.style.display = "none";
 
+        let redo = document.getElementById("redo_btn");
+        if(redo){
+            redo.disabled = true;
+            redo.style.display = "none";
+        } 
+            
+
         let trimBtn = document.getElementById("trim_btn");
         trimBtn.disabled = true;
         trimBtn.style.display = "none";
@@ -71,8 +78,8 @@ class App {
         let stopBtn = document.getElementById("stop_btn");
         stopBtn.style.display = "block";
 
-        let captureInfo = document.getElementById("capture-info");
-        captureInfo.classList.add("hidden");
+        // let captureInfo = document.getElementById("capture-info");
+        // captureInfo.classList.add("hidden");
 
         let timelineDiv = document.getElementById("timeline");
         timelineDiv.classList.remove("hidden");
@@ -82,7 +89,7 @@ class App {
         // Run mediapipe to extract landmarks
         MediaPipe.start( true, () => {
             $('#loading').fadeOut();
-        }, this.editor.gui.createCaptureGUI );
+        }, this.editor.gui.updateCaptureGUI.bind(this.editor.gui) );
 
         // Show video
         let video = document.getElementById("recording");
@@ -116,7 +123,11 @@ class App {
 
         this.setEvents();
 
-        const url = URL.createObjectURL(videoFile);
+        let url = "";
+        if(typeof(videoFile) == 'string' && videoFile.includes("blob:"))
+            url = videoFile;
+        else
+            url = URL.createObjectURL(videoFile);
         const that = this;
 
         let videoElement = document.getElementById("inputVideo");
@@ -147,7 +158,7 @@ class App {
 
         MediaPipe.start( false, () => {
             $('#loading').fadeOut();
-        } );
+        }, this.editor.gui.updateCaptureGUI.bind(this.editor.gui) );
     }
 
     onRecordLandmarks(startTime, endTime) {
@@ -196,13 +207,13 @@ class App {
         // Initially register the callback to be notified about the first frame.
         videoRec.requestVideoFrameCallback(updateFrame);
 
-        const name = "Unnamed";
-        this.editor.clipName = name;
-        this.editor.updateGUI();
-
         // Creates the scene and loads the animation
         this.editor.trimTimes = [startTime, endTime];
         this.editor.buildAnimation( MediaPipe.landmarks );
+        
+        const name = "Unnamed";
+        this.editor.clipName = name;
+        this.editor.updateGUI();
     }
 
     setEvents(live) {
@@ -233,11 +244,11 @@ class App {
                     }
                 }
 
-                capture.innerHTML = "Stop" + " <i class='bi bi-stop-fill'></i>"
-                capture.style.backgroundColor = "lightcoral";
-                capture.style.border = "solid #924242";
-
-                videoCanvas.style.border = "solid #924242";
+                capture.innerHTML = " <i class='fa fa-stop' style= 'margin:5px; font-size:initial;'></i>"//"Stop" + " <i class='bi bi-stop-fill'></i>"
+                // capture.style.backgroundColor = "lightcoral";
+                // capture.style.border = "solid #924242";
+                capture.classList.add("stop");
+                videoCanvas.style.border = "solid var(--global-color-highlight)";
                 
                 // Start the capture
                 MediaPipe.onStartRecording();
@@ -253,23 +264,31 @@ class App {
                     videoElement.loop = true;
                 }
 
-                // Show modal to redo or load the animation in the scene
-                elem.style.display = "flex";
                 
                 // Stop the video recording
                 this.recording = false;
                 
+                console.log("Stop recording");
+                capture.classList.remove("stop")
+                // Back to initial values
+                capture.innerHTML = " <i class='bi bi-record-circle' style= 'margin:5px; font-size:initial;'></i> Start recording"
+                // capture.style.removeProperty("background-color");
+                // capture.style.removeProperty("border");
+                videoCanvas.style.removeProperty("border");
+                
                 this.mediaRecorder.stop();
-                MediaPipe.onStopRecording();
                 let endTime = Date.now();
                 this.duration = endTime - this.startTime;
-                console.log("Stop recording");
 
-                // Back to initial values
-                capture.innerHTML = "Capture" + " <i class='bi bi-record2'></i>"
-                capture.style.removeProperty("background-color");
-                capture.style.removeProperty("border");
-                videoCanvas.style.removeProperty("border");
+                if(MediaPipe.landmarks.length) {
+
+                    MediaPipe.onStopRecording();
+                    // Show modal to redo or load the animation in the scene
+                    //elem.style.display = "flex";
+                    elem.style.display = "none";
+                    MediaPipe.stop();
+                    this.processVideo();
+                }
             }
         };
     
@@ -290,10 +309,10 @@ class App {
             this.onRecordLandmarks(0, null);
         };
 
-        let trimBtn = document.getElementById("trim_btn");
-        trimBtn.onclick = () => {
-            VideoUtils.unbind( (start, end) => this.onRecordLandmarks(start, end) );
-        };
+        // let trimBtn = document.getElementById("trim_btn");
+        // trimBtn.onclick = () => {
+        //     VideoUtils.unbind( (start, end) => this.onRecordLandmarks(start, end) );
+        // };
     }
     
     async processVideo() {
@@ -305,6 +324,8 @@ class App {
 
         let trimBtn = document.getElementById("trim_btn");
         trimBtn.style.display = "block";
+        let redoBtn = document.getElementById("redo_btn");
+        redoBtn.style.display = "block";
 
         // TRIM VIDEO - be sure that only the sign is recorded
         let canvas = document.getElementById("outputVideo");
@@ -317,15 +338,16 @@ class App {
     }
 
     mediaDevicesSupported(video, scope) {
-
+        
         // prepare the device to capture the video
         if (navigator.mediaDevices) {
             console.log("UserMedia supported");
-
+                       
             let constraints = { video: true, audio: false };
 
-            navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
+            navigator.mediaDevices.getUserMedia(constraints).then( (stream) => {
 
+                
                 let videoElement = document.getElementById("inputVideo");
                 scope.mediaRecorder = new MediaRecorder(videoElement.srcObject);
 

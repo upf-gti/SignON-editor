@@ -2,8 +2,9 @@ const VideoUtils = {
 
     startTime: 0,
     endTime: null,
-    markerHeight: 30,
-
+    markerHeight: 25,
+    offsetWidth: 20,
+    offsetHeight: 5,
     bind: async function(video, canvas) {
 
         canvas.addEventListener("mouseup", this.onMouse.bind(this));
@@ -23,7 +24,7 @@ const VideoUtils = {
 
         // Hacky fix: Duration is infinity if not setting a time..
         // MediaElement bug
-        while(video.duration === Infinity) {
+        while(video.duration === Infinity || isNaN(video.duration)) {
             await new Promise(r => setTimeout(r, 1000));
             video.currentTime = 10000000 * Math.random();
         }
@@ -44,10 +45,17 @@ const VideoUtils = {
         this.video.play();
     },
 
-    animate: function() {
+    animate: async function() {
         
         if(!this.video)
         return;
+
+        while(this.video.duration === Infinity || isNaN(this.video.duration)) {
+            await new Promise(r => setTimeout(r, 1000));
+            this.video.currentTime = 10000000 * Math.random();
+        }
+        if(this.endTime > this.video.duration) 
+            this.endTime =this.video.duration;
 
         requestAnimationFrame(this.animate.bind(this));
         this.update();
@@ -73,18 +81,24 @@ const VideoUtils = {
         ctx.save();
         ctx.clearRect(0, 0, this.width, this.height);
 
-        ctx.globalAlpha = 0.25;
-        ctx.fillStyle = "#444";
-        ctx.fillRect(0, this.height - this.markerHeight, this.width, this.height+2);
+        ctx.globalAlpha = 0.8;
+        ctx.fillStyle = "rgb(29, 29, 29)";
+        ctx.strokeStyle = ctx.fillStyle;
+        ctx.roundRect(this.offsetHeight, this.height - this.markerHeight - this.offsetHeight*3, this.width - this.offsetHeight*2, this.markerHeight + this.offsetHeight*2);
+        ctx.fill();
 
-        ctx.globalAlpha = 0.85;
-        ctx.fillStyle = "#222";
-        ctx.fillRect(this.timeToX(this.startTime), this.height - this.markerHeight, this.timeToX(this.endTime - this.startTime), this.height+2);
+        ctx.globalAlpha = 0.5;
+        ctx.fillStyle = "#444";
+        ctx.fillRect(this.offsetWidth, this.height - 0.5*(this.markerHeight + this.offsetHeight*3) - 1  , this.width - this.offsetWidth*2, 2);
+
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = 'rgb(58, 161, 156)';
+        ctx.fillRect(this.offsetWidth + this.timeToX(this.startTime), this.height - 0.5*(this.markerHeight + this.offsetHeight*3) - 1 , this.timeToX(this.endTime - this.startTime), 2);
 
         // Min-Max time markers
-        this.renderTimeMarker('start', this.startTime, { color: '#1E1', fillColor: null });
-        this.renderTimeMarker('end', this.endTime, { color: '#E11', fillColor: null });
-        this.renderTimeMarker('current', this.video.currentTime, { color: '#111', fillColor: '#AFD' });
+        this.renderTimeMarker('start', this.startTime, { color: null, fillColor: 'rgb(58, 161, 156, 1)', width: 15 });
+        this.renderTimeMarker('end', this.endTime, { color: null, fillColor: 'rgb(58, 161, 156, 1)', width: 15 });
+        this.renderTimeMarker('current', this.video.currentTime, { color: '#e5e5e5', fillColor: '#e5e5e5', width: 2 });
 
         ctx.restore();
     },
@@ -93,51 +107,71 @@ const VideoUtils = {
 
         options = options || {};
         const ctx = this.ctx;
-        const x = this.timeToX(time);
-        const h0 = this.height - this.markerHeight - 5;
-        const h = this.markerHeight;
+        ctx.lineWitdh = 1;
+        const x = this.offsetWidth + this.timeToX(time);
+        let h0 = this.height - this.markerHeight - this.offsetHeight*2;
+        let h = this.markerHeight ;
 
-        let mWidth = this.dragging == name ? 6 : 4;
-        let markerColor = options.fillColor || '#333';
+        let mWidth = options.width ? options.width : (this.dragging == name ? 6 : 4);
+        let markerColor = options.color || options.fillColor;
 
         ctx.strokeStyle = markerColor;
-        ctx.globalAlpha = 0.5;
-        ctx.fillStyle = "#FFF";
-        ctx.fillRect( x - mWidth * 0.5, h0, mWidth, h0 + h);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = options.fillColor || '#111' // "#FFF";
+        //ctx.fillRect( x - mWidth * 0.5, h0, mWidth, h0 + h);
+        //ctx.beginPath();
+        ctx.roundRect(x - mWidth * 0.5, h0, mWidth,  h);
+        ctx.fill();
         if(this.hovering == name) {
             ctx.globalAlpha = 0.2;
-            ctx.fillRect( x - mWidth, h0, mWidth * 2, h0 + h);
-            ctx.globalAlpha = 0.5;
+            // ctx.fillRect( x - mWidth * 0.5 - 2, h0, mWidth + 2, h0 + h);
+            //ctx.beginPath();
+            ctx.roundRect( x - mWidth * 0.5 - 2, h0, mWidth + 4,  h);
+            ctx.fill();
+            ctx.globalAlpha = 1;
         }
-        ctx.globalAlpha = 1;
-        ctx.beginPath();
-        ctx.moveTo(x, h0);
-        ctx.lineTo(x, h0 + h);
-        ctx.stroke();
-
-        ctx.fillStyle = options.color || '#111';
-        ctx.beginPath();
-        ctx.moveTo(x - 8, h0 - 1);
-        ctx.lineTo(x + 8, h0 - 1);
-        ctx.lineTo(x, h0 + 10);
-        ctx.fill();
-
-        ctx.fillStyle = markerColor;
-        ctx.beginPath();
-        ctx.moveTo(x - 6, h0);
-        ctx.lineTo(x + 6, h0);
-        ctx.lineTo(x, h0 + 8);
-        ctx.fill();
-
+        
         // Current time text
-        if(name == 'current' || this.hovering == name) {
+        if(name == 'current' ) {
+            h0 -= this.offsetHeight + 4;
+            ctx.globalAlpha = 1;
+            // ctx.beginPath();
+            // ctx.moveTo(x, h0);
+            // ctx.lineTo(x, h0 + h);
+            // ctx.stroke();
+
+            ctx.fillStyle = options.fillColor || '#e5e5e5';
+            ctx.beginPath();
+            ctx.moveTo(x - 8, h0 - 1);
+            ctx.lineTo(x + 8, h0 - 1);
+            ctx.lineTo(x, h0 + 10);
+            ctx.fill();
+
+            // ctx.fillStyle = '#e5e5e5';
+            // ctx.beginPath();
+            // ctx.moveTo(x - 6, h0);
+            // ctx.lineTo(x + 6, h0);
+            // ctx.lineTo(x, h0 + 8);
+            // ctx.fill();
+
             let xPos = Math.max( Math.min( x - 17, this.width - 42), 5 );
-            ctx.fillStyle = "#DDD";
-            ctx.fillRect(xPos - 5, h0 - 25, 47, 15);
-            ctx.fillStyle = "#222";
+            ctx.fillStyle = "rgba(200, 200, 200, 0.2)";
+            ctx.lineWitdh = 0;
+            ctx.roundRect(xPos - 5, h0 - 25, 47, 15);
+            ctx.fill();
+            ctx.fillStyle = "#e5e5e5";
             ctx.font = "bold 16px Calibri";
             ctx.fillText(String(time.toFixed(3)), xPos, h0 - 12);
         }
+        else {
+            ctx.strokeStyle = 'rgb(200, 200, 200)'
+            ctx.beginPath();
+            ctx.lineWitdh = 2;
+            ctx.moveTo(x, h0 + 4);
+            ctx.lineTo(x, h0 + h - 4);
+            ctx.stroke();
+        }
+        
     },
 
     onMouse: function(e)  {
@@ -151,13 +185,13 @@ const VideoUtils = {
         var x = e.offsetX;
         var y = e.offsetY;
 
-        if( e.type == "mouseup" || e.type == "mouseleave" || y < (this.height - this.markerHeight)) {
+        if( e.type == "mouseup" || e.type == "mouseleave") {
             this.dragging = false;
             this.hovering = false;
         }
         else if( e.type == "mousedown") {
 
-            const t = this.xToTime(x);
+            const t = this.xToTime(x - this.offsetWidth);
 
             if(Math.abs( this.startTime - t) < this.ratio) {
                 this.dragging = 'start';
@@ -165,11 +199,12 @@ const VideoUtils = {
                 this.dragging = 'end';
             } else if(Math.abs( this.video.currentTime - t) < this.ratio) {
                 this.dragging = 'current';
-            }
+            } else
+                this.video.currentTime = t;
         }
         else if( e.type == "mousemove") {
 
-            const t = this.xToTime(x);
+            const t = this.xToTime(x - this.offsetWidth);
 
             const hoverStart = t < (this.endTime - this.ratio * 2);
             const hoverEnd = t > (this.startTime + this.ratio * 2);
@@ -215,11 +250,11 @@ const VideoUtils = {
     },
 
     xToTime: function(x) {
-        return (x / this.width) *  this.video.duration;
+        return (x / (this.width - this.offsetWidth*2)) *  this.video.duration;
     },
 
     timeToX: function (time) {
-        return (time / this.video.duration) *  this.width;
+        return (time / this.video.duration) *  (this.width - this.offsetWidth*2);
     },
 
     unbind: function(callback) {

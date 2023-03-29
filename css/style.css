@@ -2,16 +2,18 @@
 	--header-size: 60px;
     --global-font-family: Verdana, sans-serif;
     --global-font-size: 0.8rem;
-    --global-text-color: #555;
-    --global-color-primary: #222;
-    --global-color-secondary: rgb(54, 61, 61);
+    --global-text-color: #495057;
+	--global-text-color-secondary: #ddd;
+    --global-color-primary: #1a2025;
+    --global-color-secondary: #2c303570; /* rgb(54, 61, 61);*/
 	--global-color-selected: rgb(35, 105, 102);
 	--global-color-highlight: rgb(58, 161, 156, 0.8);
+	--global-color-selected-secondary: #ff9a00; /* rgb(95 136 201);*/
 	--global-color-disabled: rgb(117, 79, 79);
 	--global-color-disabled-hover: rgb(110, 91, 91);
 	--start-scene-proportion: 80%;
 	--primary: #0676ed;
-	--background: #222b45;
+	--background: #161c21;
 	--warning: #f2a600;
 	--success: #12c99b;
 	--error: #e41749;
@@ -22,7 +24,7 @@
 	outline: thin;
 }
 
-html, body { width: 100%; height: 100%; margin: 0; padding: 0; background-color: var(--global-color-primary); overflow: hidden; font-size: var(--global-font-size);}
+html, body { width: 100%; height: 100%; margin: 0; padding: 0; background-color: var(--background); overflow: hidden; font-size: var(--global-font-size);}
 
 video {
 	transform: rotateY(180deg);
@@ -51,11 +53,12 @@ canvas {
 
 .expanded {
 	width: 100% !important;
-	height: 100% !important; 
-	top: 49px !important;
+	height: 100% !important;
+	/* top: 0px !important; */
+	top: 37px !important;
 	left: 0px !important;
-	flex-direction: column;
-	padding: 25px;
+	/* flex-direction: column; */
+	/* padding: 25px; */
 }
 
 .hidden {
@@ -102,14 +105,31 @@ canvas {
 }
 
 .menuButton {
-	margin-top: 2px !important;
+	/* margin-top: 2px !important; */
 	padding-left: 15px !important;
 	padding-right: 15px !important;
 	font-size: 1.6em  !important;
 }
 
+.captureButton {
+    padding: 1.25rem 2.25rem;
+    font-size: 1.1rem;
+    font-weight: bolder;
+    border: none;
+    border-radius: 10rem!important;
+    margin: 1rem;
+    display: block;
+    text-transform: capitalize;
+}
+.captureButton:hover, .recording{
+    color: var(--global-color-highlight) !important;
+}
+.captureButton.stop{
+	background-color: rgb(215,59,62)!important;
+	color:white;
+}
 .selected {
-	background: var(--global-color-selected);
+	background: var(--global-color-secondary);
 }
 
 .float-right {
@@ -126,7 +146,7 @@ canvas {
 
 #signOn-logo {
 	width: 37px;
-	padding: 3px;
+	padding: 5px;
 	cursor: pointer;
 	margin-right: 1px;
 	margin-left: 3px;
@@ -139,19 +159,16 @@ canvas {
 
 #capture {
 	width: 20%;
-	left: 40px;
-	top: 90px;
-	position: absolute;
-	z-index: 10;
-
-	display: flex;
-	/* justify-content: center; */
-	align-content: center;
-	align-items: center;
-
-	background-color: rgba(51, 51, 51, 0.5);
-	font-family: Verdana;
-
+    left: 40px;
+    top: 90px;
+    position: absolute;
+    z-index: 9;
+    display: flex;
+    /* justify-content: flex-end;
+    align-content: center;
+    align-items: center; */
+    background-color: var(--background);
+    font-family: Verdana;
 }
 
 #recording {
@@ -465,3 +482,53 @@ canvas {
   .alert .close:hover, .alert .open:hover {
 	transform: scale(1.3);
   }
+  .flex-horizontal {
+	display: flex;
+	flex-direction: row;
+  }
+  .flex-vertical {
+	display: flex;
+	flex-direction: column;
+  }
+
+.bg-success {
+	color: var(--success);
+}
+.bg-warning {
+	color: var(--warning);
+}
+.bg-danger {
+	color: var(--error);
+}
+
+.drop-icon{
+	font-size: 20px;
+	margin: 6px 10px;
+	max-height: 20px;
+	color: var(--global-color-selected);
+}
+.drop-icon:hover {
+	color: var(--global-color-highlight)!important;
+}
+
+.video-area{
+	background-color: var(--global-color-primary);
+    padding: 38px;
+    width: 100%; 
+    align-items: center;
+}
+
+/*
+#ff9a00 (a bright orange color)
+#f5a5c2 (a soft pink color)
+#5d5d5d (a dark grey color)
+#f7f7f7 (a light grey color)
+#007aff (a bright blue color)
+
+dark mode:
+#ffa600 (a bright yellow color)
+#ff6b6b (a deep red color)
+#e5e5e5 (a light grey color)
+#6c757d (a cool grey color)
+#0077c2 (a bright blue color
+*/

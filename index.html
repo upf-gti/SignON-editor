@@ -14,7 +14,7 @@
 
         <link href="css/template-style.css" rel="stylesheet" />
 		<link rel="stylesheet" href="css/style.css">
-		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
+		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.3.0/css/all.css">
 		<link rel="stylesheet" href="css/litegui.css">
 		<link rel="stylesheet" href="css/jquery-ui.css">
     </head>
@@ -51,7 +51,7 @@
         </header>
     
 		<!-- Modals -->
-		<div id="loading" class="modal">
+		<div id="loading" class="modal hidden">
 			<div class="load-7">
 				<p>Loading application, please wait</p>
 				<div class="square-holder">
@@ -61,8 +61,8 @@
 		</div>
 
 		<div id="endOfCapture" class="modal" style="display: none">
-			<button id="redo_btn" class="onEndBtn" style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Redo
-					the video</span></button>
+			<!-- <button id="redo_btn" class="onEndBtn" style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Redo
+					the video</span></button> -->
 			<button id="trimData_btn" class="onEndBtn"
 				style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Trim video</span></button>
 			<button id="loadData_btn" class="onEndBtn"
@@ -76,10 +76,13 @@
 		</div>
 
 		<div id="capture" class="expanded hidden" draggable="false">
-			<video id="inputVideo" class="hidden"></video>
-			<canvas id="outputVideo" width="1280px" height="720px" style="z-index: 1;"
-				tabindex="1"></canvas>
-			<video id="recording" class="hidden"></video>
+			<div id="capture-area" class="flex-horizontal" style ="width: 100%;">
+				<div id="video-area" class="flex-vertical">
+					<video id="inputVideo" class="hidden"></video>
+					<canvas id="outputVideo" width="1280px" height="720px" style="z-index: 1;" tabindex="1"></canvas>
+					<video id="recording" class="hidden"></video>
+				</div>
+			</div>
 		</div>
 		  
 		<div id="timeline" class="hidden">
@@ -95,7 +98,7 @@
 	<script type="importmap">
 			{
 				"imports": {
-					"three": "./src/libs/three.module.js"
+					"three": "https://cdn.skypack.dev/three@0.136"
 				}
 			}
 		</script>
@@ -145,7 +148,7 @@
 	
 		$( function() {
 	
-			$("#loading").fadeOut();
+			//$("#loading").fadeOut();
 	
 			$("#from-file").click(onloadfile);
 			$("#new-capture").click(() => {

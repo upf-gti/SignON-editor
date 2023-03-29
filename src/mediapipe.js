@@ -63,9 +63,9 @@ const MediaPipe = {
             // -------------
 
             canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-            canvasCtx.globalCompositeOperation = 'source-over';
             let recording = window.globals.app.isRecording();
             if(!recording) {
+                canvasCtx.globalCompositeOperation = 'source-over';
             
                 // const image = document.getElementById("source");
                 // canvasCtx.globalAlpha = 0.6;

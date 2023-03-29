@@ -1196,10 +1196,11 @@ Timeline.prototype.draw = function (ctx, current_time, rect) {
 
 	//background
 	ctx.clearRect(0,-this.top_margin,w,h+this.top_margin);
-	ctx.fillStyle = "#000";
-	ctx.globalAlpha = 0.65;
+	ctx.fillStyle = "#161c21";// "#000";
+	//ctx.globalAlpha = 0.65;
 	ctx.fillRect(0,-this.top_margin,w,this.top_margin);
-	ctx.globalAlpha = 0.55;
+	ctx.fillStyle = "#1a2025";// "#000";
+	ctx.globalAlpha = 0.75;
 	ctx.fillRect(0,0,w,h);
 	ctx.globalAlpha = 1;
 
@@ -1526,11 +1527,13 @@ Timeline.prototype.drawTrackWithBoxes = function (ctx, y, track_height, title, t
 		//render clip selection area
 		if(selected_clip_area)
 		{
-			ctx.strokeStyle = "white";
-			ctx.lineWidth = 2;
+			ctx.strokeStyle = this.selected_clip.color;
+			ctx.globalAlpha = 0.8;
+			ctx.lineWidth = 1;
 			roundedRect(ctx, selected_clip_area[0]-1,selected_clip_area[1]-1,selected_clip_area[2]+2,selected_clip_area[3]+2, 5, false);
 			ctx.strokeStyle = "#888";
 			ctx.lineWidth = 0.5;
+			ctx.globalAlpha = 1;
 		}
 	}
 
