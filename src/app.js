@@ -87,9 +87,10 @@ class App {
 
     onBeginCapture() {
         // Run mediapipe to extract landmarks
-        MediaPipe.start( true, () => {
-            $('#loading').fadeOut();
-        }, this.editor.gui.updateCaptureGUI.bind(this.editor.gui) );
+        if(!MediaPipe.loaded)
+            MediaPipe.start( true, () => {
+                $('#loading').fadeOut();
+            }, this.editor.gui.updateCaptureGUI.bind(this.editor.gui) );
 
         // Show video
         let video = document.getElementById("recording");

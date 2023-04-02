@@ -1500,14 +1500,15 @@ a:hover {
 	display: inline-block;
 	width: 7px;
 	height: 7px;
-	margin: 2px;
+	margin: 2px 8px 2px 2px;
 	vertical-align: top;
 }
 
 .litemenu-entry.checked .icon {
-	background-color: #AAF;
-	margin-right: 4px; 
+	background-color: var(--global-color-highlight);
+	margin-right: 8px; 
 	margin-top: 5px; 
+	border-radius: 8px;
 }
 
 .litemenu-entry .more {
@@ -1545,7 +1546,7 @@ a:hover {
 }
 
 .litemenu-entry:hover:not(.disabled):not(.separator) {
-	background-color: var(--global-color-highlight);
+	background-color: var(--background);
 	color: #EEE;
 }
 
@@ -1606,7 +1607,7 @@ button.litebutton:hover:not(:disabled) {
 }
 
 button.litebutton:active:not(:disabled) {
-    background: var(--global-color-highlight) !important;
+    background: var(--global-color-primary) !important;
 }
 
 button.litebutton:disabled {
@@ -2110,8 +2111,12 @@ ul.file-list li.file-item span.info {
 
 .litesplitbar.vertical {
 	cursor: n-resize;
-	width: 100%;
-	height: 2px;
+    width: 100%;
+    height: 4px;
+    width: 64px;
+    position: relative;
+    left: calc(50% - 32px);
+    top: -5px;
 }
 
 input {

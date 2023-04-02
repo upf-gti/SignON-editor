@@ -5,6 +5,8 @@ const VideoUtils = {
     markerHeight: 25,
     offsetWidth: 20,
     offsetHeight: 5,
+    playButtonWidth: 40,
+
     bind: async function(video, canvas) {
 
         canvas.addEventListener("mouseup", this.onMouse.bind(this));
@@ -89,11 +91,14 @@ const VideoUtils = {
 
         ctx.globalAlpha = 0.5;
         ctx.fillStyle = "#444";
-        ctx.fillRect(this.offsetWidth, this.height - 0.5*(this.markerHeight + this.offsetHeight*3) - 1  , this.width - this.offsetWidth*2, 2);
+        ctx.fillRect(this.playButtonWidth + this.offsetWidth, this.height - 0.5*(this.markerHeight + this.offsetHeight*3) - 1  , this.width - this.offsetWidth*2 - this.playButtonWidth, 2);
 
         ctx.globalAlpha = 1;
         ctx.fillStyle = 'rgb(58, 161, 156)';
-        ctx.fillRect(this.offsetWidth + this.timeToX(this.startTime), this.height - 0.5*(this.markerHeight + this.offsetHeight*3) - 1 , this.timeToX(this.endTime - this.startTime), 2);
+        ctx.fillRect(this.playButtonWidth + this.offsetWidth + this.timeToX(this.startTime), this.height - 0.5*(this.markerHeight + this.offsetHeight*3) - 1 , this.timeToX(this.endTime - this.startTime), 2);
+        
+        ctx.strokeStyle = ctx.fillStyle;
+        this.renderPlayButton();
 
         // Min-Max time markers
         this.renderTimeMarker('start', this.startTime, { color: null, fillColor: 'rgb(58, 161, 156, 1)', width: 15 });
@@ -103,12 +108,59 @@ const VideoUtils = {
         ctx.restore();
     },
 
+    renderPlayButton: function() {
+        const ctx = this.ctx;
+
+        if(this.video.paused)
+        {         
+            //make play button
+            ctx.beginPath();
+            ctx.moveTo(this.offsetWidth + 2, this.height - this.markerHeight - this.offsetHeight*2 + 4);
+            ctx.lineTo(this.offsetWidth + 2, this.height - this.offsetHeight*2 - 4);
+            ctx.lineTo( this.playButtonWidth - 2, this.height - 0.5*(this.markerHeight + this.offsetHeight*3) );
+            ctx.closePath();
+            ctx.fill();
+
+            // stroke the triangle path.
+            ctx.lineWidth = 3;
+            ctx.lineJoin = "round";
+            ctx.stroke();
+
+            if(this.hovering == 'play')
+            {
+                ctx.globalAlpha = 0.2;
+                ctx.beginPath();
+                ctx.moveTo(this.offsetWidth, this.height - this.markerHeight - this.offsetHeight*2);
+                ctx.lineTo(this.offsetWidth, this.height - this.offsetHeight*2);
+                ctx.lineTo( this.playButtonWidth, this.height - 0.5*(this.markerHeight + this.offsetHeight*3) );
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+            }
+        } else{
+            ctx.roundRect(this.offsetWidth, this.height - this.markerHeight - this.offsetHeight*2 + 4, (this.playButtonWidth - this.offsetWidth)*0.5 - 4, this.markerHeight - 8);
+            ctx.fill();
+            ctx.roundRect(this.offsetWidth + (this.playButtonWidth - this.offsetWidth)*0.5 , this.height - this.markerHeight - this.offsetHeight*2 + 4, (this.playButtonWidth - this.offsetWidth)*0.5 - 4, this.markerHeight - 8);
+            ctx.fill();
+            if(this.hovering == 'play')
+            {
+                ctx.globalAlpha = 0.2;
+                ctx.roundRect(this.offsetWidth - 2, this.height - this.markerHeight - this.offsetHeight*2 + 2, (this.playButtonWidth - this.offsetWidth)*0.5, this.markerHeight - 4);
+                ctx.fill();
+                ctx.roundRect(this.offsetWidth + (this.playButtonWidth - this.offsetWidth)*0.5, this.height - this.markerHeight - this.offsetHeight*2 + 2, (this.playButtonWidth - this.offsetWidth)*0.5 - 4, this.markerHeight - 4);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+    },
+
     renderTimeMarker: function(name, time, options) {
 
         options = options || {};
         const ctx = this.ctx;
         ctx.lineWitdh = 1;
-        const x = this.offsetWidth + this.timeToX(time);
+        const x = this.offsetWidth + this.playButtonWidth + this.timeToX(time);
         let h0 = this.height - this.markerHeight - this.offsetHeight*2;
         let h = this.markerHeight ;
 
@@ -191,7 +243,12 @@ const VideoUtils = {
         }
         else if( e.type == "mousedown") {
 
-            const t = this.xToTime(x - this.offsetWidth);
+            if(x < this.playButtonWidth && x > this.offsetWidth)
+            {
+                this.video.paused ? this.video.play() : this.video.pause();
+                return;
+            }
+            const t = this.xToTime(x - this.offsetWidth - this.playButtonWidth);
 
             if(Math.abs( this.startTime - t) < this.ratio) {
                 this.dragging = 'start';
@@ -204,9 +261,9 @@ const VideoUtils = {
         }
         else if( e.type == "mousemove") {
 
-            const t = this.xToTime(x - this.offsetWidth);
+            const t = this.xToTime(x - this.offsetWidth - this.playButtonWidth);
 
-            const hoverStart = t < (this.endTime - this.ratio * 2);
+            const hoverStart = t < (this.endTime - this.ratio * 2) && t >= 0.0;
             const hoverEnd = t > (this.startTime + this.ratio * 2);
 
             if(this.dragging) {
@@ -227,7 +284,9 @@ const VideoUtils = {
                 this.video.currentTime = t;//Math.min( this.endTime, Math.max( this.startTime, this.video.currentTime ) );
             }
             else {
-                if(Math.abs( this.startTime - t) < this.ratio)
+                if(x < this.playButtonWidth && x > this.offsetWidth)
+                    this.hovering = 'play';
+                else if(Math.abs( this.startTime - t) < this.ratio)
                     this.hovering = 'start';
                 else if(Math.abs( this.endTime - t) < this.ratio)
                     this.hovering = 'end';
@@ -250,11 +309,11 @@ const VideoUtils = {
     },
 
     xToTime: function(x) {
-        return (x / (this.width - this.offsetWidth*2)) *  this.video.duration;
+        return (x / (this.width - this.offsetWidth*2 - this.playButtonWidth)) *  this.video.duration;
     },
 
     timeToX: function (time) {
-        return (time / this.video.duration) *  (this.width - this.offsetWidth*2);
+        return (time / this.video.duration) *  (this.width - this.offsetWidth*2 - this.playButtonWidth);
     },
 
     unbind: function(callback) {

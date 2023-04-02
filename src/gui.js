@@ -76,8 +76,9 @@ class Gui {
         const canvasArea = document.getElementById("canvasarea");
 
         canvasarea.appendChild( document.getElementById("timeline") );
-        let c = document.getElementById("timeline")
-        c.style.display = "block"
+        let timeline = document.getElementById("timeline")
+        timeline.style.display = "block";
+
         this.mainArea.onresize = window.onresize;
 
         let timelineCanvas = document.getElementById("timelineCanvas");
@@ -173,6 +174,57 @@ class Gui {
                     break;
             }
         });
+
+        let splitbar = document.getElementById("timeline-splitbar");
+        splitbar.addEventListener("mousedown", inner_mousedown);
+
+        let last_pos = [0,0];
+        let is_grabbing = false;
+		function inner_mousedown(e)
+		{
+            is_grabbing = true;
+			var doc = document;
+			doc.addEventListener("mousemove",inner_mousemove);
+			doc.addEventListener("mouseup",inner_mouseup);
+			last_pos[0] = e.pageX;
+			last_pos[1] = e.pageY;
+			e.stopPropagation();
+			e.preventDefault();
+		}
+
+		function inner_mousemove(e)
+		{
+			
+			
+            if (last_pos[1] != e.pageY && is_grabbing)
+            {
+                let delta = e.pageY - last_pos[1];
+				let size = timeline.offsetHeight - delta;
+				timeline.style.height = size + "px";
+                timelineNMFCanvas.height = size;
+                if(this.NMFtimeline)
+                    this.NMFtimeline.height = size;
+            }
+			
+
+			last_pos[0] = e.pageX;
+			last_pos[1] = e.pageY;
+			e.stopPropagation();
+			e.preventDefault();
+            
+		}
+
+		function inner_mouseup(e)
+		{
+			// var doc = document;
+			// doc.removeEventListener("mousemove",inner_mousemove);
+			// doc.removeEventListener("mouseup",inner_mouseup);
+			//timeline.offsetHeight = last_pos[1];
+            is_grabbing = false;
+            e.stopPropagation();
+			e.preventDefault();
+		}
+
     }
 
     createMenubar() {
@@ -195,12 +247,10 @@ class Gui {
 
     updateMenubar() 
     {
+        var that = this;
         let menubar = window.menubar;
         menubar.add("Project/Upload animation", {icon: "<i class='bi bi-upload float-right'></i>", callback: () => this.editor.getApp().storeAnimation() });
-        menubar.add("Project/Show video", { type: "checkbox", property: "showVideo", callback: () => {
-            const tl = document.getElementById("capture");
-            tl.style.display = this.showVideo ? "flex": "none";
-        }});
+ 
         menubar.add("Project/");
         menubar.add("Project/Export MF Animation", {subtitle: true});
         menubar.add("Project/Export BVH", {icon: "<i class='bi bi-file-text float-right'></i>",  callback: () => this.editor.export('BVH') });
@@ -211,11 +261,7 @@ class Gui {
         menubar.add("Project/Export GLB", {icon: "<i class='bi bi-file-text float-right'></i>",  callback: () => this.editor.export('GLB') });
         menubar.add("Project/Open preview", {icon: "<i class='bi bi-file-earmark-play float-right'></i>",  callback: () => this.editor.showPreview() });
 
-        menubar.add("Timeline/Show", { type: "checkbox", property: "showTimeline", callback: () => {
-            const tl = document.getElementById("timeline");
-            tl.style.display = this.showTimeline ? "block": "none";
-        }});
-
+    
         menubar.add("Timeline/Shortcuts", { disabled: true });
         menubar.add("Timeline/Shortcuts/Play-Pause", { short: "SPACE" });
         menubar.add("Timeline/Shortcuts/Zoom", { short: "Wheel" });
@@ -233,7 +279,15 @@ class Gui {
         menubar.add("Timeline/");
         menubar.add("Timeline/Empty tracks", { callback: () => this.editor.cleanTracks() });
         menubar.add("Timeline/Optimize tracks", { callback: () => this.editor.optimizeTracks() });
-       
+
+        menubar.add("View/Show video", { type: "checkbox", instance: this, property: "showVideo", callback: () => {
+            const tl = document.getElementById("capture");
+            tl.style.display = this.showVideo ? "flex": "none";
+        }});
+        menubar.add("View/Show timeline", { type: "checkbox", instance: this, property: "showTimeline", callback: () => {
+            const tl = document.getElementById("timeline");
+            tl.style.display = this.showTimeline ? "block": "none";
+        }});
        
         this.appendCombo( menubar, { hidden: true} );
     }
@@ -281,8 +335,8 @@ class Gui {
                             window.globals.app.onLoadVideo(input.src);
                         }
                         else{
-
-                            window.globals.app.setEvents(live);
+                            await VideoUtils.unbind(() => window.globals.app.init())
+                           
                         }
                        // await VideoUtils.unbind();
                 }
@@ -876,11 +930,13 @@ updateBoneProperties() {
         select.innerHTML = values;
         select.addEventListener("change", (v) => {
             this.editor.mode = this.editor.eModes[select.value];
+            let splitbar = document.getElementById("timeline-splitbar");
+
             if(this.editor.mode == this.editor.eModes.NMF){
                 
+                splitbar.classList.remove("hidden");
                 if(!this.NMFtimeline) {
-                    
-                    
+                            
                     this.NMFtimeline = new Timeline(null, null, "clips", [this.timeline.size[0], this.timeline.size[1]], false);
                     this.NMFtimeline.name = "Non-Manual Features";
                     this.NMFtimeline.framerate = 30;
@@ -926,6 +982,7 @@ updateBoneProperties() {
                 this.editor.resize(canvasArea.clientWidth, canvasArea.clientHeight);
             }
             else{
+                splitbar.classList.add("hidden");
                 let c = document.getElementById("timeline")
                 c.style.height =  this.timelineCTX.canvas.height + 'px';
                 let canvas = document.getElementById("timelineNMFCanvas")

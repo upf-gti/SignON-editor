@@ -137,7 +137,7 @@ const MediaPipe = {
         if(!$feed.srcObject)
             $feed.srcObject = $feed.captureStream();
         $feed.srcObject.getTracks().forEach(a => a.stop());
-        $feed.srcObject = null;
+       // $feed.srcObject = null;
     },
 
     onStartRecording() {
