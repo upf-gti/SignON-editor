@@ -114,16 +114,16 @@ canvas {
 .captureButton {
     padding: 1.25rem 2.25rem;
     font-size: 1.1rem;
-    font-weight: bolder;
+    /* font-weight: bolder; */
     border: none;
     border-radius: 10rem!important;
     margin: 1rem;
     display: block;
     text-transform: capitalize;
 }
-.captureButton:hover, .recording{
+/* .captureButton:hover, .recording{
     color: var(--global-color-highlight) !important;
-}
+} */
 .captureButton.stop{
 	background-color: rgb(215,59,62)!important;
 	color:white;
@@ -221,16 +221,14 @@ canvas {
 
 #timeline {
 	width: 100%;
-	height: 115px;
+	/* height: 115px; */
 	max-height: 40%;
-	min-height: 150px;
+	min-height: 100px; 
 	bottom: 10%;
 	position: relative;
 	z-index: 5;
-	
 	position: absolute;
 	bottom: 0px;
-
 	display: flex;
 	justify-content: center;
 	align-content: center;
@@ -534,3 +532,53 @@ dark mode:
 #6c757d (a cool grey color)
 #0077c2 (a bright blue color
 */
+.select2 {
+	width: auto;
+    display: flex;
+    overflow: hidden;
+    flex-direction: row;
+    align-content: center;
+    align-items: center;
+    justify-content: center;
+}
+.select2-container {
+    /* top: 701.591px; */
+    left: 1677.73px;
+    overflow: hidden;
+    height: 100%;
+	color: #FEE;
+	padding: 2px;
+	background: var(--global-color-primary);
+    text-align-last: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+	
+}
+
+.select2-container ul{
+	list-style-type: none;
+    background: var(--background);
+    padding: 5px;
+	list-style-type: none;
+    background: var(--background);
+    padding: 5px;
+    overflow: scroll;
+    height: 100%;
+}
+
+.select2-container::-webkit-scrollbar {
+    display: block !important;
+    width: 5px !important;
+    border-radius: 6px;
+}
+.select2-container input{
+	border: 1px solid rgba(255, 255, 255, 0.2);
+    background-color: var(--global-color-secondary);
+    border-radius: 4px;
+    caret-color: #5f88c9;
+    padding-left: 5px;
+    width: 90%;
+}
+.selection p{
+	margin: 2px;
+}

@@ -301,3 +301,170 @@ function Slider(value, options)
 }
 
 LiteGUI.Slider = Slider;
+
+
+/**
+* Widget to edit an enumeration using a combobox
+* @method addCombo
+* @param {string} name 
+* @param {*} value 
+* @param {Object} options, here is a list for this widget (check createWidget for a list of generic options):
+* - values: a list with all the possible values, it could be an array, or an object, in case of an object, the key is the string to show, the value is the value to assign
+* - disabled: true to disable
+* - callback: function to call once an items is clicked
+* @return {HTMLElement} the widget in the form of the DOM element that contains it
+**/
+Inspector.prototype.addCombo = function(name, value, options)
+{
+	options = this.processOptions(options);
+
+	//value = value || "";
+	var that = this;
+	this.values[name] = value;
+	
+	this.tab_index++;
+
+	var element = this.createWidget(name,"<span class='inputfield full inputcombo "+(options.disabled?"disabled":"")+"'></span>", options);
+	element.options = options;
+
+	var values = options.values || [];
+	if(values.constructor === Function)
+		values = options.values();
+
+	/*
+	if(!values)
+		values = [];
+
+	var index = 0;
+	for(var i in values)
+	{
+		var item_value = values[i];
+		var item_index = values.constructor === Array ? index : i;
+		var item_title = values.constructor === Array ? item_value : i;
+		if(item_value && item_value.title)
+			item_title = item_value.title;
+		code += "<option value='"+item_index+"' "+( item_value == value ? " selected":"")+" data-index='"+item_index+"'>" + item_title + "</option>";
+		index++;
+	}
+	*/
+
+	var code = "<select tabIndex='"+this.tab_index+"' "+(options.disabled?"disabled":"")+ " class='"+(options.disabled?"disabled":"")+"'></select>";
+	element.querySelector("span.inputcombo").innerHTML = code;
+	setValues(values, false, options.thumbnail);
+	
+	var stop_event = false; //used internally
+
+	var select = element.querySelector(".wcontent select");
+	select.addEventListener("change", function(e) { 
+		var index = e.target.value;
+		value = values[index];
+		if(stop_event)
+			return;
+		Inspector.onWidgetChange.call( that,element,name,value, options );
+	});
+
+	element.getValue = function()
+	{
+		return value;		
+	}
+
+	element.setValue = function(v, skip_event) { 
+		if(v === undefined)
+			return;
+		value = v;
+		var select = element.querySelector("select");
+		var items = select.querySelectorAll("option");
+		var index =  -1;
+		if(values.constructor === Array)
+			index = values.indexOf(v);
+		else
+		{
+			//search the element index in the values
+			var j = 0;
+			for(var i in values)
+			{
+				if(values[j] == v)
+				{
+					index = j;
+					break;
+				}
+				else
+					j++;
+			}
+		}
+
+		if(index == -1)
+			return;
+			
+		stop_event = skip_event;
+
+		for(var i in items)
+		{
+			var item = items[i];
+			if(!item || !item.dataset) //weird bug
+				continue;
+			if( parseFloat(item.dataset["index"]) == index )
+			{
+				item.setAttribute("selected", true);
+				select.selectedIndex = index;
+			}
+			else
+				item.removeAttribute("selected");
+		}
+		
+		stop_event = false;
+	};
+
+	function setValues(v, selected, thumbnail){
+		if(!v)
+			v = [];
+		values = v;
+		if(selected)
+			value = selected;
+		var code = "";
+		var index = 0;
+		for(var i in values)
+		{
+			var item_value = values[i];
+			var item_index = values.constructor === Array ? index : i;
+			var item_title = values.constructor === Array ? item_value : i;
+			var item_thumbnail = 'data/imgs/thumbnails/' + item_value.toLowerCase() + '.PNG"';
+			if(item_value && item_value.title)
+				item_title = item_value.title;
+			code += "<option value='"+item_index+"' "+( item_value == value ? " selected":"")+" data-index='"+item_index+"'" + (thumbnail?" data-thumbnail='"+ item_thumbnail + "'":"")+">" + item_title + "</option>";
+			index++;
+		}
+		element.querySelector("select").innerHTML = code;
+	}
+	
+	element.setOptionValues = setValues;
+
+	function custom_template(obj){
+		var data = $(obj.element).data();
+		var text = $(obj.element).text();
+		if(data && data['thumbnail']){
+			let img_src = data['thumbnail'];
+			let template = $("<div style= 'display: flex;flex-direction: column;justify-content: center;align-items: center;'><img src=\"" + img_src + "\" style=\"width: calc(100% - 32px);height: auto;padding: 5px;\"/><p >" + text + "</p></div>");
+			return template;
+		}
+	}
+
+	if(options.thumbnail)
+	{
+
+		var optionsT = {
+			'templateSelection': custom_template,
+			'templateResult': custom_template,
+		}
+		$(select).select2(optionsT);
+		$('.select2-container--default .select2-selection--single').css({'height': '220px'});
+		
+		select.hidden = true;
+		$('.select2-selection__arrow').append('<i class="fa-solid fa-chevron-down" style="width:15px; height:15px"></i>')
+	
+	}
+	
+	this.append(element,options);
+	this.processElement(element, options);
+	return element;
+}

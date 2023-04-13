@@ -261,7 +261,13 @@ class Gui {
         menubar.add("Project/Export GLB", {icon: "<i class='bi bi-file-text float-right'></i>",  callback: () => this.editor.export('GLB') });
         menubar.add("Project/Open preview", {icon: "<i class='bi bi-file-earmark-play float-right'></i>",  callback: () => this.editor.showPreview() });
 
-    
+        menubar.add("Editor/Manual Features", { id: "mf-mode", type: "checkbox", checkbox: this.editor.mode == this.editor.eModes.MF, callback: (v) => {
+            this.changeEditorMode(this.editor.eModes.MF);
+        }});
+        menubar.add("Editor/Non-Manual Features", { id: "nmf-mode", type: "checkbox", checkbox: this.editor.mode == this.editor.eModes.NMF, callback: (v) => {
+            this.changeEditorMode(this.editor.eModes.NMF);
+        }});
+
         menubar.add("Timeline/Shortcuts", { disabled: true });
         menubar.add("Timeline/Shortcuts/Play-Pause", { short: "SPACE" });
         menubar.add("Timeline/Shortcuts/Zoom", { short: "Wheel" });
@@ -289,7 +295,83 @@ class Gui {
             tl.style.display = this.showTimeline ? "block": "none";
         }});
        
-        this.appendCombo( menubar, { hidden: true} );
+    }
+
+    changeEditorMode(mode)
+    {
+        this.editor.mode = mode;
+        let splitbar = document.getElementById("timeline-splitbar");
+        let menubar = window.menubar.findMenu("Editor");
+        let mfmenu = window.menubar.findMenu("Editor/Manual Features");
+        let nmfmenu = window.menubar.findMenu("Editor/Non-Manual Features")
+        if(this.editor.mode == this.editor.eModes.NMF){
+            mfmenu.data.checkbox = false;
+            mfmenu.enable();
+            nmfmenu.disable();
+            window.menubar.showMenu( menubar, null, menubar.element, false );
+            
+
+            if(!this.NMFtimeline) {
+                        
+                this.NMFtimeline = new Timeline(null, null, "clips", [this.timeline.size[0], this.timeline.size[1]], false);
+                this.NMFtimeline.name = "Non-Manual Features";
+                this.NMFtimeline.framerate = 30;
+                this.NMFtimeline.setScale(400);
+                this.NMFtimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
+                this.NMFtimeline.onSetDuration = (t) => {this.timeline.duration = this.timeline.clip.duration = t};
+                this.NMFtimeline.onSelectClip = this.showClipInfo.bind(this);
+                this.NMFtimeline.onClipMoved = ()=> this.editor.NMFController.updateTracks.bind(this.editor.NMFController);
+                this.NMFtimeline.clip = {duration: this.timeline.duration, tracks: []};
+                this.NMFtimeline.addClip( new ANIM.FaceLexemeClip(), this.editor.NMFController.updateTracks.bind(this.editor.NMFController) );
+                this.editor.NMFController.begin(this.NMFtimeline);
+                
+                // this.NMFtimeline.onSelectKeyFrame = (e, info, index) => {
+                    //     if(e.button != 2) {
+                        //         //this.editor.gizmo.mustUpdate = true
+                        //         this.editor.gizmo.update(true);
+                        //         return false;
+                        //     }
+                        
+                //     // Change gizmo mode and dont handle
+                //     // return false;
+                
+                //     this.showKeyFrameOptions(e, info, index);
+                //     return true; // Handled
+                // };
+                // this.timeline.onUpdateTrack = (idx) => this.editor.updateAnimationAction(idx);
+                
+                //this.createSidePanel();
+                // let c = document.getElementById("timelineCanvas")
+                // c.style.height =  this.timelineCTX.canvas.height*2 + 'px';
+                // this.timelineCTX.canvas.height = this.timelineCTX.canvas.clientHeight;
+                //this.timelineCTX.canvas.height = this.timelineCTX.canvas.height*2;
+                
+            }
+            splitbar.classList.remove("hidden");
+            this.timeline.actvie = false;
+            console.log(this.timeline.size)
+            let c = document.getElementById("timeline")
+            c.style.height =  this.timelineCTX.canvas.height*2 + 'px';
+            let canvas = document.getElementById("timelineNMFCanvas")
+            canvas.style.display =  'block';
+            console.log(this.timeline.size)
+            let canvasArea = document.getElementById("canvasarea");
+            this.editor.resize(canvasArea.clientWidth, canvasArea.clientHeight);
+        }
+        else{
+            splitbar.classList.add("hidden");
+            this.timeline.active = true;
+            let c = document.getElementById("timeline")
+            c.style.height =  this.timelineCTX.canvas.height + 'px';
+            let canvas = document.getElementById("timelineNMFCanvas")
+            canvas.style.display =  'none';
+            nmfmenu.data.checkbox = false;
+            nmfmenu.enable();
+            mfmenu.disable();
+            window.menubar.showMenu( menubar, null, menubar.element, false );
+
+        }
+        //this.updateMenubar();
     }
 
     createCaptureGUI()
@@ -548,10 +630,6 @@ class Gui {
         i.hidden = true;
     }
     createSidePanel() {
-
-        let mode = document.querySelector('#mode-selector')
-        mode.style.display = "flex";
-
         this.mainArea.split("horizontal", [null,"300px"], true);
         var docked = new LiteGUI.Panel("sidePanel", {title: 'Skeleton', scroll: true});
         this.mainArea.getSection(1).add( docked );
@@ -904,97 +982,6 @@ updateBoneProperties() {
         enabled ? ip.removeAttribute('disabled') : ip.setAttribute('disabled', !enabled);
     }
     
-    appendCombo(menubar, options) {
-        options = options || {};
-        
-        const comboContainer = document.createElement('div');
-        comboContainer.id = "mode-selector"
-        comboContainer.style.margin = "0 10px";
-        comboContainer.style.display = options.hidden? "none" : "flex";
-        comboContainer.style.alignItems = "center";
-        comboContainer.className = "inspector";
-        
-        menubar.root.appendChild(comboContainer);
-        
-        let content = document.createElement('div');
-        content.className = "wcontent";
-        content.style.width = "auto";
-        
-        let element = document.createElement("span");
-        element.className ='inputcombo';
-        
-        let combo = "<select name='editor-mode' class=''></select>"
-        element.innerHTML = combo;
-        let values = '<option value="MF" selected>' + this.editor.eModes.MF + '</option>' + '<option value="NMF" >' + this.editor.eModes.NMF + '</option>' + '<option value="MOUTHING">' + this.editor.eModes.MOUTHING + '</option>'
-        let select = element.querySelector("select");
-        select.innerHTML = values;
-        select.addEventListener("change", (v) => {
-            this.editor.mode = this.editor.eModes[select.value];
-            let splitbar = document.getElementById("timeline-splitbar");
-
-            if(this.editor.mode == this.editor.eModes.NMF){
-                
-                splitbar.classList.remove("hidden");
-                if(!this.NMFtimeline) {
-                            
-                    this.NMFtimeline = new Timeline(null, null, "clips", [this.timeline.size[0], this.timeline.size[1]], false);
-                    this.NMFtimeline.name = "Non-Manual Features";
-                    this.NMFtimeline.framerate = 30;
-                    this.NMFtimeline.setScale(400);
-                    this.NMFtimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
-                    this.NMFtimeline.onSetDuration = (t) => {this.timeline.duration = this.timeline.clip.duration = t};
-                    this.NMFtimeline.onSelectClip = this.showClipInfo.bind(this);
-                    this.NMFtimeline.onClipMoved = ()=> this.editor.NMFController.updateTracks.bind(this.editor.NMFController);
-                    this.NMFtimeline.clip = {duration: this.timeline.duration, tracks: []};
-                    this.NMFtimeline.addClip( new ANIM.FaceLexemeClip(), this.editor.NMFController.updateTracks.bind(this.editor.NMFController) );
-                    this.editor.NMFController.begin(this.NMFtimeline);
-                    
-                    // this.NMFtimeline.onSelectKeyFrame = (e, info, index) => {
-                        //     if(e.button != 2) {
-                            //         //this.editor.gizmo.mustUpdate = true
-                            //         this.editor.gizmo.update(true);
-                            //         return false;
-                            //     }
-                            
-                    //     // Change gizmo mode and dont handle
-                    //     // return false;
-                    
-                    //     this.showKeyFrameOptions(e, info, index);
-                    //     return true; // Handled
-                    // };
-                    // this.timeline.onUpdateTrack = (idx) => this.editor.updateAnimationAction(idx);
-                    
-                    //this.createSidePanel();
-                    // let c = document.getElementById("timelineCanvas")
-                    // c.style.height =  this.timelineCTX.canvas.height*2 + 'px';
-                    // this.timelineCTX.canvas.height = this.timelineCTX.canvas.clientHeight;
-                    //this.timelineCTX.canvas.height = this.timelineCTX.canvas.height*2;
-                    
-                }
-
-                console.log(this.timeline.size)
-                let c = document.getElementById("timeline")
-                c.style.height =  this.timelineCTX.canvas.height*2 + 'px';
-                let canvas = document.getElementById("timelineNMFCanvas")
-                canvas.style.display =  'block';
-                console.log(this.timeline.size)
-                let canvasArea = document.getElementById("canvasarea");
-                this.editor.resize(canvasArea.clientWidth, canvasArea.clientHeight);
-            }
-            else{
-                splitbar.classList.add("hidden");
-                let c = document.getElementById("timeline")
-                c.style.height =  this.timelineCTX.canvas.height + 'px';
-                let canvas = document.getElementById("timelineNMFCanvas")
-                canvas.style.display =  'none';
-            }
-          
-        });
-
-        content.appendChild(element);
-        comboContainer.appendChild(content);
-    }
-
     appendButtons(menubar) {
 
         const buttonContainer = document.createElement('div');
@@ -1128,11 +1115,16 @@ updateBoneProperties() {
     onMouse(e, nmf = null) {
 
         e.preventDefault();
-        let rect = this.timeline._canvas.getBoundingClientRect();
-        if( e.x >= rect.left && e.x <= rect.right && e.y >= rect.top && e.y <= rect.bottom)
+        //let rect = this.timeline._canvas.getBoundingClientRect();
+        // if( e.x >= rect.left && e.x <= rect.right && e.y >= rect.top && e.y <= rect.bottom)
+        // {
+        //     if(e.type == "mousedown" && this.NMFtimeline)
+        //         this.NMFtimeline.selected_clip = null;
+        //     this.timeline.processMouse(e);
+        //     return;
+        // }
+        if(this.timeline.active)
         {
-            if(e.type == "mousedown" && this.NMFtimeline)
-                this.NMFtimeline.selected_clip = null;
             this.timeline.processMouse(e);
             return;
         }

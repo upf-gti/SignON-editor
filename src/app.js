@@ -215,6 +215,7 @@ class App {
         const name = "Unnamed";
         this.editor.clipName = name;
         this.editor.updateGUI();
+        this.editor.gui.hiddeCaptureArea();
     }
 
     setEvents(live) {

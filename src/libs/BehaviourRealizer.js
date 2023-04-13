@@ -11,11 +11,15 @@ function Blink() {
     
     this.start = 0;
     this.end = 0;
-    this.initWs = [0, 0];
-    this.weights = [0, 0];
+    this.elapsedTime = 0;
+    this.initWs = [0, 0]; // initial pose of eyelids
+    this.endWs = [0, 0]; // target pose of eyelids ( constantly changes during update )
+    this.weights = [0, 0]; // current status
+
+    this.needsInit = true;
     this.blinking = false;
     this.between = false;
-    this.elapsedTime = 0;
+    
 }
 
 Blink.prototype.getEnd = function () {
@@ -25,44 +29,54 @@ Blink.prototype.getEnd = function () {
 
 Blink.prototype.initBlinking = function (cw0, cw1) {
     
-    this.initWs[0] = cw0; this.initWs[1] = cw1;
-    this.weights[0] = cw0; this.weights[1] = cw1;
+    if( this.blinking ){ // forced a blink while already executing one
+        this.initWs[0] = this.weights[0]; this.initWs[1] = this.weights[1];
+    }else{
+        this.initWs[0] = cw0; this.initWs[1] = cw1;
+        this.weights[0] = cw0; this.weights[1] = cw1;
+    }
+    this.endWs[0] = cw0; this.endWs[1] = cw1;
+    
     this.elapsedTime = 0;
     this.start = 0;
     let lowestWeight = Math.min(cw0, cw1);
     lowestWeight = Math.min(1, Math.max(0, lowestWeight));
     this.end = this.getEnd() * (1 - lowestWeight);
     this.end = Math.max(this.end, this.start); // just in case
+
+    this.needsInit = false;
+    this.blinking = true;
+    this.between = false;
 }
 
 Blink.prototype.blink = function () {
     
     this.start = -1;
     this.elapsedTime = -1;
-    this.blinking = true;
+    this.needsInit = true;
     this.between = false;
+    // this.blinking = true;
+    // this.between = false;
 }
 
-Blink.prototype.update = function (dt, currentWeight0, currentWeight1) {
+Blink.prototype.update = function ( dt, currentWeight0, currentWeight1 ) {
 
-    if (this.blinking && dt > 0) {
-        if (this.start < 0) {
-            this.initBlinking(currentWeight0, currentWeight1);
-        }
-
+    if ( this.needsInit ) {
+        this.initBlinking( currentWeight0, currentWeight1 );
+    }
+    if ( this.blinking && dt > 0 ) {
         this.elapsedTime += dt;
-        this.initWs[0] = currentWeight0;
-        this.initWs[1] = currentWeight1;
+        this.endWs[0] = currentWeight0;
+        this.endWs[1] = currentWeight1;
 
-        this.computeWeight(this.elapsedTime);
+        this.computeWeight( this.elapsedTime );
 
-        if (this.elapsedTime > this.end) {
+        if (this.elapsedTime > this.end ) { // schedule next blink
             this.blinking = false;
-            return
+            this.between = true;
+            setTimeout( this.blink.bind( this ), Math.random() * 3000 + 1500 );
+            return;
         }
-    } else if (!this.between) {
-        this.between = true;
-        setTimeout(this.blink.bind(this), Math.random() * 3000 + 1500);
     }
 }
 
@@ -86,14 +100,17 @@ Blink.prototype.computeWeight = function (dt) {
     let b = 1.18;
     let c = mu / 100;
     let w = 0;
+    let srcWs = null;
     if (t <= mu) {
         w = a - Math.pow(t / mu, 2);
+        srcWs = this.initWs;
     } else {
-        w = b - Math.pow(Math.E, (-c * Math.log2(t - mu + 1)))
+        w = b - Math.pow(Math.E, (-c * Math.log2(t - mu + 1)));
+        srcWs = this.endWs;
     }
     w = Math.min(1, Math.max(0, w));
-    this.weights[0] = 1 - w * (1 - this.initWs[0]);
-    this.weights[1] = 1 - w * (1 - this.initWs[1]);
+    this.weights[0] = 1 - w * (1 - srcWs[0]);
+    this.weights[1] = 1 - w * (1 - srcWs[1]);
 }
 
 
@@ -113,81 +130,78 @@ Blink.prototype.computeWeight = function (dt) {
 //      OPEN_LIPS, WIDEN_EYES, CLOSE_EYES]
 //
 
+
 // Static 
 // first row = blendshape indices || second row = blendshape proportional amount (some blendshapes are slightly used, others are fully used)
 FacialExpr.NMF = {}; // lookup table for lexeme-blendshape relation
 
 // SignON actions units
-FacialExpr.NMF.NMF_FROWN = [[2, 3, 4, 5], [1, 1, 1, 1]];
-FacialExpr.NMF.NMF_ARCH = [[6, 7, 8, 9], [1, 1, 1, 1]];
-FacialExpr.NMF.NMF_OPEN_WIDE_EYE = [[12, 13], [1, 1]];
-FacialExpr.NMF.NMF_SQUINT = [[43, 44], [1, 1]];
-FacialExpr.NMF.NMF_BLINK = [[0, 1], [1, 1]];
-FacialExpr.NMF.NMF_CLOSED = [[0, 1], [1, 1]];
-FacialExpr.NMF.NMF_SUCK_IN_RIGHT = [[11], [-1]];     // missing new blendshapes
-FacialExpr.NMF.NMF_SUCK_IN_LEFT = [[10], [-1]];     // missing new blendshapes
-FacialExpr.NMF.NMF_SUCK_IN_BOTH = [[10, 11], [-1, -1]]; // missing new blendshapes
-FacialExpr.NMF.NMF_BLOW_RIGHT = [[11], [1]];
-FacialExpr.NMF.NMF_BLOW_LEFT = [[10], [1]];
-FacialExpr.NMF.NMF_BLOW_BOTH = [[10, 11], [1, 1]];
-FacialExpr.NMF.NMF_OPEN_WIDE_MOUTH = [[35], [1]];
-FacialExpr.NMF.NMF_CLOSE_TIGHT = [[28, 33, 34, 47], [1, 1, 1, -1]];
-FacialExpr.NMF.NMF_SMILE_TEETH = [[41, 42, 35], [0.5, 0.5, 0.2]];
-FacialExpr.NMF.NMF_SMILE_TEETH_WIDE = [[41, 42, 35], [1, 1, 0.2]];
-FacialExpr.NMF.NMF_SMILE_CLOSED = [[41, 42], [1, 1]];
-FacialExpr.NMF.NMF_ROUND_OPEN = [[33, 34, 35], [0.7, 0.7, 0.7]];// missing new blendshape
-FacialExpr.NMF.NMF_ROUND_CLOSED = [[33, 34], [1, 1]];
-FacialExpr.NMF.NMF_OUT_POINTED = [[], []];       // missing new blendshapes
-FacialExpr.NMF.NMF_OUT_ROUND = [[], []];       // missing new blendshapes
-FacialExpr.NMF.NMF_CRINKLE = [[39, 40], [1, 1]];
-FacialExpr.NMF.NMF_FLARE = [[], []];       // missing new blendshape
+FacialExpr.NMF.NMF_FROWN =                  [[2, 3, 4, 5], [1, 1, 1, 1]];
+FacialExpr.NMF.NMF_ARCH =                   [[6, 7, 8, 9], [1, 1, 1, 1]];
+FacialExpr.NMF.NMF_OPEN_WIDE_EYE =          [[12, 13], [1, 1]];
+FacialExpr.NMF.NMF_SQUINT =                 [[43, 44], [1, 1]];
+FacialExpr.NMF.NMF_BLINK =                  [[0, 1], [1, 1]];
+FacialExpr.NMF.NMF_CLOSED =                 [[0, 1], [1, 1]];
+FacialExpr.NMF.NMF_SUCK_IN_RIGHT =          [[11], [-1]];     // missing new blendshapes
+FacialExpr.NMF.NMF_SUCK_IN_LEFT =           [[10], [-1]];     // missing new blendshapes
+FacialExpr.NMF.NMF_SUCK_IN_BOTH =           [[10, 11], [-1, -1]]; // missing new blendshapes
+FacialExpr.NMF.NMF_BLOW_RIGHT =             [[11], [1]];
+FacialExpr.NMF.NMF_BLOW_LEFT =              [[10], [1]];
+FacialExpr.NMF.NMF_BLOW_BOTH =              [[10, 11], [1, 1]];
+FacialExpr.NMF.NMF_OPEN_WIDE_MOUTH =        [[35], [1]];
+FacialExpr.NMF.NMF_CLOSE_TIGHT =            [[28, 33, 34, 47], [1, 1, 1, -1]];
+FacialExpr.NMF.NMF_SMILE_TEETH =            [[41, 42, 35], [0.5, 0.5, 0.2]];
+FacialExpr.NMF.NMF_SMILE_TEETH_WIDE =       [[41, 42, 35], [1, 1, 0.2]];
+FacialExpr.NMF.NMF_SMILE_CLOSED =           [[41, 42], [1, 1]];
+FacialExpr.NMF.NMF_ROUND_OPEN =             [[33, 34, 35], [0.7, 0.7, 0.7]];// missing new blendshape
+FacialExpr.NMF.NMF_ROUND_CLOSED =           [[33, 34], [1, 1]];
+FacialExpr.NMF.NMF_OUT_POINTED =            [[], []];       // missing new blendshapes
+FacialExpr.NMF.NMF_OUT_ROUND =              [[], []];       // missing new blendshapes
+FacialExpr.NMF.NMF_CRINKLE =                [[39, 40], [1, 1]];
+FacialExpr.NMF.NMF_FLARE =                  [[], []];       // missing new blendshape
 
 // others (legacy mainly)
-FacialExpr.NMF.LIP_CORNER_DEPRESSOR = [[14, 15], [1, 1]]; // AU15 sad
-FacialExpr.NMF.LIP_CORNER_DEPRESSOR_LEFT = [[14], [1]]; // LAU15 sad
+FacialExpr.NMF.LIP_CORNER_DEPRESSOR =       [[14,15], [1,1]]; // AU15 sad
+FacialExpr.NMF.LIP_CORNER_DEPRESSOR_LEFT =  [[14], [1]]; // LAU15 sad
 FacialExpr.NMF.LIP_CORNER_DEPRESSOR_RIGHT = [[15], [1]]; // RAU15 sad
+FacialExpr.NMF.LIP_CORNER_PULLER =          [[41,42], [1,1]]; // AU12 happy
+FacialExpr.NMF.LIP_CORNER_PULLER_LEFT =     [[41], [1]]; // LAU12 happy
+FacialExpr.NMF.LIP_CORNER_PULLER_RIGHT =    [[42], [1]]; // RAU12 happy
+FacialExpr.NMF.LIP_STRECHER =               [[14,15,32], [1,1,1]];// AU20
+FacialExpr.NMF.LIP_FUNNELER =               [[37,38], [1,1]];     // AU22
+FacialExpr.NMF.LIP_TIGHTENER =              [[30,31], [1,1]];     // AU23
+FacialExpr.NMF.LIP_PUCKERER =               [[33,34], [1,1]]; // AU18 mouth narrow
+FacialExpr.NMF.LIP_PRESSOR =                [[25,28,46], [1,1,1]];// AU24
+FacialExpr.NMF.LOWER_LIP_DEPRESSOR =        [[26,27], [1,1]]; // AU16
+FacialExpr.NMF.UPPER_LIP_RAISER =           [[48,49], [1,1]]; // AU10
+FacialExpr.NMF.CHIN_RAISER =                [[36], [1]]; // AU17 mouth up
+FacialExpr.NMF.DIMPLER =                    [[33,34,26,27,48,49,28,46], [-0.753,-0.753,-0.35,-0.35,-0.15,-0.15,1,0.1]]; // AU14 -- MouthNarrow + LowerLipDown + UpperLipUp + LowerLipIn + UpperLipIn 
+FacialExpr.NMF.DIMPLER_LEFT =               [[33,26,48,28,46], [-0.753,-0.25,-0.15,1.0,0.1]]; // LAU14
+FacialExpr.NMF.DIMPLER_RIGHT =              [[34,26,27,48,49,28,46], [-0.753,-0.25,-0.25,-0.15,-0.15,1.0,0.1]]; // RAU14 -- for some reason right side looks different
 
-FacialExpr.NMF.LIP_CORNER_PULLER = [[41, 42], [1, 1]]; // AU12 happy
-FacialExpr.NMF.LIP_CORNER_PULLER_LEFT = [[41], [1]]; // LAU12 happy
-FacialExpr.NMF.LIP_CORNER_PULLER_RIGHT = [[42], [1]]; // RAU12 happy
-FacialExpr.NMF.LIP_STRECHER = [[14, 15, 32], [1, 1, 1]];// AU20
-FacialExpr.NMF.LIP_FUNNELER = [[37, 38], [1, 1]];     // AU22
-FacialExpr.NMF.LIP_TIGHTENER = [[30, 31], [1, 1]];     // AU23
-FacialExpr.NMF.LIP_PRESSOR = [[25, 28, 46], [1, 1, 1]];// AU24
-FacialExpr.NMF.LIP_PUCKERER = [[33, 34], [1, 1]]; // AU18 mouth narrow
-FacialExpr.NMF.PRESS_LIPS = [[14, 15, 32], [1, 1, 1]]; // lips pressed
+FacialExpr.NMF.NOSE_WRINKLER =              [[39,40], [1,1]]; // AU9
+FacialExpr.NMF.MOUTH_STRETCH =              [[35], [1]]; // AU27
+FacialExpr.NMF.MOUTH_OPEN =                 [[35], [1]]; // jaw
+FacialExpr.NMF.JAW_DROP =                   [[22], [1]]; // AU26
+FacialExpr.NMF.TONGUE_SHOW =                [[45], [1]]; // AU19
 
-FacialExpr.NMF.MOUTH_OPEN = [[35], [1]]; // jaw
-FacialExpr.NMF.LOWER_LIP_DEPRESSOR = [[26, 27], [1, 1]]; // AU16
-FacialExpr.NMF.CHIN_RAISER = [[36], [1]]; // AU17 mouth up
-FacialExpr.NMF.TONGUE_SHOW = [[45], [1]]; // AU19
+FacialExpr.NMF.BROW_LOWERER =               [[2,3,4,5], [1,1,1,1]]; // AU4 
+FacialExpr.NMF.BROW_LOWERER_LEFT =          [[2,4], [1,1]]; // 
+FacialExpr.NMF.BROW_LOWERER_RIGHT =         [[3,4], [1,1]]; // brows down
+FacialExpr.NMF.BROW_RAISER =                [[8,9], [1,1]]; //  brow up
+FacialExpr.NMF.BROW_RAISER_LEFT =           [[8], [1]]; // left brow up
+FacialExpr.NMF.BROW_RAISER_RIGHT =          [[9], [1]]; // right brow up
+FacialExpr.NMF.INNER_BROW_RAISER =          [[6,7], [1,1]]; // AU1 rows rotate outwards
+FacialExpr.NMF.OUTER_BROW_RAISER =          [[8,9], [1,1]]; // AU2 brows up (right)
 
-FacialExpr.NMF.BROW_LOWERER = [[2, 3, 4, 5], [1, 1, 1, 1]]; // AU4 
-FacialExpr.NMF.BROW_LOWERER_LEFT = [[2, 4], [1, 1]]; // 
-FacialExpr.NMF.LOWER_RIGHT_BROW = [[3], [1]]; // brows down
-FacialExpr.NMF.LOWER_BROWS = [[4, 5], [1, 1]];
+FacialExpr.NMF.UPPER_LID_RAISER =           [[12,13], [1,1]]; // AU5 negative eyelids closed /wide eyes
+FacialExpr.NMF.CHEEK_RAISER =               [[43,44], [1,1]]; // AU6 squint
+FacialExpr.NMF.LID_TIGHTENER =              [[43,44], [1,1]]; // AU7 or AU44 squint
+FacialExpr.NMF.EYES_CLOSED =                [[0,1], [1,1]]; // AU43 eyelids closed
+FacialExpr.NMF.BLINK =                      [[0,1], [1,1]]; // AU45 eyelids closed
+FacialExpr.NMF.WINK_LEFT =                  [[0], [1]]; // AU46   
+FacialExpr.NMF.WINK_RIGHT =                 [[1], [1]]; // AU46   
 
-FacialExpr.NMF.INNER_BROW_RAISER = [[6, 7], [1, 1]]; // AU1 rows rotate outwards
-FacialExpr.NMF.OUTER_BROW_RAISER = [[8, 9], [1, 1]]; // AU2 brows up (right)
-FacialExpr.NMF.RAISE_LEFT_BROW = [[8], [1]]; // left brow up
-FacialExpr.NMF.RAISE_RIGHT_BROW = [[9], [1]]; // right brow up
-FacialExpr.NMF.RAISE_BROWS = [[8, 9], [1, 1]]; //  brow up
-
-FacialExpr.NMF.UPPER_LID_RAISER = [[12, 13], [1, 1]]; // AU5 negative eyelids closed /wide eyes
-FacialExpr.NMF.CHEEK_RAISER = [[43, 44], [1, 1]]; // AU6 squint
-FacialExpr.NMF.LID_TIGHTENER = [[43, 44], [1, 1]]; // AU44 squint
-FacialExpr.NMF.EYES_CLOSED = [[0, 1], [1, 1]]; // AU43 eyelids closed
-FacialExpr.NMF.BLINK = [[0, 1], [1, 1]]; // AU45 eyelids closed
-FacialExpr.NMF.WINK_LEFT = [[0], [1]]; // AU46   
-FacialExpr.NMF.WINK_RIGHT = [[1], [1]]; // AU46   
-
-FacialExpr.NMF.NOSE_WRINKLER = [[39, 40], [1, 1]]; // AU9
-FacialExpr.NMF.UPPER_LIP_RAISER = [[48, 49], [1, 1]]; // AU10
-FacialExpr.NMF.DIMPLER = [[43, 44, 25], [-1, -1, 1]]; // AU14
-FacialExpr.NMF.DIMPLER_LEFT = [[43, 25], [-1, 1]]; // LAU14
-FacialExpr.NMF.DIMPLER_RIGHT = [[44, 25], [-1, 1]]; // RAU14
-FacialExpr.NMF.JAW_DROP = [[22], [1]]; // AU26
-FacialExpr.NMF.MOUTH_STRETCH = [[35], [1]]; // AU27
 
 // Constructor
 function FacialExpr(faceData, shift) {
@@ -241,16 +255,17 @@ FacialExpr.prototype.initFaceLexeme = function (faceData, shift, lexemes) {
 
         let lexemeStr = lexemes[i].lexeme || lexemes[i].au;
 
-        let indices = FacialExpr.NMF[lexemeStr][0]; // returns array [ BlendshapeIndices, weights ]
-        let weights = FacialExpr.NMF[lexemeStr][1]; // get only the blendshape weights
-
         // does lexeme exist?
-        if (!indices || !weights || indices.length == 0 || weights.length == 0) {
+        if ( !FacialExpr.NMF[lexemeStr] ) {
             this.transition = false;
             this.time = this.end;
             console.warn("Facial lexeme not found:", lexemeStr, ". Please refer to the standard.");
             continue;
         }
+
+        // FacialExpr.NMF[lexemeStr] returns array [ BlendshapeIndices, weights ]
+        let indices = FacialExpr.NMF[lexemeStr][0]; // get only the blendshape indices
+        let weights = FacialExpr.NMF[lexemeStr][1]; // get only the blendshape weights
 
         // Indices
         this.indicesLex[j] = indices;
@@ -410,7 +425,6 @@ function FacialEmotion(sceneBSW) {
     this.initialVABSW = this.currentVABSW.slice();
     this.targetVABSW = this.currentVABSW.slice();
     this.defaultVABSW = this.currentVABSW.slice();
-
 }
 
 FacialEmotion.prototype.reset = function () {
@@ -506,7 +520,7 @@ FacialEmotion.prototype.initFaceValAro = function (faceData, shift) {
 
     // Normalize
     let magn = vec2.length(this.valaro);
-    if (magn > 1) {
+    if ( magn > 1 ) {
         this.valaro[0] /= magn;
         this.valaro[1] /= magn;
     }
@@ -517,7 +531,7 @@ FacialEmotion.prototype.initFaceValAro = function (faceData, shift) {
     this.amount = faceData.amount || 1.0;
     if ( shift ) {
         this.attackPeak = faceData.attackPeak || this.end;
-        this.relax = this.end = this.attackPeak + 1;//faceData.end || faceData.attackPeak || 0.0; // ignored on shift
+        this.relax = this.end = this.attackPeak + 1;//faceData.end || faceData.attackPeak || 0.0; // ignored "end" and "relax" on shift
     } else {
         this.attackPeak = faceData.attackPeak || (this.end - this.start) * 0.25 + this.start;
         this.relax = faceData.relax || (this.end - this.attackPeak) / 2 + this.attackPeak;
@@ -610,10 +624,10 @@ FacialEmotion.prototype.updateVABSW = function (dt) {
         return;
     }
 
-    // Stay still during attackPeak to relax 
-    if (this.time > this.attackPeak && this.time < this.relax ) {
-        return; 
-    } 
+    // Stay still during attackPeak to relax
+    if (this.time > this.attackPeak && this.time < this.relax){
+        return;
+    }
 
     // End
     if (this.time >= this.end) {
@@ -642,7 +656,7 @@ FacialEmotion.prototype.updateVABSW = function (dt) {
         inter = Math.cos(Math.PI * inter) * 0.5 + 0.5;
         // Interpolation
         for (let j = 0; j < this.targetVABSW.length; j++)
-            this.currentVABSW[j] = this.defaultVABSW[j] * (1 - inter) + this.targetVABSW[j] * inter;
+           this.currentVABSW[j] = this.defaultVABSW[j] * (1 - inter) + this.targetVABSW[j] * inter;
         return;
     }
 }
@@ -658,8 +672,7 @@ FacialEmotion.prototype.updateVABSW = function (dt) {
 // Scene inputs: gazePositions (head and camera), lookAt objects
 
 // Gaze manager (replace BML)
-GazeManager.gazePositions = {
-    
+GazeManager.gazePositions = {   
     "RIGHT": new THREE.Vector3(30, 2, 100), "LEFT": new THREE.Vector3(-30, 2, 100),
     "UP": new THREE.Vector3(0, 20, 100), "DOWN": new THREE.Vector3(0, -20, 100),
     "UPRIGHT": new THREE.Vector3(30, 20, 100), "UPLEFT": new THREE.Vector3(-30, 20, 100),
@@ -668,7 +681,6 @@ GazeManager.gazePositions = {
 };
 
 Gaze.prototype.gazeBS = {
-    
     "RIGHT": { squint: 0, eyelids: 0 }, "LEFT": { squint: 0, eyelids: 0 },
     "UP": { squint: 0.3, eyelids: 0 }, "DOWN": { squint: 0, eyelids: 0.2 },
     "UPRIGHT": { squint: 0.3, eyelids: 0 }, "UPLEFT": { squint: 0.3, eyelids: 0 },
@@ -1688,10 +1700,6 @@ Text2Lip.prototype.setTables = function ( phonemeToViseme, coarts, lowerBoundVis
     this.BSW = new Float32Array( this.numShapes ); this.BSW.fill( 0 );
     this.currV = new Float32Array( this.numShapes ); this.currV.fill( 0 );
     this.targV = new Float32Array( this.numShapes ); this.targV.fill( 0 ); // next visem - target
-
-    this.BSW = new Float32Array(this.numShapes); this.BSW.fill(0);
-    this._currV = new Float32Array(this.numShapes); this._currV.fill(0);
-    this._targV = new Float32Array(this.numShapes); this._targV.fill(0); // next visem - target
 }
 
 Text2Lip.prototype.getDefaultSpeed = function () { return this.DEFAULT_SPEED; }

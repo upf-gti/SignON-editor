@@ -1603,7 +1603,7 @@ button.litebutton:active, button.litebutton:focus {
 }
 
 button.litebutton:hover:not(:disabled) {
-    /* background: var(--global-color-highlight) !important; */
+	background-color: var(--background);
 }
 
 button.litebutton:active:not(:disabled) {

@@ -551,9 +551,13 @@ ControlChannel.prototype.getSample = function( time )
 // CLIPS *******************************************************
 //-----------------------------Face Behaviour-----------------------------//
 //FaceLexemeClip to show captions
-FaceLexemeClip.lexemes = ["LIP_CORNER_DEPRESSOR", "LIP_CORNER_DEPRESSOR_LEFT","LIP_CORNER_DEPRESSOR_RIGHT",	"LIP_CORNER_PULLER","LIP_CORNER_PULLER_LEFT","LIP_CORNER_PULLER_RIGHT", "MOUTH_OPEN","LOWER_LIP_DEPRESSOR",
-	"CHIN_RAISER","LIP_PUCKERER","TONGUE_SHOW","LIP_STRECHER","LIP_FUNNELER","LIP_TIGHTENER","LIP_PRESSOR","BROW_LOWERER","BROW_LOWERER_LEFT","LOWER_RIGHT_BROW",	"INNER_BROW_RAISER","OUTER_BROW_RAISER",	"RAISE_LEFT_BROW","RAISE_RIGHT_BROW",	"UPPER_LID_RAISER",	"LID_TIGHTENER",
-	"EYES_CLOSED","BLINK","WINK","NOSE_WRINKLER","UPPER_LIP_RAISER","DIMPLER","JAW_DROP","MOUTH_STRETCH"];
+FaceLexemeClip.lexemes = [
+	"LIP_CORNER_DEPRESSOR", "LIP_CORNER_DEPRESSOR_LEFT","LIP_CORNER_DEPRESSOR_RIGHT",	"LIP_CORNER_PULLER","LIP_CORNER_PULLER_LEFT","LIP_CORNER_PULLER_RIGHT", 
+	"LIP_PUCKERER", "LIP_STRECHER","LIP_FUNNELER","LIP_TIGHTENER","LIP_PRESSOR", "PRESS_LIPS",
+	"MOUTH_OPEN","LOWER_LIP_DEPRESSOR", "CHIN_RAISER", "TONGUE_SHOW", 
+	"BROW_LOWERER","BROW_LOWERER_LEFT","BROW_LOWERER_RIGHT", "LOWER_BROWS", "INNER_BROW_RAISER","OUTER_BROW_RAISER", "RAISE_LEFT_BROW", "RAISE_RIGHT_BROW", "RAISE_BROWS", 
+	"UPPER_LID_RAISER", "CHEEK_RAISER", "LID_TIGHTENER", "EYES_CLOSED","BLINK","WINK_LEFT", "WINK_RIGHT",
+	"NOSE_WRINKLER","UPPER_LIP_RAISER","DIMPLER", "DIMPLER_LEFT", "DIMPLER_RIGHT","JAW_DROP","MOUTH_STRETCH"];
 
 
 function FaceLexemeClip(o)
@@ -733,7 +737,7 @@ FaceLexemeClip.prototype.showInfo = function(panel, callback)
 	{
 		var property = this.properties[i];
 		if(i=="lexeme"){
-			panel.addCombo(i, property,{values: FaceLexemeClip.lexemes, callback: function(i,v)
+			panel.addCombo(i, property,{values: FaceLexemeClip.lexemes, thumbnail: true, callback: function(i,v)
 			{
 				if(v.includes("LIP") || v.includes("MOUTH") || v.includes("DIMPLER"))
 					this.clip_color = 'cyan';

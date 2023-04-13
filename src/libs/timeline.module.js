@@ -46,6 +46,8 @@ function Timeline( clip, bone_name, timeline_mode = "tracks" , position = [0,0],
 	this.timeline_mode = timeline_mode;
 	this.draw_buttons = drawButtons;
 
+	this.active = true;
+
 	if(clip)
 		this.processTracks();
 
@@ -91,7 +93,7 @@ function Timeline( clip, bone_name, timeline_mode = "tracks" , position = [0,0],
 
 	// Add button data
 	let offset = 25;
-	if(this.draw_buttons)
+	if(this.draw_buttons && this.active)
 	{
 
 		this._buttons_drawn.push( [this.autoKeyButtonImg, "autoKeyEnabled", 9, -this.top_margin + 1, 22, 22] );
@@ -1394,7 +1396,7 @@ Timeline.prototype.drawTrackWithKeyframes = function (ctx, y, track_height, titl
 	if(title != null)
 	{
 		// var info = ctx.measureText( title );
-		ctx.fillStyle = "rgba(255,255,255,0.9)";
+		ctx.fillStyle = this.active ? "rgba(255,255,255,0.9)" : "rgba(250,250,250,0.7)";
 		ctx.fillText( title, 25, y + track_height * 0.75 );
 	}
 
@@ -1427,6 +1429,9 @@ Timeline.prototype.drawTrackWithKeyframes = function (ctx, y, track_height, titl
 					ctx.fillStyle = "rgba(250,250,250,0.7)";
 					margin = -2;
 				}
+				if(!this.active)
+					ctx.fillStyle = "rgba(250,250,250,0.7)";
+					
 				ctx.translate(keyframe_posx, y + size * 2 + margin);
 				ctx.rotate(45 * Math.PI / 180);		
 				ctx.fillRect( -size, -size, size, size);
