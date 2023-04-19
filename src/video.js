@@ -31,7 +31,7 @@ const VideoUtils = {
             video.currentTime = 10000000 * Math.random();
         }
 
-        this.ratio = (video.duration/this.width) * 15;
+        this.ratio = (video.duration/(this.width - this.offsetWidth*2 - this.playButtonWidth)) * 15;
         this.startTime = video.currentTime = 0;
         this.endTime = video.duration;    
         this.render();
@@ -57,7 +57,10 @@ const VideoUtils = {
             this.video.currentTime = 10000000 * Math.random();
         }
         if(this.endTime > this.video.duration) 
+        {
             this.endTime =this.video.duration;
+            this.ratio = (this.video.duration/(this.width - this.offsetWidth*2 - this.playButtonWidth)) * 15;
+        }
 
         requestAnimationFrame(this.animate.bind(this));
         this.update();

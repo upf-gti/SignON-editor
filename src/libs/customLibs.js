@@ -458,10 +458,16 @@ Inspector.prototype.addCombo = function(name, value, options)
 		}
 		$(select).select2(optionsT);
 		$('.select2-container--default .select2-selection--single').css({'height': '220px'});
+		$('.select2-selection__arrow').append('<i class="fa-solid fa-chevron-down" style="width:15px; height:15px"></i>')
 		
 		select.hidden = true;
-		$('.select2-selection__arrow').append('<i class="fa-solid fa-chevron-down" style="width:15px; height:15px"></i>')
-	
+		$(select).on('select2:select',(e) => {
+			if(!options.callback) 
+				return;
+			var index = e.target.value;
+			var v = values[index];
+			options.callback(v);
+		});
 	}
 	
 	this.append(element,options);

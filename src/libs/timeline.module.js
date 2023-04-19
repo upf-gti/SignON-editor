@@ -915,7 +915,9 @@ Timeline.prototype.processMouse = function (e) {
 			}
 
 		}else {
-
+			let boundingBox = this._canvas.getBoundingClientRect()
+			if(e.y < boundingBox.top || e.y > boundingBox.bottom)
+				return;
 			// Check exact track keyframe
 			if(!discard && track) {
 				if(this.timeline_mode == "tracks")
@@ -1109,6 +1111,9 @@ Timeline.prototype.processMouse = function (e) {
 				if(this.duration < clip.start + clip.duration  )
 					this.setDuration(clip.start + clip.duration);
 				return true;
+			}
+			else{
+				innerSetTime( this.current_time );	
 			}
 				
 		}else if(track) {

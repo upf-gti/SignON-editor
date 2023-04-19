@@ -3,6 +3,7 @@ import { Editor } from "./editor.js";
 import { VideoUtils } from "./video.js";
 import { FileSystem } from "./libs/filesystem.js";
 
+const appMode = {LIVE:0, VIDEO:1};
 class App {
 
     constructor() {
@@ -14,7 +15,7 @@ class App {
 
         this.mediaRecorder = null
         this.chunks = [];
-
+        this.captureMode = null;
         this.editor = new Editor(this);
 
         // Create the fileSystem and log the user
@@ -34,12 +35,14 @@ class App {
 
         switch(mode) {
             case 'capture': 
+                this.captureMode = appMode.LIVE;
                 this.onBeginCapture();
                 break;
             case 'bvh': 
                 this.onLoadAnimation( settings.data );
                 break;
             case 'video': 
+                this.captureMode = appMode.VIDEO;
                 this.onLoadVideo( settings.data );
                 break;
         }
@@ -146,7 +149,8 @@ class App {
             video.setAttribute('controls', 'name');
             video.controls = false;
             video.loop = true;
-            
+            //that.chunks[0] = that.chunks[0].slice(1,that.chunks[0].size, "video/mp4; codecs=avc1");
+            //that.chunks.shift();
             let blob = new Blob(that.chunks, { "type": "video/mp4; codecs=avc1" });
             let videoURL = URL.createObjectURL(blob);
             video.src = videoURL;
@@ -175,6 +179,11 @@ class App {
         videoRec.classList.remove("hidden");
         videoRec.style.width = "100%";
         videoRec.style.height = "100%";
+        
+
+        videoRec.style.cssText+= "transform: rotateY(0deg);\
+        -webkit-transform:rotateY(0deg); /* Safari and Chrome */\
+        -moz-transform:rotateY(0deg); /* Firefox */"
     
         // Solve the aspect ratio problem of the video
         let videoCanvas = document.getElementById("outputVideo");
@@ -253,11 +262,14 @@ class App {
                 videoCanvas.style.border = "solid var(--global-color-highlight)";
                 
                 // Start the capture
-                MediaPipe.onStartRecording();
                 this.recording = true;
-                this.mediaRecorder.start();
-                this.startTime = Date.now();
-                console.log("Start recording");
+                setTimeout(()=> {
+                    MediaPipe.onStartRecording();
+                    this.mediaRecorder.start();
+                    this.startTime = Date.now();
+                    console.log("Start recording");
+                }, 100);
+                
             }
             else {
 
@@ -271,25 +283,28 @@ class App {
                 this.recording = false;
                 
                 console.log("Stop recording");
-                capture.classList.remove("stop")
+                capture.classList.remove("stop");
                 // Back to initial values
-                capture.innerHTML = " <i class='bi bi-record-circle' style= 'margin:5px; font-size:initial;'></i> Start recording"
+                //capture.innerHTML = " <i class='bi bi-record-circle' style= 'margin:5px; font-size:initial;'></i> Start recording";
                 // capture.style.removeProperty("background-color");
                 // capture.style.removeProperty("border");
                 videoCanvas.style.removeProperty("border");
                 
                 this.mediaRecorder.stop();
-                let endTime = Date.now();
-                this.duration = endTime - this.startTime;
-
+                
                 if(MediaPipe.landmarks.length) {
-
+                    
                     MediaPipe.onStopRecording();
+                    let endTime = Date.now();
+                    this.duration = endTime - this.startTime;
                     // Show modal to redo or load the animation in the scene
                     //elem.style.display = "flex";
                     elem.style.display = "none";
-                    MediaPipe.stop();
-                    this.processVideo();
+                    setTimeout(()=>{
+                        MediaPipe.stop();
+                        this.processVideo(live);
+                    }, 100);
+                    
                 }
             }
         };
@@ -317,18 +332,13 @@ class App {
         // };
     }
     
-    async processVideo() {
+    async processVideo(live) {
                 
         // Update header
         let capture = document.getElementById("capture_btn");
-        capture.disabled = true;
         capture.style.display = "none";
-
-        let trimBtn = document.getElementById("trim_btn");
-        trimBtn.style.display = "block";
-        let redoBtn = document.getElementById("redo_btn");
-        redoBtn.style.display = "block";
-
+        capture.disabled = true;
+        
         // TRIM VIDEO - be sure that only the sign is recorded
         let canvas = document.getElementById("outputVideo");
         let video = document.getElementById("recording");
@@ -336,7 +346,18 @@ class App {
         video.style.width = canvas.width + "px";
         video.style.height = canvas.height + "px";
 
+        if(live === undefined || !live){
+            video.style.cssText+= "transform: rotateY(0deg);\
+                            -webkit-transform:rotateY(0deg); /* Safari and Chrome */\
+                            -moz-transform:rotateY(0deg); /* Firefox */"
+        }
         await VideoUtils.bind(video, canvas);
+        
+
+        let trimBtn = document.getElementById("trim_btn");
+        trimBtn.style.display = "block";
+        let redoBtn = document.getElementById("redo_btn");
+        redoBtn.style.display = "block";
     }
 
     mediaDevicesSupported(video, scope) {

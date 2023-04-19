@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { OrbitControls } from "./controls/OrbitControls.js";
 import { BVHLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/BVHLoader.js';
 import { BVHExporter } from "./exporters/BVHExporter.js";
-import { createSkeleton, createAnimation, createAnimationFromRotations, updateThreeJSSkeleton, injectNewLandmarks } from "./skeleton.js";
+import { createSkeleton, createAnimation, createAnimationFromRotations, updateThreeJSSkeleton, injectNewLandmarks, postProcessAnimation } from "./skeleton.js";
 import { Gui } from "./gui.js";
 import { Gizmo } from "./gizmo.js";
 import { UTILS } from "./utils.js"
@@ -323,6 +323,7 @@ class Editor {
 
         } else {// -- default -- if ( urlParams.get('load') == 'NN' ) {
             this.animationClip = createAnimationFromRotations(this.clipName, this.nn);
+            //postProcessAnimation(this.animationClip, this.landmarksArray);
             if (urlParams.get('skin') && urlParams.get('skin') == 'false') {
                 this.loadAnimationWithSkeleton(this.animationClip);
             }

@@ -16,6 +16,7 @@ const MediaPipe = {
 
         UTILS.makeLoading("Loading MediaPipe...");
 
+        this.live = live;
         this.landmarks = [];
         this.onload = onload;
         this.onresults = onresults;
@@ -57,10 +58,12 @@ const MediaPipe = {
             // Only overwrite missing pixels.
             canvasCtx.globalCompositeOperation = 'destination-atop';
 
-            // Mirror canvas
-            canvasCtx.translate(canvasElement.width, 0);
-            canvasCtx.scale(-1, 1);    
-            // -------------
+            if(this.live){
+                // Mirror canvas
+                canvasCtx.translate(canvasElement.width, 0);
+                canvasCtx.scale(-1, 1);    
+                // -------------
+            }
 
             canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
             let recording = window.globals.app.isRecording();
@@ -156,22 +159,12 @@ const MediaPipe = {
             console.warn( "no landmark data at time " + dt/1000.0 );
             return;
         }
-
-        // for (let j = 0; j < data.poseLandmarks.length; ++j) {
-        //     data.poseLandmarks[j].x = (data.poseLandmarks[j].x - 0.5);
-        //     data.poseLandmarks[j].y = (1.0 - data.poseLandmarks[j].y) + 2;
-        //     data.poseLandmarks[j].z = -data.poseLandmarks[j].z * 0.5;
-        // }
-        // if(data.rightHandLandmarks)
-        //     for (let j = 0; j < data.rightHandLandmarks.length; ++j) {
-        //         data.rightHandLandmarks[j].z = -data.rightHandLandmarks[j].z * 0.5;
-        //     }
-        // if(data.leftHandLandmarks)
-        //     for (let j = 0; j < data.leftHandLandmarks.length; ++j) {
-        //         data.leftHandLandmarks[j].z = -data.leftHandLandmarks[j].z * 0.5;
-        //     }
-
-        this.landmarks.push({"RLM": data.rightHandLandmarks, "LLM": data.leftHandLandmarks, "FLM": data.faceLandmarks, "PLM": data.poseLandmarks, "dt": dt});
+        const { poseLandmarks } = data;
+        let distance = (poseLandmarks[23].visibility + poseLandmarks[24].visibility)*0.5;
+        let leftHand = (poseLandmarks[15].visibility + poseLandmarks[17].visibility + poseLandmarks[19].visibility)/3;
+        let rightHand = (poseLandmarks[16].visibility + poseLandmarks[18].visibility + poseLandmarks[20].visibility)/3;
+      
+        this.landmarks.push({"RLM": data.rightHandLandmarks, "LLM": data.leftHandLandmarks, "FLM": data.faceLandmarks, "PLM": data.poseLandmarks, "dt": dt, distanceToCamera: distance, rightHandVisibility: rightHand, leftHandVisibility: leftHand});
     }
 }
 

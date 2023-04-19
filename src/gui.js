@@ -325,30 +325,10 @@ class Gui {
                 this.NMFtimeline.addClip( new ANIM.FaceLexemeClip(), this.editor.NMFController.updateTracks.bind(this.editor.NMFController) );
                 this.editor.NMFController.begin(this.NMFtimeline);
                 
-                // this.NMFtimeline.onSelectKeyFrame = (e, info, index) => {
-                    //     if(e.button != 2) {
-                        //         //this.editor.gizmo.mustUpdate = true
-                        //         this.editor.gizmo.update(true);
-                        //         return false;
-                        //     }
-                        
-                //     // Change gizmo mode and dont handle
-                //     // return false;
-                
-                //     this.showKeyFrameOptions(e, info, index);
-                //     return true; // Handled
-                // };
-                // this.timeline.onUpdateTrack = (idx) => this.editor.updateAnimationAction(idx);
-                
-                //this.createSidePanel();
-                // let c = document.getElementById("timelineCanvas")
-                // c.style.height =  this.timelineCTX.canvas.height*2 + 'px';
-                // this.timelineCTX.canvas.height = this.timelineCTX.canvas.clientHeight;
-                //this.timelineCTX.canvas.height = this.timelineCTX.canvas.height*2;
                 
             }
             splitbar.classList.remove("hidden");
-            this.timeline.actvie = false;
+            this.timeline.active = false;
             console.log(this.timeline.size)
             let c = document.getElementById("timeline")
             c.style.height =  this.timelineCTX.canvas.height*2 + 'px';
@@ -357,6 +337,9 @@ class Gui {
             console.log(this.timeline.size)
             let canvasArea = document.getElementById("canvasarea");
             this.editor.resize(canvasArea.clientWidth, canvasArea.clientHeight);
+            
+            if(this.NMFtimeline.selected_clip)
+                this.showClipInfo(this.NMFtimeline.selected_clip)
         }
         else{
             splitbar.classList.add("hidden");
@@ -369,7 +352,9 @@ class Gui {
             nmfmenu.enable();
             mfmenu.disable();
             window.menubar.showMenu( menubar, null, menubar.element, false );
-
+            
+            if(this.item_selected != undefined)
+                this.updateSidePanel(this.sidePanel, this.item_selected)
         }
         //this.updateMenubar();
     }
@@ -1049,7 +1034,7 @@ updateBoneProperties() {
         {
             //time in the left side (current time is always in the middle)
             //seconds markers
-            this.NMFtimeline.draw(this.timelineNMFCTX, this.current_time, [0, 0, canvas.width, canvas.height+50], false);
+            this.NMFtimeline.draw(this.timelineNMFCTX, this.current_time, [0, 0, this.timelineNMFCTX.canvas.width, this.timelineNMFCTX.canvas.height-50], false);
             // var w = canvas.width;
             // var seconds_full_window = (w * this.NMFtimeline._pixels_to_seconds); //how many seconds fit in the current window
             // var seconds_half_window = seconds_full_window * 0.5;
@@ -1123,7 +1108,7 @@ updateBoneProperties() {
         //     this.timeline.processMouse(e);
         //     return;
         // }
-        if(this.timeline.active)
+        if(this.timeline && this.timeline.active)
         {
             this.timeline.processMouse(e);
             return;
@@ -1133,6 +1118,8 @@ updateBoneProperties() {
             // if(e.type == "mousedown")
             //     this.timeline.deselectAll();
             this.NMFtimeline.processMouse(e);
+            if(e.type == "wheel")
+                this.timeline.processMouse(e);
 
         }
         
