@@ -569,20 +569,20 @@ function FaceLexemeClip(o)
 	this.relax = 0.75;
 	
 	this.properties = {};
-	this.properties.amount = 0.5;
+	this.properties.amount = 0.8;
 	this.properties.lexeme = lexeme;
 	/*permanent : false,*/
 	
-	this.id = lexeme + "-" + Math.ceil(getTime());
 	
 	this._width = 0;
 	this.color = "black";
 	this.font = "40px Arial";
 	this.clip_color = "cyan";
-
+	
 	if(o)
-		this.configure(o);
-
+	this.configure(o);
+	
+	this.id = this.properties.lexeme + "-" + Math.ceil(getTime());
 	this.updateColor(this.properties.lexeme);
   //this.icon_id = 37;
 }
@@ -594,11 +594,11 @@ ANIM.registerClipType( FaceLexemeClip );
 
 FaceLexemeClip.prototype.configure = function(o)
 {
-	this.start = o.start | 0;
-	this.duration = o.duration | 1;
-	this.attackPeak = o.attackPeak | 0.25;
-	this.relax = o.relax | 0.75;
-
+	this.start = o.start || 0;
+	this.duration = o.duration || 1;
+	this.attackPeak = o.attackPeak || 0.25;
+	this.relax = o.relax || 0.75;
+	this.properties.lexeme = o.lexeme || this.properties.lexeme;
 	if(o.properties)
 	{
 		Object.assign(this.properties, o.properties);
@@ -1009,6 +1009,271 @@ FaceEmotionClip.prototype.showInfo = function(panel, callback)
 		var property = this.properties[i];
 		if(i=="emotion"){
 			panel.addCombo(i, property,{values: FaceEmotionClip.emotions, callback: function(i,v)
+			{
+				this.properties[i] = v;
+				if(callback)
+					callback();
+			}.bind(this, i)});
+		}
+		else
+		{
+			switch(property.constructor)
+			{
+
+				case String:
+					panel.addString(i, property, {callback: function(i,v)
+					{
+						this.properties[i] = v;
+						if(callback)
+							callback();
+					}.bind(this, i)});
+					break;
+				case Number:
+					if(i=="amount")
+					{
+						panel.addNumber(i, property, {min:0, max:1,callback: function(i,v)
+						{
+							this.properties[i] = v;
+							if(callback)
+								callback();
+						}.bind(this,i)});
+					}
+					else{
+						panel.addNumber(i, property, {callback: function(i,v)
+						{
+							if(i == "start"){
+								var dt = v - this.properties[i];
+								this.properties.attackPeak += dt;
+								this.properties.relax += dt;
+							}
+							this.properties[i] = v;
+							if(callback)
+								callback();
+						}.bind(this,i)});
+					}
+				break;
+				case Boolean:
+					panel.addCheckbox(i, property, {callback: function(i,v)
+					{
+						this.properties[i] = v;
+						if(callback)
+							callback();
+					}.bind(this,i)});
+						break;
+				case Array:
+					panel.addArray(i, property, {callback: function(i,v)
+					{
+						this.properties[i] = v;
+						if(callback)
+							callback();
+					}.bind(this,i)});
+						break;
+			}
+		}
+	}
+}
+//FacePresetClip
+FacePresetClip.type = "facePreset";
+FacePresetClip.facePreset = ["Yes/No-Question", "Negative", "WH-word Questions", "Topic", "RH-Questions", "Angry", "Happy", "Fear", "Sad", "Surprise"];
+FacePresetClip.customPresets = {};
+function FacePresetClip(o)
+{
+	let preset = FacePresetClip.facePreset[0];
+	this.start = 0;
+	this.duration = 1;
+	
+	this.properties = {};
+	this.properties.amount = 0.5;
+	this.properties.preset = preset;
+	/*permanent : false,*/
+	this.clips = [];
+	
+	this._width = 0;
+	this.color = "black";
+	this.font = "40px Arial";
+	this.clip_color = "green";
+	
+	if(o)
+	this.configure(o);
+	
+	this.id = this.properties.preset + "-" + Math.ceil(getTime());
+	this.addPreset(this.properties.preset)
+
+  //this.icon_id = 37;
+}
+
+FacePresetClip.type = "facePreset";
+FacePresetClip.id = ANIM.FACEPRESET? ANIM.FACEPRESET:12;
+FacePresetClip.clip_color = "green";
+ANIM.registerClipType( FacePresetClip );
+
+FacePresetClip.prototype.configure = function(o)
+{
+	this.start = o.start || 0;
+	this.duration = o.duration || 1;
+	this.properties.preset = o.preset || this.properties.preset;
+	if(FacePresetClip.facePreset.indexOf(this.properties.preset) < 0){
+		FacePresetClip.facePreset.push(this.properties.preset);
+		FacePresetClip.customPresets[this.properties.preset] = [...o.clips];
+	}
+
+	if(o.clips)
+		this.clips = [...o.clips];
+	if(o.properties)
+	{
+		Object.assign(this.properties, o.properties);
+		this.id = this.properties.preset + "-" + Math.ceil(getTime());
+	}
+}
+FacePresetClip.prototype.addPreset = function(preset){
+	let clip = null;
+	switch(preset){
+		case "Yes/No-Question":
+			// Raise eyebrows
+			clip = new FaceLexemeClip({lexeme: "BROW_RAISER", start: this.start, duration: this.duration});
+			this.clips.push(clip);
+			// Tilt head forward
+			break;
+		case "Negative":
+			// Shake head
+			break;
+		case "WH-word Questions":
+			// Furrows eyebrows
+			clip = new FaceLexemeClip({lexeme: "BROW_LOWERER", start: this.start, duration: this.duration});
+			this.clips.push(clip);
+			// Tilt head forward
+			break;
+		case "Topic":
+			// Raise eyebrows
+			clip = new FaceLexemeClip({lexeme: "BROW_RAISER", start: this.start, duration: this.duration});
+			this.clips.push(clip);
+			// Tilt head backward
+			break;
+		case "RH-Questions":
+			// Raise eyebrows
+			clip = new FaceLexemeClip({lexeme: "BROW_RAISER", start: this.start, duration: this.duration});
+			this.clips.push(clip);
+			// Tilt head backward and to the side
+			break;
+
+		case "Angry":
+			clip = new FaceLexemeClip({lexeme: "BROW_LOWERER", start: this.start, duration: this.duration, properties: { amount: 1}});
+			this.clips.push(clip);
+
+			clip = new FaceLexemeClip({lexeme: "OUTER_BROW_RAISER", start: this.start, duration: this.duration, properties: { amount: 1}});
+			this.clips.push(clip);
+
+			clip = new FaceLexemeClip({lexeme: "JAW_DROP", start: this.start, duration: this.duration, properties: { amount: 1}});
+			this.clips.push(clip);
+
+			clip = new FaceLexemeClip({lexeme: "LIP_STRECHER", start: this.start, duration: this.duration, properties: { amount: 1}});
+			this.clips.push(clip);
+
+			break;
+
+		case "Happy":
+			clip = new FaceLexemeClip({lexeme: "CHEEK_RAISER", start: this.start, duration: this.duration, properties: { amount: 1}});
+			this.clips.push(clip);
+
+			clip = new FaceLexemeClip({lexeme: "LIP_CORNER_PULLER", start: this.start, duration: this.duration, properties: { amount: 1}});
+			this.clips.push(clip);
+			break;
+
+		case "Sad":
+			clip = new FaceLexemeClip({lexeme: "INNER_BROW_RAISER", start: this.start, duration: this.duration, properties: { amount: 1}});
+			this.clips.push(clip);
+
+			clip = new FaceLexemeClip({lexeme: "DIMPLER", start: this.start, duration: this.duration, properties: { amount: 1}});
+			this.clips.push(clip);
+
+			break;
+
+		case "Fear":
+
+			clip = new FaceLexemeClip({lexeme: "INNER_BROW_RAISER", start: this.start, duration: this.duration, properties: { amount: 0.6}});
+			this.clips.push(clip);
+
+			clip = new FaceLexemeClip({lexeme: "BROW_LOWERER", start: this.start, duration: this.duration, properties: { amount: 0.5}});
+			this.clips.push(clip);
+
+			clip = new FaceLexemeClip({lexeme: "UPPER_LID_RAISER", start: this.start, duration: this.duration, properties: { amount: 0.5}});
+			this.clips.push(clip);
+
+			clip = new FaceLexemeClip({lexeme: "MOUTH_OPEN", start: this.start, duration: this.duration, properties: { amount: 0.25}});
+			this.clips.push(clip);
+
+			clip = new FaceLexemeClip({lexeme: "LID_TIGHTENER", start: this.start, duration: this.duration, properties: { amount: 0.5}});
+			this.clips.push(clip);
+
+			clip = new FaceLexemeClip({lexeme: "LIP_STRECHER", start: this.start, duration: this.duration, properties: { amount: 0.5}});
+			this.clips.push(clip);
+			break;
+
+		case "Surprise":
+			clip = new FaceLexemeClip({lexeme: "BROW_LOWERER", start: this.start, duration: this.duration, properties: { amount: 1}});
+			this.clips.push(clip);
+
+			clip = new FaceLexemeClip({lexeme: "OUTER_BROW_RAISER", start: this.start, duration: this.duration, properties: { amount: 1}});
+			this.clips.push(clip);
+
+			clip = new FaceLexemeClip({lexeme: "UPPER_LID_RAISER", start: this.start, duration: this.duration, properties: { amount: 1}});
+			this.clips.push(clip);
+
+			clip = new FaceLexemeClip({lexeme: "JAW_DROP", start: this.start, duration: this.duration, properties: { amount: 1}});
+			this.clips.push(clip);
+			break;
+	}
+	if(!clip && FacePresetClip.customPresets[preset])
+	{
+		for(let i = 0; i < FacePresetClip.customPresets[preset].length; i++){
+			clip = new FaceLexemeClip(FacePresetClip.customPresets[preset][i]);
+			this.clips.push(clip);
+		}
+
+	}
+	return this.clips;
+}
+FacePresetClip.prototype.toJSON = function()
+{
+	var json = {
+		id: this.id,
+		start: this.start,
+		duration: this.duration,
+
+	}
+	for(var i in this.properties)
+	{		
+		json[i] = this.properties[i];
+	}
+	return json;
+}
+
+FacePresetClip.prototype.fromJSON = function( json )
+{
+	this.id = json.id;
+	this.properties.amount = json.amount;
+	this.start = json.start;
+	this.duration = json.duration;
+	this.properties.preset = json.preset;
+	/*this.properties.permanent = json.permanent;*/
+
+}
+
+FacePresetClip.prototype.drawTimeline = function( ctx, w,h, selected )
+{
+	ctx.globalCompositeOperation =  "source-over";
+	var text_info = ctx.measureText( this.id );
+	ctx.fillStyle = this.color;
+	if( text_info.width < (w - 24) )
+		ctx.fillText( this.id, 24,h * 0.7 );
+}
+FacePresetClip.prototype.showInfo = function(panel, callback)
+{
+	for(var i in this.properties)
+	{
+		var property = this.properties[i];
+		if(i=="emotion"){
+			panel.addCombo(i, property,{values: FacePresetClip.presets, callback: function(i,v)
 			{
 				this.properties[i] = v;
 				if(callback)

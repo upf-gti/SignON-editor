@@ -2486,3 +2486,25 @@ canvas.slider :hover{
 
 	color: #fff;
 }
+
+.litedialog.grid .inspector{
+	display: flex!important;
+    flex-wrap: wrap!important;
+	justify-content: space-between;
+}
+.litedialog.grid .inspector .wname {
+	display: contents;
+}
+.litedialog.grid .widget{
+	display: flex!important;
+    flex-direction: column-reverse!important;
+    /* max-width: 100px; */
+    justify-content: center!important;
+    align-content: center!important;
+    align-items: center!important;
+	margin: 5px;
+}
+.litedialog.grid .info_content.wcontent {
+	width: auto;
+	margin: 5px;
+}

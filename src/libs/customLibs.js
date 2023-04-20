@@ -474,3 +474,35 @@ Inspector.prototype.addCombo = function(name, value, options)
 	this.processElement(element, options);
 	return element;
 }
+
+Inspector.prototype.addImageButton = function(name, value, options) 
+{
+	
+	let content = null;
+
+	if(options.image) {
+
+		switch(options.type) {
+			case 'image': 
+				content = "<img src='" + options.image +"' style='opacity:0.75; max-width: 100px; height:auto'></img>";
+				
+				break;
+			default: 
+				content = "<i class='bi bi-" + options.image +"'></i>";
+	
+		}
+	}
+
+	// const btn = document.createElement('button');
+	// btn.title = name;
+	// btn.className = "litebutton";
+	// btn.style = 'z-index: 2; position: absolute; right: 15px; font-size: 1.25em; width:25px; height: 25px';
+	// btn.style.marginTop = 30 + "px";
+	// btn.appendChild(content);
+	// this.append(btn);
+
+	this.addButton(name, content, options);
+	// if(options.callback)
+	// 	btn.addEventListener("click", options.callback.bind(this) );
+	
+}

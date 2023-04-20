@@ -119,36 +119,68 @@ class Gui {
             e.preventDefault()
             let actions = [];
             //let track = this.NMFtimeline.clip.tracks[0];
-            if(this.NMFtimeline.selected_clip) {
+            if(this.NMFtimeline._lastClipsSelected.length) {
                 actions.push(
                     {
                         title: "Copy" + " <i class='bi bi-clipboard-fill float-right'></i>",
-                        callback: () => {this.clip_to_copy = this.NMFtimeline.selected_clip;}
+                        callback: () => {this.clips_to_copy = [...this.NMFtimeline._lastClipsSelected];}
                     }
                 )
                 actions.push(
                     {
                         title: "Delete" + " <i class='bi bi-trash float-right'></i>",
-                        callback: () => {this.NMFtimeline.deleteClip(null, this.showClipInfo());}
+                        callback: () => {
+                            let clipstToDelete = [...this.NMFtimeline._lastClipsSelected];
+                            for(let i = 0; i < clipstToDelete.length; i++){
+                                this.NMFtimeline.deleteClip(clipstToDelete[i], this.showClipInfo.bind(this));
+                            }
+                        }
+                    }
+                )
+                actions.push(
+                    {
+                        title: "Create preset" + " <i class='bi bi-file-earmark-plus-fill float-right'></i>",
+                        callback: () => {
+                            this.NMFtimeline._lastClipsSelected.sort((a,b) => {
+                                if(a[0]<b[0]) 
+                                    return -1;
+                                return 1;
+                            });
+                            this.createNewPresetDialog(this.NMFtimeline._lastClipsSelected);
+                        }
                     }
                 )
             }
             else{
                 actions.push(
                     {
-                        title: "Add" + " <i class='bi bi-plus float-right'></i>",
-                        callback: () => {this.NMFtimeline.addClip( new ANIM.FaceLexemeClip(), this.editor.NMFController.updateTracks.bind(this.editor.NMFController) );}
+                        title: "Add lexeme" + " <i class='bi bi-plus float-right'></i>",
+                        callback: this.createLexemesDialog.bind(this)
+                    },
+                    {
+                        title: "Add preset" + " <i class='bi bi-plus float-right'></i>",
+                        callback: this.createPresetsDialog.bind(this)
                     }
                 );
-                if(this.clip_to_copy)
+                if(this.clips_to_copy)
                 {
                     actions.push(
                         {
                             title: "Paste" + " <i class='bi bi-clipboard-fill float-right'></i>",
                             callback: () => {
-                                let clip = new ANIM.FaceLexemeClip(this.clip_to_copy);
-                                this.clip_to_copy = null;
-                                this.NMFtimeline.addClip(clip, this.editor.NMFController.updateTracks.bind(this.editor.NMFController)); 
+                                this.clips_to_copy.sort((a,b) => {
+                                    if(a[0]<b[0]) 
+                                        return -1;
+                                    return 1;
+                                });
+
+                                for(let i = 0; i < this.clips_to_copy.length; i++){
+                                    let [trackIdx, clipIdx] = this.clips_to_copy[i];
+                                    let clipToCopy = this.NMFtimeline.clip.tracks[trackIdx].clips[clipIdx];
+                                    let clip = new ANIM.FaceLexemeClip(clipToCopy);
+                                    this.NMFtimeline.addClip(clip, clipToCopy.start); 
+                                }
+                                this.clips_to_copy = null;
                             }
                         }
                     )
@@ -322,7 +354,9 @@ class Gui {
                 this.NMFtimeline.onSelectClip = this.showClipInfo.bind(this);
                 this.NMFtimeline.onClipMoved = ()=> this.editor.NMFController.updateTracks.bind(this.editor.NMFController);
                 this.NMFtimeline.clip = {duration: this.timeline.duration, tracks: []};
-                this.NMFtimeline.addClip( new ANIM.FaceLexemeClip(), this.editor.NMFController.updateTracks.bind(this.editor.NMFController) );
+                // this.NMFtimeline.addClip( new ANIM.FaceLexemeClip());
+                
+                this.NMFtimeline.onUpdateTrack = this.editor.NMFController.updateTracks.bind(this.editor.NMFController);
                 this.editor.NMFController.begin(this.NMFtimeline);
                 
                 
@@ -429,7 +463,7 @@ class Gui {
         div.innerHTML = 
             '<div id="text-info" class="header"> Position yourself centered on the image with the hands and troso visible. If the conditions are not met, reposition yourself or the camera. </div>\
                 <div id="warnings" style= "display:flex;     justify-content: center;"> \
-                    <div id="distance-info" class="alert alert-primary"> \
+                    <div id="distance-info" class="alert-info alert-primary"> \
                         <div class="icon__wrapper"> \
                             <i class="fas fa-solid fa-check check"></i> \
                         <!--<span class="mdi mdi-alert-outline"></span>--> \
@@ -437,7 +471,7 @@ class Gui {
                         <p>Distance to the camera looks good</p> \
                         <!-- <span class="mdi mdi-open-in-new open"></span> -->\
                     </div> \
-                    <div id="hands-info" class="alert alert-primary"> \
+                    <div id="hands-info" class="alert-info alert-primary"> \
                         <div class="icon__wrapper"> \
                             <i class="fas fa-solid fa-check check"></i> \
                         <!--<span class="mdi mdi-alert-outline"></span>--> \
@@ -537,10 +571,10 @@ class Gui {
         let handsCondition = poseLandmarks[15].visibility < .5 || poseLandmarks[16].visibility < .5 || poseLandmarks[19].visibility < .5 || poseLandmarks[17].visibility < .5 || poseLandmarks[18].visibility < .5 || poseLandmarks[20].visibility < .5;
        
         // infoDistance.getElementsByTagName("p")[0].innerText = (torsoCondition) ? 'You are too close to the camera' : 'Distance to the camera looks good';
-        // infoDistance.className = (torsoCondition) ? "alert alert-warning" : "alert alert-success";
+        // infoDistance.className = (torsoCondition) ? "alert-info alert-warning" : "alert-info alert-success";
         
         // infoHands.getElementsByTagName("p")[0].innerText = (handsCondition) ? 'Your hands are not visible' : 'Hands visible';
-        // infoHands.className = (handsCondition) ? "alert alert-warning" : "alert alert-success";
+        // infoHands.className = (handsCondition) ? "alert-info alert-warning" : "alert-info alert-success";
         
 
         let progressBarT = document.getElementById("progressbar-torso");
@@ -780,6 +814,80 @@ class Gui {
         var element = root.content.querySelectorAll(".inspector")[0];
         var maxScroll = element.scrollHeight;
         element.scrollTop = options.maxScroll ? maxScroll : (options.scroll ? options.scroll : 0);
+    }
+
+    createLexemesDialog()
+    {
+        // Create a new dialog
+        let dialog = new LiteGUI.Dialog('Non Manual Features lexemes', { title:'Lexemes', close: true, minimize: false, width: 500, height: 400, scroll: true, resizable: true, draggable: true });
+        var that = this;
+        // Create a collection of widgets
+        let widgets = new LiteGUI.Inspector();
+        let values = ANIM.FaceLexemeClip.lexemes;//["Yes/No-Question", "Negative", "WH-word Questions", "Topic", "RH-Questions"];
+        for(let i = 0; i < values.length; i++){
+            widgets.addImageButton(values[i], null, {
+                type: "image",
+                image: "data/imgs/thumbnails/" + values[i].toLowerCase() + ".PNG",
+                callback: function(v, e) { 
+                    
+                    dialog.close();
+                    that.NMFtimeline.addClip( new ANIM.FaceLexemeClip({lexeme:this.name}));
+                    
+                   // that.editor.NMFController.updateTracks.bind(that.editor.NMFController) ;
+                }
+            } )
+        }
+        dialog.root.classList.add("grid");
+        dialog.add(widgets);
+        dialog.show();
+    }
+
+    createPresetsDialog()
+    {
+        // Create a new dialog
+        let dialog = new LiteGUI.Dialog('Non Manual Features presets', { title:'Presets', close: true, minimize: false, width: 500, height: 400, scroll: true, resizable: true, draggable: true });
+        var that = this;
+        // Create a collection of widgets
+        let widgets = new LiteGUI.Inspector();
+        let values = ANIM.FacePresetClip.facePreset;//["Yes/No-Question", "Negative", "WH-word Questions", "Topic", "RH-Questions"];
+        for(let i = 0; i < values.length; i++){
+            widgets.addImageButton(values[i], null, {
+                type: "image",
+                image: "data/imgs/thumbnails/brow_lowerer_left.PNG",
+                callback: function(v, e,) { 
+                    
+                    dialog.close();
+                    let presetClip = new ANIM.FacePresetClip({preset: this.name});
+                    for(let i = 0; i < presetClip.clips.length; i++){
+                        that.NMFtimeline.addClip( presetClip.clips[i], presetClip.clips[i].start);
+                    }
+                    //that.editor.NMFController.updateTracks.bind(that.editor.NMFController) 
+                }
+            } )
+        }
+        dialog.root.classList.add("grid");
+        dialog.add(widgets);
+
+        // Placeholder function to show the new settings. Normally you would do something usefull here
+        // with the new settings.
+        function applySettings() {
+            console.log("Expression is " + expressions.getValue() );
+        }
+
+        // Add some buttons
+        dialog.show();
+    }
+
+    createNewPresetDialog(clips)
+    {
+         LiteGUI.prompt( "Preset name", (v) => {
+            let presetInfo = {preset: v, clips:[]};
+            for(let i = 0; i < clips.length; i++){
+                let [trackIdx, clipIdx] = clips[i];
+                presetInfo.clips.push(this.NMFtimeline.clip.tracks[trackIdx].clips[clipIdx]);
+            }
+            let preset = new ANIM.FacePresetClip(presetInfo);
+        }, {title: "Create preset"} )
     }
 
     showClipInfo(clip)
@@ -1032,20 +1140,8 @@ updateBoneProperties() {
         this.timeline.draw(this.timelineCTX, this.current_time, [0, 0, canvas.width, canvas.height]);
         if(this.NMFtimeline)
         {
-            //time in the left side (current time is always in the middle)
-            //seconds markers
-            this.NMFtimeline.draw(this.timelineNMFCTX, this.current_time, [0, 0, this.timelineNMFCTX.canvas.width, this.timelineNMFCTX.canvas.height-50], false);
-            // var w = canvas.width;
-            // var seconds_full_window = (w * this.NMFtimeline._pixels_to_seconds); //how many seconds fit in the current window
-            // var seconds_half_window = seconds_full_window * 0.5;
-	        // var time_start = this.current_time - seconds_half_window;
-            // //time in the right side
-            // var time_end = this.current_time + seconds_half_window;
-            // this.timelineCTX.save();
-	        // this.timelineCTX.translate( 0, canvas.height ); //20 is
-            // this.NMFtimeline.onDrawContent( this.timelineCTX, time_start, time_end,  this.NMFtimeline );
-            // this.timelineCTX.restore();
-            
+           
+            this.NMFtimeline.draw(this.timelineNMFCTX, this.current_time, [0, 0, this.timelineNMFCTX.canvas.width, this.timelineNMFCTX.canvas.height-50], false);    
         }
         
     }

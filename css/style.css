@@ -412,7 +412,7 @@ canvas {
 	color: whitesmoke;
 }
 
-.alert {
+.alert-info {
 	height: 33px;
 	/* width: 560px; */
 	width: 300px;
@@ -545,7 +545,7 @@ dark mode:
     /* top: 701.591px; */
     left: 1677.73px;
     overflow: hidden;
-    height: 100%;
+    height: 25%;
 	color: #FEE;
 	padding: 2px;
 	background: var(--global-color-primary);
@@ -582,3 +582,15 @@ dark mode:
 .selection p{
 	margin: 2px;
 }
+
+.border-animation{
+	border: solid var(--global-color-highlight);
+	border-width: 0.1em;
+	border-radius: 5px;
+	animation: capture-animation 3s infinite ease-in-out;
+}
+@keyframes capture-animation {
+	from {border: solid var(--global-color-highlight);}
+	50% {border: solid var(--global-color-primary);}
+	to {border: solid var(--global-color-highlight);}
+  }

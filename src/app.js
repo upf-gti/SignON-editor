@@ -259,8 +259,8 @@ class App {
                 // capture.style.backgroundColor = "lightcoral";
                 // capture.style.border = "solid #924242";
                 capture.classList.add("stop");
-                videoCanvas.style.border = "solid var(--global-color-highlight)";
-                
+               // videoCanvas.style.border = "solid var(--global-color-highlight)";
+                videoCanvas.classList.add("border-animation");
                 // Start the capture
                 this.recording = true;
                 setTimeout(()=> {
@@ -283,14 +283,16 @@ class App {
                 this.recording = false;
                 
                 console.log("Stop recording");
-                capture.classList.remove("stop");
                 // Back to initial values
                 //capture.innerHTML = " <i class='bi bi-record-circle' style= 'margin:5px; font-size:initial;'></i> Start recording";
                 // capture.style.removeProperty("background-color");
                 // capture.style.removeProperty("border");
-                videoCanvas.style.removeProperty("border");
-                
+                //videoCanvas.style.removeProperty("border");
                 this.mediaRecorder.stop();
+                
+                videoCanvas.classList.remove("border-animation");
+                capture.classList.remove("stop");
+
                 
                 if(MediaPipe.landmarks.length) {
                     

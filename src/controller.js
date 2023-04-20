@@ -109,7 +109,7 @@ class Controller {
              
     }
 
-    updateTracks() {
+    updateTracks(trackIdx) {
 
         let timeline = this.editor.gui.NMFtimeline;
         
