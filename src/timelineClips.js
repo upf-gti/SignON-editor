@@ -1074,7 +1074,7 @@ FaceEmotionClip.prototype.showInfo = function(panel, callback)
 }
 //FacePresetClip
 FacePresetClip.type = "facePreset";
-FacePresetClip.facePreset = ["Yes/No-Question", "Negative", "WH-word Questions", "Topic", "RH-Questions", "Angry", "Happy", "Fear", "Sad", "Surprise"];
+FacePresetClip.facePreset = ["Yes/No-Question", "Negative", "WH-word Questions", "Topic", "RH-Questions", "Anger", "Happiness", "Fear", "Sadness", "Surprise", "Disgust", "Contempt"];
 FacePresetClip.customPresets = {};
 function FacePresetClip(o)
 {
@@ -1160,22 +1160,22 @@ FacePresetClip.prototype.addPreset = function(preset){
 			clip = new FaceLexemeClip({lexeme: "BROW_LOWERER", start: this.start, duration: this.duration, properties: { amount: 1}});
 			this.clips.push(clip);
 
-			clip = new FaceLexemeClip({lexeme: "OUTER_BROW_RAISER", start: this.start, duration: this.duration, properties: { amount: 1}});
+			clip = new FaceLexemeClip({lexeme: "UPPER_LID_RAISER", start: this.start, duration: this.duration, properties: { amount: 1}});
 			this.clips.push(clip);
 
-			clip = new FaceLexemeClip({lexeme: "JAW_DROP", start: this.start, duration: this.duration, properties: { amount: 1}});
+			clip = new FaceLexemeClip({lexeme: "LID_TIGHTENER", start: this.start, duration: this.duration, properties: { amount: 1}});
 			this.clips.push(clip);
 
-			clip = new FaceLexemeClip({lexeme: "LIP_STRECHER", start: this.start, duration: this.duration, properties: { amount: 1}});
+			clip = new FaceLexemeClip({lexeme: "LIP_TIGHTENER", start: this.start, duration: this.duration, properties: { amount: 0.8}});
 			this.clips.push(clip);
 
 			break;
 
 		case "Happy":
-			clip = new FaceLexemeClip({lexeme: "CHEEK_RAISER", start: this.start, duration: this.duration, properties: { amount: 1}});
+			clip = new FaceLexemeClip({lexeme: "CHEEK_RAISER", start: this.start, duration: this.duration, properties: { amount: 0.3}});
 			this.clips.push(clip);
 
-			clip = new FaceLexemeClip({lexeme: "LIP_CORNER_PULLER", start: this.start, duration: this.duration, properties: { amount: 1}});
+			clip = new FaceLexemeClip({lexeme: "LIP_CORNER_PULLER", start: this.start, duration: this.duration, properties: { amount: 0.8}});
 			this.clips.push(clip);
 			break;
 
@@ -1183,45 +1183,72 @@ FacePresetClip.prototype.addPreset = function(preset){
 			clip = new FaceLexemeClip({lexeme: "INNER_BROW_RAISER", start: this.start, duration: this.duration, properties: { amount: 1}});
 			this.clips.push(clip);
 
-			clip = new FaceLexemeClip({lexeme: "DIMPLER", start: this.start, duration: this.duration, properties: { amount: 1}});
+			clip = new FaceLexemeClip({lexeme: "BROW_LOWERER", start: this.start, duration: this.duration, properties: { amount: 0.8}});
+			this.clips.push(clip);
+
+			clip = new FaceLexemeClip({lexeme: "LIP_CORNER_DEPRESSOR", start: this.start, duration: this.duration, properties: { amount: 0.5}});
 			this.clips.push(clip);
 
 			break;
 
 		case "Fear":
 
-			clip = new FaceLexemeClip({lexeme: "INNER_BROW_RAISER", start: this.start, duration: this.duration, properties: { amount: 0.6}});
+			clip = new FaceLexemeClip({lexeme: "INNER_BROW_RAISER", start: this.start, duration: this.duration, properties: { amount: 0.8}});
 			this.clips.push(clip);
 
-			clip = new FaceLexemeClip({lexeme: "BROW_LOWERER", start: this.start, duration: this.duration, properties: { amount: 0.5}});
+			clip = new FaceLexemeClip({lexeme: "OUTER_BROW_RAISER", start: this.start, duration: this.duration, properties: { amount: 0.8}});
 			this.clips.push(clip);
 
-			clip = new FaceLexemeClip({lexeme: "UPPER_LID_RAISER", start: this.start, duration: this.duration, properties: { amount: 0.5}});
-			this.clips.push(clip);
-
-			clip = new FaceLexemeClip({lexeme: "MOUTH_OPEN", start: this.start, duration: this.duration, properties: { amount: 0.25}});
-			this.clips.push(clip);
-
-			clip = new FaceLexemeClip({lexeme: "LID_TIGHTENER", start: this.start, duration: this.duration, properties: { amount: 0.5}});
-			this.clips.push(clip);
-
-			clip = new FaceLexemeClip({lexeme: "LIP_STRECHER", start: this.start, duration: this.duration, properties: { amount: 0.5}});
-			this.clips.push(clip);
-			break;
-
-		case "Surprise":
 			clip = new FaceLexemeClip({lexeme: "BROW_LOWERER", start: this.start, duration: this.duration, properties: { amount: 1}});
-			this.clips.push(clip);
-
-			clip = new FaceLexemeClip({lexeme: "OUTER_BROW_RAISER", start: this.start, duration: this.duration, properties: { amount: 1}});
 			this.clips.push(clip);
 
 			clip = new FaceLexemeClip({lexeme: "UPPER_LID_RAISER", start: this.start, duration: this.duration, properties: { amount: 1}});
 			this.clips.push(clip);
 
+			clip = new FaceLexemeClip({lexeme: "LID_TIGHTENER", start: this.start, duration: this.duration, properties: { amount: 0.8}});
+			this.clips.push(clip);
+
+			clip = new FaceLexemeClip({lexeme: "LIP_STRECHER", start: this.start, duration: this.duration, properties: { amount: 0.5}});
+			this.clips.push(clip);
+			
+			clip = new FaceLexemeClip({lexeme: "JAW_DROP", start: this.start, duration: this.duration, properties: { amount: 0.5}});
+			this.clips.push(clip);
+			break;
+
+		case "Surprise":
+			clip = new FaceLexemeClip({lexeme: "INNER_BROW_RAISER", start: this.start, duration: this.duration, properties: { amount: 0.8}});
+			this.clips.push(clip);
+
+			clip = new FaceLexemeClip({lexeme: "OUTER_BROW_RAISER", start: this.start, duration: this.duration, properties: { amount: 1}});
+			this.clips.push(clip);
+
+			clip = new FaceLexemeClip({lexeme: "UPPER_LID_RAISER", start: this.start, duration: this.duration, properties: { amount: 0.5}});
+			this.clips.push(clip);
+
 			clip = new FaceLexemeClip({lexeme: "JAW_DROP", start: this.start, duration: this.duration, properties: { amount: 1}});
 			this.clips.push(clip);
 			break;
+
+		case "Disgust":
+			clip = new FaceLexemeClip({lexeme: "NOSE_WRINKLER", start: this.start, duration: this.duration, properties: { amount: 0.8}});
+			this.clips.push(clip);
+
+			clip = new FaceLexemeClip({lexeme: "LIP_CORNER_DEPRESSOR", start: this.start, duration: this.duration, properties: { amount: 0.5}});
+			this.clips.push(clip);
+
+			clip = new FaceLexemeClip({lexeme: "CHIN_RAISER", start: this.start, duration: this.duration, properties: { amount: 0.8}});
+			this.clips.push(clip);
+			break;
+		
+		case "Contempt":
+			clip = new FaceLexemeClip({lexeme: "LIP_CORNER_PULLER_RIGHT", start: this.start, duration: this.duration, properties: { amount: 0.8}});
+			this.clips.push(clip);
+
+			clip = new FaceLexemeClip({lexeme: "DIMPLER_RIGHT", start: this.start, duration: this.duration, properties: { amount: 0.5}});
+			this.clips.push(clip);
+
+			break;
+	
 	}
 	if(!clip && FacePresetClip.customPresets[preset])
 	{

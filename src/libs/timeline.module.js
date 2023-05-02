@@ -52,6 +52,7 @@ function Timeline( clip, bone_name, timeline_mode = "tracks" , position = [0,0],
 		this.processTracks();
 
 	this.onDrawContent = ( ctx, time_start, time_end, timeline) => {
+		ctx.save();
 		if(this.timeline_mode == "tracks") {
 
 			if(this.selected_bone == null)
@@ -78,10 +79,11 @@ function Timeline( clip, bone_name, timeline_mode = "tracks" , position = [0,0],
 				this.drawTrackWithBoxes(ctx, (i+1) * height, height, track.name || "", track, i);
 			}
 		}
+		ctx.restore();
 		let offset = 25;
 		ctx.fillStyle = 'white';
 		if(this.name)
-			ctx.fillText(this.name, 9 + offset * this._buttons_drawn.length, -this.top_margin*0.5 );
+			ctx.fillText(this.name, 9 + ctx.measureText(this.name).actualBoundingBoxLeft + offset * this._buttons_drawn.length, -this.top_margin*0.5 );
 	};
 
 	this.autoKeyButtonImg = document.createElement('img');
@@ -521,12 +523,36 @@ Timeline.prototype.deleteClip = function (clip, callback) {
 	if(clipIdx >= 0)
 	{
 		clips = [...clips.slice(0, clipIdx), ...clips.slice(clipIdx + 1, clips.length)]
-		this.clip.tracks[trackIdx].clips = clips;
+		if(clips.length)
+			this.clip.tracks[trackIdx].clips = clips;
+		else{
+			this.clip.tracks = [...this.clip.tracks.slice(0, trackIdx), ...this.clip.tracks.slice(trackIdx + 1, this.clip.tracks.length)];
+			for(let i = trackIdx; i < this.clip.tracks.length; i++)
+			{
+				for(let j = 0; j < this.clip.tracks[i].clips.length; j++)
+				{
+
+					this.clip.tracks[i].clips[j].trackIdx = j;
+				}
+			}
+			let selectedIdx = 0;
+			for(let i = 0; i < this._lastClipsSelected.length; i++)
+			{
+				let [t,c] = this._lastClipsSelected[i];
+				if(t > trackIdx)
+					this._lastClipsSelected[i][0] = t - 1;
+				if(t == trackIdx)
+					selectedIdx = t;
+			}
+			this._lastClipsSelected = [...this._lastClipsSelected.slice(0, selectedIdx), ...this._lastClipsSelected.slice(selectedIdx + 1, this._lastClipsSelected.length)];
+		}
 		if(callback)
 			callback();
 	}
 	this.selected_clip = null;
-	this.unSelectAllClips();
+	//this.unSelectAllClips();
+	// // Update animation action interpolation info
+
 }
 
 Timeline.prototype._delete = function( track, index ) {
@@ -1666,17 +1692,17 @@ Timeline.prototype.drawTrackWithBoxes = function (ctx, y, track_height, title, t
 			ctx.globalAlpha = track_alpha;
 			if(this.selected_clip == clip || track.selected[j])
 				selected_clip_area = [x,y,x2-x,track_height ]
+			//render clip selection area
+			if(selected_clip_area)
+			{
+				ctx.strokeStyle = track.clips[j].clip_color;
+				ctx.globalAlpha = 0.8;
+				ctx.lineWidth = 1;
+				roundedRect(ctx, selected_clip_area[0]-1,selected_clip_area[1]-1,selected_clip_area[2]+2,selected_clip_area[3]+2, 5, false);
+				ctx.strokeStyle = "#888";
+				ctx.lineWidth = 0.5;
+				ctx.globalAlpha = 1;
 		}
-		//render clip selection area
-		if(selected_clip_area)
-		{
-			ctx.strokeStyle = this.selected_clip.color;
-			ctx.globalAlpha = 0.8;
-			ctx.lineWidth = 1;
-			roundedRect(ctx, selected_clip_area[0]-1,selected_clip_area[1]-1,selected_clip_area[2]+2,selected_clip_area[3]+2, 5, false);
-			ctx.strokeStyle = "#888";
-			ctx.lineWidth = 0.5;
-			ctx.globalAlpha = 1;
 		}
 	}
 

@@ -593,4 +593,4 @@ dark mode:
 	from {border: solid var(--global-color-highlight);}
 	50% {border: solid var(--global-color-primary);}
 	to {border: solid var(--global-color-highlight);}
-  }
+}

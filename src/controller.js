@@ -95,7 +95,7 @@ class Controller {
                     for (let j = 0; j < lexeme.indicesLex[i].length; j++) {
                         let value = lexeme.currentLexBSW[i][j];
                         let index = lexeme.indicesLex[i][j];
-                        this.morphTargets[index] += Math.abs(value); // denominator of biased average
+                        this.morphTargets[index] += value; // denominator of biased average
                     }
                 }
             }

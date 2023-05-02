@@ -130,10 +130,11 @@ class Gui {
                     {
                         title: "Delete" + " <i class='bi bi-trash float-right'></i>",
                         callback: () => {
-                            let clipstToDelete = [...this.NMFtimeline._lastClipsSelected];
+                            let clipstToDelete = this.NMFtimeline._lastClipsSelected;
                             for(let i = 0; i < clipstToDelete.length; i++){
                                 this.NMFtimeline.deleteClip(clipstToDelete[i], this.showClipInfo.bind(this));
                             }
+                            this.editor.NMFController.updateTracks();
                         }
                     }
                 )
@@ -352,7 +353,10 @@ class Gui {
                 this.NMFtimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
                 this.NMFtimeline.onSetDuration = (t) => {this.timeline.duration = this.timeline.clip.duration = t};
                 this.NMFtimeline.onSelectClip = this.showClipInfo.bind(this);
-                this.NMFtimeline.onClipMoved = ()=> this.editor.NMFController.updateTracks.bind(this.editor.NMFController);
+                this.NMFtimeline.onClipMoved = ()=> {
+                    this.editor.NMFController.updateTracks.bind(this.editor.NMFController);
+                    this.NMFtimeline.onSetTime(this.NMFtimeline.current_time) 
+                };
                 this.NMFtimeline.clip = {duration: this.timeline.duration, tracks: []};
                 // this.NMFtimeline.addClip( new ANIM.FaceLexemeClip());
                 
@@ -365,7 +369,7 @@ class Gui {
             this.timeline.active = false;
             console.log(this.timeline.size)
             let c = document.getElementById("timeline")
-            c.style.height =  this.timelineCTX.canvas.height*2 + 'px';
+            c.style.height =  this.timelineCTX.canvas.height*2 + 20 + 'px';
             let canvas = document.getElementById("timelineNMFCanvas")
             canvas.style.display =  'block';
             console.log(this.timeline.size)
@@ -646,8 +650,12 @@ class Gui {
         e.classList.remove("video-area");
         
         let i = document.getElementById("expand-capture-gui");
-        i.hidden = true;
+        i.classList.add("hidden");
+
+        let ci = document.getElementById("capture-inspector");
+        ci.classList.add("hidden");
     }
+
     createSidePanel() {
         this.mainArea.split("horizontal", [null,"300px"], true);
         var docked = new LiteGUI.Panel("sidePanel", {title: 'Skeleton', scroll: true});
@@ -1141,7 +1149,7 @@ updateBoneProperties() {
         if(this.NMFtimeline)
         {
            
-            this.NMFtimeline.draw(this.timelineNMFCTX, this.current_time, [0, 0, this.timelineNMFCTX.canvas.width, this.timelineNMFCTX.canvas.height-50], false);    
+            this.NMFtimeline.draw(this.timelineNMFCTX, this.current_time, [0, 0, this.timelineNMFCTX.canvas.width, this.timelineNMFCTX.canvas.height], false);    
         }
         
     }
