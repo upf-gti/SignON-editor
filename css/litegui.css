@@ -1596,6 +1596,7 @@ button.litebutton {
 
 button.litebutton.selected {
 	background-color: var(--global-color-primary);
+	border: 0.01em solid var(--global-color-selected-secondary);
 }
 
 button.litebutton:active, button.litebutton:focus {

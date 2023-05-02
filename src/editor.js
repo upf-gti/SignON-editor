@@ -41,9 +41,10 @@ class Editor {
         this.mode = this.eModes.MF;
         this.NMFController = null;
 
-        this.boneUseDepthBuffer = false;
+        this.boneUseDepthBuffer = true;
         this.showHUD = true;
         this.showSkin = true; // defines if the model skin has to be rendered
+        this.showSkeleton = true;
         this.animLoop = true;
         this.character = "";
         
@@ -544,7 +545,7 @@ class Editor {
                         break;
                     default: 
                         content = document.createElement("i");
-                        content.className = 'bi bi-' + b.icon;
+                        content.className = b.icon;
                 }
             }
 
