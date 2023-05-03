@@ -119,6 +119,8 @@ class Gizmo {
 
         this.toolSelected = Gizmo.Tools.joint;
         this.mode = "rotate";
+
+        this.enabled = true;
     }
 
     begin(skeletonHelper) {
@@ -377,7 +379,7 @@ class Gizmo {
 
         canvas.addEventListener( 'pointerdown', e => {
 
-            if(e.button != 0 || !this.bonePoints || this.editor.state || (!this.raycastEnabled && !e.ctrlKey))
+            if(!this.enabled || e.button != 0 || !this.bonePoints || this.editor.state || (!this.raycastEnabled && !e.ctrlKey))
             return;
 
             const pointer = new THREE.Vector2(( e.offsetX / canvas.clientWidth ) * 2 - 1, -( e.offsetY / canvas.clientHeight ) * 2 + 1);
@@ -475,8 +477,18 @@ class Gizmo {
         });
     }
     
+    enable ( ) {
+        this.enabled = true;
+    }
+
+    disable ( ) {
+        this.enabled = false;
+        this.stop();
+    }
+
     update(state, dt) {
 
+        if(!this.enabled) return;
         if(state) this.updateBones(dt);
 
         //this.ikHelper.update();

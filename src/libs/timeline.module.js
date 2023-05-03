@@ -55,11 +55,11 @@ function Timeline( clip, bone_name, timeline_mode = "tracks" , position = [0,0],
 		ctx.save();
 		if(this.timeline_mode == "tracks") {
 
-			if(this.selected_bone == null)
+			if(this.selected_bone == null || !this.tracksPerBone)
 			return;
 			
-			let tracks = this.tracksPerBone[this.selected_bone];
-			if(!tracks) return;
+			let tracks = this.tracksPerBone[this.selected_bone] ? this.tracksPerBone[this.selected_bone] : [{name: this.selected_bone}];
+			//if(!tracks) return;
 			
 			const height = this.track_height;
 			for(let i = 0; i < tracks.length; i++) {
@@ -173,8 +173,8 @@ Timeline.prototype.processTracks = function () {
 }
 
 Timeline.prototype.getNumTracks = function(bone) {
-	if(!bone)
-	return;
+	if(!bone || !this.tracksPerBone)
+		return;
 	const tracks = this.tracksPerBone[bone.name];
 	return tracks ? tracks.length : null;
 }
@@ -423,7 +423,10 @@ Timeline.prototype.addClip = function( clip, offsetTime = 0, callback = null) {
 
 	// Update clip information
 	let track_idx = null;
-	clip.start = this.current_time + offsetTime;
+	let newStart = this.current_time + offsetTime
+	clip.attackPeak += (newStart - clip.start);
+	clip.relax += (newStart - clip.start);
+	clip.start = newStart;
 	// Time slot with other key?
 	let keyInCurrentSlot = null;
 	if(!this.clip) 
@@ -1257,8 +1260,11 @@ Timeline.prototype.processMouse = function (e) {
 					
 					var clip = this.timeline_clicked_clips[i] ;
 					var diff = delta;//this.current_time - this.timeline_clicked_clips_time[i];//delta;
-					if( this.drag_clip_mode == "move" )
+					if( this.drag_clip_mode == "move" ) {
 						clip.start += diff;
+						clip.attackPeak += diff;
+						clip.relax += diff;
+					}
 					else if( this.drag_clip_mode == "fadein" )
 						clip.fadein = (clip.fadein || 0) + diff;
 					else if( this.drag_clip_mode == "fadeout" )
@@ -1565,7 +1571,7 @@ Timeline.prototype.drawTrackWithKeyframes = function (ctx, y, track_height, titl
 	}
 
 	ctx.fillStyle = "rgba(10,200,200,1)";
-	var keyframes = this.clip.tracks[track.clip_idx].times;
+	var keyframes = track.clip_idx != undefined ? this.clip.tracks[track.clip_idx].times : null;
 
 	if(keyframes) {
 		

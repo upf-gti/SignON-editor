@@ -304,7 +304,7 @@ const BVHExporter = {
                 console.log(bvh);
                 break;
             default:
-                this.download(bvh, 'NMFsign.bvh', 'text/plain');
+                this.download(bvh, 'NMFsign.bvhe', 'text/plain');
                 break;
         }
     },

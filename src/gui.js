@@ -18,8 +18,9 @@ class Gui {
 
     loadClip( clip ) {
 
-        this.clip = clip;
-        this.duration = clip.duration;
+            
+        this.clip = clip || { duration: 1};
+        this.duration =  this.clip.duration;
 
         let boneName = null;
         if(this.editor.skeletonHelper.bones.length) {
@@ -30,7 +31,7 @@ class Gui {
         this.timeline.framerate = 30;
         this.timeline.setScale(400);
         this.timeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
-        this.timeline.onSetDuration = (t) => {this.timeline.duration = this.clip.duration = this.editor.animationClip.duration = t};
+        this.timeline.onSetDuration = (t) => {this.duration = this.timeline.duration = this.clip.duration = this.editor.animationClip.duration = t};
         this.timeline.onSelectKeyFrame = (e, info, index) => {
             if(e.button != 2) {
                 //this.editor.gizmo.mustUpdate = true
@@ -332,17 +333,19 @@ class Gui {
 
     changeEditorMode(mode)
     {
-        this.editor.mode = mode;
+        if(this.editor.onChangeMode)
+            this.editor.onChangeMode(mode);
+
         let splitbar = document.getElementById("timeline-splitbar");
         let menubar = window.menubar.findMenu("Editor");
         let mfmenu = window.menubar.findMenu("Editor/Manual Features");
-        let nmfmenu = window.menubar.findMenu("Editor/Non-Manual Features")
-        if(this.editor.mode == this.editor.eModes.NMF){
+        let nmfmenu = window.menubar.findMenu("Editor/Non-Manual Features");
+
+        if(mode == this.editor.eModes.NMF){
             mfmenu.data.checkbox = false;
             mfmenu.enable();
             nmfmenu.disable();
             window.menubar.showMenu( menubar, null, menubar.element, false );
-            
 
             if(!this.NMFtimeline) {
                         
@@ -351,10 +354,10 @@ class Gui {
                 this.NMFtimeline.framerate = 30;
                 this.NMFtimeline.setScale(400);
                 this.NMFtimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
-                this.NMFtimeline.onSetDuration = (t) => {this.timeline.duration = this.timeline.clip.duration = t};
+                this.NMFtimeline.onSetDuration = (t) => {this.duration = this.timeline.duration = this.timeline.clip.duration = t};
                 this.NMFtimeline.onSelectClip = this.showClipInfo.bind(this);
                 this.NMFtimeline.onClipMoved = ()=> {
-                    this.editor.NMFController.updateTracks.bind(this.editor.NMFController);
+                    this.editor.NMFController.updateTracks();
                     this.NMFtimeline.onSetTime(this.NMFtimeline.current_time) 
                 };
                 this.NMFtimeline.clip = {duration: this.timeline.duration, tracks: []};
@@ -362,22 +365,23 @@ class Gui {
                 
                 this.NMFtimeline.onUpdateTrack = this.editor.NMFController.updateTracks.bind(this.editor.NMFController);
                 this.editor.NMFController.begin(this.NMFtimeline);
-                
+                this.showNMFGuide();
                 
             }
             splitbar.classList.remove("hidden");
             this.timeline.active = false;
-            console.log(this.timeline.size)
             let c = document.getElementById("timeline")
             c.style.height =  this.timelineCTX.canvas.height*2 + 20 + 'px';
             let canvas = document.getElementById("timelineNMFCanvas")
             canvas.style.display =  'block';
-            console.log(this.timeline.size)
             let canvasArea = document.getElementById("canvasarea");
             this.editor.resize(canvasArea.clientWidth, canvasArea.clientHeight);
             
             if(this.NMFtimeline.selected_clip)
-                this.showClipInfo(this.NMFtimeline.selected_clip)
+                this.showClipInfo(this.NMFtimeline.selected_clip);
+            this.updateSidePanel();
+            document.querySelector("[title='skeleton']").click()
+
         }
         else{
             splitbar.classList.add("hidden");
@@ -392,9 +396,11 @@ class Gui {
             window.menubar.showMenu( menubar, null, menubar.element, false );
             
             if(this.item_selected != undefined)
-                this.updateSidePanel(this.sidePanel, this.item_selected)
+                this.updateSidePanel(this.sidePanel, this.item_selected);
+            
+            document.querySelector("[title='skeleton']").click()
         }
-        //this.updateMenubar();
+        
     }
 
     createCaptureGUI()
@@ -489,7 +495,7 @@ class Gui {
         // div.getElementById("warnings").appendChild(button);
         //captureArea.appendChild( div );
         let videoArea = document.getElementById("video-area");
-       videoArea.classList.add("video-area");
+        videoArea.classList.add("video-area");
 
         let i = document.createElement("i");
         i.id = "expand-capture-gui";
@@ -613,35 +619,6 @@ class Gui {
             progressBarRH.classList.add("bg-warning")
         else 
             progressBarRH.classList.add("bg-success")
-
-        // if(torsoCondition) 
-        // {
-        //     infoDistance.getElementsByTagName("i")[0].classList.remove("fa-check");
-        //     infoDistance.getElementsByTagName("i")[0].classList.add("fa-exclamation-triangle");
-        // } else {
-        //     infoDistance.getElementsByTagName("i")[0].classList.add("fa-exclamation-triangle");
-        //     infoDistance.getElementsByTagName("i")[0].classList.remove("fa-check");
-        // }
-        // if(handsCondition) 
-        // {
-        //     infoHands.getElementsByTagName("i")[0].classList.remove("fa-check");
-        //     infoHands.getElementsByTagName("i")[0].classList.add("fa-exclamation-triangle");
-        // }else{
-        //     infoHands.getElementsByTagName("i")[0].classList.add("fa-exclamation-triangle");
-        //     infoHands.getElementsByTagName("i")[0].classList.remove("fa-check");
-        // } 
-        // let message = `
-        // ${(torsoCondition) ? 'You are too close to the camera.\n': ''}
-        // ${(handsCondition) ? 'Your hands are too near to the bottom margin.\n': ''}
-        // `;
-        // console.log(message)
-        // canvasCtx.fillStyle = 'rgba(125,125,0, 0.6)';
-        // //canvasCtx.scale(-1, 1);
-        // canvasCtx.fillRect(0, 0, canvasElement.width, 80);   
-        // canvasCtx.fillStyle = 'white';
-        // // canvasCtx.translate(0, canvasElement.width);
-        // canvasCtx.font = "20px serif";
-        // canvasCtx.fillText( message, 10,  40);
         
     }
 
@@ -768,30 +745,36 @@ class Gui {
 
             if(bone_selected) {
 
+                let disabled = false;
+                if(this.editor.mode == this.editor.eModes.NMF)
+                    disabled = true;
+                 
                 const numTracks = this.timeline.getNumTracks(bone_selected);
-                const _Tools = this.editor.hasGizmoSelectedBoneIk() ? ["Joint", "Follow"] : ["Joint"];
-                
-                widgets.addSection("Gizmo", { pretitle: makePretitle('gizmo'), settings: (e) => this.openSettings( 'gizmo' ), settings_title: "<i class='bi bi-gear-fill section-settings'></i>" });
-                
-                widgets.addButtons( "Tool", _Tools, { selected: this.editor.getGizmoTool(), name_width: "50%", width: "100%", callback: (v) => {
-                    if(this.editor.getGizmoTool() != v) this.editor.setGizmoTool(v);
-                }});
-                
-                if( this.editor.getGizmoTool() == "Joint" ){
-                    const _Modes = numTracks > 1 ? ["Translate","Rotate"] : ["Rotate"];
-                    if( numTracks <= 1 ){ this.editor.setGizmoMode("Rotate"); }
-                    widgets.addButtons( "Mode", _Modes, { selected: this.editor.getGizmoMode(), name_width: "50%", width: "100%", callback: (v) => {
-                        if(this.editor.getGizmoMode() != v) this.editor.setGizmoMode(v);
+                if(!disabled) {
+                    const _Tools = this.editor.hasGizmoSelectedBoneIk() ? ["Joint", "Follow"] : ["Joint"];
+                    
+                    widgets.addSection("Gizmo", { pretitle: makePretitle('gizmo'), settings: (e) => this.openSettings( 'gizmo' ), settings_title: "<i class='bi bi-gear-fill section-settings'></i>" });
+                    
+                    widgets.addButtons( "Tool", _Tools, { selected: this.editor.getGizmoTool(), name_width: "50%", width: "100%", callback: (v) => {
+                        if(this.editor.getGizmoTool() != v) this.editor.setGizmoTool(v);
                     }});
-                }
-
-                widgets.addButtons( "Space", ["Local","World"], { selected: this.editor.getGizmoSpace(), name_width: "50%", width: "100%", callback: (v) => {
-                    if(this.editor.getGizmoSpace() != v) this.editor.setGizmoSpace(v);
-                }});
-
-                widgets.addCheckbox( "Snap", this.editor.isGizmoSnapActive(), {callback: () => this.editor.toggleGizmoSnap() } );
-
-                widgets.addSeparator();
+                    
+                    if( this.editor.getGizmoTool() == "Joint" ){
+                        const _Modes = numTracks > 1 ? ["Translate","Rotate"] : ["Rotate"];
+                        if( numTracks <= 1 ){ this.editor.setGizmoMode("Rotate"); }
+                        widgets.addButtons( "Mode", _Modes, { selected: this.editor.getGizmoMode(), name_width: "50%", width: "100%", callback: (v) => {
+                            if(this.editor.getGizmoMode() != v) this.editor.setGizmoMode(v);
+                        }});
+                    }
+    
+                    widgets.addButtons( "Space", ["Local","World"], { selected: this.editor.getGizmoSpace(), name_width: "50%", width: "100%", callback: (v) => {
+                        if(this.editor.getGizmoSpace() != v) this.editor.setGizmoSpace(v);
+                    }});
+    
+                    widgets.addCheckbox( "Snap", this.editor.isGizmoSnapActive(), {callback: () => this.editor.toggleGizmoSnap() } );
+    
+                    widgets.addSeparator();
+                }    
 
                 const innerUpdate = (attribute, value) => {
                     bone_selected[attribute].fromArray( value ); 
@@ -805,14 +788,14 @@ class Gui {
                 // Only edit position for root bone
                 if(bone_selected.children.length && bone_selected.parent.constructor !== bone_selected.children[0].constructor) {
                     widgets.addTitle("Position");
-                    this.boneProperties['position'] = widgets.addVector3(null, bone_selected.position.toArray(), {disabled: this.editor.state, precision: 3, className: 'bone-position', callback: (v) => innerUpdate("position", v)});
+                    this.boneProperties['position'] = widgets.addVector3(null, bone_selected.position.toArray(), {disabled: this.editor.state || disabled, precision: 3, className: 'bone-position', callback: (v) => innerUpdate("position", v)});
                 }
 
                 widgets.addTitle("Rotation (XYZ)");
-                this.boneProperties['rotation'] = widgets.addVector3(null, bone_selected.rotation.toArray(), {disabled: this.editor.state, precision: 3, className: 'bone-euler', callback: (v) => innerUpdate("rotation", v)});
+                this.boneProperties['rotation'] = widgets.addVector3(null, bone_selected.rotation.toArray(), {disabled: this.editor.state || disabled, precision: 3, className: 'bone-euler', callback: (v) => innerUpdate("rotation", v)});
 
                 widgets.addTitle("Quaternion");
-                this.boneProperties['quaternion'] = widgets.addVector4(null, bone_selected.quaternion.toArray(), {disabled: this.editor.state, precision: 3, className: 'bone-quaternion', callback: (v) => innerUpdate("quaternion", v)});
+                this.boneProperties['quaternion'] = widgets.addVector4(null, bone_selected.quaternion.toArray(), {disabled: this.editor.state || disabled, precision: 3, className: 'bone-quaternion', callback: (v) => innerUpdate("quaternion", v)});
             }
         };
 
@@ -898,6 +881,11 @@ class Gui {
         }, {title: "Create preset"} )
     }
 
+    showNMFGuide() {
+        //let dialog = new LiteGUI.Dialog();
+        LiteGUI.popup("Right click on the Non-Manual Features timeline to create a new clip. You can create a clip from a selected lexeme or from a preset configuration.")
+    }
+
     showClipInfo(clip)
     {
         this.clip_in_panel = clip;
@@ -938,25 +926,25 @@ class Gui {
             inspector.addNumber("Duration", clip.duration, {min:0.01, step:0.01, callback: (v) =>
             {
                 this.clip_in_panel.duration = v;
-                clip.relax = Math.min(v, clip.relax);
-                clip.attackPeak = Math.min(v, clip.attackPeak);
+                clip.relax = Math.min(v +   clip.start, clip.relax);
+                clip.attackPeak = Math.min(v +  clip.start, clip.attackPeak);
                 updateTracks();
             }})
             inspector.addSection("Sync points");
             if(clip.attackPeak != undefined)
             {
-                inspector.addNumber("Attack Peak", clip.attackPeak, {min:0, max: clip.duration, step:0.01, callback: (v) =>
+                inspector.addNumber("Attack Peak", clip.attackPeak - clip.start, {min:0, max: clip.relax - clip.start, step:0.01, callback: (v) =>
                     {              
-                       clip.attackPeak = v;
+                       clip.attackPeak = v + clip.start;
                        updateTracks();
                     }})
             }
             if(clip.relax != undefined) 
             {
-                inspector.addNumber("Relax", clip.relax, {min: clip.attackPeak, max: clip.duration, step:0.01, callback: (v) =>
+                inspector.addNumber("Relax", clip.relax  - clip.start, {min: clip.attackPeak - clip.start, max: clip.duration , step:0.01, callback: (v) =>
                     {              
-                       clip.relax = v;
-                       clip.attackPeak = Math.min(v, clip.attackPeak);
+                       clip.relax = v + clip.start;
+                       clip.attackPeak = Math.min(clip.relax, clip.attackPeak);
                        updateTracks();
                     }})
             }
@@ -1013,7 +1001,7 @@ class Gui {
                     }
                 }
             }
-            inspector.addButton(null, "Delete", () => this.NMFtimeline.deleteClip(clip, () => {clip = null; updateTracks()}));
+            inspector.addButton(null, "Delete", () => this.NMFtimeline.deleteClip(this.NMFtimeline._lastClipsSelected[0], () => {clip = null; updateTracks()}));
         }
         this.sidePanel.content.replaceChild(inspector.root, this.sidePanel.content.getElementsByClassName("inspector")[0]);
 }

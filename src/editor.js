@@ -251,6 +251,16 @@ class Editor {
         }
     }
 
+    onChangeMode(mode) {
+        this.mode = mode;
+        if( this.mode == this.eModes.NMF ) {
+            this.gizmo.disable();
+        }
+        else {
+            this.gizmo.enable();
+        }
+    }
+
     buildAnimation(landmarks) {
 
         // Remove loop mode for the display video
@@ -391,45 +401,60 @@ class Editor {
 
     loadAnimation( animation ) {
 
+        const extension = UTILS.getExtension(animation.name);
         // Canvas UI buttons
         this.createSceneUI();
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
         
         const innerOnLoad = result => {
-            if(urlParams.get('skin') && urlParams.get('skin') == 'true')
+            if(urlParams.get('skin') && urlParams.get('skin') == 'true') {
+                
                 this.loadAnimationWithSkin(result);
-            else
+
+            } else if(!result.skeleton) {
+
+                this.loadAnimationWithSkin(result.skeletonAnim, result.blendshapesAnim);
+
+            } else {
+                
                 this.loadAnimationWithSkeleton(result);
+            }
         };
 
         var reader = new FileReader();
         reader.onload = (e) => {
             const text = e.currentTarget.result;
-            const data = this.loader.parse( text );
+            let data = null;
+            if(extension == 'bvh')
+                data = this.loader.parse( text );
+            else
+                data = this.loader.parseExtended( text );
             innerOnLoad(data);
         };
         reader.readAsText(animation);
     }
 
-    loadAnimationWithSkin(result) {
+    loadAnimationWithSkin(skeletonAnim, blendshapesAnim = null) {
         
-        result.clip.name = UTILS.removeExtension(this.clipName || result.clip.name);
-        this.animationClip = result.clip;
-        let srcSkeleton = result.skeleton; 
-        let tracks = [];
-        
-        // remove position changes (only keep i == 0, hips)
-        for (let i = 0; i < this.animationClip.tracks.length; i++) {
-            if(i && this.animationClip.tracks[i].name.includes('position')) {
-                continue;
+        if( skeletonAnim.skeleton ) {
+            skeletonAnim.clip.name = UTILS.removeExtension(this.clipName || skeletonAnim.clip.name);
+            this.animationClip = skeletonAnim.clip;
+            let srcSkeleton = skeletonAnim.skeleton; 
+            let tracks = [];
+            
+            // remove position changes (only keep i == 0, hips)
+            for (let i = 0; i < this.animationClip.tracks.length; i++) {
+                if(i && this.animationClip.tracks[i].name.includes('position')) {
+                    continue;
+                }
+                tracks.push( this.animationClip.tracks[i] );
             }
-            tracks.push( this.animationClip.tracks[i] );
-        }
 
-        this.animationClip.tracks = tracks;
-        this.retargeting.loadAnimation(srcSkeleton, this.animationClip);
-        //this.retargeting.loadAnimationFromSkeleton(skinnedMesh, this.animationClip);
+            this.animationClip.tracks = tracks;
+            this.retargeting.loadAnimation(srcSkeleton, this.animationClip);
+            //this.retargeting.loadAnimationFromSkeleton(skinnedMesh, this.animationClip);
+        }
         
         // Load the target model (Eva) 
         UTILS.loadGLTF("models/Eva_Y.glb", (gltf) => {
@@ -453,17 +478,23 @@ class Editor {
             // correct model
             model.position.set(0,0.85,0);
             model.rotateOnAxis(new THREE.Vector3(1,0,0), -Math.PI/2);
-            
-            this.animationClip = this.retargeting.createAnimation(model);
-            this.mixer = new THREE.AnimationMixer(model);
-            this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
-
-            // guizmo stuff
-            updateThreeJSSkeleton(this.retargeting.tgtBindPose);
-
-            this.skeletonHelper = this.retargeting.tgtSkeletonHelper;
+            this.skeletonHelper = this.retargeting.tgtSkeletonHelper || new THREE.SkeletonHelper(model);
             this.skeletonHelper.name = "SkeletonHelper";
+            this.mixer = new THREE.AnimationMixer(model);
+            if(this.animationClip)
+            {
+                this.animationClip = this.retargeting.createAnimation(model);
+                
+                this.validateAnimationClip();
+                this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
+                updateThreeJSSkeleton(this.retargeting.tgtBindPose);
+                
+            }
             this.skeletonHelper.skeleton = this.skeleton; //= createSkeleton();
+            
+            if( blendshapesAnim )
+                this.mixer.clipAction(blendshapesAnim.clip).setEffectiveWeight(1.0).play();
+            // guizmo stuff
             
             this.scene.add( model );
             this.scene.add( this.skeletonHelper );
@@ -518,6 +549,29 @@ class Editor {
             this.animate();
             $('#loading').fadeOut();
         } );
+    }
+
+    validateAnimationClip() {
+        let newTracks = [];
+        let tracks = this.animationClip.tracks;
+        let bones = this.skeleton.bones;
+        let bonesNames = [];
+        tracks.map((v) => { bonesNames.push(v.name.split(".")[0])});
+
+        for(let i = 0; i < bones.length; i++)
+        {
+            
+            let name = bones[i].name;
+            if(bonesNames.indexOf( name ) > -1)
+                continue
+            let times = [tracks[0].times[0]];
+            let values = [bones[i].quaternion.x, bones[i].quaternion.y, bones[i].quaternion.z, bones[i].quaternion.w];
+            
+            let track = new THREE.QuaternionKeyframeTrack(name + '.quaternion', times, values);
+            newTracks.push(track);
+            
+        }
+        this.animationClip.tracks = [...this.animationClip.tracks, ...newTracks] ;
     }
 
     createSceneUI() {
@@ -587,10 +641,13 @@ class Editor {
     }
 
     setSelectedBone( name ) {
+
         if(!this.gizmo)
         throw("No gizmo attached to scene");
 
         this.gizmo.setBone(name);
+        if(this.mode == this.eModes.NMF)
+            this.gizmo.stop();
         //this.gizmo.mustUpdate = true;
     }
 

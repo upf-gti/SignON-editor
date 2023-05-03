@@ -25,7 +25,7 @@ const MediaPipe = {
         const canvasElement = document.getElementById("outputVideo");
         const canvasCtx = canvasElement.getContext("2d");
 
-        const holistic = new Holistic({locateFile: (file) => {
+        const holistic = await new Holistic({locateFile: (file) => {
             return `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`;
         }});
 
@@ -75,20 +75,20 @@ const MediaPipe = {
                 // canvasCtx.drawImage(image, 0, 0, canvasElement.width, canvasElement.height);
                 // canvasCtx.globalAlpha = 1;
                 drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,
-                                {color: '#00FF00', lineWidth: 4});
+                    {color: '#1a2025', lineWidth: 4}); //'#00FF00'
                 drawLandmarks(canvasCtx, results.poseLandmarks,
-                                {color: '#FF0000', lineWidth: 2});
+                                {color: 'rgba(58, 161, 156, 0.8)', lineWidth: 1}); //'#00FF00'
                 // drawConnectors(canvasCtx, results.faceLandmarks, FACEMESH_TESSELATION,
                 //                 {color: '#C0C0C070', lineWidth: 1});
                 drawConnectors(canvasCtx, results.leftHandLandmarks, HAND_CONNECTIONS,
-                                {color: '#CC0000', lineWidth: 5});
+                                {color: '#1a2025', lineWidth: 4}); //#CC0000
                 drawLandmarks(canvasCtx, results.leftHandLandmarks,
-                                {color: '#00FF00', lineWidth: 2});
+                                {color: 'rgba(58, 161, 156, 0.8)', lineWidth: 1}); //'#00FF00'
                 drawConnectors(canvasCtx, results.rightHandLandmarks, HAND_CONNECTIONS,
-                                {color: '#00CC00', lineWidth: 5});
+                                {color: '#1a2025', lineWidth: 4}); //#00CC00
                 drawLandmarks(canvasCtx, results.rightHandLandmarks,
-                                {color: '#FF0000', lineWidth: 2});
-                               
+                                {color: 'rgba(58, 161, 156, 0.8)', lineWidth: 1});
+                                        
             }
             canvasCtx.restore();
             if(this.onresults)

@@ -681,8 +681,8 @@ FaceLexemeClip.prototype.drawTimeline = function( ctx, w,h, selected, timeline )
 		// var gradient = ctx.createLinearGradient(0, 0, w, h);
 		
 		// ctx.globalCompositeOperation = "darken";
-		let attack_x = timeline._seconds_to_pixels * this.attackPeak;
-		let relax_x = timeline._seconds_to_pixels * this.relax ;
+		let attack_x = timeline._seconds_to_pixels * (this.attackPeak - this.start);
+		let relax_x = timeline._seconds_to_pixels * (this.relax - this.start);
 		// Add three color stops
 		// gradient.addColorStop(0, "gray");
 		// gradient.addColorStop(attack_x/w, this.clip_color);

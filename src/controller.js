@@ -134,7 +134,7 @@ class Controller {
                 }
             }
         }
-        if(!json.faceLexeme.length) return;
+        
 
         this.lexemes = [];
         //manage bml blocks sync

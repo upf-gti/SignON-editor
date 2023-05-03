@@ -44,6 +44,8 @@ const CanvasButtons = {
                 let skeleton = this.scene.getObjectByName("SkeletonHelper");
                 skeleton.visible = this.showSkeleton;
                 this.scene.getObjectByName('GizmoPoints').visible = this.showSkeleton;
+                if(!this.showSkeleton) 
+                    this.gizmo.stop();
             }
         },
 
