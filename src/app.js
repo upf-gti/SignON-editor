@@ -374,6 +374,10 @@ class App {
 
                 
                 let videoElement = document.getElementById("inputVideo");
+                
+                if(!videoElement.srcObject)
+                    videoElement.srcObject = stream;
+                    
                 scope.mediaRecorder = new MediaRecorder(videoElement.srcObject);
 
                 scope.mediaRecorder.onstop = function (e) {

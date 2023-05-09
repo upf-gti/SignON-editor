@@ -135,6 +135,7 @@ class Gui {
                             for(let i = 0; i < clipstToDelete.length; i++){
                                 this.NMFtimeline.deleteClip(clipstToDelete[i], this.showClipInfo.bind(this));
                             }
+                            this.NMFtimeline.optimizeTracks();
                             this.editor.NMFController.updateTracks();
                         }
                     }
@@ -180,7 +181,7 @@ class Gui {
                                     let [trackIdx, clipIdx] = this.clips_to_copy[i];
                                     let clipToCopy = this.NMFtimeline.clip.tracks[trackIdx].clips[clipIdx];
                                     let clip = new ANIM.FaceLexemeClip(clipToCopy);
-                                    this.NMFtimeline.addClip(clip, clipToCopy.start); 
+                                    this.NMFtimeline.addClip(clip, this.clips_to_copy.length > 1 ? clipToCopy.start : 0); 
                                 }
                                 this.clips_to_copy = null;
                             }
@@ -204,7 +205,8 @@ class Gui {
                 case "Delete": // Spacebar
                     e.preventDefault();
                     e.stopImmediatePropagation();
-                    this.NMFtimeline.deleteClip()
+                    this.NMFtimeline.deleteClip();
+                    this.NMFtimeline.optimizeTracks();
                     break;
             }
         });
@@ -428,28 +430,29 @@ class Gui {
                 title: "Redo video",
                 display: "none",
                 callback: async () => {
-                        // Update header
-                        let capture = document.getElementById("capture_btn");
-                        capture.disabled = true;
-                        capture.style.display = "block";
+                    //     // Update header
+                    //     let capture = document.getElementById("capture_btn");
+                    //     capture.disabled = true;
+                    //     capture.style.display = "block";
 
-                        let trimBtn = document.getElementById("trim_btn");
-                        trimBtn.style.display = "none";
+                    //     let trimBtn = document.getElementById("trim_btn");
+                    //     trimBtn.style.display = "none";
 
-                        // TRIM VIDEO - be sure that only the sign is recorded
-                        let canvas = document.getElementById("outputVideo");
-                        let video = document.getElementById("recording");
-                        let input = document.getElementById("inputVideo");
-                        let live = true;
-                        if(input.src)
-                        {
-                            window.globals.app.onLoadVideo(input.src);
-                        }
-                        else{
-                            await VideoUtils.unbind(() => window.globals.app.init())
+                    //     // TRIM VIDEO - be sure that only the sign is recorded
+                    //     let canvas = document.getElementById("outputVideo");
+                    //     let video = document.getElementById("recording");
+                    //     let input = document.getElementById("inputVideo");
+                    //     let live = true;
+                    //     if(input.src)
+                    //     {
+                    //         window.globals.app.onLoadVideo(input.src);
+                    //     }
+                    //     else{
+                    //         await VideoUtils.unbind(() => window.globals.app.init())
                            
-                        }
-                       // await VideoUtils.unbind();
+                    //     }
+                    //    // await VideoUtils.unbind();
+                    window.location.reload();
                 }
             }
         ];
@@ -1001,7 +1004,7 @@ class Gui {
                     }
                 }
             }
-            inspector.addButton(null, "Delete", () => this.NMFtimeline.deleteClip(this.NMFtimeline._lastClipsSelected[0], () => {clip = null; updateTracks()}));
+            inspector.addButton(null, "Delete", () => this.NMFtimeline.deleteClip(this.NMFtimeline._lastClipsSelected[0], () => {clip = null;  this.NMFtimeline.optimizeTracks(); updateTracks()}));
         }
         this.sidePanel.content.replaceChild(inspector.root, this.sidePanel.content.getElementsByClassName("inspector")[0]);
 }

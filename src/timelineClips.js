@@ -1156,7 +1156,7 @@ FacePresetClip.prototype.addPreset = function(preset){
 			// Tilt head backward and to the side
 			break;
 
-		case "Angry":
+		case "Anger":
 			clip = new FaceLexemeClip({lexeme: "BROW_LOWERER", start: this.start, duration: this.duration, properties: { amount: 1}});
 			this.clips.push(clip);
 
@@ -1171,7 +1171,7 @@ FacePresetClip.prototype.addPreset = function(preset){
 
 			break;
 
-		case "Happy":
+		case "Happiness":
 			clip = new FaceLexemeClip({lexeme: "CHEEK_RAISER", start: this.start, duration: this.duration, properties: { amount: 0.3}});
 			this.clips.push(clip);
 
@@ -1179,7 +1179,7 @@ FacePresetClip.prototype.addPreset = function(preset){
 			this.clips.push(clip);
 			break;
 
-		case "Sad":
+		case "Sadness":
 			clip = new FaceLexemeClip({lexeme: "INNER_BROW_RAISER", start: this.start, duration: this.duration, properties: { amount: 1}});
 			this.clips.push(clip);
 

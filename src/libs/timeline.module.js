@@ -434,7 +434,7 @@ Timeline.prototype.addClip = function( clip, offsetTime = 0, callback = null) {
 
 	for(let i = 0; i < this.clip.tracks.length; i++) {
 		keyInCurrentSlot = this.clip.tracks[i].clips.find( t => { 
-			return CompareThresholdRange(this.current_time, this.current_time + clip.duration, t.start, t.start+t.duration);
+			return CompareThresholdRange(this.current_time, clip.start + clip.duration, t.start, t.start+t.duration);
 			
 		 });
 		if(!keyInCurrentSlot)
@@ -525,30 +525,22 @@ Timeline.prototype.deleteClip = function (clip, callback) {
 	let clips = this.clip.tracks[trackIdx].clips;
 	if(clipIdx >= 0)
 	{
-		clips = [...clips.slice(0, clipIdx), ...clips.slice(clipIdx + 1, clips.length)]
+		clips = [...clips.slice(0, clipIdx), ...clips.slice(clipIdx + 1, clips.length)];
+		this.clip.tracks[trackIdx].clips = clips;
 		if(clips.length)
-			this.clip.tracks[trackIdx].clips = clips;
-		else{
-			this.clip.tracks = [...this.clip.tracks.slice(0, trackIdx), ...this.clip.tracks.slice(trackIdx + 1, this.clip.tracks.length)];
-			for(let i = trackIdx; i < this.clip.tracks.length; i++)
-			{
-				for(let j = 0; j < this.clip.tracks[i].clips.length; j++)
-				{
-
-					this.clip.tracks[i].clips[j].trackIdx = j;
-				}
-			}
+		{
 			let selectedIdx = 0;
 			for(let i = 0; i < this._lastClipsSelected.length; i++)
 			{
 				let [t,c] = this._lastClipsSelected[i];
-				if(t > trackIdx)
-					this._lastClipsSelected[i][0] = t - 1;
-				if(t == trackIdx)
-					selectedIdx = t;
+			
+				if( t == trackIdx  && c > clipIdx)
+					this._lastClipsSelected[i][1] = c - 1;
+				if(t == trackIdx && c == clipIdx)
+					selectedIdx = i;
 			}
 			this._lastClipsSelected = [...this._lastClipsSelected.slice(0, selectedIdx), ...this._lastClipsSelected.slice(selectedIdx + 1, this._lastClipsSelected.length)];
-		}
+		 }
 		if(callback)
 			callback();
 	}
@@ -598,6 +590,33 @@ Timeline.prototype._delete = function( track, index ) {
 	// Update animation action interpolation info
 	if(this.onUpdateTrack)
 		this.onUpdateTrack( clip_idx );
+}
+
+Timeline.prototype.optimizeTracks = function () {
+	
+	let tracks = [];
+	for(let i = 0; i < this.clip.tracks.length; i++)
+	{
+		if(this.clip.tracks[i].clips.length) {
+			this.clip.tracks[i].idx = tracks.length;
+			for(let j = 0; j < this.clip.tracks[i].clips.length; j++)
+			{
+				this.clip.tracks[i].clips[j].trackIdx = tracks.length;
+			}
+			let selectedIdx = 0;
+			for(let l = 0; l < this._lastClipsSelected.length; l++)
+			{
+				let [t,c] = this._lastClipsSelected[l];
+			
+				if(t > i)
+					this._lastClipsSelected[l][1] = t - 1;
+				if(t == i)
+					selectedIdx = l;
+			}
+			this._lastClipsSelected = [...this._lastClipsSelected.slice(0, selectedIdx), ...this._lastClipsSelected.slice(selectedIdx + 1, this._lastClipsSelected.length)];
+			tracks.push(this.clip.tracks[i]);
+		}			
+	}
 }
 
 Timeline.prototype.deleteKeyFrame = function (e, track, index) {
@@ -1333,8 +1352,11 @@ Timeline.prototype.processMouse = function (e) {
 	}
 	else if (e.type == "dblclick" && this.timeline_mode == "clips") {
 		let clipIndex = this.getCurrentClip( track, this.xToTime( local_x ), this._pixels_to_seconds * 5 );
-		if(clipIndex != undefined && this.onSelectClip) {
-			this.onSelectClip(track.clips[clipIndex]);
+		if(clipIndex != undefined)  {
+			this._lastClipsSelected = [track.idx, clipIndex];
+
+			if( this.onSelectClip ) 
+				this.onSelectClip(track.clips[clipIndex]);
 		}
 		
 	}
