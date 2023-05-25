@@ -1,4 +1,4 @@
-import * as THREE from './libs/three.module.js';
+import * as THREE from 'three';
 import { ShaderChunk } from "./utils.js";
 import { TransformControls } from './controls/TransformControls.js';
 import { CCDIKSolver, FABRIKSolver } from "./IKSolver.js"
@@ -119,6 +119,8 @@ class Gizmo {
 
         this.toolSelected = Gizmo.Tools.joint;
         this.mode = "rotate";
+
+        this.enabled = true;
     }
 
     begin(skeletonHelper) {
@@ -377,7 +379,7 @@ class Gizmo {
 
         canvas.addEventListener( 'pointerdown', e => {
 
-            if(e.button != 0 || !this.bonePoints || this.editor.state || (!this.raycastEnabled && !e.ctrlKey))
+            if(!this.enabled || e.button != 0 || !this.bonePoints || this.editor.state || (!this.raycastEnabled && !e.ctrlKey))
             return;
 
             const pointer = new THREE.Vector2(( e.offsetX / canvas.clientWidth ) * 2 - 1, -( e.offsetY / canvas.clientHeight ) * 2 + 1);
@@ -439,10 +441,10 @@ class Gizmo {
                     break;
 
                 case 'z':
-                    if(e.ctrlKey){
+                    if(e.ctrlKey && this.editor.mode == this.editor.eModes.MF){
 
                         if(!this.undoSteps.length)
-                        return;
+                            return;
                         
                         const step = this.undoSteps.pop();
                         for ( let i = 0; i < step.length; ++i){
@@ -474,9 +476,19 @@ class Gizmo {
             }
         });
     }
+    
+    enable ( ) {
+        this.enabled = true;
+    }
+
+    disable ( ) {
+        this.enabled = false;
+        this.stop();
+    }
 
     update(state, dt) {
 
+        if(!this.enabled) return;
         if(state) this.updateBones(dt);
 
         //this.ikHelper.update();
@@ -705,7 +717,7 @@ class Gizmo {
             this.editor.setGizmoSize(v);
         }});
         inspector.addTitle("Bone markers")
-        inspector.addSlider( "Size", this.editor.getGizmoSize(), { min: 0.01, max: 1, step: 0.01, callback: (v) => {
+        inspector.addSlider( "Size", this.editor.getBoneSize(), { min: 0.01, max: 1, step: 0.01, callback: (v) => {
             this.editor.setBoneSize(v);
         }});
 

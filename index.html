@@ -1,136 +1,164 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <meta name="description" content="" />
+        <meta name="author" content="" />
+        <title>Animations Editor</title>
+        <link rel="icon" type="image/x-icon" href="data/imgs/logo_SignON.png" />
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.5.0/font/bootstrap-icons.css" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css?family=Merriweather+Sans:400,700" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css?family=Merriweather:400,300,300italic,400italic,700,700italic" rel="stylesheet" type="text/css" />
+        <link href="https://cdnjs.cloudflare.com/ajax/libs/SimpleLightbox/2.1.0/simpleLightbox.min.css" rel="stylesheet" />
 
-<head>
-	<meta charset="utf-8">
-	<meta name="author" content="UPF-GTI">
-	<title>Animations Editor</title>
-	<link rel="icon" type="image/x-icon" href="data/imgs/logo_SignON.png">
-
-	<link rel="stylesheet" href="css/style.css">
-	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css">
-	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css">
-	<link rel="stylesheet" href="css/litegui.css">
-	<link rel="stylesheet" href="css/jquery-ui.css">
-
-	<script type="text/javascript" src="src/libs/jquery-3.5.0.min.js"></script>
-	<script type="text/javascript" src="src/libs/jquery-ui.min.js"></script>
-</head>
-
-<body>
-
-	<div id="init-dialog" title="SignON Editor">
-		<img src="data/imgs/signOn_title.png" id="titleImg">
-		<p style="width: 50%; float: left; font-weight: bolder; font-family: 'Roboto';">
-			End-to-end system able to generate animations of the signing avatar from user input.
-		</p>
-		
-		<img src="data/imgs/logo_SignON.png" id="logoImg">
-		<div style="font-weight: bolder; font-family: 'Roboto'; position: absolute;
-		margin-top: 18em; opacity: 0.8;">
-			<img src="data/imgs/upf.png" style="width: 45px;">
-		</div>
-	</div>
-
-	<!-- Modals -->
-	<div id="loading" class="modal">
-		<div class="load-7">
-			<p>Loading application, please wait</p>
-			<div class="square-holder">
-				<div class="square"></div>
+        <link rel="stylesheet" href="css/template-style.css">
+		<link rel="stylesheet" href="css/style.css">
+		<link rel="stylesheet" href="https://use.fontawesome.com/releases/v6.4.0/css/all.css">
+		<link rel="stylesheet" href="css/litegui.css">
+		<link rel="stylesheet" href="css/jquery-ui.css">
+    </head>
+    <body id="page-top">
+        <!-- Navigation-->
+        <nav class="navbar navbar-expand-lg navbar-light fixed-top py-3" id="mainNav">
+            <div class="container px-4 px-lg-5">
+                <h1 class="navbar-brand">SignON Editor</h1>
+                <button class="navbar-toggler navbar-toggler-right" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav ms-auto my-2 my-lg-0">
+                        <li class="nav-item"><a class="bi-github fs-2 mb-3 icon-link" href="https://github.com/upf-gti/"></a></li>
+                        <!-- <li class="nav-item"><a class="bi-youtube fs-2 mb-3 icon-link"></a></li> -->
+                        <li class="nav-item"><a class="bi-twitter fs-2 mb-3 icon-link" href="https://twitter.com/gti_upf"></a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+        <!-- Masthead (to change the background image look for header.masthead in the template css)-->
+        <header class="masthead">
+            <div class="container px-4 px-lg-5 h-100">
+                <div id="init-dialog" class="row gx-4 gx-lg-5 h-100 align-items-center justify-content-center text-center">
+                    <div class="col-lg-8 align-self-end">
+                        <h1 class="text-white font-weight-bold">SignON 3D animation platform</h1>
+                        <hr class="divider" />
+                    </div>
+                    <div class="col-lg-8 align-self-baseline">
+                        <p class="text-white-75 mb-5">End-to-end system able to generate animations of the signing avatar from user input</p>
+						<a id="from-file" class="btn btn-primary btn-xl">From Video or Animation</a>
+						<a id="new-capture" class="btn btn-primary btn-xl">New Capture</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+    
+		<!-- Modals -->
+		<div id="loading" class="modal hidden">
+			<div class="load-7">
+				<p>Loading application, please wait</p>
+				<div class="square-holder">
+					<div class="square"></div>
+				</div>
 			</div>
 		</div>
-	</div>
 
-	<div id="endOfCapture" class="modal" style="display: none">
-		<button id="redo_btn" class="btn" style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Redo
-				the video</span></button>
-		<button id="trimData_btn" class="btn"
-			style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Trim video</span></button>
-		<button id="loadData_btn" class="btn"
-			style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Create 3D animation</span></button>
-	</div>
+		<div id="endOfCapture" class="modal" style="display: none">
+			<!-- <button id="redo_btn" class="onEndBtn" style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Redo
+					the video</span></button> -->
+			<button id="trimData_btn" class="onEndBtn"
+				style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Trim video</span></button>
+			<button id="loadData_btn" class="onEndBtn"
+				style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Create 3D animation</span></button>
+		</div>
 
-	<!---->
-	<div id="capture" class="expanded hidden" draggable="false">
-		<video id="inputVideo" class="hidden"></video>
-		<canvas id="outputVideo" width="1280px" height="720px" style="z-index: 1; margin-top: 1px;"
-			tabindex="1"></canvas>
-		<video id="recording" class="hidden"></video>
-	</div>
+		<!---->
 
-	<div id="timeline" class="hidden">
-		<canvas id="timelineCanvas" tabindex="1"></canvas>
-	</div>
+		<div style="display:none;">
+			<img id="source" src="data/imgs/mask.png" width="300" height="227" />
+		</div>
 
-</body>
-<script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
-<script type="importmap">
-		{
-			"imports": {
-				"three": "./src/libs/three.module.js"
-			}
-		}
-	</script>
+		<div id="capture" class="expanded hidden" draggable="false">
+			<div id="capture-area" class="flex-horizontal" style ="width: 100%;">
+				<div id="video-area" class="flex-vertical">
+					<video id="inputVideo" class="hidden"></video>
+					<canvas id="outputVideo" width="1280px" height="720px" style="z-index: 1;" tabindex="1"></canvas>
+					<video id="recording" class="hidden"></video>
+				</div>
+			</div>
+		</div>
+		  
+		<div id="timeline" class="hidden">
+			<div id="timeline-splitbar" class="litesplitbar vertical hidden"></div>
+			<canvas id="timelineCanvas" class="timeline" height = "100" tabindex="1"></canvas>
+			<canvas id="timelineNMFCanvas" class="timeline" height = "200" tabindex="1"></canvas>
+		</div>
 
-<script type="text/javascript" src="src/libs/litegui.js"></script>
-<script type="module" src="src/libs/customLibs.js"></script>
+    </body>
+	
+	<script type="text/javascript" src="src/libs/jquery-3.5.0.min.js"></script>
+	<script type="text/javascript" src="src/libs/jquery-ui.min.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.5/js/select2.js"></script>
 
-<script type="module">
-
-	import { App } from "./src/app.js";
-	import { UTILS } from "./src/utils.js";
-
-	const createApp = (settings) => {
-		const app = new App();
-		app.init(settings);
-	}
-
-	const dialog = $("#init-dialog")[0];
-	dialog.ondragover = () => {return false};
-	dialog.ondragend = () => {return false};
-	dialog.ondrop = (e) => {
-		e.preventDefault();
-		e.stopPropagation();
-		$(dialog).dialog("close");
-
-		const file = e.dataTransfer.files[0];
-		const extension = UTILS.getExtension(file.name);
-		createApp({mode: extension === 'bvh' ? 'bvh' : 'video', data: file});
-	};
-
-	const onloadfile = function() {
-
-		const input = document.createElement('input');
-		input.type = 'file';
-		input.click();
-
-		input.onchange = (e) => {
-			$(this).dialog("close");
-			const file = e.currentTarget.files[0];
-			const extension = UTILS.getExtension(file.name);
-			createApp({mode: extension === 'bvh' ? 'bvh' : 'video', data: file});
-		}
-	}
-
-	$( function() {
-
-		$("#loading").fadeOut();
-
-		$(dialog).dialog({
-			dialogClass: "no-close", resizable: false, draggable: false, height: "auto", width: 750, modal: true,
-			buttons: {
-				"Load animation": onloadfile,
-				"Load video": onloadfile,
-				"Capture": function() {
-					$(this).dialog("close");
-					createApp();
+	<script async src="https://unpkg.com/es-module-shims@1.3.6/dist/es-module-shims.js"></script>
+	<script type="importmap">
+			{
+				"imports": {
+					"three": "https://cdn.skypack.dev/three@0.136"
 				}
 			}
-		});
-		
-	} );
+		</script>
 
-</script>
+	<script type="text/javascript" src="src/libs/litegui.js"></script>
+	<script type="module" src="src/libs/customLibs.js"></script>
+	<script type="text/javascript" src="src/timelineClips.js"></script>
 
+	<script type="module">
+
+		import { App } from "./src/app.js";
+		import { UTILS } from "./src/utils.js";
+	
+		const createApp = (settings) => {
+
+			$("#mainNav").remove();
+			$(".masthead").remove();
+			
+			const app = new App();
+			app.init(settings);
+		}
+	
+		const dialog = $("#init-dialog")[0];
+		dialog.ondragover = () => {return false};
+		dialog.ondragend = () => {return false};
+		dialog.ondrop = (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+	
+			const file = e.dataTransfer.files[0];
+			const extension = UTILS.getExtension(file.name);
+			createApp({mode: extension.includes('bvh') ? 'bvh' : 'video', data: file});
+		};
+	
+		const onloadfile = function() {
+	
+			const input = document.createElement('input');
+			input.type = 'file';
+			input.click();
+	
+			input.onchange = (e) => {
+				const file = e.currentTarget.files[0];
+				const extension = UTILS.getExtension(file.name);
+				createApp({mode: extension.includes('bvh') ? extension : 'video', data: file});
+			}
+		}
+	
+		$( function() {
+	
+			//$("#loading").fadeOut();
+	
+			$("#from-file").click(onloadfile);
+			$("#new-capture").click(() => {
+				createApp();
+			});
+		} );
+	
+	</script>
+	
 </html>

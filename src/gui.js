@@ -1,6 +1,6 @@
 import { Timeline } from "./libs/timeline.module.js";
 import { UTILS } from "./utils.js";
-
+import { VideoUtils } from "./video.js"; 
 class Gui {
 
     constructor(editor) {
@@ -18,8 +18,9 @@ class Gui {
 
     loadClip( clip ) {
 
-        this.clip = clip;
-        this.duration = clip.duration;
+            
+        this.clip = clip || { duration: 1};
+        this.duration =  this.clip.duration;
 
         let boneName = null;
         if(this.editor.skeletonHelper.bones.length) {
@@ -30,6 +31,7 @@ class Gui {
         this.timeline.framerate = 30;
         this.timeline.setScale(400);
         this.timeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
+        this.timeline.onSetDuration = (t) => {this.duration = this.timeline.duration = this.clip.duration = this.editor.animationClip.duration = t};
         this.timeline.onSelectKeyFrame = (e, info, index) => {
             if(e.button != 2) {
                 //this.editor.gizmo.mustUpdate = true
@@ -48,7 +50,9 @@ class Gui {
         this.timeline.onGetSelectedBone = () => { return this.editor.getSelectedBone(); };
         this.timeline.onGetOptimizeThreshold = () => { return this.editor.optimizeThreshold; }
 
+        this.updateMenubar();
         this.createSidePanel();
+        this.hiddeCaptureArea();
 
         let canvasArea = document.getElementById("canvasarea");
         this.editor.resize(canvasArea.clientWidth, canvasArea.clientHeight);
@@ -61,22 +65,25 @@ class Gui {
     create() {
 
         LiteGUI.init(); 
-	
+        
+        this.createCaptureGUI();
         // Create menu bar
         this.createMenubar();
-
+        
         // Create main area
         this.mainArea = new LiteGUI.Area({id: "mainarea", content_id:"canvasarea", height: "calc( 100% - 31px )", main: true});
         LiteGUI.add( this.mainArea );
         
         const canvasArea = document.getElementById("canvasarea");
+
         canvasarea.appendChild( document.getElementById("timeline") );
+        let timeline = document.getElementById("timeline")
+        timeline.style.display = "block";
 
         this.mainArea.onresize = window.onresize;
 
         let timelineCanvas = document.getElementById("timelineCanvas");
         timelineCanvas.width = canvasArea.clientWidth;
-        timelineCanvas.height = 115;
         this.timelineCTX = timelineCanvas.getContext("2d");
 
         timelineCanvas.addEventListener("mouseup", this.onMouse.bind(this));
@@ -95,6 +102,165 @@ class Gui {
                     break;
             }
         });
+
+        let timelineNMFCanvas = document.getElementById("timelineNMFCanvas");
+        timelineNMFCanvas.width = timelineCanvas.width;
+        timelineNMFCanvas.style.display = "none";
+        this.timelineNMFCTX = timelineNMFCanvas.getContext("2d");
+
+        // timelineNMFCanvas.addEventListener("mouseup", (e) => { e.preventDefault(); if(this.NMFtimeline) this.NMFtimeline.processMouse(e); });
+        // timelineNMFCanvas.addEventListener("mousedown", (e) => { e.preventDefault(); if(this.NMFtimeline) this.NMFtimeline.processMouse(e); });
+        // timelineNMFCanvas.addEventListener("mousemove", (e) => { e.preventDefault(); if(this.NMFtimeline) this.NMFtimeline.processMouse(e); });
+        // timelineNMFCanvas.addEventListener("wheel", (e) => { e.preventDefault(); if(this.NMFtimeline) this.NMFtimeline.processMouse(e); });
+        timelineNMFCanvas.addEventListener("mouseup", this.onMouse.bind(this));
+        timelineNMFCanvas.addEventListener("mousedown", this.onMouse.bind(this));
+        timelineNMFCanvas.addEventListener("mousemove", this.onMouse.bind(this));
+        timelineNMFCanvas.addEventListener("wheel", this.onMouse.bind(this));
+        timelineNMFCanvas.addEventListener('contextmenu', (e) => {
+            e.preventDefault()
+            let actions = [];
+            //let track = this.NMFtimeline.clip.tracks[0];
+            if(this.NMFtimeline._lastClipsSelected.length) {
+                actions.push(
+                    {
+                        title: "Copy" + " <i class='bi bi-clipboard-fill float-right'></i>",
+                        callback: () => {this.clips_to_copy = [...this.NMFtimeline._lastClipsSelected];}
+                    }
+                )
+                actions.push(
+                    {
+                        title: "Delete" + " <i class='bi bi-trash float-right'></i>",
+                        callback: () => {
+                            let clipstToDelete = this.NMFtimeline._lastClipsSelected;
+                            for(let i = 0; i < clipstToDelete.length; i++){
+                                this.NMFtimeline.deleteClip(clipstToDelete[i], this.showClipInfo.bind(this));
+                            }
+                            this.NMFtimeline.optimizeTracks();
+                            this.editor.NMFController.updateTracks();
+                        }
+                    }
+                )
+                actions.push(
+                    {
+                        title: "Create preset" + " <i class='bi bi-file-earmark-plus-fill float-right'></i>",
+                        callback: () => {
+                            this.NMFtimeline._lastClipsSelected.sort((a,b) => {
+                                if(a[0]<b[0]) 
+                                    return -1;
+                                return 1;
+                            });
+                            this.createNewPresetDialog(this.NMFtimeline._lastClipsSelected);
+                        }
+                    }
+                )
+            }
+            else{
+                actions.push(
+                    {
+                        title: "Add lexeme" + " <i class='bi bi-plus float-right'></i>",
+                        callback: this.createLexemesDialog.bind(this)
+                    },
+                    {
+                        title: "Add preset" + " <i class='bi bi-plus float-right'></i>",
+                        callback: this.createPresetsDialog.bind(this)
+                    }
+                );
+                if(this.clips_to_copy)
+                {
+                    actions.push(
+                        {
+                            title: "Paste" + " <i class='bi bi-clipboard-fill float-right'></i>",
+                            callback: () => {
+                                this.clips_to_copy.sort((a,b) => {
+                                    if(a[0]<b[0]) 
+                                        return -1;
+                                    return 1;
+                                });
+
+                                for(let i = 0; i < this.clips_to_copy.length; i++){
+                                    let [trackIdx, clipIdx] = this.clips_to_copy[i];
+                                    let clipToCopy = this.NMFtimeline.clip.tracks[trackIdx].clips[clipIdx];
+                                    let clip = new ANIM.FaceLexemeClip(clipToCopy);
+                                    this.NMFtimeline.addClip(clip, this.clips_to_copy.length > 1 ? clipToCopy.start : 0); 
+                                }
+                                this.clips_to_copy = null;
+                            }
+                        }
+                    )
+                }
+                
+            }
+            new LiteGUI.ContextMenu( actions, { event: e });
+        }, false);
+
+        timelineNMFCanvas.addEventListener("dblclick", (e) => { e.preventDefault(); if(this.NMFtimeline) this.NMFtimeline.processMouse(e); });
+        timelineNMFCanvas.addEventListener( 'keydown', (e) => {
+            switch ( e.key ) {
+                case " ": // Spacebar
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    const stateBtn = document.getElementById("state_btn");
+                    stateBtn.click();
+                    break;
+                case "Delete": // Spacebar
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    this.NMFtimeline.deleteClip();
+                    this.NMFtimeline.optimizeTracks();
+                    break;
+            }
+        });
+
+        let splitbar = document.getElementById("timeline-splitbar");
+        splitbar.addEventListener("mousedown", inner_mousedown);
+
+        let last_pos = [0,0];
+        let is_grabbing = false;
+		function inner_mousedown(e)
+		{
+            is_grabbing = true;
+			var doc = document;
+			doc.addEventListener("mousemove",inner_mousemove);
+			doc.addEventListener("mouseup",inner_mouseup);
+			last_pos[0] = e.pageX;
+			last_pos[1] = e.pageY;
+			e.stopPropagation();
+			e.preventDefault();
+		}
+
+		function inner_mousemove(e)
+		{
+			
+			
+            if (last_pos[1] != e.pageY && is_grabbing)
+            {
+                let delta = e.pageY - last_pos[1];
+				let size = timeline.offsetHeight - delta;
+				timeline.style.height = size + "px";
+                timelineNMFCanvas.height = size;
+                if(this.NMFtimeline)
+                    this.NMFtimeline.height = size;
+            }
+			
+
+			last_pos[0] = e.pageX;
+			last_pos[1] = e.pageY;
+			e.stopPropagation();
+			e.preventDefault();
+            
+		}
+
+		function inner_mouseup(e)
+		{
+			// var doc = document;
+			// doc.removeEventListener("mousemove",inner_mousemove);
+			// doc.removeEventListener("mouseup",inner_mouseup);
+			//timeline.offsetHeight = last_pos[1];
+            is_grabbing = false;
+            e.stopPropagation();
+			e.preventDefault();
+		}
+
     }
 
     createMenubar() {
@@ -103,7 +269,7 @@ class Gui {
 
         var menubar = new LiteGUI.Menubar("mainmenubar");
         LiteGUI.add( menubar );
-
+        
         window.menubar = menubar;
 
         const logo = document.createElement("img");
@@ -112,20 +278,30 @@ class Gui {
         logo.alt = "SignON"
         logo.addEventListener('click', () => window.open('https://signon-project.eu/'));
         menubar.root.prepend(logo);
+        this.appendButtons( menubar );
+    }
 
+    updateMenubar() 
+    {
+        var that = this;
+        let menubar = window.menubar;
         menubar.add("Project/Upload animation", {icon: "<i class='bi bi-upload float-right'></i>", callback: () => this.editor.getApp().storeAnimation() });
-        menubar.add("Project/Show video", { type: "checkbox", instance: this, property: "showVideo", callback: () => {
-            const tl = document.getElementById("capture");
-            tl.style.display = that.showVideo ? "flex": "none";
-        }});
+ 
         menubar.add("Project/");
-        menubar.add("Project/BVH", {subtitle: true});
-        menubar.add("Project/Export", {icon: "<i class='bi bi-file-text float-right'></i>",  callback: () => this.editor.export() });
+        menubar.add("Project/Export MF Animation", {subtitle: true});
+        menubar.add("Project/Export BVH", {icon: "<i class='bi bi-file-text float-right'></i>",  callback: () => this.editor.export('BVH') });
+        menubar.add("Project/Export NMF Animation", {subtitle: true});
+        menubar.add("Project/Export extended BVH", {icon: "<i class='bi bi-file-text float-right'></i>",  callback: () => this.editor.export("BVH extended") });
+        menubar.add("Project/Export BML", {icon: "<i class='bi bi-file-text float-right'></i>",  callback: () => this.editor.export() });
+        menubar.add("Project/Export Animation together", {subtitle: true});
+        menubar.add("Project/Export GLB", {icon: "<i class='bi bi-file-text float-right'></i>",  callback: () => this.editor.export('GLB') });
         menubar.add("Project/Open preview", {icon: "<i class='bi bi-file-earmark-play float-right'></i>",  callback: () => this.editor.showPreview() });
 
-        menubar.add("Timeline/Show", { type: "checkbox", instance: this, property: "showTimeline", callback: () => {
-            const tl = document.getElementById("timeline");
-            tl.style.display = that.showTimeline ? "block": "none";
+        menubar.add("Editor/Manual Features", { id: "mf-mode", type: "checkbox", checkbox: this.editor.mode == this.editor.eModes.MF, callback: (v) => {
+            this.changeEditorMode(this.editor.eModes.MF);
+        }});
+        menubar.add("Editor/Non-Manual Features", { id: "nmf-mode", type: "checkbox", checkbox: this.editor.mode == this.editor.eModes.NMF, callback: (v) => {
+            this.changeEditorMode(this.editor.eModes.NMF);
         }});
 
         menubar.add("Timeline/Shortcuts", { disabled: true });
@@ -146,11 +322,321 @@ class Gui {
         menubar.add("Timeline/Empty tracks", { callback: () => this.editor.cleanTracks() });
         menubar.add("Timeline/Optimize tracks", { callback: () => this.editor.optimizeTracks() });
 
-        this.appendButtons( menubar );
+        menubar.add("View/Show video", { type: "checkbox", instance: this, property: "showVideo", callback: () => {
+            const tl = document.getElementById("capture");
+            tl.style.display = this.showVideo ? "flex": "none";
+        }});
+        menubar.add("View/Show timeline", { type: "checkbox", instance: this, property: "showTimeline", callback: () => {
+            const tl = document.getElementById("timeline");
+            tl.style.display = this.showTimeline ? "block": "none";
+        }});
+       
+    }
+
+    changeEditorMode(mode)
+    {
+        if(this.editor.onChangeMode)
+            this.editor.onChangeMode(mode);
+
+        let splitbar = document.getElementById("timeline-splitbar");
+        let menubar = window.menubar.findMenu("Editor");
+        let mfmenu = window.menubar.findMenu("Editor/Manual Features");
+        let nmfmenu = window.menubar.findMenu("Editor/Non-Manual Features");
+
+        if(mode == this.editor.eModes.NMF){
+            mfmenu.data.checkbox = false;
+            mfmenu.enable();
+            nmfmenu.disable();
+            window.menubar.showMenu( menubar, null, menubar.element, false );
+
+            if(!this.NMFtimeline) {
+                        
+                this.NMFtimeline = new Timeline(null, null, "clips", [this.timeline.size[0], this.timeline.size[1]], false);
+                this.NMFtimeline.name = "Non-Manual Features";
+                this.NMFtimeline.framerate = 30;
+                this.NMFtimeline.setScale(400);
+                this.NMFtimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
+                this.NMFtimeline.onSetDuration = (t) => {this.duration = this.timeline.duration = this.timeline.clip.duration = t};
+                this.NMFtimeline.onSelectClip = this.showClipInfo.bind(this);
+                this.NMFtimeline.onClipMoved = ()=> {
+                    this.editor.NMFController.updateTracks();
+                    this.NMFtimeline.onSetTime(this.NMFtimeline.current_time) 
+                };
+                this.NMFtimeline.clip = {duration: this.timeline.duration, tracks: []};
+                // this.NMFtimeline.addClip( new ANIM.FaceLexemeClip());
+                
+                this.NMFtimeline.onUpdateTrack = this.editor.NMFController.updateTracks.bind(this.editor.NMFController);
+                this.editor.NMFController.begin(this.NMFtimeline);
+                this.showNMFGuide();
+                
+            }
+            splitbar.classList.remove("hidden");
+            this.timeline.active = false;
+            let c = document.getElementById("timeline")
+            c.style.height =  this.timelineCTX.canvas.height*2 + 20 + 'px';
+            let canvas = document.getElementById("timelineNMFCanvas")
+            canvas.style.display =  'block';
+            let canvasArea = document.getElementById("canvasarea");
+            this.editor.resize(canvasArea.clientWidth, canvasArea.clientHeight);
+            
+            if(this.NMFtimeline.selected_clip)
+                this.showClipInfo(this.NMFtimeline.selected_clip);
+            this.updateSidePanel();
+            document.querySelector("[title='skeleton']").click()
+
+        }
+        else{
+            splitbar.classList.add("hidden");
+            this.timeline.active = true;
+            let c = document.getElementById("timeline")
+            c.style.height =  this.timelineCTX.canvas.height + 'px';
+            let canvas = document.getElementById("timelineNMFCanvas")
+            canvas.style.display =  'none';
+            nmfmenu.data.checkbox = false;
+            nmfmenu.enable();
+            mfmenu.disable();
+            window.menubar.showMenu( menubar, null, menubar.element, false );
+            
+            if(this.item_selected != undefined)
+                this.updateSidePanel(this.sidePanel, this.item_selected);
+            
+            document.querySelector("[title='skeleton']").click()
+        }
+        
+    }
+
+    createCaptureGUI()
+    {
+        // Create capture info area
+        let mainCapture = document.getElementById("capture");
+        let captureArea = document.getElementById("capture-area");
+        const buttonContainer = document.createElement('div');
+        //buttonContainer.style.margin = "0 auto";
+        buttonContainer.style.display = "flex";
+        const buttons = [
+            {
+                id: "capture_btn",
+                text: " <i class='bi bi-record-circle' style= 'margin:5px; font-size:initial;'></i> Start recording"
+            },
+            {
+                id: "trim_btn",
+                text: "Convert to animation",
+                display: "none",
+                callback: () => VideoUtils.unbind( (start, end) => window.globals.app.onRecordLandmarks(start, end) )
+            },
+            {
+                id: "redo_btn",
+                text: " <i class='fa fa-redo'></i>",
+                title: "Redo video",
+                display: "none",
+                callback: async () => {
+                    //     // Update header
+                    //     let capture = document.getElementById("capture_btn");
+                    //     capture.disabled = true;
+                    //     capture.style.display = "block";
+
+                    //     let trimBtn = document.getElementById("trim_btn");
+                    //     trimBtn.style.display = "none";
+
+                    //     // TRIM VIDEO - be sure that only the sign is recorded
+                    //     let canvas = document.getElementById("outputVideo");
+                    //     let video = document.getElementById("recording");
+                    //     let input = document.getElementById("inputVideo");
+                    //     let live = true;
+                    //     if(input.src)
+                    //     {
+                    //         window.globals.app.onLoadVideo(input.src);
+                    //     }
+                    //     else{
+                    //         await VideoUtils.unbind(() => window.globals.app.init())
+                           
+                    //     }
+                    //    // await VideoUtils.unbind();
+                    window.location.reload();
+                }
+            }
+        ];
+       for(let b of buttons) {
+            const button = document.createElement("button");
+            button.id = b.id;
+            button.title = b.title || "";
+            button.style.display = b.display || "block";
+            button.innerHTML = b.text;
+            button.classList.add("btn-primary", "captureButton");
+            if(b.styles) Object.assign(button.style, b.styles);
+            if(b.callback) button.addEventListener('click', b.callback);
+            buttonContainer.appendChild(button);
+        }
+        captureArea.appendChild(buttonContainer);
+
+
+        let div = document.createElement("div");
+        div.id = "capture-info";
+        div.className = "hidden";
+        div.innerHTML = 
+            '<div id="text-info" class="header"> Position yourself centered on the image with the hands and troso visible. If the conditions are not met, reposition yourself or the camera. </div>\
+                <div id="warnings" style= "display:flex;     justify-content: center;"> \
+                    <div id="distance-info" class="alert-info alert-primary"> \
+                        <div class="icon__wrapper"> \
+                            <i class="fas fa-solid fa-check check"></i> \
+                        <!--<span class="mdi mdi-alert-outline"></span>--> \
+                        </div> \
+                        <p>Distance to the camera looks good</p> \
+                        <!-- <span class="mdi mdi-open-in-new open"></span> -->\
+                    </div> \
+                    <div id="hands-info" class="alert-info alert-primary"> \
+                        <div class="icon__wrapper"> \
+                            <i class="fas fa-solid fa-check check"></i> \
+                        <!--<span class="mdi mdi-alert-outline"></span>--> \
+                        </div> \
+                        <p>Hands visible</p> \
+                        <!--<span class="mdi mdi-open-in-new open"></span>--> \
+                    </div>\
+                </div>\
+            </div>'
+            
+        // div.getElementById("warnings").appendChild(button);
+        //captureArea.appendChild( div );
+        let videoArea = document.getElementById("video-area");
+        videoArea.classList.add("video-area");
+
+        let i = document.createElement("i");
+        i.id = "expand-capture-gui";
+        i.style = "position: relative;top: 35px;left: -19px;"
+        i.className = "fas fa-solid fa-circle-chevron-left drop-icon";
+        i.addEventListener("click", () => this.changeCaptureGUIVisivility(i.classList.contains("fa-circle-chevron-right")) );
+        //videoArea.appendChild(i);
+
+        let inspector = new LiteGUI.Inspector("capture-inspector");
+        inspector.root.hidden = true;
+       // inspector.root.style.margin = "0px 25px";
+        inspector.addTitle("User positioning");
+        //inspector.addSection("User positioning");
+        inspector.addInfo(null, 'Position yourself centered on the image with the hands and troso visible. If the conditions are not met, reposition yourself or the camera.') 
+        inspector.addInfo(null, 'Distance to the camera');
+
+        let progressVar = document.createElement('div');
+        progressVar.className = "progress mb-3";
+        progressVar.innerHTML = 
+           '<div id="progressbar-torso" class="progress-bar bg-danger" role="progressbar" style="width: 50%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>'
+            // <div id="progressbar-torso-warning" class="progress-bar bg-warning" role="progressbar" style="width: 30%" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>\
+            // <div id="progressbar-torso-success" class="progress-bar bg-success" role="progressbar" style="width: 20%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>'
+
+        inspector.root.appendChild(progressVar);
+        inspector.addInfo(null, 'Left Hand visibility');
+        let progressVarLH = document.createElement('div');
+        progressVarLH.className = "progress mb-3";
+        progressVarLH.innerHTML = 
+           '<div id="progressbar-lefthand" class="progress-bar bg-danger" role="progressbar" style="width: 50%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>'
+            // <div id="progressbar-torso-warning" class="progress-bar bg-warning" role="progressbar" style="width: 30%" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>\
+            // <div id="progressbar-torso-success" class="progress-bar bg-success" role="progressbar" style="width: 20%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>'
+
+        inspector.root.appendChild(progressVarLH);
+
+        inspector.addInfo(null, 'Right hand visibility');
+        let progressVarRH = document.createElement('div');
+        progressVarRH.className = "progress mb-3";
+        progressVarRH.innerHTML = 
+           '<div id="progressbar-righthand" class="progress-bar bg-danger" role="progressbar" style="width: 50%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>'
+            // <div id="progressbar-torso-warning" class="progress-bar bg-warning" role="progressbar" style="width: 30%" aria-valuenow="30" aria-valuemin="0" aria-valuemax="100"></div>\
+            // <div id="progressbar-torso-success" class="progress-bar bg-success" role="progressbar" style="width: 20%" aria-valuenow="20" aria-valuemin="0" aria-valuemax="100"></div>'
+
+        inspector.root.appendChild(progressVarRH);
+        mainCapture.appendChild(i);
+        mainCapture.appendChild(inspector.root)
+        videoArea.appendChild(buttonContainer);
+    }
+
+    changeCaptureGUIVisivility(hidde) {
+        document.getElementById("capture-inspector").hidden = hidde;
+        let i = document.getElementById("expand-capture-gui");
+        if(hidde) {
+            i.classList.remove("fa-circle-chevron-right") ;
+            i.classList.add("fa-circle-chevron-left");
+        }
+        else{
+            i.classList.remove("fa-circle-chevron-left"); 
+            i.classList.add("fa-circle-chevron-right");
+        }
+    }
+
+    updateCaptureGUI(landmarksResults, isRecording) {
+        
+        if(isRecording){
+            this.changeCaptureGUIVisivility(true);
+            return;
+        }
+        else {
+            //document.getElementById("capture-info").classList.remove("hidden");
+        }
+        if(!landmarksResults || !landmarksResults.poseLandmarks) return;
+        
+        let infoDistance = document.getElementById("distance-info");
+        let infoHands = document.getElementById("hands-info");
+        const { poseLandmarks } = landmarksResults;
+        
+        let distance = (poseLandmarks[23].visibility + poseLandmarks[24].visibility)*0.5;
+        let leftHand = (poseLandmarks[15].visibility + poseLandmarks[17].visibility + poseLandmarks[19].visibility)/3;
+        let rightHand = (poseLandmarks[16].visibility + poseLandmarks[18].visibility + poseLandmarks[20].visibility)/3;
+      
+        // Intro message for the pose detection assesment step
+        let torsoCondition = poseLandmarks[23].visibility < .5 || poseLandmarks[24].visibility < .5;
+        let handsCondition = poseLandmarks[15].visibility < .5 || poseLandmarks[16].visibility < .5 || poseLandmarks[19].visibility < .5 || poseLandmarks[17].visibility < .5 || poseLandmarks[18].visibility < .5 || poseLandmarks[20].visibility < .5;
+       
+        // infoDistance.getElementsByTagName("p")[0].innerText = (torsoCondition) ? 'You are too close to the camera' : 'Distance to the camera looks good';
+        // infoDistance.className = (torsoCondition) ? "alert-info alert-warning" : "alert-info alert-success";
+        
+        // infoHands.getElementsByTagName("p")[0].innerText = (handsCondition) ? 'Your hands are not visible' : 'Hands visible';
+        // infoHands.className = (handsCondition) ? "alert-info alert-warning" : "alert-info alert-success";
+        
+
+        let progressBarT = document.getElementById("progressbar-torso");
+        progressBarT.setAttribute("aria-valuenow", distance*100);
+        progressBarT.style.width = distance*100 + '%';
+        progressBarT.className = "progress-bar";
+        if(distance < 0.3) 
+            progressBarT.classList.add("bg-danger")
+        else if(distance > 0.3 && distance < 0.7) 
+            progressBarT.classList.add("bg-warning")
+        else 
+            progressBarT.classList.add("bg-success")
+        
+        let progressBarLH = document.getElementById("progressbar-lefthand");
+        progressBarLH.setAttribute("aria-valuenow", leftHand*100);
+        progressBarLH.style.width = leftHand*100 + '%';
+        progressBarLH.className = "progress-bar";
+        if(leftHand < 0.3) 
+            progressBarLH.classList.add("bg-danger")
+        else if(leftHand > 0.3 && leftHand < 0.7) 
+            progressBarLH.classList.add("bg-warning")
+        else 
+            progressBarLH.classList.add("bg-success")
+
+        let progressBarRH = document.getElementById("progressbar-righthand");
+        progressBarRH.setAttribute("aria-valuenow", rightHand*100);
+        progressBarRH.style.width = rightHand*100 + '%';
+        progressBarRH.className = "progress-bar";
+        if(leftHand < 0.3) 
+            progressBarRH.classList.add("bg-danger")
+        else if(leftHand > 0.3 && leftHand < 0.7) 
+            progressBarRH.classList.add("bg-warning")
+        else 
+            progressBarRH.classList.add("bg-success")
+        
+    }
+
+    hiddeCaptureArea() {
+        let e = document.getElementById("video-area");
+        e.classList.remove("video-area");
+        
+        let i = document.getElementById("expand-capture-gui");
+        i.classList.add("hidden");
+
+        let ci = document.getElementById("capture-inspector");
+        ci.classList.add("hidden");
     }
 
     createSidePanel() {
-
         this.mainArea.split("horizontal", [null,"300px"], true);
         var docked = new LiteGUI.Panel("sidePanel", {title: 'Skeleton', scroll: true});
         this.mainArea.getSection(1).add( docked );
@@ -234,7 +720,7 @@ class Gui {
         var widgets = new LiteGUI.Inspector();
         $(root.content).append(widgets.root);
     
-        const makePretitle = (src) => { return "<img src='data/imgs/mini-icon-"+src+".png' style='margin-right: 4px;margin-top: 6px;'>"; }
+        const makePretitle = (src) => { return "<img src='data/imgs/mini-icon-"+src+".png' style='margin-right: 4px;'>"; }
 
         widgets.on_refresh = (o) => {
 
@@ -262,30 +748,36 @@ class Gui {
 
             if(bone_selected) {
 
+                let disabled = false;
+                if(this.editor.mode == this.editor.eModes.NMF)
+                    disabled = true;
+                 
                 const numTracks = this.timeline.getNumTracks(bone_selected);
-                const _Tools = this.editor.hasGizmoSelectedBoneIk() ? ["Joint", "Follow"] : ["Joint"];
-                
-                widgets.addSection("Gizmo", { pretitle: makePretitle('gizmo'), settings: (e) => this.openSettings( 'gizmo' ), settings_title: "<i class='bi bi-gear-fill section-settings'></i>" });
-                
-                widgets.addButtons( "Tool", _Tools, { selected: this.editor.getGizmoTool(), name_width: "50%", width: "100%", callback: (v) => {
-                    if(this.editor.getGizmoTool() != v) this.editor.setGizmoTool(v);
-                }});
-                
-                if( this.editor.getGizmoTool() == "Joint" ){
-                    const _Modes = numTracks > 1 ? ["Translate","Rotate"] : ["Rotate"];
-                    if( numTracks <= 1 ){ this.editor.setGizmoMode("Rotate"); }
-                    widgets.addButtons( "Mode", _Modes, { selected: this.editor.getGizmoMode(), name_width: "50%", width: "100%", callback: (v) => {
-                        if(this.editor.getGizmoMode() != v) this.editor.setGizmoMode(v);
+                if(!disabled) {
+                    const _Tools = this.editor.hasGizmoSelectedBoneIk() ? ["Joint", "Follow"] : ["Joint"];
+                    
+                    widgets.addSection("Gizmo", { pretitle: makePretitle('gizmo'), settings: (e) => this.openSettings( 'gizmo' ), settings_title: "<i class='bi bi-gear-fill section-settings'></i>" });
+                    
+                    widgets.addButtons( "Tool", _Tools, { selected: this.editor.getGizmoTool(), name_width: "50%", width: "100%", callback: (v) => {
+                        if(this.editor.getGizmoTool() != v) this.editor.setGizmoTool(v);
                     }});
-                }
-
-                widgets.addButtons( "Space", ["Local","World"], { selected: this.editor.getGizmoSpace(), name_width: "50%", width: "100%", callback: (v) => {
-                    if(this.editor.getGizmoSpace() != v) this.editor.setGizmoSpace(v);
-                }});
-
-                widgets.addCheckbox( "Snap", this.editor.isGizmoSnapActive(), {callback: () => this.editor.toggleGizmoSnap() } );
-
-                widgets.addSeparator();
+                    
+                    if( this.editor.getGizmoTool() == "Joint" ){
+                        const _Modes = numTracks > 1 ? ["Translate","Rotate"] : ["Rotate"];
+                        if( numTracks <= 1 ){ this.editor.setGizmoMode("Rotate"); }
+                        widgets.addButtons( "Mode", _Modes, { selected: this.editor.getGizmoMode(), name_width: "50%", width: "100%", callback: (v) => {
+                            if(this.editor.getGizmoMode() != v) this.editor.setGizmoMode(v);
+                        }});
+                    }
+    
+                    widgets.addButtons( "Space", ["Local","World"], { selected: this.editor.getGizmoSpace(), name_width: "50%", width: "100%", callback: (v) => {
+                        if(this.editor.getGizmoSpace() != v) this.editor.setGizmoSpace(v);
+                    }});
+    
+                    widgets.addCheckbox( "Snap", this.editor.isGizmoSnapActive(), {callback: () => this.editor.toggleGizmoSnap() } );
+    
+                    widgets.addSeparator();
+                }    
 
                 const innerUpdate = (attribute, value) => {
                     bone_selected[attribute].fromArray( value ); 
@@ -299,14 +791,14 @@ class Gui {
                 // Only edit position for root bone
                 if(bone_selected.children.length && bone_selected.parent.constructor !== bone_selected.children[0].constructor) {
                     widgets.addTitle("Position");
-                    this.boneProperties['position'] = widgets.addVector3(null, bone_selected.position.toArray(), {disabled: this.editor.state, precision: 3, className: 'bone-position', callback: (v) => innerUpdate("position", v)});
+                    this.boneProperties['position'] = widgets.addVector3(null, bone_selected.position.toArray(), {disabled: this.editor.state || disabled, precision: 3, className: 'bone-position', callback: (v) => innerUpdate("position", v)});
                 }
 
                 widgets.addTitle("Rotation (XYZ)");
-                this.boneProperties['rotation'] = widgets.addVector3(null, bone_selected.rotation.toArray(), {disabled: this.editor.state, precision: 3, className: 'bone-euler', callback: (v) => innerUpdate("rotation", v)});
+                this.boneProperties['rotation'] = widgets.addVector3(null, bone_selected.rotation.toArray(), {disabled: this.editor.state || disabled, precision: 3, className: 'bone-euler', callback: (v) => innerUpdate("rotation", v)});
 
                 widgets.addTitle("Quaternion");
-                this.boneProperties['quaternion'] = widgets.addVector4(null, bone_selected.quaternion.toArray(), {disabled: this.editor.state, precision: 3, className: 'bone-quaternion', callback: (v) => innerUpdate("quaternion", v)});
+                this.boneProperties['quaternion'] = widgets.addVector4(null, bone_selected.quaternion.toArray(), {disabled: this.editor.state || disabled, precision: 3, className: 'bone-quaternion', callback: (v) => innerUpdate("quaternion", v)});
             }
         };
 
@@ -318,72 +810,269 @@ class Gui {
         element.scrollTop = options.maxScroll ? maxScroll : (options.scroll ? options.scroll : 0);
     }
 
-    // Listed with __ at the beggining
-    updateBoneProperties() {
+    createLexemesDialog()
+    {
+        // Create a new dialog
+        let dialog = new LiteGUI.Dialog('Non Manual Features lexemes', { title:'Lexemes', close: true, minimize: false, width: 500, height: 400, scroll: true, resizable: true, draggable: true });
+        var that = this;
+        // Create a collection of widgets
+        let widgets = new LiteGUI.Inspector();
+        let values = ANIM.FaceLexemeClip.lexemes;//["Yes/No-Question", "Negative", "WH-word Questions", "Topic", "RH-Questions"];
+        for(let i = 0; i < values.length; i++){
+            widgets.addImageButton(values[i], null, {
+                type: "image",
+                image: "data/imgs/thumbnails/" + values[i].toLowerCase() + ".png",
+                callback: function(v, e) { 
+                    
+                    dialog.close();
+                    that.NMFtimeline.addClip( new ANIM.FaceLexemeClip({lexeme:this.name}));
+                    
+                   // that.editor.NMFController.updateTracks.bind(that.editor.NMFController) ;
+                }
+            } )
+        }
+        dialog.root.classList.add("grid");
+        dialog.add(widgets);
+        dialog.show();
+    }
 
+    createPresetsDialog()
+    {
+        // Create a new dialog
+        let dialog = new LiteGUI.Dialog('Non Manual Features presets', { title:'Presets', close: true, minimize: false, width: 500, height: 400, scroll: true, resizable: true, draggable: true });
+        var that = this;
+        // Create a collection of widgets
+        let widgets = new LiteGUI.Inspector();
+        let values = ANIM.FacePresetClip.facePreset;//["Yes/No-Question", "Negative", "WH-word Questions", "Topic", "RH-Questions"];
+        for(let i = 0; i < values.length; i++){
+
+            widgets.addButton(null, values[i], {
+                width: 100,
+                callback: function(v, e,) { 
+                    dialog.close();
+                    let presetClip = new ANIM.FacePresetClip({preset: v});
+                    for(let i = 0; i < presetClip.clips.length; i++){
+                        that.NMFtimeline.addClip( presetClip.clips[i], presetClip.clips[i].start);
+                    }
+                    //that.editor.NMFController.updateTracks.bind(that.editor.NMFController) 
+                }
+            } )
+        }
+        dialog.root.classList.add("grid");
+        dialog.add(widgets);
+
+        // Placeholder function to show the new settings. Normally you would do something usefull here
+        // with the new settings.
+        function applySettings() {
+            console.log("Expression is " + expressions.getValue() );
+        }
+
+        // Add some buttons
+        dialog.show();
+    }
+
+    createNewPresetDialog(clips)
+    {
+         LiteGUI.prompt( "Preset name", (v) => {
+            let presetInfo = {preset: v, clips:[]};
+            for(let i = 0; i < clips.length; i++){
+                let [trackIdx, clipIdx] = clips[i];
+                presetInfo.clips.push(this.NMFtimeline.clip.tracks[trackIdx].clips[clipIdx]);
+            }
+            let preset = new ANIM.FacePresetClip(presetInfo);
+        }, {title: "Create preset"} )
+    }
+
+    showNMFGuide() {
+        //let dialog = new LiteGUI.Dialog();
+        LiteGUI.popup("Right click on the Non-Manual Features timeline to create a new clip. You can create a clip from a selected lexeme or from a preset configuration.")
+    }
+
+    showClipInfo(clip)
+    {
+        this.clip_in_panel = clip;
+        
+        var inspector = new LiteGUI.Inspector();
+        if(clip)
+        {
+            inspector.widgets_per_row = 1;
+            inspector.addTitle( clip.constructor.name );
+            inspector.addString("Id", clip.id, {callback: function(v)
+            {
+                this.clip_in_panel.id = v;
+            }.bind(this)})
+            
+            inspector.addSection("Time");
+            const updateTracks = () => {
+                this.showClipInfo(clip);
+                if(clip.start + clip.duration > this.NMFtimeline) {
+                    this.NMFtimeline.onSetDuration(clip.start + clip.duration);
+                }
+                this.editor.NMFController.updateTracks(); 
+            }
+            inspector.addNumber("Start", clip.start, {min:0, step:0.01, callback: (v) =>
+            {              
+                // var dt = v - this.clip_in_panel.start;
+                // if(clip.ready) clip.ready += dt;
+                // if(clip.strokeStart) clip.strokeStart += dt;
+                // if(clip.stroke) clip.stroke += dt;
+                // if(clip.attackPeak) clip.attackPeak += dt;
+                // if(clip.strokeEnd) clip.strokeEnd += dt;
+                // if(clip.relax) clip.relax += dt;
+                this.clip_in_panel.start = v;
+                clip.start = v;
+                updateTracks();
+                
+                /*this.showClipInfo(clip)*/
+            }})
+            inspector.addNumber("Duration", clip.duration, {min:0.01, step:0.01, callback: (v) =>
+            {
+                this.clip_in_panel.duration = v;
+                clip.relax = Math.min(v +   clip.start, clip.relax);
+                clip.attackPeak = Math.min(v +  clip.start, clip.attackPeak);
+                updateTracks();
+            }})
+            inspector.addSection("Sync points");
+            if(clip.attackPeak != undefined)
+            {
+                inspector.addNumber("Attack Peak", clip.attackPeak - clip.start, {min:0, max: clip.relax - clip.start, step:0.01, callback: (v) =>
+                    {              
+                       clip.attackPeak = v + clip.start;
+                       updateTracks();
+                    }})
+            }
+            if(clip.relax != undefined) 
+            {
+                inspector.addNumber("Relax", clip.relax  - clip.start, {min: clip.attackPeak - clip.start, max: clip.duration , step:0.01, callback: (v) =>
+                    {              
+                       clip.relax = v + clip.start;
+                       clip.attackPeak = Math.min(clip.relax, clip.attackPeak);
+                       updateTracks();
+                    }})
+            }
+
+            inspector.addSection("Content");
+            if(clip.showInfo)
+            {
+                clip.showInfo(inspector, updateTracks);
+            }
+            else{
+                for(var i in clip.properties)
+                {
+                    var property = clip.properties[i];
+                    switch(property.constructor)
+                    {
+                        
+                        case String:
+                            inspector.addString(i, property, {callback: function(i,v)
+                            {
+                                this.clip_in_panel.properties[i] = v;
+                            }.bind(this, i)});
+                            break;
+                        case Number:
+                            if(i=="amount")
+                            {
+                                inspector.addNumber(i, property, {min:0, max:1, step:0.01, callback: function(i,v)
+                                {
+                                    this.clip_in_panel.properties[i] = v;
+                                    updateTracks();
+                                }.bind(this,i)});
+                            }
+                        else{
+                            inspector.addNumber(i, property, {callback: function(i,v)
+                                {
+                                    this.clip_in_panel.properties[i] = v;
+                                    updateTracks();
+                                }.bind(this,i)});
+                            }
+                            break;
+                        case Boolean:
+                            inspector.addCheckbox(i, property, {callback: function(i,v)
+                            {
+                                this.clip_in_panel.properties[i] = v;
+                                updateTracks();
+                            }.bind(this,i)});
+                            break;
+                        case Array:
+                            inspector.addArray(i, property, {callback: function(i,v)
+                            {
+                                this.clip_in_panel.properties[i] = v;
+                                updateTracks();
+                            }.bind(this,i)});
+                            break;
+                    }
+                }
+            }
+            inspector.addButton(null, "Delete", () => this.NMFtimeline.deleteClip(this.NMFtimeline._lastClipsSelected[0], () => {clip = null;  this.NMFtimeline.optimizeTracks(); updateTracks()}));
+        }
+        this.sidePanel.content.replaceChild(inspector.root, this.sidePanel.content.getElementsByClassName("inspector")[0]);
+}
+// Listed with __ at the beggining
+updateBoneProperties() {
+                        
         const bone = this.editor.skeletonHelper.bones[this.editor.gizmo.selectedBone];
         if(!bone)
         return;
-
+        
         for( const p in this.boneProperties ) {
             // @eg: p as position, element.setValue( bone.position.toArray() )
             this.boneProperties[p].setValue( bone[p].toArray(), true );
         }
     }
-
+    
     openSettings( settings ) {
-
+        
         let prevDialog = document.getElementById("settings-dialog");
         if(prevDialog) prevDialog.remove();
-
+        
         const dialog = new LiteGUI.Dialog({ id: 'settings-dialog', title: UTILS.firstToUpperCase(settings), close: true, width: 380, height: 210, scroll: false, draggable: true});
-		dialog.show();
-
+        dialog.show();
+        
         const inspector = new LiteGUI.Inspector();
-
+        
         switch( settings ) {
             case 'gizmo': 
-                this.editor.gizmo.showOptions( inspector );
-                break;
+            this.editor.gizmo.showOptions( inspector );
+            break;
         };
-
+        
         dialog.add( inspector );
     }
-
+    
     updateNodeTree() {
         
         const rootBone = this.editor.skeletonHelper.bones[0];
-
+        
         let mytree = { 'id': rootBone.name };
         let children = [];
-
+        
         const addChildren = (bone, array) => {
-
+            
             for( let b of bone.children ) {
-
+                
                 if ( ! b.isBone ){ continue; }
                 let child = {
                     id: b.name,
                     children: []
                 }
-
+                
                 array.push( child );
-
+                
                 addChildren(b, child.children);
             }
         };
-
+        
         addChildren(rootBone, children);
-
+        
         mytree['children'] = children;
         return mytree;
     }
-
+    
     setBoneInfoState( enabled ) {
         for(const ip of $(".bone-position input, .bone-euler input, .bone-quaternion input"))
-            enabled ? ip.removeAttribute('disabled') : ip.setAttribute('disabled', !enabled);
+        enabled ? ip.removeAttribute('disabled') : ip.setAttribute('disabled', !enabled);
     }
-
+    
     appendButtons(menubar) {
 
         const buttonContainer = document.createElement('div');
@@ -402,15 +1091,15 @@ class Gui {
                 text: "<i class='bi bi-skip-start-fill'></i>",
                 display: "none"
             },
-            {
-                id: "capture_btn",
-                text: "Capture" + " <i class='bi bi-record2'></i>"
-            },
-            {
-                id: "trim_btn",
-                text: "Convert data to 3D animation",
-                display: "none"
-            }
+            // {
+            //     id: "capture_btn",
+            //     text: "Capture" + " <i class='bi bi-record2'></i>"
+            // },
+            // {
+            //     id: "trim_btn",
+            //     text: "Convert to animation",
+            //     display: "none"
+            // }
         ];
 
         for(let b of buttons) {
@@ -418,7 +1107,7 @@ class Gui {
             button.id = b.id;
             button.style.display = b.display || "block";
             button.innerHTML = b.text;
-            button.classList.add( "litebutton", "menuButton" );
+            button.classList.add( "litebutton", "menuButton", "captureButton" );
             if(b.styles) Object.assign(button.style, b.styles);
             if(b.callback) button.addEventListener('click', b.callback);
             buttonContainer.appendChild(button);
@@ -447,6 +1136,12 @@ class Gui {
         }
 
         this.timeline.draw(this.timelineCTX, this.current_time, [0, 0, canvas.width, canvas.height]);
+        if(this.NMFtimeline)
+        {
+           
+            this.NMFtimeline.draw(this.timelineNMFCTX, this.current_time, [0, 0, this.timelineNMFCTX.canvas.width, this.timelineNMFCTX.canvas.height], false);    
+        }
+        
     }
 
     showKeyFrameOptions(e, info, index) {
@@ -496,10 +1191,32 @@ class Gui {
         new LiteGUI.ContextMenu( actions, { event: e });
     }
 
-    onMouse(e) {
+    onMouse(e, nmf = null) {
 
         e.preventDefault();
-        this.timeline.processMouse(e);
+        //let rect = this.timeline._canvas.getBoundingClientRect();
+        // if( e.x >= rect.left && e.x <= rect.right && e.y >= rect.top && e.y <= rect.bottom)
+        // {
+        //     if(e.type == "mousedown" && this.NMFtimeline)
+        //         this.NMFtimeline.selected_clip = null;
+        //     this.timeline.processMouse(e);
+        //     return;
+        // }
+        if(this.timeline && this.timeline.active)
+        {
+            this.timeline.processMouse(e);
+            return;
+        }
+        else if(this.NMFtimeline)
+        {
+            // if(e.type == "mousedown")
+            //     this.timeline.deselectAll();
+            this.NMFtimeline.processMouse(e);
+            if(e.type == "wheel")
+                this.timeline.processMouse(e);
+
+        }
+        
     }
 
     resize() {
@@ -511,7 +1228,8 @@ class Gui {
 
         const canvasArea = document.getElementById("canvasarea");
         let timelineCanvas = document.getElementById("timelineCanvas");
-        timelineCanvas.width = canvasArea.clientWidth;
+        let timelineNMFCanvas = document.getElementById("timelineNMFCanvas");
+        timelineCanvas.width = timelineNMFCanvas.width = canvasArea.clientWidth;
     }
 
     drawSkeleton() {

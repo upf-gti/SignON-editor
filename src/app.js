@@ -3,6 +3,7 @@ import { Editor } from "./editor.js";
 import { VideoUtils } from "./video.js";
 import { FileSystem } from "./libs/filesystem.js";
 
+const appMode = {LIVE:0, VIDEO:1};
 class App {
 
     constructor() {
@@ -14,7 +15,7 @@ class App {
 
         this.mediaRecorder = null
         this.chunks = [];
-
+        this.captureMode = null;
         this.editor = new Editor(this);
 
         // Create the fileSystem and log the user
@@ -34,12 +35,14 @@ class App {
 
         switch(mode) {
             case 'capture': 
+                this.captureMode = appMode.LIVE;
                 this.onBeginCapture();
                 break;
             case 'bvh': 
                 this.onLoadAnimation( settings.data );
                 break;
             case 'video': 
+                this.captureMode = appMode.VIDEO;
                 this.onLoadVideo( settings.data );
                 break;
         }
@@ -62,6 +65,13 @@ class App {
         capture.disabled = true;
         capture.style.display = "none";
 
+        let redo = document.getElementById("redo_btn");
+        if(redo){
+            redo.disabled = true;
+            redo.style.display = "none";
+        } 
+            
+
         let trimBtn = document.getElementById("trim_btn");
         trimBtn.disabled = true;
         trimBtn.style.display = "none";
@@ -71,15 +81,19 @@ class App {
         let stopBtn = document.getElementById("stop_btn");
         stopBtn.style.display = "block";
 
+        // let captureInfo = document.getElementById("capture-info");
+        // captureInfo.classList.add("hidden");
+
         let timelineDiv = document.getElementById("timeline");
         timelineDiv.classList.remove("hidden");
     }
 
     onBeginCapture() {
         // Run mediapipe to extract landmarks
-        MediaPipe.start( true, () => {
-            $('#loading').fadeOut();
-        } );
+        if(!MediaPipe.loaded)
+            MediaPipe.start( true, () => {
+                $('#loading').fadeOut();
+            }, this.editor.gui.updateCaptureGUI.bind(this.editor.gui) );
 
         // Show video
         let video = document.getElementById("recording");
@@ -113,7 +127,11 @@ class App {
 
         this.setEvents();
 
-        const url = URL.createObjectURL(videoFile);
+        let url = "";
+        if(typeof(videoFile) == 'string' && videoFile.includes("blob:"))
+            url = videoFile;
+        else
+            url = URL.createObjectURL(videoFile);
         const that = this;
 
         let videoElement = document.getElementById("inputVideo");
@@ -131,7 +149,8 @@ class App {
             video.setAttribute('controls', 'name');
             video.controls = false;
             video.loop = true;
-            
+            //that.chunks[0] = that.chunks[0].slice(1,that.chunks[0].size, "video/mp4; codecs=avc1");
+            //that.chunks.shift();
             let blob = new Blob(that.chunks, { "type": "video/mp4; codecs=avc1" });
             let videoURL = URL.createObjectURL(blob);
             video.src = videoURL;
@@ -144,7 +163,7 @@ class App {
 
         MediaPipe.start( false, () => {
             $('#loading').fadeOut();
-        } );
+        }, this.editor.gui.updateCaptureGUI.bind(this.editor.gui) );
     }
 
     onRecordLandmarks(startTime, endTime) {
@@ -160,6 +179,11 @@ class App {
         videoRec.classList.remove("hidden");
         videoRec.style.width = "100%";
         videoRec.style.height = "100%";
+        
+
+        videoRec.style.cssText+= "transform: rotateY(0deg);\
+        -webkit-transform:rotateY(0deg); /* Safari and Chrome */\
+        -moz-transform:rotateY(0deg); /* Firefox */"
     
         // Solve the aspect ratio problem of the video
         let videoCanvas = document.getElementById("outputVideo");
@@ -193,13 +217,14 @@ class App {
         // Initially register the callback to be notified about the first frame.
         videoRec.requestVideoFrameCallback(updateFrame);
 
-        const name = "Unnamed";
-        this.editor.clipName = name;
-        this.editor.updateGUI();
-
         // Creates the scene and loads the animation
         this.editor.trimTimes = [startTime, endTime];
         this.editor.buildAnimation( MediaPipe.landmarks );
+        
+        const name = "Unnamed";
+        this.editor.clipName = name;
+        this.editor.updateGUI();
+        this.editor.gui.hiddeCaptureArea();
     }
 
     setEvents(live) {
@@ -230,18 +255,21 @@ class App {
                     }
                 }
 
-                capture.innerHTML = "Stop" + " <i class='bi bi-stop-fill'></i>"
-                capture.style.backgroundColor = "lightcoral";
-                capture.style.border = "solid #924242";
-
-                videoCanvas.style.border = "solid #924242";
-                
+                capture.innerHTML = " <i class='fa fa-stop' style= 'margin:5px; font-size:initial;'></i>"//"Stop" + " <i class='bi bi-stop-fill'></i>"
+                // capture.style.backgroundColor = "lightcoral";
+                // capture.style.border = "solid #924242";
+                capture.classList.add("stop");
+               // videoCanvas.style.border = "solid var(--global-color-highlight)";
+                videoCanvas.classList.add("border-animation");
                 // Start the capture
-                MediaPipe.onStartRecording();
                 this.recording = true;
-                this.mediaRecorder.start();
-                this.startTime = Date.now();
-                console.log("Start recording");
+                setTimeout(()=> {
+                    MediaPipe.onStartRecording();
+                    this.mediaRecorder.start();
+                    this.startTime = Date.now();
+                    console.log("Start recording");
+                }, 100);
+                
             }
             else {
 
@@ -250,23 +278,36 @@ class App {
                     videoElement.loop = true;
                 }
 
-                // Show modal to redo or load the animation in the scene
-                elem.style.display = "flex";
                 
                 // Stop the video recording
                 this.recording = false;
                 
-                this.mediaRecorder.stop();
-                MediaPipe.onStopRecording();
-                let endTime = Date.now();
-                this.duration = endTime - this.startTime;
                 console.log("Stop recording");
-
                 // Back to initial values
-                capture.innerHTML = "Capture" + " <i class='bi bi-record2'></i>"
-                capture.style.removeProperty("background-color");
-                capture.style.removeProperty("border");
-                videoCanvas.style.removeProperty("border");
+                //capture.innerHTML = " <i class='bi bi-record-circle' style= 'margin:5px; font-size:initial;'></i> Start recording";
+                // capture.style.removeProperty("background-color");
+                // capture.style.removeProperty("border");
+                //videoCanvas.style.removeProperty("border");
+                this.mediaRecorder.stop();
+                
+                videoCanvas.classList.remove("border-animation");
+                capture.classList.remove("stop");
+
+                
+                if(MediaPipe.landmarks.length) {
+                    
+                    MediaPipe.onStopRecording();
+                    let endTime = Date.now();
+                    this.duration = endTime - this.startTime;
+                    // Show modal to redo or load the animation in the scene
+                    //elem.style.display = "flex";
+                    elem.style.display = "none";
+                    setTimeout(()=>{
+                        MediaPipe.stop();
+                        this.processVideo(live);
+                    }, 100);
+                    
+                }
             }
         };
     
@@ -287,22 +328,19 @@ class App {
             this.onRecordLandmarks(0, null);
         };
 
-        let trimBtn = document.getElementById("trim_btn");
-        trimBtn.onclick = () => {
-            VideoUtils.unbind( (start, end) => this.onRecordLandmarks(start, end) );
-        };
+        // let trimBtn = document.getElementById("trim_btn");
+        // trimBtn.onclick = () => {
+        //     VideoUtils.unbind( (start, end) => this.onRecordLandmarks(start, end) );
+        // };
     }
     
-    async processVideo() {
+    async processVideo(live) {
                 
         // Update header
         let capture = document.getElementById("capture_btn");
-        capture.disabled = true;
         capture.style.display = "none";
-
-        let trimBtn = document.getElementById("trim_btn");
-        trimBtn.style.display = "block";
-
+        capture.disabled = true;
+        
         // TRIM VIDEO - be sure that only the sign is recorded
         let canvas = document.getElementById("outputVideo");
         let video = document.getElementById("recording");
@@ -310,20 +348,36 @@ class App {
         video.style.width = canvas.width + "px";
         video.style.height = canvas.height + "px";
 
+        if(live === undefined || !live){
+            video.style.cssText+= "transform: rotateY(0deg);\
+                            -webkit-transform:rotateY(0deg); /* Safari and Chrome */\
+                            -moz-transform:rotateY(0deg); /* Firefox */"
+        }
         await VideoUtils.bind(video, canvas);
+        
+
+        let trimBtn = document.getElementById("trim_btn");
+        trimBtn.style.display = "block";
+        let redoBtn = document.getElementById("redo_btn");
+        redoBtn.style.display = "block";
     }
 
     mediaDevicesSupported(video, scope) {
-
+        
         // prepare the device to capture the video
         if (navigator.mediaDevices) {
             console.log("UserMedia supported");
-
+                       
             let constraints = { video: true, audio: false };
 
-            navigator.mediaDevices.getUserMedia(constraints).then(function (stream) {
+            navigator.mediaDevices.getUserMedia(constraints).then( (stream) => {
 
+                
                 let videoElement = document.getElementById("inputVideo");
+                
+                if(!videoElement.srcObject)
+                    videoElement.srcObject = stream;
+                    
                 scope.mediaRecorder = new MediaRecorder(videoElement.srcObject);
 
                 scope.mediaRecorder.onstop = function (e) {

@@ -1,4 +1,4 @@
-import * as THREE from "./libs/three.module.js";
+import * as THREE from "three";
 import * as MATH_UTILS from "./math.js";
 
 var base_size = 1;
@@ -686,6 +686,33 @@ function createAnimationFromRotations(name, nn) {
     return new THREE.AnimationClip(name || "sign_anim", length, tracks);
 }
 
+function postProcessAnimation(clip, landmarks) {
+
+    let distance = 0;
+    let rightHand = 0;
+    let leftHand = 0;
+    for(let i = 0; i < landmarks.length; i++){
+        distance += landmarks[i].distanceToCamera;
+        rightHand += landmarks[i].rightHandVisibility;
+        leftHand += landmarks[i].leftHandVisibility;
+    }
+    distance /= landmarks.length;
+    rightHand /= landmarks.length;
+    leftHand /= landmarks.length;
+
+    let tracks = [];
+    for(let i = 0; i < clip.tracks.length; i++){
+        let track = clip.tracks[i];
+        if((track.name.includes("Hips") || track.name.includes("Spine") || track.name.includes("Neck")) && distance < 0.5)
+        {
+            continue;
+        }
+        tracks.push(track);
+    }
+
+    clip.tracks = tracks;
+}
+
 function retargetNames(names) {
     
     var lmInfoArray = Object.keys(LM_INFO);
@@ -705,4 +732,4 @@ function retargetNames(names) {
     return names;
 }
 
-export { createSkeleton, createAnimation, createAnimationFromRotations, createThreeJSSkeleton, updateThreeJSSkeleton, injectNewLandmarks };
+export { createSkeleton, createAnimation, createAnimationFromRotations, createThreeJSSkeleton, updateThreeJSSkeleton, injectNewLandmarks, postProcessAnimation };

@@ -12,19 +12,20 @@ const MediaPipe = {
     previousTime: 0,
     landmarks: [],
 
-    async start( live, onload ) {
+    async start( live, onload, onresults ) {
 
         UTILS.makeLoading("Loading MediaPipe...");
 
+        this.live = live;
         this.landmarks = [];
         this.onload = onload;
-
+        this.onresults = onresults;
         // Webcam and MediaPipe Set-up
         const videoElement = document.getElementById("inputVideo");
         const canvasElement = document.getElementById("outputVideo");
         const canvasCtx = canvasElement.getContext("2d");
 
-        const holistic = new Holistic({locateFile: (file) => {
+        const holistic = await new Holistic({locateFile: (file) => {
             return `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`;
         }});
 
@@ -47,7 +48,6 @@ const MediaPipe = {
                 this.fillLandmarks(results, dt);
                 this.previousTime = this.currentTime;
             }
-
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
             // Only overwrite existing pixels.
@@ -58,29 +58,41 @@ const MediaPipe = {
             // Only overwrite missing pixels.
             canvasCtx.globalCompositeOperation = 'destination-atop';
 
-            // Mirror canvas
-            canvasCtx.translate(canvasElement.width, 0);
-            canvasCtx.scale(-1, 1);    
-            // -------------
+            if(this.live){
+                // Mirror canvas
+                canvasCtx.translate(canvasElement.width, 0);
+                canvasCtx.scale(-1, 1);    
+                // -------------
+            }
 
             canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
-
-            canvasCtx.globalCompositeOperation = 'source-over';
-            drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,
-                            {color: '#00FF00', lineWidth: 4});
-            drawLandmarks(canvasCtx, results.poseLandmarks,
-                            {color: '#FF0000', lineWidth: 2});
-            drawConnectors(canvasCtx, results.faceLandmarks, FACEMESH_TESSELATION,
-                            {color: '#C0C0C070', lineWidth: 1});
-            drawConnectors(canvasCtx, results.leftHandLandmarks, HAND_CONNECTIONS,
-                            {color: '#CC0000', lineWidth: 5});
-            drawLandmarks(canvasCtx, results.leftHandLandmarks,
-                            {color: '#00FF00', lineWidth: 2});
-            drawConnectors(canvasCtx, results.rightHandLandmarks, HAND_CONNECTIONS,
-                            {color: '#00CC00', lineWidth: 5});
-            drawLandmarks(canvasCtx, results.rightHandLandmarks,
-                            {color: '#FF0000', lineWidth: 2});
+            let recording = window.globals.app.isRecording();
+            if(!recording) {
+                canvasCtx.globalCompositeOperation = 'source-over';
+            
+                // const image = document.getElementById("source");
+                // canvasCtx.globalAlpha = 0.6;
+                // canvasCtx.drawImage(image, 0, 0, canvasElement.width, canvasElement.height);
+                // canvasCtx.globalAlpha = 1;
+                drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,
+                    {color: '#1a2025', lineWidth: 4}); //'#00FF00'
+                drawLandmarks(canvasCtx, results.poseLandmarks,
+                                {color: 'rgba(58, 161, 156, 0.8)', lineWidth: 1}); //'#00FF00'
+                // drawConnectors(canvasCtx, results.faceLandmarks, FACEMESH_TESSELATION,
+                //                 {color: '#C0C0C070', lineWidth: 1});
+                drawConnectors(canvasCtx, results.leftHandLandmarks, HAND_CONNECTIONS,
+                                {color: '#1a2025', lineWidth: 4}); //#CC0000
+                drawLandmarks(canvasCtx, results.leftHandLandmarks,
+                                {color: 'rgba(58, 161, 156, 0.8)', lineWidth: 1}); //'#00FF00'
+                drawConnectors(canvasCtx, results.rightHandLandmarks, HAND_CONNECTIONS,
+                                {color: '#1a2025', lineWidth: 4}); //#00CC00
+                drawLandmarks(canvasCtx, results.rightHandLandmarks,
+                                {color: 'rgba(58, 161, 156, 0.8)', lineWidth: 1});
+                                        
+            }
             canvasCtx.restore();
+            if(this.onresults)
+                this.onresults(results, recording);
 
         }).bind(this));
 
@@ -128,7 +140,7 @@ const MediaPipe = {
         if(!$feed.srcObject)
             $feed.srcObject = $feed.captureStream();
         $feed.srcObject.getTracks().forEach(a => a.stop());
-        $feed.srcObject = null;
+       // $feed.srcObject = null;
     },
 
     onStartRecording() {
@@ -147,22 +159,12 @@ const MediaPipe = {
             console.warn( "no landmark data at time " + dt/1000.0 );
             return;
         }
-
-        // for (let j = 0; j < data.poseLandmarks.length; ++j) {
-        //     data.poseLandmarks[j].x = (data.poseLandmarks[j].x - 0.5);
-        //     data.poseLandmarks[j].y = (1.0 - data.poseLandmarks[j].y) + 2;
-        //     data.poseLandmarks[j].z = -data.poseLandmarks[j].z * 0.5;
-        // }
-        // if(data.rightHandLandmarks)
-        //     for (let j = 0; j < data.rightHandLandmarks.length; ++j) {
-        //         data.rightHandLandmarks[j].z = -data.rightHandLandmarks[j].z * 0.5;
-        //     }
-        // if(data.leftHandLandmarks)
-        //     for (let j = 0; j < data.leftHandLandmarks.length; ++j) {
-        //         data.leftHandLandmarks[j].z = -data.leftHandLandmarks[j].z * 0.5;
-        //     }
-
-        this.landmarks.push({"RLM": data.rightHandLandmarks, "LLM": data.leftHandLandmarks, "FLM": data.faceLandmarks, "PLM": data.poseLandmarks, "dt": dt});
+        const { poseLandmarks } = data;
+        let distance = (poseLandmarks[23].visibility + poseLandmarks[24].visibility)*0.5;
+        let leftHand = (poseLandmarks[15].visibility + poseLandmarks[17].visibility + poseLandmarks[19].visibility)/3;
+        let rightHand = (poseLandmarks[16].visibility + poseLandmarks[18].visibility + poseLandmarks[20].visibility)/3;
+      
+        this.landmarks.push({"RLM": data.rightHandLandmarks, "LLM": data.leftHandLandmarks, "FLM": data.faceLandmarks, "PLM": data.poseLandmarks, "dt": dt, distanceToCamera: distance, rightHandVisibility: rightHand, leftHandVisibility: leftHand});
     }
 }
 

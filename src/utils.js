@@ -6,6 +6,19 @@ import { MiniGLTFLoader } from "./loaders/GLTFLoader.js";
 
 const CompareEqual = (v, p, n) => { return v !== p || v !== n };
 const CompareThreshold = (v, p, n, t) => { return Math.abs(v - p) >= t || Math.abs(v - n) >= t };
+const CompareThresholdRange = (v0, v1, t0, t1) => { return v0 > t0 && v0 <= t1 || v1 > t0 && v1 <= t1 };
+const HexToRgb = (hex) => {
+    var c;
+    if(/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)){
+        c= hex.substring(1).split('');
+        if(c.length== 3){
+            c= [c[0], c[0], c[1], c[1], c[2], c[2]];
+        }
+        c= '0x'+c.join('');
+        return [(c>>16)&255, (c>>8)&255, c&255];
+    }
+    throw new Error('Bad Hex');
+}
 
 const UTILS = {
 	getTime() {
@@ -79,6 +92,7 @@ const UTILS = {
 	makeLoading( string, opacity = 1 ) {
 
 		$("#loading p").text( string );
+		$("#loading").removeClass("hidden");
 		$("#loading").css({ background: "rgba(17,17,17," + opacity + ")" })
 		$("#loading").fadeIn();
 	}
@@ -131,4 +145,4 @@ const ShaderChunk = {
 
 };
 
-export { UTILS, ShaderChunk, CompareThreshold }
+export { UTILS, ShaderChunk, CompareThreshold, CompareThresholdRange, HexToRgb }

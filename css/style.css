@@ -1,22 +1,30 @@
 :root {
-	--header-size: 70px;
+	--header-size: 60px;
     --global-font-family: Verdana, sans-serif;
     --global-font-size: 0.8rem;
-    --global-text-color: #555;
-    --global-color-primary: #222;
-    --global-color-secondary: rgb(54, 61, 61);
+    --global-text-color: #495057;
+	--global-text-color-secondary: #ddd;
+    --global-color-primary: #1a2025;
+    --global-color-secondary: #2c303570; /* rgb(54, 61, 61);*/
 	--global-color-selected: rgb(35, 105, 102);
 	--global-color-highlight: rgb(58, 161, 156, 0.8);
+	--global-color-selected-secondary: #5f88c9;/* #ff9a00; /* rgb(95 136 201);*/
 	--global-color-disabled: rgb(117, 79, 79);
 	--global-color-disabled-hover: rgb(110, 91, 91);
 	--start-scene-proportion: 80%;
+	--primary: #0676ed;
+	--background: #161c21;
+	--warning: #f2a600;
+	--success: #12c99b;
+	--error: #e41749;
+	--dark: #151a30;
 }
 
 :focus-visible{
 	outline: thin;
 }
 
-html, body { width: 100%; height: 100%; margin: 0; padding: 0; background-color: var(--global-color-primary); overflow: hidden;}
+html, body { width: 100%; height: 100%; margin: 0; padding: 0; background-color: var(--background); overflow: hidden; font-size: var(--global-font-size);}
 
 video {
 	transform: rotateY(180deg);
@@ -45,9 +53,12 @@ canvas {
 
 .expanded {
 	width: 100% !important;
-	height: 100% !important; 
-	top: 49px !important;
+	height: 100% !important;
+	/* top: 0px !important; */
+	top: 37px !important;
 	left: 0px !important;
+	/* flex-direction: column; */
+	/* padding: 25px; */
 }
 
 .hidden {
@@ -84,24 +95,41 @@ canvas {
 	font-size: 1.6em;
 }
 
-#header {
+.header {
     height: var(--header-size);
     text-align: center;
-    background-color: var(--global-color-primary);
     display: flex;
-    justify-content: left;
+    justify-content: center;
     align-items: center;
+	font-size: initial;
 }
 
 .menuButton {
-	margin-top: 2px !important;
+	/* margin-top: 2px !important; */
 	padding-left: 15px !important;
 	padding-right: 15px !important;
 	font-size: 1.6em  !important;
 }
 
+.captureButton {
+    padding: 1.25rem 2.25rem;
+    font-size: 1.1rem;
+    /* font-weight: bolder; */
+    border: none;
+    border-radius: 10rem!important;
+    margin: 1rem;
+    display: block;
+    text-transform: capitalize;
+}
+/* .captureButton:hover, .recording{
+    color: var(--global-color-highlight) !important;
+} */
+.captureButton.stop{
+	background-color: rgb(215,59,62)!important;
+	color:white;
+}
 .selected {
-	background: var(--global-color-selected);
+	background: var(--global-color-secondary);
 }
 
 .float-right {
@@ -118,7 +146,7 @@ canvas {
 
 #signOn-logo {
 	width: 37px;
-	padding: 3px;
+	padding: 5px;
 	cursor: pointer;
 	margin-right: 1px;
 	margin-left: 3px;
@@ -131,17 +159,16 @@ canvas {
 
 #capture {
 	width: 20%;
-	left: 40px;
-	top: 90px;
-	position: absolute;
-	z-index: 10;
-
-	display: flex;
-	justify-content: center;
-	align-content: center;
-	align-items: center;
-
-	background-color: rgba(51, 51, 51, 0.5);
+    left: 40px;
+    top: 90px;
+    position: absolute;
+    z-index: 9;
+    display: flex;
+    /* justify-content: flex-end;
+    align-content: center;
+    align-items: center; */
+    background-color: var(--background);
+    font-family: Verdana;
 }
 
 #recording {
@@ -194,23 +221,23 @@ canvas {
 
 #timeline {
 	width: 100%;
-	height: 115px;
+	/* height: 115px; */
+	max-height: 40%;
+	min-height: 100px; 
 	bottom: 10%;
 	position: relative;
 	z-index: 5;
-	
 	position: absolute;
 	bottom: 0px;
-
 	display: flex;
 	justify-content: center;
 	align-content: center;
 	align-items: center;
 }
 
-#timelineCanvas {
+.timeline{
 	width: 100%;
-	height: 100%;
+	/* height: 100%; */
 }
 
 .square {
@@ -356,7 +383,7 @@ canvas {
   }
 
 /* Header buttons */
-.btn {
+.onEndBtn {
 	height: 100%;
     display: flex;
     justify-content: center;
@@ -368,7 +395,212 @@ canvas {
 	background-color: var(--global-color-secondary);
 }
 
-/* Darker background on mouse-over */
-.btn:hover {
+.onEndBtn:hover {
 	background-color: var(--global-color-highlight) !important;
+}
+
+.icon-link {
+	margin-right: 1rem;
+	color: var(--global-color-highlight) !important;
+}
+
+.icon-link:hover{
+	color: var(--global-color-selected) !important;
+}
+
+#endOfCapture span{
+	color: whitesmoke;
+}
+
+.alert-info {
+	height: 33px;
+	/* width: 560px; */
+	width: 300px;
+	max-width: 90%;
+	border-radius: 12px;
+	/*padding: 16px 22px 17px 20px;*/
+	padding: 5px;
+	display: flex;
+	align-items: center;
+	margin: 0px 10px;
+	background: transparent !important;
+  }
+  .alert-warning {
+	/* background: var(--warning) !important; */
+	color: var(--warning) !important;
+  }
+  .alert-success {
+	/* background: var(--success) !important; */
+	color: var(--success) !important;
+  }
+  .alert-primary {
+	/* background: var(--primary) !important; */
+	color: var(--primary) !important;
+  }
+  .alert-dark {
+	/* background: var(--dark) !important; */
+	color: var(--dark) !important;
+  }
+  .alert-error {
+	/* background: var(--error) !important; */
+	color: var(--error) !important;
+  }
+  .alert .icon__wrapper {
+	height: 25px;
+	width: 25px;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.253);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+  }
+  .alert .icon__wrapper span {
+	font-size: 21px;
+	color: #fff;
+  }
+  .alert p {
+	/* color: #fff; */
+	font-family: Verdana;
+	margin-left: 10px;
+	margin-top: revert;
+  }
+  .alert p a,
+  .alert p a:visited,
+  .alert p a:active {
+	color: #fff;
+  }
+  .alert .open {
+	margin-left: auto;
+	margin-right: 5px;
+  }
+  .alert .close, .alert .open {
+	color: #fff;
+	transition: transform 0.5s;
+	font-size: 18px;
+	cursor: pointer;
+  }
+  .alert .close:hover, .alert .open:hover {
+	transform: scale(1.3);
+  }
+  .flex-horizontal {
+	display: flex;
+	flex-direction: row;
+  }
+  .flex-vertical {
+	display: flex;
+	flex-direction: column;
+  }
+
+.bg-success {
+	color: var(--success);
+}
+.bg-warning {
+	color: var(--warning);
+}
+.bg-danger {
+	color: var(--error);
+}
+
+.drop-icon{
+	font-size: 20px;
+	margin: 6px 10px;
+	max-height: 20px;
+	color: var(--global-color-selected);
+}
+.drop-icon:hover {
+	color: var(--global-color-highlight)!important;
+}
+
+.video-area{
+	background-color: var(--global-color-primary);
+    padding: 38px;
+    width: 100%; 
+    align-items: center;
+}
+
+/*
+#ff9a00 (a bright orange color)
+#f5a5c2 (a soft pink color)
+#5d5d5d (a dark grey color)
+#f7f7f7 (a light grey color)
+#007aff (a bright blue color)
+
+dark mode:
+#ffa600 (a bright yellow color)
+#ff6b6b (a deep red color)
+#e5e5e5 (a light grey color)
+#6c757d (a cool grey color)
+#0077c2 (a bright blue color
+*/
+.select2 {
+	width: auto;
+    display: flex;
+    overflow: hidden;
+    flex-direction: row;
+    align-content: center;
+    align-items: center;
+    justify-content: center;
+}
+.select2-container {
+    /* top: 701.591px; */
+    left: 1677.73px;
+    overflow: hidden;
+    height: 25%;
+	color: #FEE;
+	padding: 2px;
+	background: var(--global-color-primary);
+    text-align-last: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+	
+}
+
+.select2-container ul{
+	list-style-type: none;
+    background: var(--background);
+    padding: 5px;
+	list-style-type: none;
+    background: var(--background);
+    padding: 5px;
+    overflow: scroll;
+    height: 100%;
+}
+
+.select2-container::-webkit-scrollbar {
+    display: block !important;
+    width: 5px !important;
+    border-radius: 6px;
+}
+.select2-container input{
+	border: 1px solid rgba(255, 255, 255, 0.2);
+    background-color: var(--global-color-secondary);
+    border-radius: 4px;
+    caret-color: #5f88c9;
+    padding-left: 5px;
+    width: 90%;
+}
+.selection p{
+	margin: 2px;
+}
+
+.border-animation{
+	border: solid var(--global-color-highlight);
+	border-width: 0.1em;
+	border-radius: 5px;
+	animation: capture-animation 3s infinite ease-in-out;
+}
+@keyframes capture-animation {
+	from {border: solid var(--global-color-highlight);}
+	50% {border: solid var(--global-color-primary);}
+	to {border: solid var(--global-color-highlight);}
+}
+
+.slidein-top{
+	animation: intop 0.2s;
+}
+
+@keyframes intop  {
+	from {top: -1%}
+	75% {top: 0.1%}
+	to {top: 0%;}
 }

@@ -14,10 +14,10 @@ const CanvasButtons = {
         if(!item.nIcon) item.nIcon = item.icon;
 
         if( this[item.property] ) {
-            item.type === 'image' ? content.src = item.icon : content.className = 'bi bi-' + item.icon;
+            item.type === 'image' ? content.src = item.icon : content.className = item.icon;
             content.parentElement.classList.add('selected');
         }else {
-            item.type === 'image' ? content.src = item.nIcon : content.className = 'bi bi-' + item.nIcon;
+            item.type === 'image' ? content.src = item.nIcon : content.className =  item.nIcon;
             content.parentElement.classList.remove('selected');
         }
     },
@@ -26,11 +26,26 @@ const CanvasButtons = {
         {
             name: 'skin',
             property: 'showSkin',
-            icon: 'person-x-fill',
-            nIcon: 'person-check-fill',
+            icon: 'bi bi-person-x-fill',
+            nIcon: 'bi bi-person-check-fill',
             callback: function() {
                 let model = this.scene.getObjectByName("Armature");
                 model.visible = this.showSkin;
+                
+            }
+        },
+
+        {
+            name: 'skeleton',
+            property: 'showSkeleton',
+            icon: 'fa-solid fa-skull',
+            nIcon: 'fa-solid fa-skull',
+            callback: function() {
+                let skeleton = this.scene.getObjectByName("SkeletonHelper");
+                skeleton.visible = this.showSkeleton;
+                this.scene.getObjectByName('GizmoPoints').visible = this.showSkeleton;
+                if(!this.showSkeleton) 
+                    this.gizmo.stop();
             }
         },
 
@@ -40,13 +55,18 @@ const CanvasButtons = {
             icon: 'https://webglstudio.org/latest/imgs/mini-icon-gui.png',
             type: 'image',
             callback: function() {
+                
                 this.scene.getObjectByName('SkeletonHelper').visible = this.showHUD;
                 this.scene.getObjectByName('GizmoPoints').visible = this.showHUD;
                 this.scene.getObjectByName('Grid').visible = this.showHUD;
-
+                
+                let skull = document.querySelector("[title=skeleton]");
                 if(!this.showHUD) {
                     this.gizmo.stop();
+                    skull.classList.remove("selected")
                 }
+                else if(this.scene.getObjectByName("SkeletonHelper").visible)
+                    skull.classList.add("selected");
 
                 const video = document.getElementById("capture");
                 const tl = document.getElementById("timeline");
@@ -68,7 +88,7 @@ const CanvasButtons = {
         {
             name: 'anim-loop',
             property: 'animLoop',
-            icon: 'arrow-clockwise'
+            icon: 'bi bi-arrow-clockwise'
         }
     ]
 

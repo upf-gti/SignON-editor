@@ -1,10 +1,11 @@
-import { UTILS, CompareThreshold } from '../utils.js';
+import { UTILS, CompareThreshold, CompareThresholdRange } from '../utils.js';
 
 // Agnostic timeline, do nos impose any timeline content
 // It renders to a canvas
 
-function Timeline( clip, bone_name ) {
+function Timeline( clip, bone_name, timeline_mode = "tracks" , position = [0,0], drawButtons = true) {
 
+	this.name = null;
 	this.current_time = 0;
 	this.framerate = 30;
 	this.opacity = 0.8;
@@ -14,12 +15,12 @@ function Timeline( clip, bone_name ) {
 
 	//do not change, it will be updated when called draw
 	this.duration = 100;
-	this.position = [0,0];
-	this.size = [300, 150];
+	this.position = position;
+	this.size = [300, 100];
 
 	this.current_scroll = 0; //in percentage
 	this.current_scroll_in_pixels = 0; //in pixels
-	this.scrollable_height = 0; //true height of the timeline content
+	this.scrollable_height = this.size[1]; //true height of the timeline content
 
 	this._seconds_to_pixels = 100;
 	this._pixels_to_seconds = 1 / this._seconds_to_pixels;
@@ -30,7 +31,7 @@ function Timeline( clip, bone_name ) {
 
 	this._last_mouse = [0,0];
 	this._lastKeyFramesSelected = [];
-
+	this._lastClipsSelected = [];
 	this._trackState = [];
 	this._tracks_drawn = [];
 	this._buttons_drawn = [];
@@ -40,22 +41,49 @@ function Timeline( clip, bone_name ) {
 	this.selected_bone = bone_name;
 	this.snappedKeyFrameIndex = -1;
 	this.autoKeyEnabled = false;
+	
+	this.track_height = 15;
+	this.timeline_mode = timeline_mode;
+	this.draw_buttons = drawButtons;
 
-	this.processTracks();
+	this.active = true;
 
-	this.onDrawContent = ( ctx, time_start, time_end, timeline ) => {
+	if(clip)
+		this.processTracks();
 
-		if(this.selected_bone == null)
-		return;
+	this.onDrawContent = ( ctx, time_start, time_end, timeline) => {
+		ctx.save();
+		if(this.timeline_mode == "tracks") {
 
-		let tracks = this.tracksPerBone[this.selected_bone];
-		if(!tracks) return;
-
-		const height = 15;
-		for(let i = 0; i < tracks.length; i++) {
-			let track = tracks[i];
-			this.drawTrackWithKeyframes(ctx, (i+1) * height, height, track.name + " (" + track.type + ")", track, i);
+			if(this.selected_bone == null || !this.tracksPerBone)
+			return;
+			
+			let tracks = this.tracksPerBone[this.selected_bone] ? this.tracksPerBone[this.selected_bone] : [{name: this.selected_bone}];
+			//if(!tracks) return;
+			
+			const height = this.track_height;
+			for(let i = 0; i < tracks.length; i++) {
+				let track = tracks[i];
+				this.drawTrackWithKeyframes(ctx, (i+1) * height, height, track.name + " (" + track.type + ")", track, i);
+			}
 		}
+		else if( this.timeline_mode == "clips")
+		{
+			
+			let tracks = this.clip.tracks|| [{name: "NMF", clips: []}];
+			if(!tracks) return;
+			
+			const height = this.track_height*1.2;
+			for(let i = 0; i < tracks.length; i++) {
+				let track = tracks[i];
+				this.drawTrackWithBoxes(ctx, (i+1) * height, height, track.name || "", track, i);
+			}
+		}
+		ctx.restore();
+		let offset = 25;
+		ctx.fillStyle = 'white';
+		if(this.name)
+			ctx.fillText(this.name, 9 + ctx.measureText(this.name).actualBoundingBoxLeft + offset * this._buttons_drawn.length, -this.top_margin*0.5 );
 	};
 
 	this.autoKeyButtonImg = document.createElement('img');
@@ -67,13 +95,19 @@ function Timeline( clip, bone_name ) {
 
 	// Add button data
 	let offset = 25;
-	this._buttons_drawn.push( [this.autoKeyButtonImg, "autoKeyEnabled", 9, -this.top_margin + 1, 22, 22] );
-	this._buttons_drawn.push( [this.optimizeButtonImg, "optimize", 9 + offset * this._buttons_drawn.length, -this.top_margin + 1, 22, 22, (e) => {
-		this.onShowOptimizeMenu(e);
-	}] );
-	this._buttons_drawn.push( [this.unSelectAllKeyFramesImg, "unselectAll", 9 + offset * this._buttons_drawn.length, -this.top_margin + 1, 22, 22, (e) => {
-		this.unSelectAllKeyFrames();
-	}] );
+	if(this.draw_buttons && this.active)
+	{
+
+		this._buttons_drawn.push( [this.autoKeyButtonImg, "autoKeyEnabled", 9, -this.top_margin + 1, 22, 22] );
+		this._buttons_drawn.push( [this.optimizeButtonImg, "optimize", 9 + offset * this._buttons_drawn.length, -this.top_margin + 1, 22, 22, (e) => {
+			this.onShowOptimizeMenu(e);
+		}] );
+		this._buttons_drawn.push( [this.unSelectAllKeyFramesImg, "unselectAll", 9 + offset * this._buttons_drawn.length, -this.top_margin + 1, 22, 22, (e) => {
+			this.unSelectAllKeyFrames();
+		}] );
+	}
+	
+	
 }
 
 Timeline.prototype.onUpdateTracks = function ( keyType ) {
@@ -139,8 +173,8 @@ Timeline.prototype.processTracks = function () {
 }
 
 Timeline.prototype.getNumTracks = function(bone) {
-	if(!bone)
-	return;
+	if(!bone || !this.tracksPerBone)
+		return;
 	const tracks = this.tracksPerBone[bone.name];
 	return tracks ? tracks.length : null;
 }
@@ -369,6 +403,152 @@ Timeline.prototype.addKeyFrame = function( track ) {
 
 	return newIdx;
 }
+Timeline.prototype.setDuration = function (t) { this.duration = this.clip.duration = t; if( this.onSetDuration ) this.onSetDuration( t );	 }
+
+Timeline.prototype.addTrackClip = function(){
+	if(!this.clip)
+		this.clip = {tracks:[]};
+
+	let trackInfo = {
+		idx: this.clip.tracks.length,
+		clips: [],
+		selected: [], edited: [], hovered: []
+	};
+
+	this.clip.tracks.push(trackInfo);
+	return trackInfo.idx;
+}
+
+Timeline.prototype.addClip = function( clip, offsetTime = 0, callback = null) {
+
+	// Update clip information
+	let track_idx = null;
+	let newStart = this.current_time + offsetTime
+	clip.attackPeak += (newStart - clip.start);
+	clip.relax += (newStart - clip.start);
+	clip.start = newStart;
+	// Time slot with other key?
+	let keyInCurrentSlot = null;
+	if(!this.clip) 
+		this.addTrackClip();
+
+	for(let i = 0; i < this.clip.tracks.length; i++) {
+		keyInCurrentSlot = this.clip.tracks[i].clips.find( t => { 
+			return CompareThresholdRange(this.current_time, clip.start + clip.duration, t.start, t.start+t.duration);
+			
+		 });
+		if(!keyInCurrentSlot)
+		{
+			track_idx = i;
+			break;
+		}
+		console.warn("There is already a keyframe stored in time slot ", keyInCurrentSlot)
+	}
+	if(track_idx == undefined)
+	{
+		// clip_idx = this.clip.tracks.length;
+		// this.clip.tracks.push({clip_idx: clip_idx, clips: []} );
+		track_idx = this.addTrackClip();
+	}
+	//this.saveState(clip_idx);
+
+	// Find new index
+	let newIdx = this.clip.tracks[track_idx].clips.findIndex( t => t.start > this.current_time );
+
+	// Add as last index
+	let lastIndex = false;
+	if(newIdx < 0) {
+		newIdx = this.clip.tracks[track_idx].clips.length;
+		lastIndex = true;
+	}
+
+	// Add clip
+	const clipsArray = [];
+	this.clip.tracks[track_idx].clips.forEach( (a, b) => {
+		b == newIdx ? clipsArray.push(clip, a) : clipsArray.push(a);
+	} );
+
+	if(lastIndex) {
+		clipsArray.push(clip);			
+	}
+
+	this.clip.tracks[track_idx].clips = clipsArray;	
+	// Move the other's key properties
+	let track = this.clip.tracks[track_idx];
+	for(let i = (track.clips.length - 1); i > newIdx; --i) {
+		track.edited[i - 1] ? track.edited[i] = track.edited[i - 1] : 0;
+	}
+	
+	// Reset this key's properties
+	track.hovered[newIdx] = undefined;
+	track.selected[newIdx] = undefined;
+	track.edited[newIdx] = undefined;
+
+	// // Update animation action interpolation info
+	if(this.onUpdateTrack)
+		this.onUpdateTrack( track_idx );
+
+	if(this.onSetTime)
+		this.onSetTime(this.current_time);
+		
+	let end = clip.start + clip.duration;
+	
+	if( end > this.duration)
+		this.setDuration(end);
+
+	// if(callback)
+	// 	callback();
+	return newIdx;
+}
+Timeline.prototype.deleteClip = function (clip, callback) {
+
+	let index = -1;
+	// Key pressed
+	if(!clip && this.selected_clip) {
+		clip = this.selected_clip;
+	}
+	
+	// for(let i = 0; i < this.clip.tracks.length; i++){
+	// 	let clips = this.clip.tracks[i].clips;
+	// 	index =  clips.findIndex( t => t == clip );
+	// 	if(index >= 0)
+	// 	{
+	// 		clips = [...clips.slice(0, index), ...clips.slice(index + 1, clips.length)]
+	// 		this.clip.tracks[i].clips = clips;
+	// 		if(callback)
+	// 			callback();
+
+	// 		return;
+	// 	}
+	// }
+	let [trackIdx, clipIdx] = clip;
+	let clips = this.clip.tracks[trackIdx].clips;
+	if(clipIdx >= 0)
+	{
+		clips = [...clips.slice(0, clipIdx), ...clips.slice(clipIdx + 1, clips.length)];
+		this.clip.tracks[trackIdx].clips = clips;
+		if(clips.length)
+		{
+			let selectedIdx = 0;
+			for(let i = 0; i < this._lastClipsSelected.length; i++)
+			{
+				let [t,c] = this._lastClipsSelected[i];
+			
+				if( t == trackIdx  && c > clipIdx)
+					this._lastClipsSelected[i][1] = c - 1;
+				if(t == trackIdx && c == clipIdx)
+					selectedIdx = i;
+			}
+			this._lastClipsSelected = [...this._lastClipsSelected.slice(0, selectedIdx), ...this._lastClipsSelected.slice(selectedIdx + 1, this._lastClipsSelected.length)];
+		 }
+		if(callback)
+			callback();
+	}
+	this.selected_clip = null;
+	//this.unSelectAllClips();
+	// // Update animation action interpolation info
+
+}
 
 Timeline.prototype._delete = function( track, index ) {
 
@@ -410,6 +590,33 @@ Timeline.prototype._delete = function( track, index ) {
 	// Update animation action interpolation info
 	if(this.onUpdateTrack)
 		this.onUpdateTrack( clip_idx );
+}
+
+Timeline.prototype.optimizeTracks = function () {
+	
+	let tracks = [];
+	for(let i = 0; i < this.clip.tracks.length; i++)
+	{
+		if(this.clip.tracks[i].clips.length) {
+			this.clip.tracks[i].idx = tracks.length;
+			for(let j = 0; j < this.clip.tracks[i].clips.length; j++)
+			{
+				this.clip.tracks[i].clips[j].trackIdx = tracks.length;
+			}
+			let selectedIdx = 0;
+			for(let l = 0; l < this._lastClipsSelected.length; l++)
+			{
+				let [t,c] = this._lastClipsSelected[l];
+			
+				if(t > i)
+					this._lastClipsSelected[l][1] = t - 1;
+				if(t == i)
+					selectedIdx = l;
+			}
+			this._lastClipsSelected = [...this._lastClipsSelected.slice(0, selectedIdx), ...this._lastClipsSelected.slice(selectedIdx + 1, this._lastClipsSelected.length)];
+			tracks.push(this.clip.tracks[i]);
+		}			
+	}
 }
 
 Timeline.prototype.deleteKeyFrame = function (e, track, index) {
@@ -650,6 +857,96 @@ Timeline.prototype.processCurrentKeyFrame = function (e, keyFrameIndex, track, l
 		this.onSetTime( track.times[ keyFrameIndex ] );
 }
 
+Timeline.prototype.getCurrentClip = function( track, time, threshold )
+{
+	if(!track || !track.clips.length)
+	return;
+
+	// Avoid iterating through all timestamps
+	if((time + threshold) < track.clips[0])
+	return;
+
+	for(let i = 0; i < track.clips.length; ++i) {
+		let t = track.clips[i];
+		if(t.start + t.duration >= (time - threshold) && 
+			t.start <= (time + threshold)) {
+			return i;
+		}
+	}
+
+	return;
+};
+
+Timeline.prototype.unSelectAllClips = function() {
+	for(let [ idx, keyIndex] of this._lastClipsSelected) {
+		this.clip.tracks[idx].selected[keyIndex]= false;
+	}
+	// Something has been unselected
+	const unselected = this._lastClipsSelected.length > 0;
+	this._lastClipsSelected.length = 0;
+	this.selected_clip = false;
+	return unselected;
+}
+
+Timeline.prototype.processCurrentClip = function (e, clipIndex, track, local_x, multiple) {
+
+	e.multipleSelection = multiple;
+	clipIndex = clipIndex ?? this.getCurrentClip( track, this.xToTime( local_x ), this._pixels_to_seconds * 5 );
+
+	if(!multiple && e.button != 2) {
+		this.unSelectAllClips();
+	}
+					
+	if(clipIndex == undefined)
+		return;
+
+	let currentSelection = [ track.idx, clipIndex];
+	// Select if not handled
+	this._lastClipsSelected.push( currentSelection );
+	track.selected[clipIndex] = true;
+
+	// if( !multiple && this.onSetTime )
+	// 	this.onSetTime( track.clips[ clipIndex ] );
+
+	if( this.onSelectClip && this.onSelectClip(track.clips[ clipIndex ])) {
+		// Event handled
+		return;
+	}
+	
+
+}
+
+Timeline.prototype.getClipsInRange = function (track, minTime, maxTime, threshold) {
+
+	if(!track || !track.clips.length)
+	return;
+
+	// Manage negative selection
+	if(minTime > maxTime) {
+		let aux = minTime;
+		minTime = maxTime;
+		maxTime = aux;
+	}
+
+	// Avoid iterating through all timestamps
+	
+	if((maxTime + threshold) < track.clips[0].start)
+		return;
+
+	let indices = [];
+
+	for(let i = 0; i < track.clips.length; ++i) {
+		let t = track.clips[i];
+		if((t.start + t.duration <= (maxTime + threshold) || t.start <= (maxTime + threshold)) &&
+			(t.start + t.duration >= (minTime - threshold) || t.start >= (minTime - threshold)) ) 
+		{
+			indices.push(i);
+		}
+	}
+
+	return indices;
+}
+
 Timeline.prototype.processMouse = function (e) {
 	if(!this._canvas)
 		return;
@@ -691,7 +988,9 @@ Timeline.prototype.processMouse = function (e) {
 	{
 		const discard = this._movingKeys || (UTILS.getTime() - this._click_time) > 420; // ms
 		this._movingKeys ? innerSetTime( this.current_time ) : 0;
-		
+		if(this._grabbing && this.timeline_mode == "clips"){
+			if(this.onClipMoved) this.onClipMoved();
+		}
 		this._grabbing = false;
 		this._grabbing_scroll = false;
 		this._movingKeys = false;
@@ -701,34 +1000,69 @@ Timeline.prototype.processMouse = function (e) {
 
 			// Multiple selection
 			if(!discard && track) {
-				this.processCurrentKeyFrame( e, null, track, local_x, true );
+				if(this.timeline_mode == "tracks")
+					this.processCurrentKeyFrame( e, null, track, local_x, true );
+				else 
+					this.processCurrentClip( e, null, track, local_x, true );
 			}
 			// Box selection
 			else{
+				if(this.timeline_mode == "tracks"){
 
-				this.unSelectAllKeyFrames();
-
-				let tracks = this.getTracksInRange(this.boxSelectionStart[1], this.boxSelectionEnd[1], this._pixels_to_seconds * 5);
-
-				for(let t of tracks) {
-					let keyFrameIndices = this.getKeyFramesInRange(t, 
-						this.xToTime( this.boxSelectionStart[0] ), 
-						this.xToTime( this.boxSelectionEnd[0] ),
-						this._pixels_to_seconds * 5);
+					this.unSelectAllKeyFrames();
 					
-					if(keyFrameIndices) {
+					let tracks = this.getTracksInRange(this.boxSelectionStart[1], this.boxSelectionEnd[1], this._pixels_to_seconds * 5);
+					
+					for(let t of tracks) {
+						let keyFrameIndices = this.getKeyFramesInRange(t, 
+							this.xToTime( this.boxSelectionStart[0] ), 
+							this.xToTime( this.boxSelectionEnd[0] ),
+							this._pixels_to_seconds * 5);
+							
+						if(keyFrameIndices) {
 						for(let index of keyFrameIndices)
-						this.processCurrentKeyFrame( e, index, t, null, true );
+							this.processCurrentKeyFrame( e, index, t, null, true );
+						}
+					}
+				}
+				else{
+					let tracks = this.getTracksInRange(this.boxSelectionStart[1], this.boxSelectionEnd[1], this._pixels_to_seconds * 5);
+					
+					for(let t of tracks) {
+						let clipsIndices = this.getClipsInRange(t, 
+							this.xToTime( this.boxSelectionStart[0] ), 
+							this.xToTime( this.boxSelectionEnd[0] ),
+							this._pixels_to_seconds * 5);
+							
+						if(clipsIndices) {
+						for(let index of clipsIndices)
+							this.processCurrentClip( e, index, t, null, true );
+						}
 					}
 				}
 			}
 
 		}else {
-
+			let boundingBox = this._canvas.getBoundingClientRect()
+			if(e.y < boundingBox.top || e.y > boundingBox.bottom)
+				return;
 			// Check exact track keyframe
 			if(!discard && track) {
-				this.processCurrentKeyFrame( e, null, track, local_x );
-			} else {
+				if(this.timeline_mode == "tracks")
+					this.processCurrentKeyFrame( e, null, track, local_x );
+				else if(e.button!=2){
+					this.processCurrentClip( e, null, track, local_x );
+					// let clip_idx = this.getCurrentClip(track, this.xToTime( local_x ), this._pixels_to_seconds * 5 ); //this.processCurrentClip( e, null, track, local_x );
+					// if(clip_idx!=undefined)
+					// {
+					// 	track.clips[clip_idx].selected = true;
+					// 	this.selected_clip = track.clips[clip_idx];
+					// 	if(this.selected_clip != undefined && this.onSelectClip) {
+					// 		this.onSelectClip(this.selected_clip);
+					// 	}
+					// }
+				}
+			} else if(this.draw_buttons){
 				y -= this.top_margin;
 				for( const b of this._buttons_drawn ) {
 					b.pressed = false;
@@ -741,6 +1075,7 @@ Timeline.prototype.processMouse = function (e) {
 					}
 				}
 			}
+			
 		}
 
 		this.boxSelection = false;
@@ -777,25 +1112,112 @@ Timeline.prototype.processMouse = function (e) {
 				this.boxSelection = true;
 				this.boxSelectionStart = [local_x,local_y - 20];
 			}else if(e.ctrlKey && track) {
-				const keyFrameIndex = this.getCurrentKeyFrame( track, this.xToTime( local_x ), this._pixels_to_seconds * 5 );
-				if( keyFrameIndex != undefined ) {
-					this.processCurrentKeyFrame( e, keyFrameIndex, track, null, true ); // Settings this as multiple so time is not being set
-					this._movingKeys = true;
+				if(this.timeline_mode == "tracks")
+				{
 
-					// Set pre-move state
-					for(let selectedKey of this._lastKeyFramesSelected) {
-						let [name, idx, keyIndex] = selectedKey;
-						let track = this.tracksPerBone[name][idx];
-						selectedKey[3] = this.clip.tracks[ track.clip_idx ].times[ keyIndex ];
+					const keyFrameIndex = this.getCurrentKeyFrame( track, this.xToTime( local_x ), this._pixels_to_seconds * 5 );
+					if( keyFrameIndex != undefined ) {
+						this.processCurrentKeyFrame( e, keyFrameIndex, track, null, true ); // Settings this as multiple so time is not being set
+						this._movingKeys = true;
+						
+						// Set pre-move state
+						for(let selectedKey of this._lastKeyFramesSelected) {
+							let [name, idx, keyIndex] = selectedKey;
+							track = this.tracksPerBone[name][idx];
+							selectedKey[3] = this.clip.tracks[ track.clip_idx ].times[ keyIndex ];
+						}
+						
+						this._timeBeforeMove = track.times[ keyFrameIndex ];
 					}
-
-					this._timeBeforeMove = track.times[ keyFrameIndex ];
 				}
+				else{
+					let trackIndex = track.idx;
+					let clipIndex = null;
+					let selectedClips = [];
+					if(this._lastClipsSelected.length){
+						selectedClips = this._lastClipsSelected;
+					}
+					// else{
+					// 	clipIndex = this.getCurrentClip( track, this.xToTime( local_x ), this._pixels_to_seconds * 5 );
+					// 	if(clipIndex != undefined)
+					// 	{
+					// 		selectedClips = [[trackIndex, clipIndex]];
+					// 	}
+					
+					// }
+					
+					for(let i = 0; i< selectedClips.length; i++)
+					{
+						this._movingKeys = false
+						let [trackIndex, clipIndex] = selectedClips[i];
+						var clip = this.clip.tracks[trackIndex].clips[clipIndex];
+						if(!this.timeline_clicked_clips)
+							this.timeline_clicked_clips  = [];
+						this.timeline_clicked_clips.push(clip);
+						if(!this.timeline_clicked_clips_time)
+							this.timeline_clicked_clips_time  = [];
+						this.timeline_clicked_clips_time.push(this.xToTime( local_x ));
+						var ending_x = this.timeToX( clip.start + clip.duration );
+						var dist_to_start = Math.abs( this.timeToX( clip.start ) - x );
+						var dist_to_end = Math.abs( this.timeToX( clip.start + clip.duration ) - e.offsetX );
+						if(this.duration < clip.start + clip.duration  )
+							this.setDuration(clip.start + clip.duration);
+						//this.addUndoStep( "clip_modified", clip );
+						if( (e.shiftKey && dist_to_start < 5) || (clip.fadein && Math.abs( this.timeToX( clip.start + clip.fadein ) - e.offsetX ) < 5) )
+							this.drag_clip_mode = "fadein";
+						else if( (e.shiftKey && dist_to_end < 5) || (clip.fadeout && Math.abs( this.timeToX( clip.start + clip.duration - clip.fadeout ) - e.offsetX ) < 5) )
+							this.drag_clip_mode = "fadeout";
+						else if( Math.abs( ending_x - x ) < 10 )
+							this.drag_clip_mode = "duration";
+						else
+							this.drag_clip_mode = "move";
+					}
+					
+					
+					// if(clipIndex != undefined &&  (this.selected_clip == track.clips[clipIndex] || track.selected[clipIndex])) //modifying clip
+					// {
+					// 	this._movingKeys = false
+					// 	var clip = track.clips[clipIndex];
+					// 	this.timeline_clicked_clip = clip;
+					// 	this.timeline_clicked_clip_time = this.xToTime( local_x );
+					// 	var ending_x = this.timeToX( clip.start + clip.duration );
+					// 	var dist_to_start = Math.abs( this.timeToX( clip.start ) - x );
+					// 	var dist_to_end = Math.abs( this.timeToX( clip.start + clip.duration ) - e.offsetX );
+					// 	if(this.duration < clip.start + clip.duration  )
+					// 		this.setDuration(clip.start + clip.duration);
+					// 	//this.addUndoStep( "clip_modified", clip );
+					// 	if( (e.shiftKey && dist_to_start < 5) || (clip.fadein && Math.abs( this.timeToX( clip.start + clip.fadein ) - e.offsetX ) < 5) )
+					// 		this.drag_clip_mode = "fadein";
+					// 	else if( (e.shiftKey && dist_to_end < 5) || (clip.fadeout && Math.abs( this.timeToX( clip.start + clip.duration - clip.fadeout ) - e.offsetX ) < 5) )
+					// 		this.drag_clip_mode = "fadeout";
+					// 	else if( Math.abs( ending_x - x ) < 10 )
+					// 		this.drag_clip_mode = "duration";
+					// 	else
+					// 		this.drag_clip_mode = "move";
+					// }
+				}
+
 			}else if(!track) {
 				y -= this.top_margin;
 				for( const b of this._buttons_drawn ) {
 					const bActive = x >= b[2] && x <= (b[2] + b[4]) && y >= b[3] && y <= (b[3] + b[5]);
 					b.pressed = bActive;
+				}
+				if(this.timeline_mode == "clips") {
+					if( this.timeline_clicked_clips )
+					{
+						for(let i = 0; i < this.timeline_clicked_clips.length; i++){
+
+							if( this.timeline_clicked_clips[i].fadein && this.timeline_clicked_clips[i].fadein < 0 )
+								this.timeline_clicked_clips[i].fadein = 0;
+							if( this.timeline_clicked_clips[i].fadeout && this.timeline_clicked_clips[i].fadeout < 0 )
+								this.timeline_clicked_clips[i].fadeout = 0;
+						}
+					}
+					this.timeline_clicked_clips = null;
+					this.selected_clip = null;
+					this.unSelectAllClips();
+					this.onSelectClip(null);
 				}
 			}
 		}
@@ -809,7 +1231,7 @@ Timeline.prototype.processMouse = function (e) {
 			const newTime = this.xToTime( local_x );
 			
 			for(let [name, idx, keyIndex, keyTime] of this._lastKeyFramesSelected) {
-				let track = this.tracksPerBone[name][idx];
+				track = this.tracksPerBone[name][idx];
 				const delta = this._timeBeforeMove - keyTime;
 				this.clip.tracks[ track.clip_idx ].times[ keyIndex ] = Math.min( this.clip.duration, Math.max(0, newTime - delta) );
 			}
@@ -837,34 +1259,82 @@ Timeline.prototype.processMouse = function (e) {
 			this.current_time = Math.max(0,this.current_time - delta);
 
 			// fix this
-			if(e.shiftKey && track) {
-				let keyFrameIndex = this.getNearestKeyFrame( track, this.current_time);
+			if(this.timeline_mode == "tracks"){
+				if(e.shiftKey && track) {
 
-				if(keyFrameIndex != this.snappedKeyFrameIndex){
-					this.snappedKeyFrameIndex = keyFrameIndex;
-					this.current_time = track.times[ keyFrameIndex ];		
-					innerSetTime( this.current_time );		
+					let keyFrameIndex = this.getNearestKeyFrame( track, this.current_time);
+					
+					if(keyFrameIndex != this.snappedKeyFrameIndex){
+						this.snappedKeyFrameIndex = keyFrameIndex;
+						this.current_time = track.times[ keyFrameIndex ];		
+						innerSetTime( this.current_time );		
+					}
 				}
-				
-			}else{
+				else{
+					innerSetTime( this.current_time );	
+				}
+			}else if( this.timeline_clicked_clips != undefined)
+			{
+				for(let i = 0; i < this.timeline_clicked_clips.length; i++){
+					
+					var clip = this.timeline_clicked_clips[i] ;
+					var diff = delta;//this.current_time - this.timeline_clicked_clips_time[i];//delta;
+					if( this.drag_clip_mode == "move" ) {
+						clip.start += diff;
+						clip.attackPeak += diff;
+						clip.relax += diff;
+					}
+					else if( this.drag_clip_mode == "fadein" )
+						clip.fadein = (clip.fadein || 0) + diff;
+					else if( this.drag_clip_mode == "fadeout" )
+						clip.fadeout = (clip.fadeout || 0) - diff;
+					else if( this.drag_clip_mode == "duration" )
+						clip.duration += diff;
+					this.clip_time = this.current_time;
+					if(this.duration < clip.start + clip.duration  )
+						this.setDuration(clip.start + clip.duration);
+				}
+				return true;
+			}
+			else{
 				innerSetTime( this.current_time );	
 			}
+				
 		}else if(track) {
 
-			let keyFrameIndex = this.getCurrentKeyFrame( track, this.xToTime( local_x ), this._pixels_to_seconds * 5 );
-			if(keyFrameIndex != undefined) {
-				
-				const [name, type] = this.getTrackName(track.name);
-				let t = this.tracksPerBone[ name ][track.idx];
-
-				removeHover();
+			if(this.timeline_mode == "tracks")
+			{
+				let keyFrameIndex = this.getCurrentKeyFrame( track, this.xToTime( local_x ), this._pixels_to_seconds * 5 );
+				if(keyFrameIndex != undefined) {
 					
-				this.lastHovered = [name, track.idx, keyFrameIndex];
-				t.hovered[keyFrameIndex] = true;
-
-			}else {
-				removeHover();
+					const [name, type] = this.getTrackName(track.name);
+					let t = this.tracksPerBone[ name ][track.idx];
+	
+					removeHover();
+						
+					this.lastHovered = [name, track.idx, keyFrameIndex];
+					t.hovered[keyFrameIndex] = true;
+	
+				}else {
+					removeHover();
+				}
 			}
+			// else if( this.timeline_clicked_clip != undefined)
+			// {
+			// 	var clip = this.timeline_clicked_clip;
+			// 	var diff = this.current_time - this.timeline_clicked_clip_time;
+			// 	if( this.drag_clip_mode == "move" )
+			// 		clip.start += diff;
+			// 	else if( this.drag_clip_mode == "fadein" )
+			// 		clip.fadein = (clip.fadein || 0) + diff;
+			// 	else if( this.drag_clip_mode == "fadeout" )
+			// 		clip.fadeout = (clip.fadeout || 0) - diff;
+			// 	else if( this.drag_clip_mode == "duration" )
+			// 		clip.duration += diff;
+			// 	this.clip_time = this.current_time;
+			// 	return true;
+			// }
+	
 		}else {
 			removeHover();
 		}
@@ -880,7 +1350,16 @@ Timeline.prototype.processMouse = function (e) {
 			this.setScale( this._seconds_to_pixels * (e.wheelDelta < 0 ? 0.9 : (1/0.9)) );
 		}
 	}
+	else if (e.type == "dblclick" && this.timeline_mode == "clips") {
+		let clipIndex = this.getCurrentClip( track, this.xToTime( local_x ), this._pixels_to_seconds * 5 );
+		if(clipIndex != undefined)  {
+			this._lastClipsSelected = [track.idx, clipIndex];
 
+			if( this.onSelectClip ) 
+				this.onSelectClip(track.clips[clipIndex]);
+		}
+		
+	}
 	this._canvas.style.cursor = this._grabbing && (UTILS.getTime() - this._click_time > 320) ? "grabbing" : "pointer" ;
 
 	return true;
@@ -901,7 +1380,9 @@ Timeline.prototype.draw = function (ctx, current_time, rect) {
 	var timeline_height = this.size[1];
 
 	this.current_time = current_time;
-	var duration = this.duration = this.clip.duration;
+	if(this.clip)
+		this.duration = this.clip.duration;
+	var duration = this.duration;
 	this.current_scroll_in_pixels = this.scrollable_height <= h ? 0 : (this.current_scroll * (this.scrollable_height - timeline_height));
 
 	ctx.save();
@@ -909,10 +1390,11 @@ Timeline.prototype.draw = function (ctx, current_time, rect) {
 
 	//background
 	ctx.clearRect(0,-this.top_margin,w,h+this.top_margin);
-	ctx.fillStyle = "#000";
-	ctx.globalAlpha = 0.65;
+	ctx.fillStyle = "#161c21";// "#000";
+	//ctx.globalAlpha = 0.65;
 	ctx.fillRect(0,-this.top_margin,w,this.top_margin);
-	ctx.globalAlpha = 0.55;
+	ctx.fillStyle = "#1a2025";// "#000";
+	ctx.globalAlpha = 0.75;
 	ctx.fillRect(0,0,w,h);
 	ctx.globalAlpha = 1;
 
@@ -1106,12 +1588,12 @@ Timeline.prototype.drawTrackWithKeyframes = function (ctx, y, track_height, titl
 	if(title != null)
 	{
 		// var info = ctx.measureText( title );
-		ctx.fillStyle = "rgba(255,255,255,0.9)";
+		ctx.fillStyle = this.active ? "rgba(255,255,255,0.9)" : "rgba(250,250,250,0.7)";
 		ctx.fillText( title, 25, y + track_height * 0.75 );
 	}
 
 	ctx.fillStyle = "rgba(10,200,200,1)";
-	var keyframes = this.clip.tracks[track.clip_idx].times;
+	var keyframes = track.clip_idx != undefined ? this.clip.tracks[track.clip_idx].times : null;
 
 	if(keyframes) {
 		
@@ -1139,6 +1621,9 @@ Timeline.prototype.drawTrackWithKeyframes = function (ctx, y, track_height, titl
 					ctx.fillStyle = "rgba(250,250,250,0.7)";
 					margin = -2;
 				}
+				if(!this.active)
+					ctx.fillStyle = "rgba(250,250,250,0.7)";
+					
 				ctx.translate(keyframe_posx, y + size * 2 + margin);
 				ctx.rotate(45 * Math.PI / 180);		
 				ctx.fillRect( -size, -size, size, size);
@@ -1155,6 +1640,103 @@ Timeline.prototype.drawTrackWithKeyframes = function (ctx, y, track_height, titl
 	ctx.globalAlpha = 1;
 }
 
+Timeline.prototype.drawTrackWithBoxes = function (ctx, y, track_height, title, track, track_index)
+{
+
+	track_height *= 0.8;
+	let selected_clip_area = null;
+	if(track.enabled === false)
+		ctx.globalAlpha = 0.4;
+	this._tracks_drawn.push([this.clip.tracks[track.idx],y+this.top_margin,track_height]);
+	this._canvas = this._canvas || ctx.canvas;
+	ctx.font = Math.floor( track_height * 0.8) + "px Arial";
+	ctx.textAlign = "left";
+	ctx.fillStyle = "rgba(255,255,255,0.8)";
+
+	if(title != null)
+	{
+		// var info = ctx.measureText( title );
+		ctx.fillStyle = "rgba(255,255,255,0.9)";
+		ctx.fillText( title, 25, y + track_height * 0.8 );
+	}
+
+	ctx.fillStyle = "rgba(10,200,200,1)";
+	var clips = this.clip.tracks[track.idx].clips;
+	let track_alpha = 1;
+	if(clips) {
+		// A utility function to draw a rectangle with rounded corners.
+
+		function roundedRect(ctx, x, y, width, height, radius, fill = true) {
+			ctx.beginPath();
+			ctx.moveTo(x, y + radius);
+			ctx.arcTo(x, y + height, x + radius, y + height, radius);
+			ctx.arcTo(x + width, y + height, x + width, y + height - radius, radius);
+			ctx.arcTo(x + width, y, x + width - radius, y, radius);
+			ctx.arcTo(x, y, x, y + radius, radius);
+			if(fill)
+				ctx.fill();
+			else
+				ctx.stroke();
+		}
+		for(var j = 0; j < clips.length; ++j)
+		{
+			let clip = clips[j];
+			let framerate = this.framerate;
+			//let selected = track.selected[j];
+			var frame_num = Math.floor( clip.start * framerate );
+			var x = Math.floor( this.timeToX( frame_num / framerate) ) + 0.5;
+			frame_num = Math.floor( (clip.start + clip.duration) * framerate );
+			var x2 = Math.floor( this.timeToX( frame_num / framerate) ) + 0.5;
+			var w = x2-x;
+
+			if( x2 < 0 || x > this._canvas.width )
+				continue;
+
+			//background rect
+			ctx.globalAlpha = track_alpha;
+			ctx.fillStyle = clip.clip_color || "#333";
+			//ctx.fillRect(x,y,w,track_height);
+			roundedRect(ctx, x, y, w, track_height, 5, true);
+
+			//draw clip content
+			if( clip.drawTimeline )
+			{
+				ctx.save();
+				ctx.translate(x,y);
+				ctx.strokeStyle = "#AAA";
+				ctx.fillStyle = "#AAA";
+				clip.drawTimeline( ctx, x2-x,track_height, this.selected_clip == clip || track.selected[j], this );
+				ctx.restore();
+			}
+			//draw clip outline
+			if(clip.hidden)
+				ctx.globalAlpha = track_alpha * 0.5;
+			
+				var safex = Math.max(-2, x );
+			var safex2 = Math.min( this._canvas.width + 2, x2 );
+			// ctx.lineWidth = 0.5;
+			// ctx.strokeStyle = clip.constructor.color || "black";
+			// ctx.strokeRect( safex, y, safex2-safex, track_height );
+			ctx.globalAlpha = track_alpha;
+			if(this.selected_clip == clip || track.selected[j])
+				selected_clip_area = [x,y,x2-x,track_height ]
+			//render clip selection area
+			if(selected_clip_area)
+			{
+				ctx.strokeStyle = track.clips[j].clip_color;
+				ctx.globalAlpha = 0.8;
+				ctx.lineWidth = 1;
+				roundedRect(ctx, selected_clip_area[0]-1,selected_clip_area[1]-1,selected_clip_area[2]+2,selected_clip_area[3]+2, 5, false);
+				ctx.strokeStyle = "#888";
+				ctx.lineWidth = 0.5;
+				ctx.globalAlpha = 1;
+		}
+		}
+	}
+
+	//ctx.restore();
+	
+}
 /**
  * Draws a rounded rectangle using the current state of the canvas.
  * If you omit the last three params, it will draw a rectangle
