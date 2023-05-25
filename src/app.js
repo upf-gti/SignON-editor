@@ -89,11 +89,12 @@ class App {
     }
 
     onBeginCapture() {
+        
         // Run mediapipe to extract landmarks
         if(!MediaPipe.loaded)
-            MediaPipe.start( true, () => {
-                $('#loading').fadeOut();
-            }, this.editor.gui.updateCaptureGUI.bind(this.editor.gui) );
+        MediaPipe.start( true, () => {
+            $('#loading').fadeOut();
+        }, this.editor.gui.updateCaptureGUI.bind(this.editor.gui) );
 
         // Show video
         let video = document.getElementById("recording");
@@ -107,9 +108,13 @@ class App {
             video.currentTime = video.startTime > 0 ? video.startTime : 0;
         });
 
-        if(!this.mediaDevicesSupported(video, this)) {
-            console.log("This app is not supported in your browser");
-        }
+        this.mediaDevicesSupported(video, this, ()=> {     
+
+        }, (err) => {
+            if(!err)
+                err = "This app is not supported in your browser";
+            console.error(err);
+        });
 
         this.setEvents(true);
     }
@@ -362,48 +367,71 @@ class App {
         redoBtn.style.display = "block";
     }
 
-    mediaDevicesSupported(video, scope) {
+    mediaDevicesSupported(video, scope, callback, on_error) {
         
         // prepare the device to capture the video
         if (navigator.mediaDevices) {
             console.log("UserMedia supported");
                        
-            let constraints = { video: true, audio: false };
+            
 
-            navigator.mediaDevices.getUserMedia(constraints).then( (stream) => {
+            navigator.mediaDevices.enumerateDevices()
+            .then(function(devices) {
+                let deviceId = null;
+                for (const deviceInfo of devices) {
+                    if(deviceInfo.kind === 'videoinput') {
+                        deviceId = deviceInfo.deviceId;
+                        break;
+                    }
+                };
+                let constraints = { "video": true, "audio": false };
+                navigator.mediaDevices.getUserMedia(constraints)
+                .then( (stream) => {
 
-                
-                let videoElement = document.getElementById("inputVideo");
-                
-                if(!videoElement.srcObject)
-                    videoElement.srcObject = stream;
+                    let videoElement = document.getElementById("inputVideo");
                     
-                scope.mediaRecorder = new MediaRecorder(videoElement.srcObject);
+                    if(!videoElement.srcObject)
+                        videoElement.srcObject = stream;
+                        
+                    scope.mediaRecorder = new MediaRecorder(videoElement.srcObject);
 
-                scope.mediaRecorder.onstop = function (e) {
+                    scope.mediaRecorder.onstop = function (e) {
 
-                    video.addEventListener("play", function() {});
-                    video.addEventListener("pause", function() {});
-                    video.setAttribute('controls', 'name');
-                    video.controls = false;
-                    video.loop = true;
-                    
-                    let blob = new Blob(scope.chunks, { "type": "video/mp4; codecs=avc1" });
-                    let videoURL = URL.createObjectURL(blob);
-                    video.src = videoURL;
-                    console.log("Recording correctly saved");
-                }
+                        video.addEventListener("play", function() {});
+                        video.addEventListener("pause", function() {});
+                        video.setAttribute('controls', 'name');
+                        video.controls = false;
+                        video.loop = true;
+                        
+                        let blob = new Blob(scope.chunks, { "type": "video/mp4; codecs=avc1" });
+                        let videoURL = URL.createObjectURL(blob);
+                        video.src = videoURL;
+                        console.log("Recording correctly saved");
+                    }
 
-                scope.mediaRecorder.ondataavailable = function (e) {
-                    scope.chunks.push(e.data);
-                }
+                    scope.mediaRecorder.ondataavailable = function (e) {
+                        scope.chunks.push(e.data);
+                    }
+                    if(callback)
+                        callback();
+                })
+                .catch(function (err) {
+                    console.error("The following error occurred: " + err);
+                    if(err == "NotReadableError: Could not start video source")
+                        alert("Camera error: Make sure your webcam is not used in another application.")
+                    if(on_error)
+                        on_error(err);
+                });
+                
             })
-            .catch(function (err) {
-                console.error("The following error occurred: " + err);
+            .catch(function(err) {
+             console.log(err.name + ": " + err.message);
             });
+            
         }
         else {
-            return false;
+            if(on_error)
+                on_error();
         }
     }
 
