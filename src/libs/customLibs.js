@@ -429,7 +429,7 @@ Inspector.prototype.addCombo = function(name, value, options)
 			var item_value = values[i];
 			var item_index = values.constructor === Array ? index : i;
 			var item_title = values.constructor === Array ? item_value : i;
-			var item_thumbnail = 'data/imgs/thumbnails/' + item_value.toLowerCase() + '.PNG"';
+			var item_thumbnail = 'data/imgs/thumbnails/' + item_value.toLowerCase() + '.png"';
 			if(item_value && item_value.title)
 				item_title = item_value.title;
 			code += "<option value='"+item_index+"' "+( item_value == value ? " selected":"")+" data-index='"+item_index+"'" + (thumbnail?" data-thumbnail='"+ item_thumbnail + "'":"")+">" + item_title + "</option>";

@@ -594,3 +594,13 @@ dark mode:
 	50% {border: solid var(--global-color-primary);}
 	to {border: solid var(--global-color-highlight);}
 }
+
+.slidein-top{
+	animation: intop 0.2s;
+}
+
+@keyframes intop  {
+	from {top: -1%}
+	75% {top: 0.1%}
+	to {top: 0%;}
+}
