@@ -845,24 +845,11 @@ class Gui {
         let widgets = new LiteGUI.Inspector();
         let values = ANIM.FacePresetClip.facePreset;//["Yes/No-Question", "Negative", "WH-word Questions", "Topic", "RH-Questions"];
         for(let i = 0; i < values.length; i++){
-            // widgets.addImageButton(values[i], null, {
-            //     type: "image",
-            //     image: "data/imgs/thumbnails/brow_lowerer_left.PNG",
-            //     callback: function(v, e,) { 
-                    
-            //         dialog.close();
-            //         let presetClip = new ANIM.FacePresetClip({preset: this.name});
-            //         for(let i = 0; i < presetClip.clips.length; i++){
-            //             that.NMFtimeline.addClip( presetClip.clips[i], presetClip.clips[i].start);
-            //         }
-            //         //that.editor.NMFController.updateTracks.bind(that.editor.NMFController) 
-            //     }
-            // } )
             widgets.addButton(null, values[i], {
                 width: 100,
                 callback: function(v, e,) { 
                     dialog.close();
-                    let presetClip = new ANIM.FacePresetClip({preset: this.name});
+                    let presetClip = new ANIM.FacePresetClip({preset: v});
                     for(let i = 0; i < presetClip.clips.length; i++){
                         that.NMFtimeline.addClip( presetClip.clips[i], presetClip.clips[i].start);
                     }
