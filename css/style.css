@@ -606,7 +606,7 @@ dark mode:
 	to {top: 0%;}
 }
 
-.inspector::-webkit-scrollbar {
+::-webkit-scrollbar {
     width: 5px !important;
     border-radius: 6px;
 }

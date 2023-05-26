@@ -74,6 +74,9 @@ const VideoUtils = {
 
         if(this.video.currentTime >= this.endTime)
             this.video.currentTime = this.startTime;
+            
+        if(this.onSetTime)
+            this.onSetTime(this.video.currentTime);
     },
 
     render: function() {
@@ -259,8 +262,11 @@ const VideoUtils = {
                 this.dragging = 'end';
             } else if(Math.abs( this.video.currentTime - t) < this.ratio) {
                 this.dragging = 'current';
-            } else
+            } else {
                 this.video.currentTime = t;
+                if(this.onSetTime)
+                    this.onSetTime(t);
+            }
         }
         else if( e.type == "mousemove") {
 
@@ -285,6 +291,8 @@ const VideoUtils = {
                 }
 
                 this.video.currentTime = t;//Math.min( this.endTime, Math.max( this.startTime, this.video.currentTime ) );
+                if(this.onSetTime)
+                    this.onSetTime(t);
             }
             else {
                 if(x < this.playButtonWidth && x > this.offsetWidth)

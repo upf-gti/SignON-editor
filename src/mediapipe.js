@@ -49,22 +49,14 @@ const MediaPipe = {
 
         holistic.onResults(((results) => {
 
-            const faceResults = this.faceLandmarker.detectForVideo(videoElement, Date.now() );
-
-            let faceBlendshapes = null;
             if (window.globals.app.isRecording()) // store MediaPipe data
             {
                 this.currentTime = Date.now();
                 var dt = this.currentTime - this.previousTime;
                 this.fillLandmarks(results, dt);
-                if(faceResults)
-                    faceBlendshapes = this.fillBlendshapes(faceResults, dt, true);
+            
                 this.previousTime = this.currentTime;
             }
-            else {
-                faceBlendshapes = this.fillBlendshapes(faceResults);
-            }
-
             
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
@@ -110,7 +102,7 @@ const MediaPipe = {
             }
             canvasCtx.restore();
             if(this.onresults)
-                this.onresults({landmarksResults: results, blendshapesResults: faceBlendshapes}, recording);
+                this.onresults({landmarksResults: results}, recording);
 
         }).bind(this));
 
@@ -140,6 +132,10 @@ const MediaPipe = {
                         this.loaded = true;
                         if(this.onload) this.onload();
                     }
+
+                    const faceResults = this.faceLandmarker.detectForVideo(videoElement, Date.now() );
+                    if(faceResults)
+                        this.onFaceResults(faceResults);
                 },
                 width: 1280,
                 height: 720
@@ -156,7 +152,9 @@ const MediaPipe = {
 
     async sendVideo(holistic, videoElement){
         await holistic.send({image: videoElement});
-        
+         const faceResults = this.faceLandmarker.detectForVideo(videoElement, Date.now() );
+                    if(faceResults)
+                        this.onFaceResults(faceResults);
         videoElement.requestVideoFrameCallback(this.sendVideo.bind(this, holistic, videoElement));
 
         if(!this.loaded) {
@@ -167,14 +165,20 @@ const MediaPipe = {
 
     onFaceResults(results) {
         
+        let faceBlendshapes = null;
         if (window.globals.app.isRecording()) // store MediaPipe data
         {
             this.bs_currentTime = Date.now();
             var dt = this.bs_currentTime - this.bs_previousTime;
-            this.fillBlendshapes(results, dt);
+            faceBlendshapes = this.fillBlendshapes(results, dt, true);
             this.bs_previousTime = this.bs_currentTime;
             
         }
+        else {
+            faceBlendshapes = this.fillBlendshapes(results);
+        }
+
+        this.onresults({blendshapesResults: faceBlendshapes}, window.globals.app.isRecording())
     },
 
     // camera.stop() does not exist, therefore solved using jQuery, we can replace the methods with appropriate JavaScript methods

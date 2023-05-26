@@ -1718,7 +1718,7 @@ button.litebutton.close-button {
 
 .litetabs li.wtab.selected {
 	color: #EEE !important;
-	background-color: #777;
+	background-color: var(--global-color-selected-secondary);
 	/*border: 1px solid #888;*/
 	border-bottom: 0;
 	/*box-shadow: 0 -2px 2px rgba(0,0,0,0.5);*/
@@ -1731,7 +1731,7 @@ button.litebutton.close-button {
 }
 
 .litetabs li.wtab:hover:not(.selected) {
-	background-color: #555;	
+	background-color: var(--global-color-selected-secondary);
 	color: #DDD;
 }
 
@@ -1770,7 +1770,7 @@ button.litebutton.close-button {
 
 .litetabs .wtabcontent {
 	position: relative;
-	background-color: #333;	
+	background-color: var(--global-color-primary);
 	display: inline-block;
 }
 
@@ -2005,11 +2005,13 @@ ul.litelist li.selected:before {
 
 ::-webkit-scrollbar {
     height: 3px;
-    width: 8px;
-    background: #ddd;
+    width: 6px; /*8px;*/
+    border-radius: 6px;
+    background: #aaa;
 }
 ::-webkit-scrollbar-thumb {
-    background: #aaa;
+    background: whitesmoke;
+    border-radius: 6px;
 }
 ::-webkit-scrollbar-corner {
     /* background: red; */

@@ -581,76 +581,79 @@ class Gui {
         else {
             //document.getElementById("capture-info").classList.remove("hidden");
         }
-        if(!landmarksResults || !landmarksResults.poseLandmarks) return;
+        if(landmarksResults && landmarksResults.poseLandmarks) {
         
-        let infoDistance = document.getElementById("distance-info");
-        let infoHands = document.getElementById("hands-info");
-        const { poseLandmarks } = landmarksResults;
+            let infoDistance = document.getElementById("distance-info");
+            let infoHands = document.getElementById("hands-info");
+            const { poseLandmarks } = landmarksResults;
+            
+            let distance = (poseLandmarks[23].visibility + poseLandmarks[24].visibility)*0.5;
+            let leftHand = (poseLandmarks[15].visibility + poseLandmarks[17].visibility + poseLandmarks[19].visibility)/3;
+            let rightHand = (poseLandmarks[16].visibility + poseLandmarks[18].visibility + poseLandmarks[20].visibility)/3;
         
-        let distance = (poseLandmarks[23].visibility + poseLandmarks[24].visibility)*0.5;
-        let leftHand = (poseLandmarks[15].visibility + poseLandmarks[17].visibility + poseLandmarks[19].visibility)/3;
-        let rightHand = (poseLandmarks[16].visibility + poseLandmarks[18].visibility + poseLandmarks[20].visibility)/3;
-      
-        // Intro message for the pose detection assesment step
-        let torsoCondition = poseLandmarks[23].visibility < .5 || poseLandmarks[24].visibility < .5;
-        let handsCondition = poseLandmarks[15].visibility < .5 || poseLandmarks[16].visibility < .5 || poseLandmarks[19].visibility < .5 || poseLandmarks[17].visibility < .5 || poseLandmarks[18].visibility < .5 || poseLandmarks[20].visibility < .5;
-       
-        // infoDistance.getElementsByTagName("p")[0].innerText = (torsoCondition) ? 'You are too close to the camera' : 'Distance to the camera looks good';
-        // infoDistance.className = (torsoCondition) ? "alert-info alert-warning" : "alert-info alert-success";
+            // Intro message for the pose detection assesment step
+            let torsoCondition = poseLandmarks[23].visibility < .5 || poseLandmarks[24].visibility < .5;
+            let handsCondition = poseLandmarks[15].visibility < .5 || poseLandmarks[16].visibility < .5 || poseLandmarks[19].visibility < .5 || poseLandmarks[17].visibility < .5 || poseLandmarks[18].visibility < .5 || poseLandmarks[20].visibility < .5;
         
-        // infoHands.getElementsByTagName("p")[0].innerText = (handsCondition) ? 'Your hands are not visible' : 'Hands visible';
-        // infoHands.className = (handsCondition) ? "alert-info alert-warning" : "alert-info alert-success";
-        
+            // infoDistance.getElementsByTagName("p")[0].innerText = (torsoCondition) ? 'You are too close to the camera' : 'Distance to the camera looks good';
+            // infoDistance.className = (torsoCondition) ? "alert-info alert-warning" : "alert-info alert-success";
+            
+            // infoHands.getElementsByTagName("p")[0].innerText = (handsCondition) ? 'Your hands are not visible' : 'Hands visible';
+            // infoHands.className = (handsCondition) ? "alert-info alert-warning" : "alert-info alert-success";
+            
 
-        let progressBarT = document.getElementById("progressbar-torso");
-        progressBarT.setAttribute("aria-valuenow", distance*100);
-        progressBarT.style.width = distance*100 + '%';
-        progressBarT.className = "progress-bar";
-        if(distance < 0.3) 
-            progressBarT.classList.add("bg-danger")
-        else if(distance > 0.3 && distance < 0.7) 
-            progressBarT.classList.add("bg-warning")
-        else 
-            progressBarT.classList.add("bg-success")
-        
-        let progressBarLH = document.getElementById("progressbar-lefthand");
-        progressBarLH.setAttribute("aria-valuenow", leftHand*100);
-        progressBarLH.style.width = leftHand*100 + '%';
-        progressBarLH.className = "progress-bar";
-        if(leftHand < 0.3) 
-            progressBarLH.classList.add("bg-danger")
-        else if(leftHand > 0.3 && leftHand < 0.7) 
-            progressBarLH.classList.add("bg-warning")
-        else 
-            progressBarLH.classList.add("bg-success")
-
-        let progressBarRH = document.getElementById("progressbar-righthand");
-        progressBarRH.setAttribute("aria-valuenow", rightHand*100);
-        progressBarRH.style.width = rightHand*100 + '%';
-        progressBarRH.className = "progress-bar";
-        if(leftHand < 0.3) 
-            progressBarRH.classList.add("bg-danger")
-        else if(leftHand > 0.3 && leftHand < 0.7) 
-            progressBarRH.classList.add("bg-warning")
-        else 
-            progressBarRH.classList.add("bg-success")
-        
-
-        for(let i in blendshapesResults)
-        {
-            let value = blendshapesResults[i];
-            let progressBar = document.getElementById("progressbar-"+i);
-            if(!progressBar) 
-                continue;
-            progressBar.setAttribute("aria-valuenow", value*100);
-            progressBar.style.width = value*100 + '%';
-            progressBar.className = "progress-bar";
-            if(value < 0.25) 
-                progressBar.classList.add("bg-danger")
-            else if(value > 0.25 && value < 0.5) 
-                progressBar.classList.add("bg-warning")
+            let progressBarT = document.getElementById("progressbar-torso");
+            progressBarT.setAttribute("aria-valuenow", distance*100);
+            progressBarT.style.width = distance*100 + '%';
+            progressBarT.className = "progress-bar";
+            if(distance < 0.3) 
+                progressBarT.classList.add("bg-danger")
+            else if(distance > 0.3 && distance < 0.7) 
+                progressBarT.classList.add("bg-warning")
             else 
-                progressBar.classList.add("bg-success")
+                progressBarT.classList.add("bg-success")
+            
+            let progressBarLH = document.getElementById("progressbar-lefthand");
+            progressBarLH.setAttribute("aria-valuenow", leftHand*100);
+            progressBarLH.style.width = leftHand*100 + '%';
+            progressBarLH.className = "progress-bar";
+            if(leftHand < 0.3) 
+                progressBarLH.classList.add("bg-danger")
+            else if(leftHand > 0.3 && leftHand < 0.7) 
+                progressBarLH.classList.add("bg-warning")
+            else 
+                progressBarLH.classList.add("bg-success")
+
+            let progressBarRH = document.getElementById("progressbar-righthand");
+            progressBarRH.setAttribute("aria-valuenow", rightHand*100);
+            progressBarRH.style.width = rightHand*100 + '%';
+            progressBarRH.className = "progress-bar";
+            if(leftHand < 0.3) 
+                progressBarRH.classList.add("bg-danger")
+            else if(leftHand > 0.3 && leftHand < 0.7) 
+                progressBarRH.classList.add("bg-warning")
+            else 
+                progressBarRH.classList.add("bg-success")
+        }        
+
+        if(blendshapesResults) {
+
+            for(let i in blendshapesResults)
+            {
+                let value = blendshapesResults[i];
+                let progressBar = document.getElementById("progressbar-"+i);
+                if(!progressBar) 
+                    continue;
+                progressBar.setAttribute("aria-valuenow", value*100);
+                progressBar.style.width = value*100 + '%';
+                progressBar.className = "progress-bar";
+                if(value < 0.25) 
+                    progressBar.classList.add("bg-danger")
+                else if(value > 0.25 && value < 0.5) 
+                    progressBar.classList.add("bg-warning")
+                else 
+                    progressBar.classList.add("bg-success")
+            }
         }
     }
 
@@ -668,14 +671,29 @@ class Gui {
 
     createSidePanel() {
         this.mainArea.split("horizontal", [null,"300px"], true);
-        var docked = new LiteGUI.Panel("sidePanel", {title: 'Skeleton', scroll: true});
-        this.mainArea.getSection(1).add( docked );
-        $(docked).bind("closed", function() { this.mainArea.merge(); });
-        this.sidePanel = docked;
-        this.updateSidePanel( docked, 'root', {firstBone: true} );
+
+        //create tabs
+        let tabs = new LiteGUI.Tabs("mode-tabs", {size: "full"});
+
+        let skeletonPanel = new LiteGUI.Panel("sidePanel", {title: 'Skeleton', scroll: true});  
+        $(skeletonPanel).bind("closed", function() { this.mainArea.merge(); });
+        this.sidePanel = skeletonPanel;
+
+        skeletonPanel.content.id = "main-inspector-content";
+        skeletonPanel.content.style.width = "100%";
+
+        let bsPanel = new LiteGUI.Panel("sidePanel", {title: 'Blendshapes', scroll: true});  
+        //Create blendshapes panel
+        let inspector = this.createBlendShapesInspector(this.editor.mapNames);
+        inspector.root.style.padding = "10px";
+        bsPanel.content.appendChild(inspector.root);
+
+        this.updateSidePanel( skeletonPanel, 'root', {firstBone: true} );
         
-        docked.content.id = "main-inspector-content";
-        docked.content.style.width = "100%";
+        tabs.addTab("Skeleton", { size: "full", content: skeletonPanel.content });
+        tabs.addTab("Blendshapes", { size: "full" , content: bsPanel.content});
+
+        this.mainArea.getSection(1).add( tabs );
 
         this.resize();
     }

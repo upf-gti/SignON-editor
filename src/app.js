@@ -329,7 +329,7 @@ class App {
                     elem.style.display = "none";
                     setTimeout(()=>{
                         MediaPipe.stop();
-                        this.processVideo(live);
+                        this.processVideo(live, {blendshapesResults: MediaPipe.blendshapes, landmarksResults: MediaPipe.landmarks});
                     }, 100);
                     
                 }
@@ -359,7 +359,7 @@ class App {
         // };
     }
     
-    async processVideo(live) {
+    async processVideo(live, results) {
                 
         // Update header
         let capture = document.getElementById("capture_btn");
@@ -379,7 +379,7 @@ class App {
                             -moz-transform:rotateY(0deg); /* Firefox */"
         }
         await VideoUtils.bind(video, canvas);
-        
+        VideoUtils.onSetTime = this.editor.setBlendshapesTime.bind(this.editor, results);
 
         let trimBtn = document.getElementById("trim_btn");
         trimBtn.style.display = "block";

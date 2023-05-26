@@ -648,6 +648,26 @@ class Editor {
         return animation;
     }
 
+    setBlendshapesTime(data, t) {
+        let timeAcc = 0;
+        let bs = null, lm = null;
+        let idx = -1;
+
+        for(let i = 0; i < data.blendshapesResults.length; i++) {
+            timeAcc += data.blendshapesResults[i].dt*0.001;
+            if(timeAcc <= t) {
+                idx = i
+                
+            }
+        }
+        if(idx >= 0) {
+            bs = data.blendshapesResults[idx];
+            lm = data.landmarksResults[idx];
+        }
+            
+        this.gui.updateCaptureGUI({blendshapesResults: bs, landmarksResults: lm}, false)
+    }
+
     loadAnimation( animation ) {
 
         const extension = UTILS.getExtension(animation.name);
@@ -988,7 +1008,8 @@ class Editor {
         this.mixer.setTime(t);
         this.gizmo.updateBones(0.0);
         this.gui.updateBoneProperties();
-
+        //results = {faceBlendshapes: {}}
+        this.setBlendshapesTime({faceBlendshapes: this.blendshapesArray}, t);
         // Update video
         this.video.currentTime = this.video.startTime + t;
         if(this.state && force) {
