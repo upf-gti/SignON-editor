@@ -94,6 +94,26 @@ class App {
         if(!MediaPipe.loaded)
         MediaPipe.start( true, () => {
             $('#loading').fadeOut();
+            let videoElement = document.getElementById("inputVideo")
+            this.mediaRecorder = new MediaRecorder(videoElement.srcObject);
+
+            this.mediaRecorder.onstop =  (e) => {
+
+                video.addEventListener("play", function() {});
+                video.addEventListener("pause", function() {});
+                video.setAttribute('controls', 'name');
+                video.controls = false;
+                video.loop = true;
+                
+                let blob = new Blob(this.chunks, { "type": "video/mp4; codecs=avc1" });
+                let videoURL = URL.createObjectURL(blob);
+                video.src = videoURL;
+                console.log("Recording correctly saved");
+            }
+
+            this.mediaRecorder.ondataavailable =  (e) => {
+                this.chunks.push(e.data);
+            }
         }, this.editor.gui.updateCaptureGUI.bind(this.editor.gui) );
 
         // Show video
@@ -108,13 +128,13 @@ class App {
             video.currentTime = video.startTime > 0 ? video.startTime : 0;
         });
 
-        this.mediaDevicesSupported(video, this, ()=> {     
+        // this.mediaDevicesSupported(video, this, ()=> {     
 
-        }, (err) => {
-            if(!err)
-                err = "This app is not supported in your browser";
-            console.error(err);
-        });
+        // }, (err) => {
+        //     if(!err)
+        //         err = "This app is not supported in your browser";
+        //     console.error(err);
+        // });
 
         this.setEvents(true);
     }
@@ -224,7 +244,7 @@ class App {
 
         // Creates the scene and loads the animation
         this.editor.trimTimes = [startTime, endTime];
-        this.editor.buildAnimation( MediaPipe.landmarks );
+        this.editor.buildAnimation( {landmarks: MediaPipe.landmarks, blendshapes: MediaPipe.blendshapes} );
         
         const name = "Unnamed";
         this.editor.clipName = name;

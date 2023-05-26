@@ -19,6 +19,7 @@ THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNor
 THREE.ShaderChunk[ 'morphtarget_pars_vertex' ] = "#ifdef USE_MORPHTARGETS\n	uniform float morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		uniform float morphTargetInfluences[ MORPHTARGETS_COUNT ];\n		uniform sampler2DArray morphTargetsTexture;\n		uniform vec2 morphTargetsTextureSize;\n		vec3 getMorph( const in int vertexIndex, const in int morphTargetIndex, const in int offset, const in int stride ) {\n			float texelIndex = float( vertexIndex * stride + offset );\n			float y = floor( texelIndex / morphTargetsTextureSize.x );\n			float x = texelIndex - y * morphTargetsTextureSize.x;\n			vec3 morphUV = vec3( ( x + 0.5 ) / morphTargetsTextureSize.x, y / morphTargetsTextureSize.y, morphTargetIndex );\n			return texture( morphTargetsTexture, morphUV ).xyz;\n		}\n	#else\n		#ifndef USE_MORPHNORMALS\n			uniform float morphTargetInfluences[ 8 ];\n		#else\n			uniform float morphTargetInfluences[ 4 ];\n		#endif\n	#endif\n#endif";
 THREE.ShaderChunk[ 'morphtarget_vertex' ] = "#ifdef USE_MORPHTARGETS\n	transformed *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n			#ifndef USE_MORPHNORMALS\n				transformed += getMorph( gl_VertexID, i, 0, 1 ) * morphTargetInfluences[ i ];\n			#else\n				transformed += getMorph( gl_VertexID, i, 0, 2 ) * morphTargetInfluences[ i ];\n			#endif\n		}\n	#else\n		transformed += morphTarget0 * morphTargetInfluences[ 0 ];\n		transformed += morphTarget1 * morphTargetInfluences[ 1 ];\n		transformed += morphTarget2 * morphTargetInfluences[ 2 ];\n		transformed += morphTarget3 * morphTargetInfluences[ 3 ];\n		#ifndef USE_MORPHNORMALS\n			transformed += morphTarget4 * morphTargetInfluences[ 4 ];\n			transformed += morphTarget5 * morphTargetInfluences[ 5 ];\n			transformed += morphTarget6 * morphTargetInfluences[ 6 ];\n			transformed += morphTarget7 * morphTargetInfluences[ 7 ];\n		#endif\n	#endif\n#endif";
 
+const MapNames = await import('../data/mapnames.json', {assert: { type: 'json' }});
 
 class Editor {
     
@@ -58,7 +59,12 @@ class Editor {
 
         this.nn = new NN("data/ML/model.json");
         this.landmarksArray = [];
+        this.blendshapesArray = [];
+        this.applyRotation = false; // head and eyes rotation
         
+        this.character = "EVA";
+        this.mapNames = MapNames.default.map_llnames[this.character];
+
     	this.onDrawTimeline = null;
 	    this.onDrawSettings = null;
         this.gui = new Gui(this);
@@ -261,14 +267,16 @@ class Editor {
         }
     }
 
-    buildAnimation(landmarks) {
+    buildAnimation(data) {
 
+        let {landmarks, blendshapes} = data;
         // Remove loop mode for the display video
         this.video.sync = true;
         this.video.loop = false;
 
         // Trim
         this.landmarksArray = this.processLandmarks( landmarks );
+        this.blendshapesArray = this.processBlendshapes( blendshapes );
 
         // Canvas UI buttons
         this.createSceneUI();
@@ -292,10 +300,13 @@ class Editor {
                         object.frustumCulled = false;
                         object.castShadow = true;
                         object.receiveShadow = true;
+
                         if (object.name == "Eyelashes")
                             object.castShadow = false;
+
                         if(object.material.map)
                             object.material.map.anisotropy = 16; 
+
                         this.help = object.skeleton;
                         if(object.morphTargetDictionary)
                             this.morphTargets = object.morphTargetDictionary;
@@ -399,6 +410,244 @@ class Editor {
         return landmarks;
     }
 
+    processBlendshapes( blendshapes ) {
+        
+        const [startTime, endTime] = this.trimTimes;
+
+        // Video is non duration-complete
+        if(endTime) {
+
+            let totalDt = 0;
+            let index = 1;
+    
+            // remove starting frames
+            while( totalDt < startTime ) {
+                const bs = blendshapes[index];
+                totalDt += bs.dt * 0.001;
+                index++;
+            }
+    
+            if(totalDt > 0) {
+                blendshapes = blendshapes.slice(index - 1);
+            }
+    
+            // remove ending frames
+            index = 1;
+            while( totalDt < endTime && index < blendshapes.length ) {
+                const bs = blendshapes[index];
+                totalDt += bs.dt * 0.001;
+                index++;
+            }
+    
+            blendshapes = blendshapes.slice(0, index - 1);
+        }
+
+        return blendshapes;
+    }
+
+
+    createAnimationFromBlendshapes(name, data) {
+
+        let clipData = {};
+        let times = [];
+        // let {dt, weights} = data;
+
+        for (let idx = 0; idx < data.length; idx++) {
+            let dt = data[idx].dt;
+            let weights = data[idx];
+
+            if(times.length)
+                times.push(times[idx-1] + dt* 0.001);
+            else
+                times.push(dt);
+
+                
+            for(let i in weights)
+            {
+                var value = weights[i];
+                let map = this.mapNames[i];
+                if(map == null) 
+                {
+                    if(!this.applyRotation) 
+                        continue;
+
+                    let axis = i.split("Yaw");
+                    if(axis.length > 1)
+                    {
+                        switch(axis[0]){
+                            case "LeftEye":
+                                if(!clipData["mixamorig_LeftEye"])
+                                {
+                                    clipData["mixamorig_LeftEye"] = [];
+                                    clipData["mixamorig_LeftEye"].length = data.length;
+                                    clipData["mixamorig_LeftEye"] = clipData["mixamorig_LeftEye"].fill(null).map(() => new THREE.Euler( 0, 0, 0, 'XYZ' ));
+
+                                }
+                                    clipData["mixamorig_LeftEye"][idx].y = value;
+                            break;
+                            case "RightEye":
+                                if(!clipData["mixamorig_RightEye"])
+                                {
+                                    clipData["mixamorig_RightEye"] = [];
+                                    clipData["mixamorig_RightEye"].length = data.length;
+                                    clipData["mixamorig_RightEye"] = clipData["mixamorig_RightEye"].fill(null).map(() => new THREE.Euler( 0, 0, 0, 'XYZ' ));
+
+                                }
+                                clipData["mixamorig_RightEye"][idx].y = value;
+                            break;
+                            case "Head":
+                                if(!clipData["mixamorig_Head"])
+                                {
+                                    clipData["mixamorig_Head"] = [];
+                                    clipData["mixamorig_Head"].length = data.length;
+                                    clipData["mixamorig_Head"] = clipData["mixamorig_Head"].fill(null).map(() => new THREE.Euler( 0, 0, 0, 'XYZ' ));
+
+                                }
+                                clipData["mixamorig_Head"][idx].y = value;
+                            break;
+                        }
+                        continue;
+                    }
+                    axis = i.split("Pitch");
+                    if(axis.length > 1)
+                    {
+                        switch(axis[0]){
+                            case "LeftEye":
+                                if(!clipData["mixamorig_LeftEye"])
+                                {
+                                    clipData["mixamorig_LeftEye"] = [];
+                                    clipData["mixamorig_LeftEye"].length = data.length;
+                                    clipData["mixamorig_LeftEye"] = clipData["mixamorig_LeftEye"].fill(null).map(() => new THREE.Euler( 0, 0, 0, 'XYZ' ));
+
+                                }
+                                clipData["mixamorig_LeftEye"][idx].x = value;
+                            break;
+                            case "RightEye":
+                                if(!clipData["mixamorig_RightEye"])
+                                {
+                                    clipData["mixamorig_RightEye"] = [];
+                                    clipData["mixamorig_RightEye"].length = data.length;
+                                    clipData["mixamorig_RightEye"] = clipData["mixamorig_RightEye"].fill(null).map(() => new THREE.Euler( 0, 0, 0, 'XYZ' ));
+
+                                }
+                                clipData["mixamorig_RightEye"][idx].x = value;
+                            break;
+                            case "Head":
+                                if(!clipData["mixamorig_Head"])
+                                {
+                                    clipData["mixamorig_Head"] = [];
+                                    clipData["mixamorig_Head"].length = data.length;
+                                    clipData["mixamorig_Head"] = clipData["mixamorig_Head"].fill(null).map(() => new THREE.Euler( 0, 0, 0, 'XYZ' ));
+
+                                }
+                                clipData["mixamorig_Head"][idx].x = value;
+                            break;
+                        }
+                        continue;
+                    }
+                    axis = i.split("Roll");
+                    if(axis.length > 1)
+                    {
+                        switch(axis[0]){
+                            case "LeftEye":
+                                if(!clipData["mixamorig_LeftEye"])
+                                {
+                                    clipData["mixamorig_LeftEye"] = [];
+                                    clipData["mixamorig_LeftEye"].length = data.length;
+                                    clipData["mixamorig_LeftEye"] = clipData["mixamorig_LeftEye"].fill(null).map(() => new THREE.Euler( 0, 0, 0, 'XYZ' ));
+
+                                }
+                                clipData["mixamorig_LeftEye"][idx].z = value;
+                            break;
+
+                            case "RightEye":
+                                if(!clipData["mixamorig_RightEye"])
+                                {
+                                    clipData["mixamorig_RightEye"] = [];
+                                    clipData["mixamorig_RightEye"].length = data.length;
+                                    clipData["mixamorig_RightEye"] = clipData["mixamorig_RightEye"].fill(null).map(() => new THREE.Euler( 0, 0, 0, 'XYZ' ));
+
+                                }
+                                clipData["mixamorig_RightEye"][idx].z = -value;
+                            break;
+
+                            case "Head":
+                                if(!clipData["mixamorig_Head"])
+                                {
+                                    clipData["mixamorig_Head"] = [];
+                                    clipData["mixamorig_Head"].length = data.length;
+                                    clipData["mixamorig_Head"] = clipData["mixamorig_Head"].fill(null).map(() => new THREE.Euler( 0, 0, 0, 'XYZ' ));
+
+                                }
+                                clipData["mixamorig_Head"][idx].z = value;
+                            break;
+                        }
+                        continue;
+                    }
+                    else
+                        continue;
+                }
+                else if (typeof(map) == 'string'){
+                    if(!clipData[map])
+                    {
+                        clipData[map] = [];
+                        clipData[map].length = data.length;
+                        clipData[map].fill(0);
+                    }
+                    clipData[map][idx] = value;
+                }
+                else if( typeof(map) == 'object'){
+                    for(let j = 0; j < map.length; j++){
+                        if(!clipData[map[j]])
+                        {
+                            clipData[map[j]] = [];
+                            clipData[map[j]].length = data.length;
+                            clipData[map[j]].fill(0);
+                        }
+                        clipData[map[j]][idx] = value; 
+                    }
+                }
+              
+            }
+
+        }
+        let tracks = [];
+        for(let bs in clipData)
+        {
+
+            if(typeof(clipData[bs][0]) == 'object' )
+            {
+                let animData = []; 
+                clipData[bs].map((x) => {
+                    let q = new THREE.Quaternion().setFromEuler(x);
+                    animData.push(q.x);
+                    animData.push(q.y);
+                    animData.push(q.z);
+                    animData.push(q.w);
+                }, animData)
+                tracks.push( new THREE.QuaternionKeyframeTrack(bs + '.quaternion', times, data ));
+            }
+            else
+            {
+                
+                for(let mesh of this.skinnedMeshes)
+                {
+                    let mt_idx = mesh.morphTargetDictionary[bs]
+                    if(mt_idx>-1)
+                        tracks.push( new THREE.NumberKeyframeTrack(mesh.name +'.morphTargetInfluences['+ bs + ']', times, clipData[bs]) );
+
+                }
+            }
+        }
+
+        // use -1 to automatically calculate
+        // the length from the array of tracks
+        const length = -1;
+
+        let animation = new THREE.AnimationClip(name ||"liveLinkAnim", length, tracks);
+        return animation;
+    }
+
     loadAnimation( animation ) {
 
         const extension = UTILS.getExtension(animation.name);
@@ -461,6 +710,7 @@ class Editor {
             let model = gltf.scene;
             model.visible = true;
             
+            this.skinnedMeshes = [];
             model.traverse( o => {
                 if (o.isMesh || o.isSkinnedMesh) {
                     o.castShadow = true;
@@ -470,8 +720,12 @@ class Editor {
                         this.skeleton = o.skeleton;
                     }
                     if(o.morphTargetDictionary)
+                    {
                         this.morphTargets = o.morphTargetDictionary;
+                        this.skinnedMeshes.push(o);
+                    }
                     o.material.side = THREE.FrontSide;
+                    
                 }
             } );
             
@@ -491,9 +745,15 @@ class Editor {
                 
             }
             this.skeletonHelper.skeleton = this.skeleton; //= createSkeleton();
-            
+
+
+            this.faceAnimationClip = this.createAnimationFromBlendshapes(null, this.blendshapesArray);
+
             if( blendshapesAnim )
                 this.mixer.clipAction(blendshapesAnim.clip).setEffectiveWeight(1.0).play();
+            else if(this.faceAnimationClip )
+                this.mixer.clipAction(this.faceAnimationClip).setEffectiveWeight(1.0).play();
+
             // guizmo stuff
             
             this.scene.add( model );

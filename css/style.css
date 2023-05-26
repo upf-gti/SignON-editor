@@ -506,6 +506,7 @@ canvas {
 	margin: 6px 10px;
 	max-height: 20px;
 	color: var(--global-color-selected);
+	cursor: pointer;
 }
 .drop-icon:hover {
 	color: var(--global-color-highlight)!important;
@@ -603,4 +604,9 @@ dark mode:
 	from {top: -1%}
 	75% {top: 0.1%}
 	to {top: 0%;}
+}
+
+.inspector::-webkit-scrollbar {
+    width: 5px !important;
+    border-radius: 6px;
 }

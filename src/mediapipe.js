@@ -3,6 +3,10 @@ import "https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js";
 import "https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js";
 import "https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js";
 
+// Mediapipe face blendshapes
+import { FaceLandmarker, FilesetResolver } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0';
+
+import * as THREE from 'three'
 import { UTILS } from "./utils.js"
 
 const MediaPipe = {
@@ -10,14 +14,17 @@ const MediaPipe = {
     loaded: false,
     currentTime: 0,
     previousTime: 0,
+    bs_currentTime: 0,
+    bs_previousTime: 0,
     landmarks: [],
-
+    blendshapes : [],
     async start( live, onload, onresults ) {
 
         UTILS.makeLoading("Loading MediaPipe...");
 
         this.live = live;
         this.landmarks = [];
+        this.blendshapes = [];
         this.onload = onload;
         this.onresults = onresults;
         // Webcam and MediaPipe Set-up
@@ -25,6 +32,7 @@ const MediaPipe = {
         const canvasElement = document.getElementById("outputVideo");
         const canvasCtx = canvasElement.getContext("2d");
 
+        //Holistic 
         const holistic = await new Holistic({locateFile: (file) => {
             return `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`;
         }});
@@ -39,15 +47,25 @@ const MediaPipe = {
             minTrackingConfidence: 0.5
         });
 
-        holistic.onResults((function(results) {
+        holistic.onResults(((results) => {
 
+            const faceResults = this.faceLandmarker.detectForVideo(videoElement, Date.now() );
+
+            let faceBlendshapes = null;
             if (window.globals.app.isRecording()) // store MediaPipe data
             {
                 this.currentTime = Date.now();
                 var dt = this.currentTime - this.previousTime;
                 this.fillLandmarks(results, dt);
+                if(faceResults)
+                    faceBlendshapes = this.fillBlendshapes(faceResults, dt, true);
                 this.previousTime = this.currentTime;
             }
+            else {
+                faceBlendshapes = this.fillBlendshapes(faceResults);
+            }
+
+            
             canvasCtx.save();
             canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
             // Only overwrite existing pixels.
@@ -92,15 +110,32 @@ const MediaPipe = {
             }
             canvasCtx.restore();
             if(this.onresults)
-                this.onresults(results, recording);
+                this.onresults({landmarksResults: results, blendshapesResults: faceBlendshapes}, recording);
 
         }).bind(this));
 
+        // Face blendshapes
+        const filesetResolver = await FilesetResolver.forVisionTasks(
+            'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm'
+        );
+
+        this.faceLandmarker = await FaceLandmarker.createFromOptions( filesetResolver, {
+            baseOptions: {
+                modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+                delegate: 'GPU'
+            },
+            outputFaceBlendshapes: true,
+            outputFacialTransformationMatrixes: true,
+            runningMode: 'VIDEO',
+            numFaces: 1
+        } );
+
+        
         if(live) {
             const webcamera = new Camera(videoElement, {
                 onFrame: async () => {
                     await holistic.send({image: videoElement});
-    
+
                     if(!this.loaded) {
                         this.loaded = true;
                         if(this.onload) this.onload();
@@ -121,11 +156,24 @@ const MediaPipe = {
 
     async sendVideo(holistic, videoElement){
         await holistic.send({image: videoElement});
+        
         videoElement.requestVideoFrameCallback(this.sendVideo.bind(this, holistic, videoElement));
 
         if(!this.loaded) {
             this.loaded = true;
             if(this.onload) this.onload();
+        }
+    },
+
+    onFaceResults(results) {
+        
+        if (window.globals.app.isRecording()) // store MediaPipe data
+        {
+            this.bs_currentTime = Date.now();
+            var dt = this.bs_currentTime - this.bs_previousTime;
+            this.fillBlendshapes(results, dt);
+            this.bs_previousTime = this.bs_currentTime;
+            
         }
     },
 
@@ -145,12 +193,14 @@ const MediaPipe = {
 
     onStartRecording() {
         this.landmarks = [];
+        this.blendshapes = [];
     },
 
     onStopRecording() {
         
         // Correct first dt of landmarks
         this.landmarks[0].dt = 0;
+        this.blendshapes[0].dt = 0;
     },
 
     fillLandmarks(data, dt) {
@@ -165,6 +215,50 @@ const MediaPipe = {
         let rightHand = (poseLandmarks[16].visibility + poseLandmarks[18].visibility + poseLandmarks[20].visibility)/3;
       
         this.landmarks.push({"RLM": data.rightHandLandmarks, "LLM": data.leftHandLandmarks, "FLM": data.faceLandmarks, "PLM": data.poseLandmarks, "dt": dt, distanceToCamera: distance, rightHandVisibility: rightHand, leftHandVisibility: leftHand});
+    },
+
+ 
+    fillBlendshapes(data, dt = 0, fill = false) {
+        const transform = new THREE.Object3D();
+        let blends = {};
+        if ( data.faceBlendshapes.length > 0  ) {
+
+            const faceBlendshapes = data.faceBlendshapes[ 0 ].categories;
+            for ( const blendshape of faceBlendshapes ) {
+
+                const name =  blendshape.categoryName.charAt(0).toUpperCase() + blendshape.categoryName.slice(1);
+                blends[name] = blendshape.score;
+
+            }
+            
+            if(blends["LeftEyeYaw"] == null);
+            {
+                blends["LeftEyeYaw"] = (blends["EyeLookOutLeft"] - blends["EyeLookInLeft"])/2;
+                blends["RightEyeYaw"] = - (blends["EyeLookOutRight"] - blends["EyeLookInRight"])/2;
+                blends["LeftEyePitch"] = (blends["EyeLookDownLeft"] - blends["EyeLookUpLeft"])/2;
+                blends["RightEyePitch"] = (blends["EyeLookDownRight"] - blends["EyeLookUpRight"])/2;
+            }
+
+        }
+
+        if ( data.facialTransformationMatrixes.length > 0 ) {
+
+            const facialTransformationMatrixes = data.facialTransformationMatrixes[ 0 ].data;
+
+            transform.matrix.fromArray( facialTransformationMatrixes );
+            transform.matrix.decompose( transform.position, transform.quaternion, transform.scale );
+
+            blends["HeadYaw"] = - transform.rotation.y;
+            blends["HeadPitch"] = - transform.rotation.x;
+            blends["HeadRoll"] = - transform.rotation.z;
+        }
+
+        if(fill) {
+            blends.dt = dt;
+            this.blendshapes.push(blends)
+        }
+
+        return blends;
     }
 }
 

@@ -503,8 +503,9 @@ class Gui {
         let i = document.createElement("i");
         i.id = "expand-capture-gui";
         i.style = "position: relative;top: 35px;left: -19px;"
-        i.className = "fas fa-solid fa-circle-chevron-left drop-icon";
-        i.addEventListener("click", () => this.changeCaptureGUIVisivility(i.classList.contains("fa-circle-chevron-right")) );
+        i.className = "fas fa-solid fa-circle-info drop-icon";//"fas fa-solid fa-circle-chevron-left drop-icon";
+        // i.addEventListener("click", () => this.changeCaptureGUIVisivility(i.classList.contains("fa-circle-chevron-right")) );
+        i.addEventListener("click", () => this.changeCaptureGUIVisivility());
         //videoArea.appendChild(i);
 
         let inspector = new LiteGUI.Inspector("capture-inspector");
@@ -545,23 +546,34 @@ class Gui {
         mainCapture.appendChild(i);
         mainCapture.appendChild(inspector.root)
         videoArea.appendChild(buttonContainer);
+
+        let section = inspector.addSection("Blendshapes weights");
+        let inspect = this.createBlendShapesInspector(this.editor.mapNames, inspector);
+        // inspect.root.style["margin-top"] = "10px";
+        // inspect.root.style.display = "flex";
+        // inspect.root.style["flex-wrap"] =  "wrap";
+        // inspect.root.style.width = "auto";
+        inspector.root.style.maxHeight = "calc(100% - 57px)";
+        inspector.root.style.overflowY = "scroll";
+ 
     }
 
     changeCaptureGUIVisivility(hidde) {
-        document.getElementById("capture-inspector").hidden = hidde;
-        let i = document.getElementById("expand-capture-gui");
-        if(hidde) {
-            i.classList.remove("fa-circle-chevron-right") ;
-            i.classList.add("fa-circle-chevron-left");
-        }
-        else{
-            i.classList.remove("fa-circle-chevron-left"); 
-            i.classList.add("fa-circle-chevron-right");
-        }
+        document.getElementById("capture-inspector").hidden = hidde || !document.getElementById("capture-inspector").hidden;
+        // let i = document.getElementById("expand-capture-gui");
+        // if(hidde) {
+        //     i.classList.remove("fa-circle-chevron-right") ;
+        //     i.classList.add("fa-circle-chevron-left");
+        // }
+        // else{
+        //     i.classList.remove("fa-circle-chevron-left"); 
+        //     i.classList.add("fa-circle-chevron-right");
+        // }
     }
 
-    updateCaptureGUI(landmarksResults, isRecording) {
+    updateCaptureGUI(results, isRecording) {
         
+        let {landmarksResults, blendshapesResults} = results;
         if(isRecording){
             this.changeCaptureGUIVisivility(true);
             return;
@@ -623,6 +635,23 @@ class Gui {
         else 
             progressBarRH.classList.add("bg-success")
         
+
+        for(let i in blendshapesResults)
+        {
+            let value = blendshapesResults[i];
+            let progressBar = document.getElementById("progressbar-"+i);
+            if(!progressBar) 
+                continue;
+            progressBar.setAttribute("aria-valuenow", value*100);
+            progressBar.style.width = value*100 + '%';
+            progressBar.className = "progress-bar";
+            if(value < 0.25) 
+                progressBar.classList.add("bg-danger")
+            else if(value > 0.25 && value < 0.5) 
+                progressBar.classList.add("bg-warning")
+            else 
+                progressBar.classList.add("bg-success")
+        }
     }
 
     hiddeCaptureArea() {
@@ -634,6 +663,7 @@ class Gui {
 
         let ci = document.getElementById("capture-inspector");
         ci.classList.add("hidden");
+        
     }
 
     createSidePanel() {
@@ -648,6 +678,29 @@ class Gui {
         docked.content.style.width = "100%";
 
         this.resize();
+    }
+
+    createBlendShapesInspector(bsNames, inspector = null) {
+        
+        inspector = inspector || new LiteGUI.Inspector("blendshapes-inspector");
+        if(inspector.id)
+            inspector.addTitle("Blend shapes weights");
+        
+        // inspector.root.hidden = true;
+       // inspector.root.style.margin = "0px 25px";
+        //inspector.addSection("User positioning");
+
+        for(let name in bsNames) {
+            let info = inspector.addInfo(null, name, {width: "150px"});
+            let progressVar = document.createElement('div');
+            progressVar.className = "progress mb-3";
+            progressVar.innerHTML = 
+            '<div id="progressbar-' + name + '" class="progress-bar bg-danger" role="progressbar" style="width: 0%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>'
+          
+            info.appendChild(progressVar);
+        }
+        
+        return inspector;
     }
 
     updateSidePanel(root, item_selected, options) {
