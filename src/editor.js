@@ -662,7 +662,8 @@ class Editor {
         }
         if(idx >= 0) {
             bs = data.blendshapesResults[idx];
-            lm = data.landmarksResults[idx];
+            if(data.landmarksResults)
+                lm = data.landmarksResults[idx];
         }
             
         this.gui.updateCaptureGUI({blendshapesResults: bs, landmarksResults: lm}, false)
@@ -1009,7 +1010,7 @@ class Editor {
         this.gizmo.updateBones(0.0);
         this.gui.updateBoneProperties();
         //results = {faceBlendshapes: {}}
-        this.setBlendshapesTime({faceBlendshapes: this.blendshapesArray}, t);
+        this.setBlendshapesTime({blendshapesResults: this.blendshapesArray}, t);
         // Update video
         this.video.currentTime = this.video.startTime + t;
         if(this.state && force) {
