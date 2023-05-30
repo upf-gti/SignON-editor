@@ -10,7 +10,7 @@ class NN {
         this.model = new TFModel( path );
     }
 
-    loadLandmarks(landmarks, onLoad) {
+    loadLandmarks(landmarks, onLoad, onError) {
 
         this.nnDeltas = [];
 
@@ -52,8 +52,13 @@ class NN {
             return vec2.flat(1);
         });
 
-        if (!firstNonNull || !lastNonNull) 
-            throw('Missing landmarks error');
+        if (!firstNonNull || !lastNonNull) {
+            let err = 'Missing landmarks error';
+            if(onError)
+                onError(err)
+            throw(err);
+
+        } 
 
         this.landmarksNN    = this.landmarksNN.slice(firstNonNull, lastNonNull + 1);
         this.nnDeltas       = this.nnDeltas.slice(firstNonNull, lastNonNull + 1);

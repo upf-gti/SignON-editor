@@ -61,6 +61,7 @@ class Editor {
         this.landmarksArray = [];
         this.blendshapesArray = [];
         this.applyRotation = false; // head and eyes rotation
+        this.selectedAU = null;
         
         this.character = "EVA";
         this.mapNames = MapNames.default.map_llnames[this.character];
@@ -396,16 +397,22 @@ class Editor {
             landmarks = landmarks.slice(0, index - 1);
         }
 
-        this.nn.loadLandmarks( landmarks, offsets => {
-            this.trimTimes[0] += offsets[0];
-            this.trimTimes[1] += offsets[1];
+        this.nn.loadLandmarks( landmarks, 
+            offsets => {
+                this.trimTimes[0] += offsets[0];
+                this.trimTimes[1] += offsets[1];
 
-            this.video.startTime = this.trimTimes[0];
-            this.video.onended = function() {
-                this.currentTime = this.startTime;
-                this.play();
-            };
-        } );
+                this.video.startTime = this.trimTimes[0];
+                this.video.onended = function() {
+                    this.currentTime = this.startTime;
+                    this.play();
+                };
+            },
+            (err) => {
+                alert(err, "Try it again."); 
+                window.location.reload();
+            } 
+        );
 
         return landmarks;
     }
@@ -450,6 +457,8 @@ class Editor {
 
         let clipData = {};
         let times = [];
+
+        let auValues = {};
         // let {dt, weights} = data;
 
         for (let idx = 0; idx < data.length; idx++) {
@@ -465,6 +474,11 @@ class Editor {
             for(let i in weights)
             {
                 var value = weights[i];
+                if(!auValues[i])
+                    auValues[i] = [value];
+                else
+                    auValues[i].push(value);
+
                 let map = this.mapNames[i];
                 if(map == null) 
                 {
@@ -639,13 +653,18 @@ class Editor {
                 }
             }
         }
+        let auTracks = [];
+        for(let bs in auValues) {
+            auTracks.push( new THREE.NumberKeyframeTrack(bs, times, auValues[bs] ));
+        }
 
         // use -1 to automatically calculate
         // the length from the array of tracks
         const length = -1;
 
-        let animation = new THREE.AnimationClip(name ||"liveLinkAnim", length, tracks);
-        return animation;
+        let animation = new THREE.AnimationClip(name || "liveLinkAnim", length, tracks);
+        let auAnimation = new THREE.AnimationClip("au-animation", length, auTracks);
+        return [animation, auAnimation];
     }
 
     setBlendshapesTime(data, t) {
@@ -768,7 +787,9 @@ class Editor {
             this.skeletonHelper.skeleton = this.skeleton; //= createSkeleton();
 
 
-            this.faceAnimationClip = this.createAnimationFromBlendshapes(null, this.blendshapesArray);
+            let anim = this.createAnimationFromBlendshapes(null, this.blendshapesArray);
+            this.faceAnimationClip = anim[0];
+            this.auAnimation = anim[1];
 
             if( blendshapesAnim )
                 this.mixer.clipAction(blendshapesAnim.clip).setEffectiveWeight(1.0).play();
@@ -998,6 +1019,14 @@ class Editor {
         return;
         this.gizmo.transform.setTranslationSnap( this.defaultTranslationSnapValue );
         this.gizmo.transform.setRotationSnap( THREE.MathUtils.degToRad( this.defaultRotationSnapValue ) );
+    }
+
+    getSelectedActionUnit() {
+        return this.selectedAU;
+    }
+
+    setSelectedActionUnit(au) {
+        this.selectedAU = au;
     }
 
     setTime(t, force) {

@@ -682,16 +682,179 @@ class Gui {
         skeletonPanel.content.id = "main-inspector-content";
         skeletonPanel.content.style.width = "100%";
 
+
         let bsPanel = new LiteGUI.Panel("sidePanel", {title: 'Blendshapes', scroll: true});  
+        let bsArea = new LiteGUI.Area({content_id: "blenshapes-area"});
+        bsArea.split("vertical", [null, "50%"], true);
+
+        //Create face areas selector
+        let canvas = document.createElement("canvas");
+        canvas.style.width = "100%";
+
+        let section = bsArea.getSection(0);
+        section.content.appendChild(canvas);
+        bsPanel.add(bsArea);
+        bsPanel.content.style.height = "calc(100% - 20px)";
+        let areas = {
+            "rgb(255,0,0)": "nose", 
+            "rgb(0,0,255)": "browr_right",
+            "rgb(255,0,255)": "brow_left",
+            "rgb(0,255,255)": "eyer_right",
+            "rgb(0,255,0)": "eye_left",
+            "rgb(255,255,255)": "cheek_right",
+            "rgb(255,255,0)": "cheek_left",
+            "rgb(0,125,0)": "jaw",
+            "rgb(125,0,0)": "mouth"
+        }
+        let ctx = canvas.getContext("2d");
+        let img = document.createElement("img");
+        img.src = "./data/imgs/face areas.png";
+        img.onload = (e) =>
+        {
+            //canvas.height = bsArea.getSection(0).getHeight();
+            ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
+        }
+
+        let clon = canvas.cloneNode(true);
+        clon.hidde = true;
+        let ctxClon = clon.getContext("2d");
+        let mask = document.createElement("img");
+        mask.src = "./data/imgs/face mask.png";
+        mask.onload = (e) =>
+        {
+            //clon.height = canvas.height;
+            ctxClon.drawImage(mask, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
+        }
+
+        canvas.onmousemove = (e) => {
+            ctxClon = clon.getContext("2d");
+            var pos = findPos(canvas);
+            var x = e.pageX - pos.x;
+            var y = e.pageY - pos.y;
+            let data = ctxClon.getImageData(x, y, 1, 1).data;
+            let color = "rgb(" + data[0] + "," + data[1] + "," + data[2] + ")";
+            if(areas[color]) {
+                console.log(areas[color])
+                let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                let allData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
+                for (var i = 0; i < allData.length-4; i+=4) {
+                    if(allData[i] == data[0] && allData[i+1] == data[1] && allData[i+2] == data[2] && allData[i+3] == data[3]) {
+                        // currentData[i] = 0;
+                        // currentData[i+1] = 0;
+                        // currentData[i+2] = 0;
+                        currentData.data[i+3] = 125;
+                    }
+                }
+                //ctx.clearRect(0,0, canvas.width,canvas.height);
+                ctx.putImageData(currentData, 0, 0)
+            }else {
+                ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
+                if(this.editor.getSelectedActionUnit()) {
+                    let idx = Object.values(areas).indexOf(this.editor.getSelectedActionUnit());
+                    let area = Object.keys(areas)[idx];
+                    let c = area.replace("rgb(", "").replace(")","").split(",");
+                    let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                    let allData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
+                    for (var i = 0; i < allData.length-4; i+=4) {
+                        if(allData[i].toString() == c[0] && allData[i+1].toString() == c[1] && allData[i+2].toString() == c[2] ) {
+                            // currentData[i] = 0;
+                            // currentData[i+1] = 0;
+                            // currentData[i+2] = 0;
+                            currentData.data[i+3] = 125;
+                        }
+                    }
+                    //ctx.clearRect(0,0, canvas.width,canvas.height);
+                    ctx.putImageData(currentData, 0, 0)
+                }
+
+            }
+        }   
+
+
+        function findPos(obj) {
+            var curleft = 0, curtop = 0;
+            if (obj.offsetParent) {
+                do {
+                    curleft += obj.offsetLeft;
+                    curtop += obj.offsetTop;
+                } while (obj = obj.offsetParent);
+                return { x: curleft, y: curtop };
+            }
+            return undefined;
+        }
+
         //Create blendshapes panel
         let inspector = this.createBlendShapesInspector(this.editor.mapNames);
         inspector.root.style.padding = "10px";
-        bsPanel.content.appendChild(inspector.root);
+        inspector.hidde = true;
+        bsArea.getSection(1).add(inspector);
+        bsArea.onResize = (e) => {
+            canvas.height = bsArea.getSection(0).getHeight();
+            clon.height = canvas.height;
+            ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
+            ctxClon.drawImage(mask, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
 
+        }
+        // bsPanel.content.appendChild(inspector.root);
+
+        canvas.onmouseup = (e) => {
+            ctxClon = clon.getContext("2d");
+            var pos = findPos(canvas);
+            var x = e.pageX - pos.x;
+            var y = e.pageY - pos.y;
+            let data = ctxClon.getImageData(x, y, 1, 1).data;
+            let color = "rgb(" + data[0] + "," + data[1] + "," + data[2] + ")";
+            if(areas[color]) {
+                this.editor.setSelectedActionUnit(areas[color]);
+                ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
+                let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                let allData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
+
+                for (var i = 0; i < allData.length-4; i+=4) {
+                    if(allData[i] == data[0] && allData[i+1] == data[1] && allData[i+2] == data[2] && allData[i+3] == data[3]) {
+                        // currentData[i] = 0;
+                        // currentData[i+1] = 0;
+                        // currentData[i+2] = 0;
+                        currentData.data[i+3] = 125;
+                    }
+                }
+                console.log(areas[color])
+                let names = {};
+                for(let i in this.editor.mapNames) {
+                    let toCompare = areas[color].split("_");
+                    let found = true;
+                    for(let j = 0; j < toCompare.length; j++) {
+
+                        if(!i.toLowerCase().includes(toCompare[j])) {
+                            found = false;
+                            break;
+                        }
+                    }
+                    if(found)
+                        names[i] = this.editor.mapNames[i]
+                }
+
+                let newinspector = this.createBlendShapesInspector(names, inspector);
+                bsArea.getSection(1).add(newinspector);
+                ctx.clearRect(0,0, canvas.width,canvas.height);
+                ctx.putImageData(currentData, 0, 0)
+            }else {
+                inspector.root.remove();
+                ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
+            }
+        }   
+
+
+        
         this.updateSidePanel( skeletonPanel, 'root', {firstBone: true} );
         
-        tabs.addTab("Skeleton", { size: "full", content: skeletonPanel.content });
-        tabs.addTab("Blendshapes", { size: "full" , content: bsPanel.content});
+        tabs.addTab("Skeleton", { size: "full", content: skeletonPanel.content, callback: () => {
+            // if(this.timeline.clip != this.editor.animationClip)
+            //     this.loadClip(this.editor.animationClip);
+        } });
+        tabs.addTab("Blendshapes", { size: "full" , content: bsPanel.content, callback: () => {
+            // this.loadClip(this.editor.auAnimation);
+        } });
 
         this.mainArea.getSection(1).add( tabs );
 
@@ -701,6 +864,12 @@ class Gui {
     createBlendShapesInspector(bsNames, inspector = null) {
         
         inspector = inspector || new LiteGUI.Inspector("blendshapes-inspector");
+        if(document.getElementById('blendshapes-inspector')) {
+                document.getElementById('blendshapes-inspector').innerHTML = "";
+            document.getElementById('blendshapes-inspector').remove();    
+        }
+            
+
         if(inspector.id)
             inspector.addTitle("Blend shapes weights");
         
@@ -710,6 +879,9 @@ class Gui {
 
         for(let name in bsNames) {
             let info = inspector.addInfo(null, name, {width: "150px"});
+            if(document.getElementById('progressbar-' + name ))
+                document.getElementById('progressbar-' + name ).remove();
+
             let progressVar = document.createElement('div');
             progressVar.className = "progress mb-3";
             progressVar.innerHTML = 
