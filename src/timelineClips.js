@@ -23,7 +23,7 @@ ANIM.LEFT_BUTTON = 1;
 ANIM.RIGHT_BUTTON = 2;
 ANIM.MIDDLE_BUTTON = 4;
 
-ANIM.clip_types = [];
+ANIM.clipTypes = [];
 
 //blend modes
 ANIM.NORMAL = 0;
@@ -34,7 +34,7 @@ ANIM.DARKEN = 4;
 ANIM.HARD_LIGHT = 5;
 ANIM.SOFT_LIGHT = 6;
 ANIM.BLEND_MODES = ["Normal","Screen","Overlay","Multiply","Darken","Hard Light","Soft Light"];
-ANIM.blend_to_operation = {
+ANIM.blendToOperation = {
 	0: "source-over",
 	1: "screen",
 	2: "overlay",
@@ -60,12 +60,12 @@ ANIM.LOCOMOTION = 10;
 
 ANIM.CUSTOM = 11;
 
-ANIM.clip_types = [ SpeechClip, AudioClip, FaceLexemeClip, FaceFACSClip, FaceEmotionClip, GazeClip, GestureClip, HeadClip, HeadDirectionShiftClip, PostureClip] ;
-ANIM.track_types = {"Speech": [ SpeechClip, AudioClip], "FaceShift": [FaceLexemeClip/*, FaceFACSClip*/], "Face": [FaceLexemeClip, FaceFACSClip, FaceEmotionClip], "Gaze": [GazeClip],"GazeShift": [GazeClip], "Gesture":[GestureClip], "Head": [HeadClip],"HeadDirectionShift": [HeadDirectionShiftClip], "Posture": [PostureClip], "PostureShift": [PostureClip] };
+ANIM.clipTypes = [ SpeechClip, AudioClip, FaceLexemeClip, FaceFACSClip, FaceEmotionClip, GazeClip, GestureClip, HeadClip, HeadDirectionShiftClip, PostureClip] ;
+ANIM.trackTypes = {"Speech": [ SpeechClip, AudioClip], "FaceShift": [FaceLexemeClip/*, FaceFACSClip*/], "Face": [FaceLexemeClip, FaceFACSClip, FaceEmotionClip], "Gaze": [GazeClip],"GazeShift": [GazeClip], "Gesture":[GestureClip], "Head": [HeadClip],"HeadDirectionShift": [HeadDirectionShiftClip], "Posture": [PostureClip], "PostureShift": [PostureClip] };
 ANIM.registerClipType = function(ctor)
 {
 	var name = ctor.name;
-	ANIM.clip_types[ ctor.id ] = ctor;
+	ANIM.clipTypes[ ctor.id ] = ctor;
 	for(var i in BaseClip.prototype)
 		ctor.prototype[i] = BaseClip.prototype[i];
 	ANIM[ name ] = ctor;
@@ -79,12 +79,12 @@ function Project()
 
 	//timing
 	this.mode = ANIM.PAUSED;
-	this.current_time = 0;
+	this.currentTime = 0;
 	this.duration = 60;
 	this.framerate = 30;
 	this.volume = 1;
 	this.type = ANIM.CANVAS2D;
-	this.allow_seeking = true;
+	this.allowSeeking = true;
 
 	//canvas
 	this.size = [1280,720]; //project res
@@ -102,7 +102,7 @@ function Project()
 	//external
 	this.fonts = []; //fonts that must be loaded from Google Fonts
 
-	this.clip_types = []; //list of all available clip types
+	this.clipTypes = []; //list of all available clip types
 
 	this.clear();
 
@@ -133,9 +133,9 @@ Project.prototype.getTrack = function( id )
 }
 
 
-Project.prototype.clear = function( skip_default_tracks )
+Project.prototype.clear = function( skipDefaultTracks )
 {
-	this.current_time = 0;
+	this.currentTime = 0;
 
 	this.globals = {};
 	this.tracks.length = 0;
@@ -147,21 +147,21 @@ Project.prototype.clear = function( skip_default_tracks )
 }
 
 
-Project.prototype.load = function( url, on_complete )
+Project.prototype.load = function( url, onComplete )
 {
 	var that = this;
 	fetch(url)
 	.then(function(response) {
 		if(response.status == 404)
 		{
-			if(on_complete)
-				on_complete(null);
+			if(onComplete)
+				onComplete(null);
 		}
 		else
 		  return response.json();
 	}).then( function(data){
 		if(data)
-			that.fromJSON(data, on_complete);
+			that.fromJSON(data, onComplete);
 	});/*.catch(function(err){
 		console.error( "error loading project: " + err );
 	});
@@ -174,7 +174,7 @@ Project.prototype.toJSON = function()
 
 	json.name = this.name;
 
-	json.current_time = this.current_time;
+	json.currentTime = this.currentTime;
 	json.duration = this.duration;
 	json.framerate = this.framerate;
 	json.size = this.size;
@@ -203,7 +203,7 @@ Project.prototype.toJSON = function()
 Project.prototype.fromJSON = function(json, callback)
 {
 
-	this.current_time = json.current_time || 0;
+	this.currentTime = json.currentTime || 0;
 	this.duration = json.duration;
 	this.framerate = json.framerate;
 	this.size = json.size;
@@ -223,14 +223,14 @@ Project.prototype.checkClips = function()
 		for(var i = 0; i < this.clips.length; ++i)
 		{
 			var clip = this.clips;
-			var ctor_class = ANIM.clip_types[ clip.constructor.id ];
-			if(clip.constructor === ctor_class)
+			var ctorClass = ANIM.clipTypes[ clip.constructor.id ];
+			if(clip.constructor === ctorClass)
 				continue;
-			var new_clip = new ctor_class();
-			new_clip.fromJSON( clip.toJSON() );
-			new_clip.start = clip.start;
-			new_clip.duration = clip.duration;
-			this.clips[i] = new_clip;
+			var newClip = new ctorClass();
+			newClip.fromJSON( clip.toJSON() );
+			newClip.start = clip.start;
+			newClip.duration = clip.duration;
+			this.clips[i] = newClip;
 		}
 	}
 }
@@ -242,7 +242,7 @@ function Track( name )
 	this.hidden = false;
 	this.editable = true;
 	this._project = null;
-	this.current_clip = null;
+	this.currentClip = null;
 }
 
 Track.prototype.getIndex = function()
@@ -283,7 +283,7 @@ ANIM.clipToJSON = function( clip )
 	var data;
 	if( clip.constructor === ANIM.MissingClip )
 	{
-		id = clip.missing_type;
+		id = clip.missingType;
 		data = clip.json;
 	}
 	else if(clip.toJSON)
@@ -300,11 +300,11 @@ ANIM.clipToJSON = function( clip )
 		data.fadein = clip.fadein;
 	if( clip.fadeout )
 		data.fadeout = clip.fadeout;
-	if( clip.control_channels )
+	if( clip.controlChannels )
 	{
 		data.ccs = [];
-		for(var i = 0; i < clip.control_channels.length; ++i)
-			data.ccs.push( clip.control_channels[i].toJSON() );
+		for(var i = 0; i < clip.controlChannels.length; ++i)
+			data.ccs.push( clip.controlChannels[i].toJSON() );
 	}
 
 	return [ id, clip.start, clip.duration, data ];
@@ -324,15 +324,15 @@ Track.prototype.fromJSON = function(json)
 
 	for(var i = 0; i < json.clips.length; ++i)
 	{
-		var clip_data = json.clips[i];
-		var clip = ANIM.clipFromJSON( clip_data );
+		var clipData = json.clips[i];
+		var clip = ANIM.clipFromJSON( clipData );
 		this.add( clip );
 	}
 }
 
-ANIM.clipFromJSON = function( clip_data, clip )
+ANIM.clipFromJSON = function( clipData, clip )
 {
-	var type = ANIM.clip_types[ clip_data[0] ];
+	var type = ANIM.clipTypes[ clipData[0] ];
 	clip = clip || null;
 	if(!clip)
 	{
@@ -340,26 +340,26 @@ ANIM.clipFromJSON = function( clip_data, clip )
 			clip = new type();
 		else
 		{
-			console.error("Clip type id unknown:", clip_data[0] );
+			console.error("Clip type id unknown:", clipData[0] );
 			clip = new ANIM.MissingClip();
-			clip.missing_type = clip_data[0];
-			clip.json = clip_data[3];
+			clip.missingType = clipData[0];
+			clip.json = clipData[3];
 		}
 	}
-	clip.start = clip_data[1];
-	clip.duration = clip_data[2];
+	clip.start = clipData[1];
+	clip.duration = clipData[2];
 	if(clip.fromJSON)
-		clip.fromJSON( clip_data[3] );
+		clip.fromJSON( clipData[3] );
 	else if( clip.constructor !== ANIM.MissingClip )
-		console.warn("Clip without fromJSON: ", clip_data[0] );
-	var data = clip_data[3];
+		console.warn("Clip without fromJSON: ", clipData[0] );
+	var data = clipData[3];
 
 		clip.fadeout = data.fadeout;
 	if( data.ccs )
 	{
-		clip.control_channels = [];
+		clip.controlChannels = [];
 		for(var i = 0; i < data.ccs.length; ++i)
-			clip.control_channels.push( new ANIM.ControlChannel( data.ccs[i] ) );
+			clip.controlChannels.push( new ANIM.ControlChannel( data.ccs[i] ) );
 	}
 
 	return clip;
@@ -368,9 +368,9 @@ ANIM.clipFromJSON = function( clip_data, clip )
 //used to render the content of this track so it doesnt have to be rendered constantly
 Track.prototype.getTempCanvas = function()
 {
-	if(!this._temp_canvas)
-		this._temp_canvas = document.createElement("canvas");
-	return this._temp_canvas;
+	if(!this._tempCanvas)
+		this._tempCanvas = document.createElement("canvas");
+	return this._tempCanvas;
 }
 
 
@@ -439,7 +439,7 @@ function ControlChannel(o)
 	this.name = "param";
 	this.type = ANIM.NUMBER;
 	this.values = [];
-	this.interpolation_type = ANIM.LINEAR;
+	this.interpolationType = ANIM.LINEAR;
 	if(o)
 		this.fromJSON(o);
 }
@@ -577,7 +577,7 @@ function FaceLexemeClip(o)
 	this._width = 0;
 	this.color = "black";
 	this.font = "40px Arial";
-	this.clip_color = "cyan";
+	this.clipColor = "cyan";
 	
 	if(o)
 	this.configure(o);
@@ -589,7 +589,7 @@ function FaceLexemeClip(o)
 
 FaceLexemeClip.type = "faceLexeme";
 FaceLexemeClip.id = ANIM.FACELEXEME? ANIM.FACELEXEME:2;
-FaceLexemeClip.clip_color = "cyan";
+FaceLexemeClip.clipColor = "cyan";
 ANIM.registerClipType( FaceLexemeClip );
 
 FaceLexemeClip.prototype.configure = function(o)
@@ -609,15 +609,15 @@ FaceLexemeClip.prototype.configure = function(o)
 FaceLexemeClip.prototype.updateColor = function(v) 
 {
 	if(v.includes("LIP") || v.includes("MOUTH") || v.includes("DIMPLER"))
-		this.clip_color = 'cyan';
+		this.clipColor = 'cyan';
 	else if(v.includes("BROW"))
-		this.clip_color = 'orange';
+		this.clipColor = 'orange';
 	else if(v.includes("CHIN") || v.includes("JAW"))
-		this.clip_color = 'purple';
+		this.clipColor = 'purple';
 	else if(v.includes("NOSE"))
-		this.clip_color = 'yellow';
+		this.clipColor = 'yellow';
 	else
-		this.clip_color = 'green';
+		this.clipColor = 'green';
 }
 FaceLexemeClip.prototype.toJSON = function()
 {
@@ -675,52 +675,52 @@ FaceLexemeClip.prototype.drawTimeline = function( ctx, w,h, selected, timeline )
 {
 	//ctx.globalCompositeOperation =  "source-over";
 	ctx.font = "11px Calibri";
-	var text_info = ctx.measureText( this.id );
+	var textInfo = ctx.measureText( this.id );
 	if(timeline && timeline.timeToX)
 	{
 		// var gradient = ctx.createLinearGradient(0, 0, w, h);
 		
 		// ctx.globalCompositeOperation = "darken";
-		let attack_x = timeline._seconds_to_pixels * (this.attackPeak - this.start);
-		let relax_x = timeline._seconds_to_pixels * (this.relax - this.start);
+		let attackX = timeline._secondsToPixels * (this.attackPeak - this.start);
+		let relaxX = timeline._secondsToPixels * (this.relax - this.start);
 		// Add three color stops
 		// gradient.addColorStop(0, "gray");
-		// gradient.addColorStop(attack_x/w, this.clip_color);
-		// gradient.addColorStop(relax_x/w, this.clip_color);
+		// gradient.addColorStop(attackX/w, this.clipColor);
+		// gradient.addColorStop(relaxX/w, this.clipColor);
 		// gradient.addColorStop(1, "gray");
 		// ctx.beginPath();
-		// ctx.rect(x, 0, timeline._seconds_to_pixels * this.relax - x, h);
+		// ctx.rect(x, 0, timeline._secondsToPixels * this.relax - x, h);
 		// // ctx.rect(0, 0, x, h);
 		// // ctx.fill();
-		// // x = timeline._seconds_to_pixels * this.relax ;
+		// // x = timeline._secondsToPixels * this.relax ;
 		// // ctx.beginPath();
 		// // ctx.rect(x, 0, w - x, h);
 		// ctx.fill();
 		//ctx.fillStyle = gradient;
-		ctx.fillStyle = this.clip_color;
+		ctx.fillStyle = this.clipColor;
 		let color = HexToRgb(ctx.fillStyle);
 		color = color.map(x => x*=0.8);
 		ctx.fillStyle = 'rgba(' + color.join(',') + ', 1)';
-		roundedRect(ctx, 0, 0, attack_x, h, 5, 0, true);
-		roundedRect(ctx, relax_x, 0, w - relax_x, h, 0, 5, true);
+		roundedRect(ctx, 0, 0, attackX, h, 5, 0, true);
+		roundedRect(ctx, relaxX, 0, w - relaxX, h, 0, 5, true);
 		ctx.globalCompositeOperation = "source-over";
 		
 		// ctx.fillStyle = "rgba(164, 74, 41, 1)";
 		// ctx.beginPath();
-		// ctx.rect(attack_x - 0.5, 0, 1.5, h);
+		// ctx.rect(attackX - 0.5, 0, 1.5, h);
 		// ctx.fill();
 		// ctx.beginPath();
-		// ctx.rect(relax_x, 0, 1.5, h);
+		// ctx.rect(relaxX, 0, 1.5, h);
 		// ctx.fill();
 		// let margin = 0;
 		// let size = h * 0.4;
 		// ctx.save();
-		// ctx.translate(attack_x, size * 2 + margin);
+		// ctx.translate(attackX, size * 2 + margin);
 		// ctx.rotate(45 * Math.PI / 180);		
 		// ctx.fillRect( -size, -size, size, size);
 		// ctx.restore();
 		// ctx.save();
-		// ctx.translate(relax_x, size * 2 + margin);
+		// ctx.translate(relaxX, size * 2 + margin);
 		// ctx.rotate(45 * Math.PI / 180);		
 		// ctx.fillRect( -size, -size, size, size);
 		// ctx.restore();
@@ -728,7 +728,7 @@ FaceLexemeClip.prototype.drawTimeline = function( ctx, w,h, selected, timeline )
 	}
 	ctx.fillStyle = this.color;
 	
-	if( text_info.width < (w - 24) )
+	if( textInfo.width < (w - 24) )
 		ctx.fillText( this.id, 24, h/2 + 11/2);
 }
 FaceLexemeClip.prototype.showInfo = function(panel, callback)
@@ -740,15 +740,15 @@ FaceLexemeClip.prototype.showInfo = function(panel, callback)
 			panel.addCombo(i, property,{values: FaceLexemeClip.lexemes, thumbnail: true, callback: function(i,v)
 			{
 				if(v.includes("LIP") || v.includes("MOUTH") || v.includes("DIMPLER"))
-					this.clip_color = 'cyan';
+					this.clipColor = 'cyan';
 				else if(v.includes("BROW"))
-					this.clip_color = 'orange';
+					this.clipColor = 'orange';
 				else if(v.includes("CHIN") || v.includes("JAW"))
-					this.clip_color = 'purple';
+					this.clipColor = 'purple';
 				else if(v.includes("NOSE"))
-					this.clip_color = 'yellow';
+					this.clipColor = 'yellow';
 				else
-					this.clip_color = 'green';
+					this.clipColor = 'green';
 
 				this.properties[i] = v;
 				this.id = v + "-" + Math.ceil(getTime());
@@ -837,7 +837,7 @@ function FaceFACSClip()
 }
 
 FaceFACSClip.id = ANIM.FACEFACS? ANIM.FACEFACS:3;
-FaceFACSClip.clip_color = "#00BDFF";
+FaceFACSClip.clipColor = "#00BDFF";
 ANIM.registerClipType( FaceFACSClip );
 
 FaceFACSClip.prototype.toJSON = function()
@@ -877,9 +877,9 @@ FaceFACSClip.prototype.fromJSON = function( json )
 FaceFACSClip.prototype.drawTimeline = function( ctx, w,h, selected )
 {
 	ctx.globalCompositeOperation =  "source-over";
-	var text_info = ctx.measureText( this.id );
+	var textInfo = ctx.measureText( this.id );
 	ctx.fillStyle = this.color;
-	if( text_info.width < (w - 24) )
+	if( textInfo.width < (w - 24) )
 		ctx.fillText( this.id, 24,h * 0.7 );
 }
 FaceFACSClip.prototype.showInfo = function(panel)
@@ -962,7 +962,7 @@ function FaceEmotionClip()
 }
 
 FaceEmotionClip.id = ANIM.FACEEMOTION? ANIM.FACEEMOTION:4;
-FaceEmotionClip.clip_color = "#00BDFF";
+FaceEmotionClip.clipColor = "#00BDFF";
 ANIM.registerClipType( FaceEmotionClip );
 
 FaceEmotionClip.prototype.toJSON = function()
@@ -997,9 +997,9 @@ FaceEmotionClip.prototype.fromJSON = function( json )
 FaceEmotionClip.prototype.drawTimeline = function( ctx, w,h, selected )
 {
 	ctx.globalCompositeOperation =  "source-over";
-	var text_info = ctx.measureText( this.id );
+	var textInfo = ctx.measureText( this.id );
 	ctx.fillStyle = this.color;
-	if( text_info.width < (w - 24) )
+	if( textInfo.width < (w - 24) )
 		ctx.fillText( this.id, 24,h * 0.7 );
 }
 FaceEmotionClip.prototype.showInfo = function(panel, callback)
@@ -1091,7 +1091,7 @@ function FacePresetClip(o)
 	this._width = 0;
 	this.color = "black";
 	this.font = "40px Arial";
-	this.clip_color = "green";
+	this.clipColor = "green";
 	
 	if(o)
 	this.configure(o);
@@ -1104,7 +1104,7 @@ function FacePresetClip(o)
 
 FacePresetClip.type = "facePreset";
 FacePresetClip.id = ANIM.FACEPRESET? ANIM.FACEPRESET:12;
-FacePresetClip.clip_color = "green";
+FacePresetClip.clipColor = "green";
 ANIM.registerClipType( FacePresetClip );
 
 FacePresetClip.prototype.configure = function(o)
@@ -1289,9 +1289,9 @@ FacePresetClip.prototype.fromJSON = function( json )
 FacePresetClip.prototype.drawTimeline = function( ctx, w,h, selected )
 {
 	ctx.globalCompositeOperation =  "source-over";
-	var text_info = ctx.measureText( this.id );
+	var textInfo = ctx.measureText( this.id );
 	ctx.fillStyle = this.color;
-	if( text_info.width < (w - 24) )
+	if( textInfo.width < (w - 24) )
 		ctx.fillText( this.id, 24,h * 0.7 );
 }
 FacePresetClip.prototype.showInfo = function(panel, callback)
@@ -1392,7 +1392,7 @@ function GazeClip()
 }
 
 GazeClip.id = ANIM.GAZE? ANIM.GAZE:5;
-GazeClip.clip_color = "fuchsia";
+GazeClip.clipColor = "fuchsia";
 ANIM.registerClipType( GazeClip );
 
 GazeClip.prototype.toJSON = function()
@@ -1434,9 +1434,9 @@ GazeClip.prototype.fromJSON = function( json )
 GazeClip.prototype.drawTimeline = function( ctx, w,h, selected )
 {
 	ctx.globalCompositeOperation =  "source-over";
-	var text_info = ctx.measureText( this.id );
+	var textInfo = ctx.measureText( this.id );
 	ctx.fillStyle = this.color;
-	if( text_info.width < (w - 24) )
+	if( textInfo.width < (w - 24) )
 		ctx.fillText( this.id, 24,h * 0.7 );
 }
 GazeClip.prototype.showInfo = function(panel)
@@ -1532,7 +1532,7 @@ function GestureClip()
 }
 
 GestureClip.id = ANIM.GESTURE? ANIM.GESTURE:6;
-GestureClip.clip_color = "lime";
+GestureClip.clipColor = "lime";
 ANIM.registerClipType( GestureClip );
 
 GestureClip.prototype.toJSON = function()
@@ -1568,9 +1568,9 @@ GestureClip.prototype.fromJSON = function( json )
 GestureClip.prototype.drawTimeline = function( ctx, w,h, selected )
 {
 	//ctx.globalCompositeOperation =  "source-over";
-	var text_info = ctx.measureText( this.id );
+	var textInfo = ctx.measureText( this.id );
 	ctx.fillStyle = this.color;
-	if( text_info.width < (w - 24) )
+	if( textInfo.width < (w - 24) )
 		ctx.fillText( this.id, 24,h * 0.7 );
 }
 GestureClip.prototype.showInfo = function(panel)
@@ -1664,7 +1664,7 @@ function HeadClip()
 }
 
 HeadClip.id = ANIM.HEAD? ANIM.HEAD:7;
-HeadClip.clip_color = "yellow";
+HeadClip.clipColor = "yellow";
 ANIM.registerClipType( HeadClip );
 
 HeadClip.prototype.toJSON = function()
@@ -1699,9 +1699,9 @@ HeadClip.prototype.fromJSON = function( json )
 HeadClip.prototype.drawTimeline = function( ctx, w,h, selected )
 {
 	//ctx.globalCompositeOperation =  "source-over";
-	var text_info = ctx.measureText( this.id );
+	var textInfo = ctx.measureText( this.id );
 	ctx.fillStyle = this.color;
-	if( text_info.width < (w - 24) )
+	if( textInfo.width < (w - 24) )
 		ctx.fillText( this.id, 24,h * 0.7 );
 }
 HeadClip.prototype.showInfo = function(panel)
@@ -1785,7 +1785,7 @@ function HeadDirectionShiftClip()
 }
 
 HeadDirectionShiftClip.id = ANIM.HEADDIRECTION? ANIM.HEADDIRECTION:8;
-HeadDirectionShiftClip.clip_color = "orange";
+HeadDirectionShiftClip.clipColor = "orange";
 ANIM.registerClipType( HeadDirectionShiftClip );
 
 HeadDirectionShiftClip.prototype.toJSON = function()
@@ -1811,9 +1811,9 @@ HeadDirectionShiftClip.prototype.fromJSON = function( json )
 HeadDirectionShiftClip.prototype.drawTimeline = function( ctx, w,h, selected )
 {
 	ctx.globalCompositeOperation =  "source-over";
-	var text_info = ctx.measureText( this.id );
+	var textInfo = ctx.measureText( this.id );
 	ctx.fillStyle = this.color;
-	if( text_info.width < (w - 24) )
+	if( textInfo.width < (w - 24) )
 		ctx.fillText( this.id, 24,h * 0.7 );
 }
 /*----------------------------------Posture Behaviour-----------------------------------*/
@@ -1842,7 +1842,7 @@ function PostureClip()
 }
 
 PostureClip.id = ANIM.POSTURE? ANIM.POSTURE:9;
-PostureClip.clip_color = "#7CFF00";
+PostureClip.clipColor = "#7CFF00";
 ANIM.registerClipType( PostureClip );
 
 PostureClip.prototype.toJSON = function()
@@ -1875,9 +1875,9 @@ PostureClip.prototype.fromJSON = function( json )
 PostureClip.prototype.drawTimeline = function( ctx, w,h, selected )
 {
 	ctx.globalCompositeOperation =  "source-over";
-	var text_info = ctx.measureText( this.id );
+	var textInfo = ctx.measureText( this.id );
 	ctx.fillStyle = this.color;
-	if( text_info.width < (w - 24) )
+	if( textInfo.width < (w - 24) )
 		ctx.fillText( this.id, 24,h * 0.7 );
 }
 
@@ -1892,16 +1892,16 @@ function SpeechClip()
 
 	this._width = 0;
 
-	this.properties = {inherited_text:false, text : ""}
+	this.properties = {inheritedText:false, text : ""}
 	this.aduioId = null;
 	this.color = "black";
 
-  this.clip_color = "#94e9d9";
+  this.clipColor = "#94e9d9";
   //this.icon_id = 37;
 }
 
 SpeechClip.id = ANIM.SPEECH;
-SpeechClip.clip_color = "#FF0046";
+SpeechClip.clipColor = "#FF0046";
 ANIM.registerClipType( SpeechClip );
 
 
@@ -1925,8 +1925,8 @@ SpeechClip.prototype.fromJSON = function( json )
 	this.start = json.start;
 	this.duration = json.duration;
 	this.properties.text = json.text;
-	if(this.properties.inherited_text)
-		this.properties.inherited_text = json.inherited_text;
+	if(this.properties.inheritedText)
+		this.properties.inheritedText = json.inheritedText;
 	if(json.audioId)
 		this.audioId = json.audioId;
 }
@@ -1935,9 +1935,9 @@ SpeechClip.prototype.drawTimeline = function( ctx, w,h, selected )
 {
 	if(this.id == "")
 		this.id = this.text;
-	var text_info = ctx.measureText( this.id );
+	var textInfo = ctx.measureText( this.id );
 	ctx.fillStyle = this.color;
-/*	if( text_info.width < (w - 24) )*/
+/*	if( textInfo.width < (w - 24) )*/
 		ctx.fillText( this.id, 24,h * 0.7 );
 }
 SpeechClip.prototype.showInfo = function(panel)
@@ -1946,7 +1946,7 @@ SpeechClip.prototype.showInfo = function(panel)
 	{
 		var property = this.properties[i];
 		if(i=="text"){
-			if(this.properties['inherited_text']==false)
+			if(this.properties['inheritedText']==false)
 			{
 				var newPhrase = "";
     			var tags = [];
@@ -1970,21 +1970,21 @@ SpeechClip.prototype.showInfo = function(panel)
 				continue;
 			}
 		}
-		if(i=="inherited_text")
+		if(i=="inheritedText")
 		{
 			var that = this;
 			panel.addCheckbox(i, property, {title:"Text from the parent node", id:"inher", callback: function(v)
 			{
-				that.properties["inherited_text"] = v;
-				var text_area = null
+				that.properties["inheritedText"] = v;
+				var textArea = null
 				for(var i in this.parentElement.children )
 					if(this.parentElement.children[i].id == "custom-textarea")
-						text_area = this.parentElement.children[i]
+						textArea = this.parentElement.children[i]
 				
 				if(v)
-					text_area.style.visibility = "hidden";
+					textArea.style.visibility = "hidden";
 				else
-					text_area.style.visibility = "visible";
+					textArea.style.visibility = "visible";
 			}});
 			continue;
 		}
@@ -2047,24 +2047,24 @@ BaseClip.prototype.getProject = function()
 
 BaseClip.prototype.addControlChannel = function(name, type)
 {
-	if(!this.control_channels)
-		this.control_channels = [];
+	if(!this.controlChannels)
+		this.controlChannels = [];
 	var cc = new ANIM.ControlChannel();
 	cc.name = name;
 	cc.type = type;
-	this.control_channels.push(cc);
+	this.controlChannels.push(cc);
 	return cc;
 }
 
 //returns value of a CC given a local_time
-BaseClip.prototype.getCC = function(name, time, default_value )
+BaseClip.prototype.getCC = function(name, time, defaultValue )
 {
-	if(!this.control_channels)
-		return default_value;
+	if(!this.controlChannels)
+		return defaultValue;
 
-	for(var i = 0; i < this.control_channels.length;++i)
+	for(var i = 0; i < this.controlChannels.length;++i)
 	{
-		var cc = this.control_channels[i];
+		var cc = this.controlChannels[i];
 		if( cc.name != name )
 			continue;
 		//sample value
@@ -2096,7 +2096,7 @@ BaseClip.prototype.getCC = function(name, time, default_value )
 			return prev[1] * (1-f) + next[1] * (f);
 	}
 
-	return default_value;
+	return defaultValue;
 }
 
 
@@ -2114,7 +2114,7 @@ function AudioClip()
 	this.properties = {text : ""}
 	this.aduioId = null;
 	this.color = "black";
-  	this.clip_color = "#94e9d9";
+  	this.clipColor = "#94e9d9";
 	*/
 
 
@@ -2123,18 +2123,18 @@ function AudioClip()
 	this.start = 0;
 	this.duration = 1;
 	this.volume = 0.5;
-	this.offset_time = 0;
+	this.offsetTime = 0;
 	this.properties = {url:"", text:""}
 	this.position = new Float32Array(2);
 	this.scale = new Float32Array([1,1]);
-	this.clip_color = "#7c0022";
+	this.clipColor = "#7c0022";
 	this.color = "white";
 	this._audio = new Audio();
 	this._audio.onloadedmetadata = function(v){this.duration = this._audio.duration}.bind(this)
 }
 AudioClip.type = "lg"
 AudioClip.id = ANIM.AUDIO;
-AudioClip.clip_color = "#7c0022";
+AudioClip.clipColor = "#7c0022";
 
 Object.defineProperty( AudioClip.prototype, "src", {
 	set: function(v){
@@ -2151,10 +2151,10 @@ AudioClip.id = ANIM.AUDIO;
 ANIM.registerClipType( AudioClip );
 
 
-AudioClip.prototype.preload = function( time, is_visible )
+AudioClip.prototype.preload = function( time, isVisible )
 {
-	if(!is_visible)
-		this._audio.currentTime = this.offset_time;
+	if(!isVisible)
+		this._audio.currentTime = this.offsetTime;
 }
 
 AudioClip.prototype.drawTimeline = function( ctx, w,h, selected )
@@ -2162,9 +2162,9 @@ AudioClip.prototype.drawTimeline = function( ctx, w,h, selected )
 	//draw waveform...
 	if(this.id == "")
 		this.id = this.text;
-	var text_info = ctx.measureText( this.id );
+	var textInfo = ctx.measureText( this.id );
 	ctx.fillStyle = this.color;
-	/*	if( text_info.width < (w - 24) )*/
+	/*	if( textInfo.width < (w - 24) )*/
 	ctx.fillText( this.id, 24,h * 0.7 );
 }
 
@@ -2273,9 +2273,9 @@ function random() {
     var x = Math.sin(seed++) * 10000;
     return x - Math.floor(x);
 }
-var noise_data = new Float32Array(1024);
-for(var i = 0; i < noise_data.length; ++i)
-	noise_data[i] = random();
+var noiseData = new Float32Array(1024);
+for(var i = 0; i < noiseData.length; ++i)
+	noiseData[i] = random();
 
 function noise(t)
 {
@@ -2284,7 +2284,7 @@ function noise(t)
 	var i2 = (i+1) % 1024;
 	var f = t-(t|0);
 	f = f*f*f*(f*(f*6.0-15.0)+10.0); //exp
-	return noise_data[i] * (1-f) + noise_data[i2] * f;
+	return noiseData[i] * (1-f) + noiseData[i2] * f;
 }
 
 ANIM.noise = noise;

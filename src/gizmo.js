@@ -568,7 +568,7 @@ class Gizmo {
         if ( this.toolSelected == Gizmo.Tools.ik ){
             if ( !this.ikSelectedChain ){ return; }
             
-            const effectorFrameTime = this.editor.animationClip.tracks[ track.clip_idx ].times[ keyFrameIndex ];
+            const effectorFrameTime = this.editor.animationClip.tracks[ track.clipIdx ].times[ keyFrameIndex ];
             const timeThreshold = ( timeline.framerate < 60 ) ? 0.008 : ( 0.5 * 1.0 / timeline.framerate );
             
             const chain = this.ikSelectedChain.chain;
@@ -583,31 +583,31 @@ class Gizmo {
                 let values = boneToProcess[ track.type ].toArray();
                 if( !values ){ continue; }
 
-                let nearestTime = timeline.getNearestKeyFrame( this.editor.animationClip.tracks[ track.clip_idx ], effectorFrameTime );
+                let nearestTime = timeline.getNearestKeyFrame( this.editor.animationClip.tracks[ track.clipIdx ], effectorFrameTime );
                 let keyframe = null;
                 
                 // find nearest frame or create one if too far
                 if ( Math.abs( nearestTime - effectorFrameTime ) > 0.008 ){ 
-                    const currentTime = timeline.current_time;
-                    timeline.current_time = effectorFrameTime;
-                    keyframe = timeline.addKeyFrame( track ); //Works with current time.  current_time and selected frame time might not be the same
-                    timeline.current_time = currentTime;
+                    const currentTime = timeline.currentTime;
+                    timeline.currentTime = effectorFrameTime;
+                    keyframe = timeline.addKeyFrame( track ); //Works with current time.  currentTime and selected frame time might not be the same
+                    timeline.currentTime = currentTime;
                 }
                 else{ 
-                    keyframe = timeline.getCurrentKeyFrame( this.editor.animationClip.tracks[ track.clip_idx ], nearestTime, 0.0001 );
+                    keyframe = timeline.getCurrentKeyFrame( this.editor.animationClip.tracks[ track.clipIdx ], nearestTime, 0.0001 );
                 }
                 if ( isNaN(keyframe) ){ continue; }
                 
                 let start = 4 * keyframe;
                 for( let j = 0; j < values.length; ++j ) {
-                    this.editor.animationClip.tracks[ track.clip_idx ].values[ start + j ] = values[j];
+                    this.editor.animationClip.tracks[ track.clipIdx ].values[ start + j ] = values[j];
                 }
 
                 track.edited[ keyframe ] = true;
 
                 // Update animation interpolants
-                this.editor.updateAnimationAction( track.clip_idx );
-                timeline.onSetTime( timeline.current_time );
+                this.editor.updateAnimationAction( track.clipIdx );
+                timeline.onSetTime( timeline.currentTime );
 
             }
         }
@@ -618,7 +618,7 @@ class Gizmo {
             if(!values)
                 return;
     
-            const idx = track.clip_idx;
+            const idx = track.clipIdx;
             track.edited[ keyFrameIndex ] = true;
 
             // supports position and quaternion types
@@ -628,7 +628,7 @@ class Gizmo {
 
             // Update animation interpolants
             this.editor.updateAnimationAction( idx );
-            timeline.onSetTime( timeline.current_time );
+            timeline.onSetTime( timeline.currentTime );
 
         }
 

@@ -26,8 +26,8 @@ class Editor {
     constructor(app) {
         
         this.clock = new THREE.Clock();
-        this.loader = new BVHLoader();
-        this.loader2 = new GLTFLoader();
+        this.BVHloader = new BVHLoader();
+        this.GLTFloader = new GLTFLoader();
 
         this.GLTFExporter = new GLTFExporter();
         this.help = null;
@@ -47,7 +47,6 @@ class Editor {
         this.showSkin = true; // defines if the model skin has to be rendered
         this.showSkeleton = true;
         this.animLoop = true;
-        this.character = "";
         
         this.skeletonHelper = null;
         this.skeleton = null;
@@ -288,7 +287,7 @@ class Editor {
 
         if ( urlParams.get('load') == 'hard') {
     
-            this.loader2.load( 'models/Eva_Y.glb', (glb) => {
+            this.GLTFloader.load( 'models/Eva_Y.glb', (glb) => {
 
                 let model = glb.scene;
                 model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
@@ -335,7 +334,7 @@ class Editor {
                 this.NMFController.begin();
                 // load the actual animation to play
                 this.mixer = new THREE.AnimationMixer( model );
-                this.loader.load( 'models/ISL Thanks final.bvh' , (result) => {
+                this.BVHloader.load( 'models/ISL Thanks final.bvh' , (result) => {
                     this.animationClip = result.clip;
                     for (let i = 0; i < result.clip.tracks.length; i++) {
                         this.animationClip.tracks[i].name = this.animationClip.tracks[i].name.replaceAll(/[\]\[]/g,"").replaceAll(".bones","");
@@ -357,7 +356,7 @@ class Editor {
                 this.loadAnimationWithSkeleton(this.animationClip);
             }
             else {
-                this.loader.load( 'models/kateBVH.bvh' , (result) => {
+                this.BVHloader.load( 'models/kateBVH.bvh' , (result) => {
                     result.clip = this.animationClip;
                     this.loadAnimationWithSkin(result);
                 });
@@ -646,8 +645,8 @@ class Editor {
                 
                 for(let mesh of this.skinnedMeshes)
                 {
-                    let mt_idx = mesh.morphTargetDictionary[bs]
-                    if(mt_idx>-1)
+                    let mtIdx = mesh.morphTargetDictionary[bs]
+                    if(mtIdx>-1)
                         tracks.push( new THREE.NumberKeyframeTrack(mesh.name +'.morphTargetInfluences['+ bs + ']', times, clipData[bs]) );
 
                 }
@@ -716,9 +715,9 @@ class Editor {
             const text = e.currentTarget.result;
             let data = null;
             if(extension == 'bvh')
-                data = this.loader.parse( text );
+                data = this.BVHloader.parse( text );
             else
-                data = this.loader.parseExtended( text );
+                data = this.BVHloader.parseExtended( text );
             innerOnLoad(data);
         };
         reader.readAsText(animation);
@@ -818,7 +817,7 @@ class Editor {
 
     loadAnimationWithSkeleton(animation) {
         this.animationClip = animation.clip || animation || this.animationClip;
-        this.loader.load( 'models/kateBVH.bvh' , (result) => {
+        this.BVHloader.load( 'models/kateBVH.bvh' , (result) => {
     
             let skinnedMesh = result.skeleton;
             this.skeletonHelper = new THREE.SkeletonHelper( skinnedMesh.bones[0] );

@@ -7,7 +7,7 @@ class Gui {
        
         this.showTimeline = true;
         this.showVideo = true;
-        this.current_time = 0;
+        this.currentTime = 0;
         this.skeletonScroll = 0;
         this.editor = editor;
 
@@ -124,7 +124,7 @@ class Gui {
                 actions.push(
                     {
                         title: "Copy" + " <i class='bi bi-clipboard-fill float-right'></i>",
-                        callback: () => {this.clips_to_copy = [...this.NMFtimeline._lastClipsSelected];}
+                        callback: () => {this.clipsToCopy = [...this.NMFtimeline._lastClipsSelected];}
                     }
                 )
                 actions.push(
@@ -165,25 +165,25 @@ class Gui {
                         callback: this.createPresetsDialog.bind(this)
                     }
                 );
-                if(this.clips_to_copy)
+                if(this.clipsToCopy)
                 {
                     actions.push(
                         {
                             title: "Paste" + " <i class='bi bi-clipboard-fill float-right'></i>",
                             callback: () => {
-                                this.clips_to_copy.sort((a,b) => {
+                                this.clipsToCopy.sort((a,b) => {
                                     if(a[0]<b[0]) 
                                         return -1;
                                     return 1;
                                 });
 
-                                for(let i = 0; i < this.clips_to_copy.length; i++){
-                                    let [trackIdx, clipIdx] = this.clips_to_copy[i];
+                                for(let i = 0; i < this.clipsToCopy.length; i++){
+                                    let [trackIdx, clipIdx] = this.clipsToCopy[i];
                                     let clipToCopy = this.NMFtimeline.clip.tracks[trackIdx].clips[clipIdx];
                                     let clip = new ANIM.FaceLexemeClip(clipToCopy);
-                                    this.NMFtimeline.addClip(clip, this.clips_to_copy.length > 1 ? clipToCopy.start : 0); 
+                                    this.NMFtimeline.addClip(clip, this.clipsToCopy.length > 1 ? clipToCopy.start : 0); 
                                 }
-                                this.clips_to_copy = null;
+                                this.clipsToCopy = null;
                             }
                         }
                     )
@@ -212,29 +212,29 @@ class Gui {
         });
 
         let splitbar = document.getElementById("timeline-splitbar");
-        splitbar.addEventListener("mousedown", inner_mousedown);
+        splitbar.addEventListener("mousedown", innerMousedown);
 
-        let last_pos = [0,0];
-        let is_grabbing = false;
-		function inner_mousedown(e)
+        let lastPos = [0,0];
+        let isGrabbing = false;
+		function innerMousedown(e)
 		{
-            is_grabbing = true;
+            isGrabbing = true;
 			var doc = document;
-			doc.addEventListener("mousemove",inner_mousemove);
-			doc.addEventListener("mouseup",inner_mouseup);
-			last_pos[0] = e.pageX;
-			last_pos[1] = e.pageY;
+			doc.addEventListener("mousemove",innerMousemove);
+			doc.addEventListener("mouseup",innerMouseup);
+			lastPos[0] = e.pageX;
+			lastPos[1] = e.pageY;
 			e.stopPropagation();
 			e.preventDefault();
 		}
 
-		function inner_mousemove(e)
+		function innerMousemove(e)
 		{
 			
 			
-            if (last_pos[1] != e.pageY && is_grabbing)
+            if (lastPos[1] != e.pageY && isGrabbing)
             {
-                let delta = e.pageY - last_pos[1];
+                let delta = e.pageY - lastPos[1];
 				let size = timeline.offsetHeight - delta;
 				timeline.style.height = size + "px";
                 timelineNMFCanvas.height = size;
@@ -243,20 +243,20 @@ class Gui {
             }
 			
 
-			last_pos[0] = e.pageX;
-			last_pos[1] = e.pageY;
+			lastPos[0] = e.pageX;
+			lastPos[1] = e.pageY;
 			e.stopPropagation();
 			e.preventDefault();
             
 		}
 
-		function inner_mouseup(e)
+		function innerMouseup(e)
 		{
 			// var doc = document;
-			// doc.removeEventListener("mousemove",inner_mousemove);
-			// doc.removeEventListener("mouseup",inner_mouseup);
-			//timeline.offsetHeight = last_pos[1];
-            is_grabbing = false;
+			// doc.removeEventListener("mousemove",innerMousemove);
+			// doc.removeEventListener("mouseup",innerMouseup);
+			//timeline.offsetHeight = lastPos[1];
+            isGrabbing = false;
             e.stopPropagation();
 			e.preventDefault();
 		}
@@ -360,7 +360,7 @@ class Gui {
                 this.NMFtimeline.onSelectClip = this.showClipInfo.bind(this);
                 this.NMFtimeline.onClipMoved = ()=> {
                     this.editor.NMFController.updateTracks();
-                    this.NMFtimeline.onSetTime(this.NMFtimeline.current_time) 
+                    this.NMFtimeline.onSetTime(this.NMFtimeline.currentTime) 
                 };
                 this.NMFtimeline.clip = {duration: this.timeline.duration, tracks: []};
                 // this.NMFtimeline.addClip( new ANIM.FaceLexemeClip());
@@ -379,8 +379,8 @@ class Gui {
             let canvasArea = document.getElementById("canvasarea");
             this.editor.resize(canvasArea.clientWidth, canvasArea.clientHeight);
             
-            if(this.NMFtimeline.selected_clip)
-                this.showClipInfo(this.NMFtimeline.selected_clip);
+            if(this.NMFtimeline.selectedClip)
+                this.showClipInfo(this.NMFtimeline.selectedClip);
             this.updateSidePanel();
             document.querySelector("[title='skeleton']").click()
 
@@ -397,8 +397,8 @@ class Gui {
             mfmenu.disable();
             window.menubar.showMenu( menubar, null, menubar.element, false );
             
-            if(this.item_selected != undefined)
-                this.updateSidePanel(this.sidePanel, this.item_selected);
+            if(this.itemSelected != undefined)
+                this.updateSidePanel(this.sidePanel, this.itemSelected);
             
             document.querySelector("[title='skeleton']").click()
         }
@@ -724,6 +724,10 @@ class Gui {
         {
             //clon.height = canvas.height;
             ctxClon.drawImage(mask, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
+            let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let allData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
+            updateAreasColor([null,null,null], currentData, allData);
+            ctx.putImageData(currentData, 0, 0);
         }
 
         canvas.onmousemove = (e) => {
@@ -731,45 +735,48 @@ class Gui {
             var pos = findPos(canvas);
             var x = e.pageX - pos.x;
             var y = e.pageY - pos.y;
+            ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
+
             let data = ctxClon.getImageData(x, y, 1, 1).data;
             let color = "rgb(" + data[0] + "," + data[1] + "," + data[2] + ")";
+            let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let allData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
+
+            if(this.editor.getSelectedActionUnit()) {
+                let idx = Object.values(areas).indexOf(this.editor.getSelectedActionUnit());
+                let area = Object.keys(areas)[idx];
+                let c = area.replace("rgb(", "").replace(")","").split(",");
+                
+                updateAreasColor(c, currentData, allData);
+                //ctx.clearRect(0,0, canvas.width,canvas.height);
+                ctx.putImageData(currentData, 0, 0);
+            }
             if(areas[color]) {
                 console.log(areas[color])
-                let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                let allData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
-                for (var i = 0; i < allData.length-4; i+=4) {
-                    if(allData[i] == data[0] && allData[i+1] == data[1] && allData[i+2] == data[2] && allData[i+3] == data[3]) {
-                        // currentData[i] = 0;
-                        // currentData[i+1] = 0;
-                        // currentData[i+2] = 0;
-                        currentData.data[i+3] = 125;
-                    }
-                }
+
+                updateAreasColor(data, currentData, allData);
                 //ctx.clearRect(0,0, canvas.width,canvas.height);
                 ctx.putImageData(currentData, 0, 0)
             }else {
-                ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
-                if(this.editor.getSelectedActionUnit()) {
-                    let idx = Object.values(areas).indexOf(this.editor.getSelectedActionUnit());
-                    let area = Object.keys(areas)[idx];
-                    let c = area.replace("rgb(", "").replace(")","").split(",");
-                    let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                    let allData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
-                    for (var i = 0; i < allData.length-4; i+=4) {
-                        if(allData[i].toString() == c[0] && allData[i+1].toString() == c[1] && allData[i+2].toString() == c[2] ) {
-                            // currentData[i] = 0;
-                            // currentData[i+1] = 0;
-                            // currentData[i+2] = 0;
-                            currentData.data[i+3] = 125;
-                        }
-                    }
-                    //ctx.clearRect(0,0, canvas.width,canvas.height);
-                    ctx.putImageData(currentData, 0, 0)
-                }
-
+                
+            updateAreasColor([null,null,null], currentData, allData);
+                //ctx.clearRect(0,0, canvas.width,canvas.height);
+                ctx.putImageData(currentData, 0, 0)
             }
         }   
 
+        function updateAreasColor(data, currentData, allData, threshold = 50) {
+            for (var i = 0; i < allData.length-4; i+=4) {
+                if(allData[i] == data[0] && allData[i+1] == data[1] && allData[i+2] == data[2]) {
+                    // currentData[i] = 0;
+                    // currentData[i+1] = 0;
+                    // currentData[i+2] = 0;
+                   // currentData.data[i+3] *= 1;
+                }
+                else if(allData[i+3] >= threshold)
+                    currentData.data[i+3] = Math.floor(currentData.data[i+3]*0.5);
+            }
+        }
 
         function findPos(obj) {
             var curleft = 0, curtop = 0;
@@ -793,6 +800,22 @@ class Gui {
             clon.height = canvas.height;
             ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
             ctxClon.drawImage(mask, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
+            if(this.editor.getSelectedActionUnit()) {
+                let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                let allData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
+
+                let idx = Object.values(areas).indexOf(this.editor.getSelectedActionUnit());
+                let area = Object.keys(areas)[idx];
+                let c = area.replace("rgb(", "").replace(")","").split(",");
+                
+                updateAreasColor(c, currentData, allData);
+                //ctx.clearRect(0,0, canvas.width,canvas.height);
+                ctx.putImageData(currentData, 0, 0)
+            }else{
+                updateAreasColor([null,null,null], currentData, allData);
+                //ctx.clearRect(0,0, canvas.width,canvas.height);
+                ctx.putImageData(currentData, 0, 0)
+            }
 
         }
         // bsPanel.content.appendChild(inspector.root);
@@ -802,22 +825,18 @@ class Gui {
             var pos = findPos(canvas);
             var x = e.pageX - pos.x;
             var y = e.pageY - pos.y;
+            ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
+
             let data = ctxClon.getImageData(x, y, 1, 1).data;
             let color = "rgb(" + data[0] + "," + data[1] + "," + data[2] + ")";
+            let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let allData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
+
             if(areas[color]) {
                 this.editor.setSelectedActionUnit(areas[color]);
-                ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
-                let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                let allData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
-
-                for (var i = 0; i < allData.length-4; i+=4) {
-                    if(allData[i] == data[0] && allData[i+1] == data[1] && allData[i+2] == data[2] && allData[i+3] == data[3]) {
-                        // currentData[i] = 0;
-                        // currentData[i+1] = 0;
-                        // currentData[i+2] = 0;
-                        currentData.data[i+3] = 125;
-                    }
-                }
+                //ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
+                
+                updateAreasColor(data, currentData, allData);
                 console.log(areas[color])
                 let names = {};
                 for(let i in this.editor.mapNames) {
@@ -840,7 +859,10 @@ class Gui {
                 ctx.putImageData(currentData, 0, 0)
             }else {
                 inspector.root.remove();
-                ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
+                this.editor.setSelectedActionUnit();
+                updateAreasColor([null,null,null], currentData, allData);
+                //ctx.clearRect(0,0, canvas.width,canvas.height);
+                ctx.putImageData(currentData, 0, 0)
             }
         }   
 
@@ -893,32 +915,32 @@ class Gui {
         return inspector;
     }
 
-    updateSidePanel(root, item_selected, options) {
+    updateSidePanel(root, itemSelected, options) {
 
         if(!this.sidePanel)
         return;
 
-        item_selected = item_selected || this.item_selected;
+        itemSelected = itemSelected || this.itemSelected;
     
         options = options || {};
         this.boneProperties = {};
-        this.item_selected = item_selected;
+        this.itemSelected = itemSelected;
         root = root || this.sidePanel;
         $(root.content).empty();
         
         var mytree = this.updateNodeTree();
     
         var litetree = new LiteGUI.Tree(mytree, {id: "tree"});
-        litetree.setSelectedItem(item_selected);
+        litetree.setSelectedItem(itemSelected);
         var that = this;
     
         // Click right mouse
         litetree.onItemContextMenu = (e, el) => { 
     
             e.preventDefault();
-            var bone_id = el.data.id;
+            var boneId = el.data.id;
     
-            const bone = this.editor.skeletonHelper.getBoneByName(bone_id);
+            const bone = this.editor.skeletonHelper.getBoneByName(boneId);
             if(!bone)
             return;
     
@@ -941,8 +963,8 @@ class Gui {
     
         litetree.onItemSelected = function(data){
             this.expandItem(data.id);
-            item_selected = data.id;
-            widgets.on_refresh();
+            itemSelected = data.id;
+            widgets.onRefresh();
 
             if(!that.editor)
             throw("No editor attached");
@@ -965,7 +987,7 @@ class Gui {
     
         const makePretitle = (src) => { return "<img src='data/imgs/mini-icon-"+src+".png' style='margin-right: 4px;'>"; }
 
-        widgets.on_refresh = (o) => {
+        widgets.onRefresh = (o) => {
 
             o = o || {};
             const numBones = this.editor.skeletonHelper.bones.length;
@@ -985,17 +1007,17 @@ class Gui {
             }, min: 0, max: 0.25, step: 0.001, precision: 4});
             widgets.widgets_per_row = 1;
 
-            const bone_selected = !(o.firstBone && numBones) ? 
-                this.editor.skeletonHelper.getBoneByName(item_selected) : 
+            const boneSelected = !(o.firstBone && numBones) ? 
+                this.editor.skeletonHelper.getBoneByName(itemSelected) : 
                 this.editor.skeletonHelper.bones[0];
 
-            if(bone_selected) {
+            if(boneSelected) {
 
                 let disabled = false;
                 if(this.editor.mode == this.editor.eModes.NMF)
                     disabled = true;
                  
-                const numTracks = this.timeline.getNumTracks(bone_selected);
+                const numTracks = this.timeline.getNumTracks(boneSelected);
                 if(!disabled) {
                     const _Tools = this.editor.hasGizmoSelectedBoneIk() ? ["Joint", "Follow"] : ["Joint"];
                     
@@ -1023,29 +1045,29 @@ class Gui {
                 }    
 
                 const innerUpdate = (attribute, value) => {
-                    bone_selected[attribute].fromArray( value ); 
+                    boneSelected[attribute].fromArray( value ); 
                     this.editor.gizmo.onGUI();
                 };
 
                 widgets.addSection("Bone", { pretitle: makePretitle('circle') });
-                widgets.addInfo("Name", bone_selected.name);
+                widgets.addInfo("Name", boneSelected.name);
                 widgets.addInfo("Num tracks", numTracks ?? 0);
 
                 // Only edit position for root bone
-                if(bone_selected.children.length && bone_selected.parent.constructor !== bone_selected.children[0].constructor) {
+                if(boneSelected.children.length && boneSelected.parent.constructor !== boneSelected.children[0].constructor) {
                     widgets.addTitle("Position");
-                    this.boneProperties['position'] = widgets.addVector3(null, bone_selected.position.toArray(), {disabled: this.editor.state || disabled, precision: 3, className: 'bone-position', callback: (v) => innerUpdate("position", v)});
+                    this.boneProperties['position'] = widgets.addVector3(null, boneSelected.position.toArray(), {disabled: this.editor.state || disabled, precision: 3, className: 'bone-position', callback: (v) => innerUpdate("position", v)});
                 }
 
                 widgets.addTitle("Rotation (XYZ)");
-                this.boneProperties['rotation'] = widgets.addVector3(null, bone_selected.rotation.toArray(), {disabled: this.editor.state || disabled, precision: 3, className: 'bone-euler', callback: (v) => innerUpdate("rotation", v)});
+                this.boneProperties['rotation'] = widgets.addVector3(null, boneSelected.rotation.toArray(), {disabled: this.editor.state || disabled, precision: 3, className: 'bone-euler', callback: (v) => innerUpdate("rotation", v)});
 
                 widgets.addTitle("Quaternion");
-                this.boneProperties['quaternion'] = widgets.addVector4(null, bone_selected.quaternion.toArray(), {disabled: this.editor.state || disabled, precision: 3, className: 'bone-quaternion', callback: (v) => innerUpdate("quaternion", v)});
+                this.boneProperties['quaternion'] = widgets.addVector4(null, boneSelected.quaternion.toArray(), {disabled: this.editor.state || disabled, precision: 3, className: 'bone-quaternion', callback: (v) => innerUpdate("quaternion", v)});
             }
         };
 
-        widgets.on_refresh(options);
+        widgets.onRefresh(options);
 
         // update scroll position
         var element = root.content.querySelectorAll(".inspector")[0];
@@ -1132,7 +1154,7 @@ class Gui {
 
     showClipInfo(clip)
     {
-        this.clip_in_panel = clip;
+        this.clipInPanel = clip;
         
         var inspector = new LiteGUI.Inspector();
         if(clip)
@@ -1141,7 +1163,7 @@ class Gui {
             inspector.addTitle( clip.constructor.name );
             inspector.addString("Id", clip.id, {callback: function(v)
             {
-                this.clip_in_panel.id = v;
+                this.clipInPanel.id = v;
             }.bind(this)})
             
             inspector.addSection("Time");
@@ -1154,14 +1176,14 @@ class Gui {
             }
             inspector.addNumber("Start", clip.start, {min:0, step:0.01, callback: (v) =>
             {              
-                // var dt = v - this.clip_in_panel.start;
+                // var dt = v - this.clipInPanel.start;
                 // if(clip.ready) clip.ready += dt;
                 // if(clip.strokeStart) clip.strokeStart += dt;
                 // if(clip.stroke) clip.stroke += dt;
                 // if(clip.attackPeak) clip.attackPeak += dt;
                 // if(clip.strokeEnd) clip.strokeEnd += dt;
                 // if(clip.relax) clip.relax += dt;
-                this.clip_in_panel.start = v;
+                this.clipInPanel.start = v;
                 clip.start = v;
                 updateTracks();
                 
@@ -1169,7 +1191,7 @@ class Gui {
             }})
             inspector.addNumber("Duration", clip.duration, {min:0.01, step:0.01, callback: (v) =>
             {
-                this.clip_in_panel.duration = v;
+                this.clipInPanel.duration = v;
                 clip.relax = Math.min(v +   clip.start, clip.relax);
                 clip.attackPeak = Math.min(v +  clip.start, clip.attackPeak);
                 updateTracks();
@@ -1208,7 +1230,7 @@ class Gui {
                         case String:
                             inspector.addString(i, property, {callback: function(i,v)
                             {
-                                this.clip_in_panel.properties[i] = v;
+                                this.clipInPanel.properties[i] = v;
                             }.bind(this, i)});
                             break;
                         case Number:
@@ -1216,14 +1238,14 @@ class Gui {
                             {
                                 inspector.addNumber(i, property, {min:0, max:1, step:0.01, callback: function(i,v)
                                 {
-                                    this.clip_in_panel.properties[i] = v;
+                                    this.clipInPanel.properties[i] = v;
                                     updateTracks();
                                 }.bind(this,i)});
                             }
                         else{
                             inspector.addNumber(i, property, {callback: function(i,v)
                                 {
-                                    this.clip_in_panel.properties[i] = v;
+                                    this.clipInPanel.properties[i] = v;
                                     updateTracks();
                                 }.bind(this,i)});
                             }
@@ -1231,14 +1253,14 @@ class Gui {
                         case Boolean:
                             inspector.addCheckbox(i, property, {callback: function(i,v)
                             {
-                                this.clip_in_panel.properties[i] = v;
+                                this.clipInPanel.properties[i] = v;
                                 updateTracks();
                             }.bind(this,i)});
                             break;
                         case Array:
                             inspector.addArray(i, property, {callback: function(i,v)
                             {
-                                this.clip_in_panel.properties[i] = v;
+                                this.clipInPanel.properties[i] = v;
                                 updateTracks();
                             }.bind(this,i)});
                             break;
@@ -1370,18 +1392,18 @@ updateBoneProperties() {
     drawTimeline() {
         
         const canvas = this.timelineCTX.canvas;
-        this.current_time = this.editor.mixer.time;
+        this.currentTime = this.editor.mixer.time;
 
-        if(this.current_time > this.duration) {
-            this.current_time = 0.0;
+        if(this.currentTime > this.duration) {
+            this.currentTime = 0.0;
             this.editor.onAnimationEnded();
         }
 
-        this.timeline.draw(this.timelineCTX, this.current_time, [0, 0, canvas.width, canvas.height]);
+        this.timeline.draw(this.timelineCTX, this.currentTime, [0, 0, canvas.width, canvas.height]);
         if(this.NMFtimeline)
         {
            
-            this.NMFtimeline.draw(this.timelineNMFCTX, this.current_time, [0, 0, this.timelineNMFCTX.canvas.width, this.timelineNMFCTX.canvas.height], false);    
+            this.NMFtimeline.draw(this.timelineNMFCTX, this.currentTime, [0, 0, this.timelineNMFCTX.canvas.width, this.timelineNMFCTX.canvas.height], false);    
         }
         
     }
@@ -1440,7 +1462,7 @@ updateBoneProperties() {
         // if( e.x >= rect.left && e.x <= rect.right && e.y >= rect.top && e.y <= rect.bottom)
         // {
         //     if(e.type == "mousedown" && this.NMFtimeline)
-        //         this.NMFtimeline.selected_clip = null;
+        //         this.NMFtimeline.selectedClip = null;
         //     this.timeline.processMouse(e);
         //     return;
         // }
@@ -1479,23 +1501,23 @@ updateBoneProperties() {
         const ctx = this.skeletonCTX;
         const canvas = ctx.canvas;
         
-        let scroll_y = this.skeletonScroll; // pixels scrolled (it can cause to move the whole text to the top)
-        let startx = 0; // starting pixel (it can cause to move the whole text to the left)
+        let scrollY = this.skeletonScroll; // pixels scrolled (it can cause to move the whole text to the top)
+        let startX = 0; // starting pixel (it can cause to move the whole text to the left)
 
-        let vertical_offset = 15; // top space
-        let name_height = 25; // space between names
-        let sidebar_width = ctx.width; // width
-        let sidebar_height = ctx.height;
+        let verticalOffset = 15; // top space
+        let nameHeight = 25; // space between names
+        let sidebarWidth = ctx.width; // width
+        let sidebarHeight = ctx.height;
         let names = this.names;
-        let scrollable_height = names.length * name_height;
-        let current_scroll_in_pixels = 0;
+        let scrollableHeight = names.length * nameHeight;
+        let currentScrollInPixels = 0;
 
         //compute the current y scrollable value
-        if (sidebar_height < scrollable_height)
-            scroll_y = -current_scroll_in_pixels;
-        if (scroll_y) {
+        if (sidebarHeight < scrollableHeight)
+            scrollY = -currentScrollInPixels;
+        if (scrollY) {
             ctx.beginPath();
-            ctx.rect(0, vertical_offset, canvas.width, sidebar_height);
+            ctx.rect(0, verticalOffset, canvas.width, sidebarHeight);
             ctx.clip();
         }
 
@@ -1504,7 +1526,7 @@ updateBoneProperties() {
         ctx.globalAlpha = 0.1;
         for (var i = 0; i < names.length; ++i) {
             ctx.fillStyle = i % 2 == 0 ? "#2D2D2D" : "#2A2A2A";
-            ctx.fillRect(0, scroll_y + vertical_offset + i * name_height, w, name_height);
+            ctx.fillRect(0, scrollY + verticalOffset + i * nameHeight, w, nameHeight);
         }
 
         //draw names of bones from list
@@ -1512,49 +1534,49 @@ updateBoneProperties() {
 
         //estimated starting distance of timeline in the canvas
         var w = 60; //left space for names start
-        var y = scroll_y + 0.5 + vertical_offset;
+        var y = scrollY + 0.5 + verticalOffset;
 
         if (names)
             for (var i = 0; i < names.length; ++i) {
                 var bone = names[i];
-                var [name, depth, is_selected, has_childs] = bone;
+                var [name, depth, isSelected, hasChilds] = bone;
 
                 //compute horizontal position
-                var x = startx > w ? startx : w;
+                var x = startX > w ? startX : w;
                 x = x + (20 * depth);
 
                 //draw an opening triangle
-                if (has_childs) {
+                if (hasChilds) {
                     ctx.fillStyle = "#FFF";
                     ctx.beginPath();
-                    ctx.moveTo(x - 35, y + name_height * 0.4);
-                    ctx.lineTo(x - 25, y + name_height * 0.4);
-                    ctx.lineTo(x - 30, y + name_height * 0.7);
+                    ctx.moveTo(x - 35, y + nameHeight * 0.4);
+                    ctx.lineTo(x - 25, y + nameHeight * 0.4);
+                    ctx.lineTo(x - 30, y + nameHeight * 0.7);
                     ctx.fill();
                 }
 
                 //name
                 ctx.fillStyle = "#AAA";
                 ctx.font = '13px sans-serif';
-                ctx.fillText(name, x - 20, y + name_height * 0.65);
+                ctx.fillText(name, x - 20, y + nameHeight * 0.65);
                 ctx.fillStyle = "#123";
                 ctx.globalAlpha = 1;
 
-                if (is_selected) {
+                if (isSelected) {
                     ctx.fillStyle = "white";
                     ctx.globalCompositeOperation = "difference";
                     ctx.beginPath();
                     ctx.moveTo(0, y);
-                    ctx.lineTo(sidebar_width - 7, y);
-                    ctx.lineTo(sidebar_width - 2, y + name_height * 0.5);
-                    ctx.lineTo(sidebar_width - 7, y + name_height);
-                    ctx.lineTo(0, y + name_height);
+                    ctx.lineTo(sidebarWidth - 7, y);
+                    ctx.lineTo(sidebarWidth - 2, y + nameHeight * 0.5);
+                    ctx.lineTo(sidebarWidth - 7, y + nameHeight);
+                    ctx.lineTo(0, y + nameHeight);
                     ctx.closePath();
                     ctx.fill();
                     ctx.globalCompositeOperation = "source-over";
                 }
 
-                y += name_height;
+                y += nameHeight;
             }
 
         ctx.restore();

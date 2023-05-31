@@ -387,7 +387,7 @@ class App {
         redoBtn.style.display = "block";
     }
 
-    mediaDevicesSupported(video, scope, callback, on_error) {
+    mediaDevicesSupported(video, scope, callback, onError) {
         
         // prepare the device to capture the video
         if (navigator.mediaDevices) {
@@ -439,8 +439,8 @@ class App {
                     console.error("The following error occurred: " + err);
                     if(err == "NotReadableError: Could not start video source")
                         alert("Camera error: Make sure your webcam is not used in another application.")
-                    if(on_error)
-                        on_error(err);
+                    if(onError)
+                        onError(err);
                 });
                 
             })
@@ -450,8 +450,8 @@ class App {
             
         }
         else {
-            if(on_error)
-                on_error();
+            if(onError)
+                onError();
         }
     }
 

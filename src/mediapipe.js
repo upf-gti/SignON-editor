@@ -14,8 +14,8 @@ const MediaPipe = {
     loaded: false,
     currentTime: 0,
     previousTime: 0,
-    bs_currentTime: 0,
-    bs_previousTime: 0,
+    bsCurrentTime: 0,
+    bsPreviousTime: 0,
     landmarks: [],
     blendshapes : [],
     async start( live, onload, onresults ) {
@@ -168,10 +168,10 @@ const MediaPipe = {
         let faceBlendshapes = null;
         if (window.globals.app.isRecording()) // store MediaPipe data
         {
-            this.bs_currentTime = Date.now();
-            var dt = this.bs_currentTime - this.bs_previousTime;
+            this.bsCurrentTime = Date.now();
+            var dt = this.bsCurrentTime - this.bsPreviousTime;
             faceBlendshapes = this.fillBlendshapes(results, dt, true);
-            this.bs_previousTime = this.bs_currentTime;
+            this.bsPreviousTime = this.bsCurrentTime;
             
         }
         else {
