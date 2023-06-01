@@ -697,7 +697,7 @@ class Gui {
         bsPanel.content.style.height = "calc(100% - 20px)";
         let areas = {
             "rgb(255,0,0)": "nose", 
-            "rgb(0,0,255)": "browr_right",
+            "rgb(0,0,255)": "brow_right",
             "rgb(255,0,255)": "brow_left",
             "rgb(0,255,255)": "eyer_right",
             "rgb(0,255,0)": "eye_left",
@@ -800,9 +800,9 @@ class Gui {
             clon.height = canvas.height;
             ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
             ctxClon.drawImage(mask, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
+            let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            let allData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
             if(this.editor.getSelectedActionUnit()) {
-                let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                let allData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
 
                 let idx = Object.values(areas).indexOf(this.editor.getSelectedActionUnit());
                 let area = Object.keys(areas)[idx];
@@ -853,6 +853,7 @@ class Gui {
                         names[i] = this.editor.mapNames[i]
                 }
 
+                inspector.id = areas[color];
                 let newinspector = this.createBlendShapesInspector(names, inspector);
                 bsArea.getSection(1).add(newinspector);
                 ctx.clearRect(0,0, canvas.width,canvas.height);
@@ -893,7 +894,7 @@ class Gui {
             
 
         if(inspector.id)
-            inspector.addTitle("Blend shapes weights");
+            inspector.addTitle(inspector.id);
         
         // inspector.root.hidden = true;
        // inspector.root.style.margin = "0px 25px";

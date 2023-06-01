@@ -607,7 +607,7 @@ class Editor {
                         clipData[map].length = data.length;
                         clipData[map].fill(0);
                     }
-                    clipData[map][idx] = value;
+                    clipData[map][idx] = Math.max(clipData[map][idx], value );
                 }
                 else if( typeof(map) == 'object'){
                     for(let j = 0; j < map.length; j++){
@@ -617,7 +617,7 @@ class Editor {
                             clipData[map[j]].length = data.length;
                             clipData[map[j]].fill(0);
                         }
-                        clipData[map[j]][idx] = value; 
+                        clipData[map[j]][idx] = Math.max(clipData[map[j]][idx], value );; 
                     }
                 }
               
