@@ -1,4 +1,4 @@
-import { Timeline } from "./libs/timeline.module.js";
+import { ClipsTimeline, KeyFramesTimeline } from "./libs/timeline.module.js";
 import { UTILS } from "./utils.js";
 import { VideoUtils } from "./video.js"; 
 class Gui {
@@ -27,7 +27,7 @@ class Gui {
             boneName = this.editor.skeletonHelper.bones[0].name;
         }
 
-        this.timeline = new Timeline( this.editor.animationClip, boneName);
+        this.timeline = new KeyFramesTimeline( this.editor.animationClip, boneName);
         this.timeline.framerate = 30;
         this.timeline.setScale(400);
         this.timeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
@@ -45,9 +45,9 @@ class Gui {
             this.showKeyFrameOptions(e, info, index);
             return true; // Handled
         };
-        this.timeline.onBoneUnselected = () => this.editor.gizmo.stop();
+        this.timeline.onItemUnselected = () => this.editor.gizmo.stop();
         this.timeline.onUpdateTrack = (idx) => this.editor.updateAnimationAction(idx);
-        this.timeline.onGetSelectedBone = () => { return this.editor.getSelectedBone(); };
+        this.timeline.onGetSelectedItem = () => { return this.editor.getSelectedBone(); };
         this.timeline.onGetOptimizeThreshold = () => { return this.editor.optimizeThreshold; }
 
         this.updateMenubar();
@@ -351,7 +351,7 @@ class Gui {
 
             if(!this.NMFtimeline) {
                         
-                this.NMFtimeline = new Timeline(null, null, "clips", [this.timeline.size[0], this.timeline.size[1]], false);
+                this.NMFtimeline = new ClipsTimeline(null, null, [this.timeline.size[0], this.timeline.size[1]], false);
                 this.NMFtimeline.name = "Non-Manual Features";
                 this.NMFtimeline.framerate = 30;
                 this.NMFtimeline.setScale(400);
@@ -690,25 +690,24 @@ class Gui {
         //Create face areas selector
         let canvas = document.createElement("canvas");
         canvas.style.width = "100%";
-
         let section = bsArea.getSection(0);
         section.content.appendChild(canvas);
         bsPanel.add(bsArea);
         bsPanel.content.style.height = "calc(100% - 20px)";
         let areas = {
-            "rgb(255,0,0)": "nose", 
-            "rgb(0,0,255)": "brow_right",
-            "rgb(255,0,255)": "brow_left",
-            "rgb(0,255,255)": "eyer_right",
-            "rgb(0,255,0)": "eye_left",
-            "rgb(255,255,255)": "cheek_right",
-            "rgb(255,255,0)": "cheek_left",
-            "rgb(0,125,0)": "jaw",
-            "rgb(125,0,0)": "mouth"
+            "rgb(255,0,0)": "Nose", 
+            "rgb(0,0,255)": "Brow Right",
+            "rgb(255,0,255)": "Brow Left",
+            "rgb(0,255,255)": "Eye Right",
+            "rgb(0,255,0)": "Eye Left",
+            "rgb(255,255,255)": "Cheek Right",
+            "rgb(255,255,0)": "Cheek Left",
+            "rgb(0,125,0)": "Jaw",
+            "rgb(125,0,0)": "Mouth"
         }
         let ctx = canvas.getContext("2d");
         let img = document.createElement("img");
-        img.src = "./data/imgs/face areas.png";
+        img.src = "./data/imgs/face areas2.png";
         img.onload = (e) =>
         {
             //canvas.height = bsArea.getSection(0).getHeight();
@@ -725,8 +724,8 @@ class Gui {
             //clon.height = canvas.height;
             ctxClon.drawImage(mask, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
             let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            let allData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
-            updateAreasColor([null,null,null], currentData, allData);
+            let maskData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
+            updateAreasColor([null,null,null], currentData, maskData);
             ctx.putImageData(currentData, 0, 0);
         }
 
@@ -735,46 +734,44 @@ class Gui {
             var pos = findPos(canvas);
             var x = e.pageX - pos.x;
             var y = e.pageY - pos.y;
+            ctx.globalCompositeOperation = "source-over";
+            ctx.globalAlpha = 1;
             ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
 
             let data = ctxClon.getImageData(x, y, 1, 1).data;
             let color = "rgb(" + data[0] + "," + data[1] + "," + data[2] + ")";
             let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            let allData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
-
+            let maskData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
+            
             if(this.editor.getSelectedActionUnit()) {
+                
                 let idx = Object.values(areas).indexOf(this.editor.getSelectedActionUnit());
                 let area = Object.keys(areas)[idx];
                 let c = area.replace("rgb(", "").replace(")","").split(",");
                 
-                updateAreasColor(c, currentData, allData);
-                //ctx.clearRect(0,0, canvas.width,canvas.height);
-                ctx.putImageData(currentData, 0, 0);
-            }
-            if(areas[color]) {
-                console.log(areas[color])
-
-                updateAreasColor(data, currentData, allData);
-                //ctx.clearRect(0,0, canvas.width,canvas.height);
-                ctx.putImageData(currentData, 0, 0)
-            }else {
+                updateAreasColor(c, currentData, maskData, null);
                 
-            updateAreasColor([null,null,null], currentData, allData);
-                //ctx.clearRect(0,0, canvas.width,canvas.height);
-                ctx.putImageData(currentData, 0, 0)
             }
+            if(areas[color]) {                
+                updateAreasColor(data, currentData, maskData);
+                
+            }
+            else {                
+                updateAreasColor([null,null,null], currentData, maskData);          
+            }
+            ctx.putImageData(currentData, 0, 0)
         }   
 
-        function updateAreasColor(data, currentData, allData, threshold = 50) {
-            for (var i = 0; i < allData.length-4; i+=4) {
-                if(allData[i] == data[0] && allData[i+1] == data[1] && allData[i+2] == data[2]) {
-                    // currentData[i] = 0;
-                    // currentData[i+1] = 0;
-                    // currentData[i+2] = 0;
-                   // currentData.data[i+3] *= 1;
+        function updateAreasColor(data, currentData, maskData, threshold = 50, ctx) {
+            let color = [73, 100, 141];
+            for (var i = 0; i < maskData.length-4; i+=4) {
+                
+                if(maskData[i] == data[0] && maskData[i+1] == data[1] && maskData[i+2] == data[2]) {
+                    currentData.data[i+3] = 250;    
                 }
-                else if(allData[i+3] >= threshold)
-                    currentData.data[i+3] = Math.floor(currentData.data[i+3]*0.5);
+                else if(!(currentData.data[i] == color[0] && currentData.data[i+1] == color[1] && currentData.data[i+2] == color[2] && currentData.data[i+3] == 250) && maskData[i+3]!=0) {
+                    currentData.data[i+3] = 160;
+                }
             }
         }
 
@@ -801,18 +798,18 @@ class Gui {
             ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
             ctxClon.drawImage(mask, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
             let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            let allData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
+            let maskData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
             if(this.editor.getSelectedActionUnit()) {
 
                 let idx = Object.values(areas).indexOf(this.editor.getSelectedActionUnit());
                 let area = Object.keys(areas)[idx];
                 let c = area.replace("rgb(", "").replace(")","").split(",");
                 
-                updateAreasColor(c, currentData, allData);
+                updateAreasColor(c, currentData, maskData);
                 //ctx.clearRect(0,0, canvas.width,canvas.height);
                 ctx.putImageData(currentData, 0, 0)
             }else{
-                updateAreasColor([null,null,null], currentData, allData);
+                updateAreasColor([null,null,null], currentData, maskData);
                 //ctx.clearRect(0,0, canvas.width,canvas.height);
                 ctx.putImageData(currentData, 0, 0)
             }
@@ -830,17 +827,17 @@ class Gui {
             let data = ctxClon.getImageData(x, y, 1, 1).data;
             let color = "rgb(" + data[0] + "," + data[1] + "," + data[2] + ")";
             let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            let allData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
+            let maskData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
 
             if(areas[color]) {
                 this.editor.setSelectedActionUnit(areas[color]);
                 //ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
                 
-                updateAreasColor(data, currentData, allData);
+                updateAreasColor(data, currentData, maskData);
                 console.log(areas[color])
                 let names = {};
                 for(let i in this.editor.mapNames) {
-                    let toCompare = areas[color].split("_");
+                    let toCompare = areas[color].toLowerCase().split(" ");
                     let found = true;
                     for(let j = 0; j < toCompare.length; j++) {
 
@@ -861,7 +858,7 @@ class Gui {
             }else {
                 inspector.root.remove();
                 this.editor.setSelectedActionUnit();
-                updateAreasColor([null,null,null], currentData, allData);
+                updateAreasColor([null,null,null], currentData, maskData);
                 //ctx.clearRect(0,0, canvas.width,canvas.height);
                 ctx.putImageData(currentData, 0, 0)
             }
@@ -877,6 +874,8 @@ class Gui {
         } });
         tabs.addTab("Blendshapes", { size: "full" , content: bsPanel.content, callback: () => {
             // this.loadClip(this.editor.auAnimation);
+            canvas.height = bsArea.getSection(0).getHeight()
+            bsArea.onResize();
         } });
 
         this.mainArea.getSection(1).add( tabs );
@@ -971,7 +970,7 @@ class Gui {
             throw("No editor attached");
 
             that.editor.setSelectedBone( data.id );
-            that.timeline.setSelectedBone( data.id );
+            that.timeline.setSelectedItem( data.id );
         };
     
         litetree.root.addEventListener("item_dblclicked", function(e){

@@ -18,7 +18,7 @@ const MediaPipe = {
     bsPreviousTime: 0,
     landmarks: [],
     blendshapes : [],
-    async start( live, onload, onresults ) {
+    async start( live, onload, onResults ) {
 
         UTILS.makeLoading("Loading MediaPipe...");
 
@@ -26,7 +26,7 @@ const MediaPipe = {
         this.landmarks = [];
         this.blendshapes = [];
         this.onload = onload;
-        this.onresults = onresults;
+        this.onResults = onResults;
         // Webcam and MediaPipe Set-up
         const videoElement = document.getElementById("inputVideo");
         const canvasElement = document.getElementById("outputVideo");
@@ -87,22 +87,22 @@ const MediaPipe = {
                 drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,
                     {color: '#1a2025', lineWidth: 4}); //'#00FF00'
                 drawLandmarks(canvasCtx, results.poseLandmarks,
-                                {color: 'rgba(58, 161, 156, 0.8)', lineWidth: 1}); //'#00FF00'
+                                {color: '#1a2025',fillColor: 'rgba(58, 161, 156, 1)', lineWidth: 2}); //'#00FF00'
                 // drawConnectors(canvasCtx, results.faceLandmarks, FACEMESH_TESSELATION,
                 //                 {color: '#C0C0C070', lineWidth: 1});
                 drawConnectors(canvasCtx, results.leftHandLandmarks, HAND_CONNECTIONS,
                                 {color: '#1a2025', lineWidth: 4}); //#CC0000
                 drawLandmarks(canvasCtx, results.leftHandLandmarks,
-                                {color: 'rgba(58, 161, 156, 0.8)', lineWidth: 1}); //'#00FF00'
+                                {color: '#1a2025',fillColor: 'rgba(58, 161, 156, 1)', lineWidth: 2}); //'#00FF00'
                 drawConnectors(canvasCtx, results.rightHandLandmarks, HAND_CONNECTIONS,
                                 {color: '#1a2025', lineWidth: 4}); //#00CC00
                 drawLandmarks(canvasCtx, results.rightHandLandmarks,
-                                {color: 'rgba(58, 161, 156, 0.8)', lineWidth: 1});
+                                {color: '#1a2025',fillColor: 'rgba(58, 161, 156, 1)', lineWidth: 2});
                                         
             }
             canvasCtx.restore();
-            if(this.onresults)
-                this.onresults({landmarksResults: results}, recording);
+            if(this.onResults)
+                this.onResults({landmarksResults: results}, recording);
 
         }).bind(this));
 
@@ -178,7 +178,7 @@ const MediaPipe = {
             faceBlendshapes = this.fillBlendshapes(results);
         }
 
-        this.onresults({blendshapesResults: faceBlendshapes}, window.globals.app.isRecording())
+        this.onResults({blendshapesResults: faceBlendshapes}, window.globals.app.isRecording())
     },
 
     // camera.stop() does not exist, therefore solved using jQuery, we can replace the methods with appropriate JavaScript methods

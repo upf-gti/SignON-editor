@@ -316,7 +316,7 @@ class App {
                 this.mediaRecorder.stop();
                 
                 videoCanvas.classList.remove("border-animation");
-                capture.classList.remove("stop");
+                
 
                 
                 if(MediaPipe.landmarks.length) {
@@ -365,6 +365,7 @@ class App {
         let capture = document.getElementById("capture_btn");
         capture.style.display = "none";
         capture.disabled = true;
+        capture.classList.remove("stop");
         
         // TRIM VIDEO - be sure that only the sign is recorded
         let canvas = document.getElementById("outputVideo");

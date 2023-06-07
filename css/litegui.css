@@ -1454,17 +1454,17 @@ a:hover {
 }
 
 .litemenubar li {
-	font-size: 1.5em;
-	color: #999;
-	display: inline-block;
-	min-width: 50px;
-	padding-left: 10px;
-	padding-right: 10px;
+	font-size: 1.4em;
+    color: #999;
+    display: inline-block;
+    min-width: 50px;
+    padding-left: 10px;
+    padding-right: 10px;
     padding-top: 5px;
-	user-select: none;
-	-moz-user-select: none;  
-	-webkit-user-select: none;  
-	cursor: pointer;
+    user-select: none;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+    cursor: pointer;
 }
 
 .litemenubar li:hover {
