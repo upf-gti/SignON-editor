@@ -122,8 +122,8 @@ class Controller {
         //convert each clip to BML json format
         let json = { faceLexeme: []};;
 
-        for(let i = 0; i < timeline.clip.tracks.length; i++){
-            let track = timeline.clip.tracks[i];
+        for(let i = 0; i < timeline.animationClip.tracks.length; i++){
+            let track = timeline.animationClip.tracks[i];
             for(let j = 0; j < track.clips.length; j++){
                 let clip = track.clips[j];
                 var data = ANIM.clipToJSON( clip );
@@ -133,8 +133,7 @@ class Controller {
                     json.faceLexeme.push( data[3] );
                 }
             }
-        }
-        
+        }    
 
         this.lexemes = [];
         //manage bml blocks sync
@@ -189,7 +188,7 @@ class Controller {
 
         //     // supports position and quaternion types
         //     for( let i = 0; i < values.length; ++i ) {
-        //         this.editor.animationClip.tracks[ idx ].values[ start + i ] = values[i];
+        //         this.editor.animationanimationClip.tracks[ idx ].values[ start + i ] = values[i];
         //     }
 
         //     // Update animation interpolants
@@ -198,29 +197,6 @@ class Controller {
 
        
 
-    }
-
-
-
-    showOptions( inspector ) {
-        // inspector.addNumber( "Translation snap", this.editor.defaultTranslationSnapValue, { min: 0.5, max: 5, step: 0.5, callback: (v) => {
-        //     this.editor.defaultTranslationSnapValue = v;
-        //     this.editor.updateGizmoSnap();
-        // }});
-        // inspector.addNumber( "Rotation snap", this.editor.defaultRotationSnapValue, { min: 15, max: 180, step: 15, callback: (v) => {
-        //     this.editor.defaultRotationSnapValue = v;
-        //     this.editor.updateGizmoSnap();
-        // }});
-        // inspector.addSlider( "Size", this.editor.getGizmoSize(), { min: 0.2, max: 2, step: 0.1, callback: (v) => {
-        //     this.editor.setGizmoSize(v);
-        // }});
-        // inspector.addTitle("Bone markers")
-        // inspector.addSlider( "Size", this.editor.getGizmoSize(), { min: 0.01, max: 1, step: 0.01, callback: (v) => {
-        //     this.editor.setBoneSize(v);
-        // }});
-
-        // const depthTestEnabled = this.bonePoints.material.depthTest;
-        // inspector.addCheckbox( "Depth test", depthTestEnabled, (v) => { this.bonePoints.material.depthTest = v; })
     }
     
     //on update values on gui inspector

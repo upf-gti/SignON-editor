@@ -13,13 +13,16 @@ import { AnimationRetargeting } from './retargeting.js'
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { GLTFExporter } from './exporters/GLTFExporoter.js' 
 import { Controller } from "./controller.js"
+import { BlendshapesManager } from "./blendshapes.js"
+
+const MapNames = await import('../data/mapnames.json', {assert: { type: 'json' }});
 
 // Correct negative blenshapes shader of ThreeJS
 THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
 THREE.ShaderChunk[ 'morphtarget_pars_vertex' ] = "#ifdef USE_MORPHTARGETS\n	uniform float morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		uniform float morphTargetInfluences[ MORPHTARGETS_COUNT ];\n		uniform sampler2DArray morphTargetsTexture;\n		uniform vec2 morphTargetsTextureSize;\n		vec3 getMorph( const in int vertexIndex, const in int morphTargetIndex, const in int offset, const in int stride ) {\n			float texelIndex = float( vertexIndex * stride + offset );\n			float y = floor( texelIndex / morphTargetsTextureSize.x );\n			float x = texelIndex - y * morphTargetsTextureSize.x;\n			vec3 morphUV = vec3( ( x + 0.5 ) / morphTargetsTextureSize.x, y / morphTargetsTextureSize.y, morphTargetIndex );\n			return texture( morphTargetsTexture, morphUV ).xyz;\n		}\n	#else\n		#ifndef USE_MORPHNORMALS\n			uniform float morphTargetInfluences[ 8 ];\n		#else\n			uniform float morphTargetInfluences[ 4 ];\n		#endif\n	#endif\n#endif";
 THREE.ShaderChunk[ 'morphtarget_vertex' ] = "#ifdef USE_MORPHTARGETS\n	transformed *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n			#ifndef USE_MORPHNORMALS\n				transformed += getMorph( gl_VertexID, i, 0, 1 ) * morphTargetInfluences[ i ];\n			#else\n				transformed += getMorph( gl_VertexID, i, 0, 2 ) * morphTargetInfluences[ i ];\n			#endif\n		}\n	#else\n		transformed += morphTarget0 * morphTargetInfluences[ 0 ];\n		transformed += morphTarget1 * morphTargetInfluences[ 1 ];\n		transformed += morphTarget2 * morphTargetInfluences[ 2 ];\n		transformed += morphTarget3 * morphTargetInfluences[ 3 ];\n		#ifndef USE_MORPHNORMALS\n			transformed += morphTarget4 * morphTargetInfluences[ 4 ];\n			transformed += morphTarget5 * morphTargetInfluences[ 5 ];\n			transformed += morphTarget6 * morphTargetInfluences[ 6 ];\n			transformed += morphTarget7 * morphTargetInfluences[ 7 ];\n		#endif\n	#endif\n#endif";
 
-const MapNames = await import('../data/mapnames.json', {assert: { type: 'json' }});
+
 
 class Editor {
     
@@ -51,9 +54,12 @@ class Editor {
         this.skeletonHelper = null;
         this.skeleton = null;
         this.mixer = null;
+
+        this.bodyAnimation = null;
+        this.faceAnimation = null;
         
         this.morphTargets = null;
-
+        this.blendshapesManager = null;
         this.retargeting = new AnimationRetargeting();
 
         this.nn = new NN("data/ML/model.json");
@@ -79,6 +85,7 @@ class Editor {
         this.init();
     }
     
+    //Create canvas scene
     init() {
 
         let canvasArea = document.getElementById("canvasarea");
@@ -196,77 +203,74 @@ class Editor {
                 case "Delete":
                     e.preventDefault();
                     e.stopImmediatePropagation();
-                    this.gui.timeline.deleteKeyFrame(e, null);
+                    this.gui.keyFramesTimeline.deleteKeyFrame(e, null);
                     break;
                 case "Escape":
-                    this.gui.timeline.unSelect();
+                    this.gui.keyFramesTimeline.unSelect();
                     break;
                 case 'z':
                     if(e.ctrlKey) {
-                        this.gui.timeline.restoreState();
+                        this.gui.keyFramesTimeline.restoreState();
                     }
                     break;
             }
         } );
     }
 
+    createSceneUI() {
+
+        $(this.orientationHelper.domElement).show();
+
+        let canvasArea = document.getElementById("canvasarea");
+        let timelineCanvas = document.getElementById("timelineCanvas");
+        const HEIGHT = canvasArea.clientHeight / 2
+                        - timelineCanvas.clientHeight
+                        - (CanvasButtons.items.length / 2) * 30;
+
+        for( let i = 0; i < CanvasButtons.items.length; ++i ) {
+
+            const b = CanvasButtons.items[i];
+            let content = null;
+
+            if(b.icon) {
+
+                switch(b.type) {
+                    case 'image': 
+                        content = document.createElement("img");
+                        content.style.opacity = 0.75;
+                        content.src = b.icon;
+                        break;
+                    default: 
+                        content = document.createElement("i");
+                        content.className = b.icon;
+                }
+            }
+
+            const btn = document.createElement('button');
+            btn.title = b.name;
+            btn.className = "litebutton";
+            btn.style = 'z-index: 2; position: absolute; right: 15px; font-size: 1.25em; width:25px; height: 25px';
+            btn.style.marginTop = (HEIGHT + i * 30) + "px";
+            btn.appendChild(content);
+            document.getElementById("canvasarea").prepend(btn);
+
+            CanvasButtons.onCreate.bind(this, b, content)();
+
+            btn.addEventListener("click", CanvasButtons.onChange.bind(this, b, content) );
+
+            if(b.callback)
+                btn.addEventListener("click", b.callback.bind(this) );
+        }
+    }
+
     getApp() {
         return this.__app;
     }
 
-    onPlay(element, e) {
 
-        this.state = !this.state;
-        element.innerHTML = "<i class='bi bi-" + (this.state ? "pause" : "play") + "-fill'></i>";
-        //element.style.border = "solid #268581";
+    /** -------------------- CREATE ANIMATIONS FROM MEDIAPIPE -------------------- */
 
-        if(this.state) {
-            this.mixer._actions[0].paused = false;
-            this.gizmo.stop();
-            if(this.NMFController)
-                this.NMFController.stop();
-            
-            this.gui.setBoneInfoState( false );
-            (this.video.paused && this.video.sync) ? this.video.play() : 0;    
-        } else{
-            this.gui.setBoneInfoState( true );
-
-            if(this.video.sync) {
-                try{
-                    this.video.paused ? 0 : this.video.pause();    
-                }catch(ex) {
-                    console.error("video warning");
-                }
-            }
-        }
-
-        element.blur();
-    }
-    
-    onStop(element, e) {
-
-        this.state = false;
-        element.innerHTML = "<i class='bi bi-play-fill'></i>";
-        //element.style.removeProperty("border");
-        this.gui.setBoneInfoState( true );
-        this.stopAnimation();
-
-        if(this.video.sync) {
-            this.video.pause();
-            this.video.currentTime = this.video.startTime;
-        }
-    }
-
-    onChangeMode(mode) {
-        this.mode = mode;
-        if( this.mode == this.eModes.NMF ) {
-            this.gizmo.disable();
-        }
-        else {
-            this.gizmo.enable();
-        }
-    }
-
+    /**Create face and body animations from mediapipe and load character*/
     buildAnimation(data) {
 
         let {landmarks, blendshapes} = data;
@@ -332,32 +336,34 @@ class Editor {
                     this.mixer.clipAction( this.NMFclip ).setEffectiveWeight( 1.0 ).play();
                 }
                 this.NMFController.begin();
+
                 // load the actual animation to play
                 this.mixer = new THREE.AnimationMixer( model );
                 this.BVHloader.load( 'models/ISL Thanks final.bvh' , (result) => {
-                    this.animationClip = result.clip;
+                    this.bodyAnimation = result.clip;
                     for (let i = 0; i < result.clip.tracks.length; i++) {
-                        this.animationClip.tracks[i].name = this.animationClip.tracks[i].name.replaceAll(/[\]\[]/g,"").replaceAll(".bones","");
+                        this.bodyAnimation.tracks[i].name = this.bodyAnimation.tracks[i].name.replaceAll(/[\]\[]/g,"").replaceAll(".bones","");
                     }
-                    this.gui.loadClip(this.animationClip);
-                    this.mixer.clipAction( this.animationClip ).setEffectiveWeight( 1.0 ).play();
-                    this.mixer.update(0);
                     this.gizmo.begin(this.skeletonHelper);
+                    this.gui.loadKeyframeClip(this.bodyAnimation);
+                    this.mixer.clipAction( this.bodyAnimation ).setEffectiveWeight( 1.0 ).play();
+                    this.mixer.update(0);
                     this.setBoneSize(0.05);
                     this.animate();
                     $('#loading').fadeOut();
                 } );
             } );
 
-        } else {// -- default -- if ( urlParams.get('load') == 'NN' ) {
-            this.animationClip = createAnimationFromRotations(this.clipName, this.nn);
-            //postProcessAnimation(this.animationClip, this.landmarksArray);
+        } 
+        else {// -- default -- if ( urlParams.get('load') == 'NN' ) {
+            this.bodyAnimation = createAnimationFromRotations(this.clipName, this.nn);
+            //postProcessAnimation(this.bodyAnimation, this.landmarksArray);
             if (urlParams.get('skin') && urlParams.get('skin') == 'false') {
-                this.loadAnimationWithSkeleton(this.animationClip);
+                this.loadAnimationWithSkeleton(this.bodyAnimation);
             }
             else {
-                this.BVHloader.load( 'models/kateBVH.bvh' , (result) => {
-                    result.clip = this.animationClip;
+                this.BVHloader.load( 'models/kateBVH.bvh', (result) => {
+                    result.clip = this.bodyAnimation;
                     this.loadAnimationWithSkin(result);
                 });
             }
@@ -452,241 +458,6 @@ class Editor {
     }
 
 
-    createAnimationFromBlendshapes(name, data) {
-
-        let clipData = {};
-        let times = [];
-
-        let auValues = {};
-        // let {dt, weights} = data;
-
-        for (let idx = 0; idx < data.length; idx++) {
-            let dt = data[idx].dt;
-            let weights = data[idx];
-
-            if(times.length)
-                times.push(times[idx-1] + dt* 0.001);
-            else
-                times.push(dt);
-
-                
-            for(let i in weights)
-            {
-                var value = weights[i];
-                if(!auValues[i])
-                    auValues[i] = [value];
-                else
-                    auValues[i].push(value);
-
-                let map = this.mapNames[i];
-                if(map == null) 
-                {
-                    if(!this.applyRotation) 
-                        continue;
-
-                    let axis = i.split("Yaw");
-                    if(axis.length > 1)
-                    {
-                        switch(axis[0]){
-                            case "LeftEye":
-                                if(!clipData["mixamorig_LeftEye"])
-                                {
-                                    clipData["mixamorig_LeftEye"] = [];
-                                    clipData["mixamorig_LeftEye"].length = data.length;
-                                    clipData["mixamorig_LeftEye"] = clipData["mixamorig_LeftEye"].fill(null).map(() => new THREE.Euler( 0, 0, 0, 'XYZ' ));
-
-                                }
-                                    clipData["mixamorig_LeftEye"][idx].y = value;
-                            break;
-                            case "RightEye":
-                                if(!clipData["mixamorig_RightEye"])
-                                {
-                                    clipData["mixamorig_RightEye"] = [];
-                                    clipData["mixamorig_RightEye"].length = data.length;
-                                    clipData["mixamorig_RightEye"] = clipData["mixamorig_RightEye"].fill(null).map(() => new THREE.Euler( 0, 0, 0, 'XYZ' ));
-
-                                }
-                                clipData["mixamorig_RightEye"][idx].y = value;
-                            break;
-                            case "Head":
-                                if(!clipData["mixamorig_Head"])
-                                {
-                                    clipData["mixamorig_Head"] = [];
-                                    clipData["mixamorig_Head"].length = data.length;
-                                    clipData["mixamorig_Head"] = clipData["mixamorig_Head"].fill(null).map(() => new THREE.Euler( 0, 0, 0, 'XYZ' ));
-
-                                }
-                                clipData["mixamorig_Head"][idx].y = value;
-                            break;
-                        }
-                        continue;
-                    }
-                    axis = i.split("Pitch");
-                    if(axis.length > 1)
-                    {
-                        switch(axis[0]){
-                            case "LeftEye":
-                                if(!clipData["mixamorig_LeftEye"])
-                                {
-                                    clipData["mixamorig_LeftEye"] = [];
-                                    clipData["mixamorig_LeftEye"].length = data.length;
-                                    clipData["mixamorig_LeftEye"] = clipData["mixamorig_LeftEye"].fill(null).map(() => new THREE.Euler( 0, 0, 0, 'XYZ' ));
-
-                                }
-                                clipData["mixamorig_LeftEye"][idx].x = value;
-                            break;
-                            case "RightEye":
-                                if(!clipData["mixamorig_RightEye"])
-                                {
-                                    clipData["mixamorig_RightEye"] = [];
-                                    clipData["mixamorig_RightEye"].length = data.length;
-                                    clipData["mixamorig_RightEye"] = clipData["mixamorig_RightEye"].fill(null).map(() => new THREE.Euler( 0, 0, 0, 'XYZ' ));
-
-                                }
-                                clipData["mixamorig_RightEye"][idx].x = value;
-                            break;
-                            case "Head":
-                                if(!clipData["mixamorig_Head"])
-                                {
-                                    clipData["mixamorig_Head"] = [];
-                                    clipData["mixamorig_Head"].length = data.length;
-                                    clipData["mixamorig_Head"] = clipData["mixamorig_Head"].fill(null).map(() => new THREE.Euler( 0, 0, 0, 'XYZ' ));
-
-                                }
-                                clipData["mixamorig_Head"][idx].x = value;
-                            break;
-                        }
-                        continue;
-                    }
-                    axis = i.split("Roll");
-                    if(axis.length > 1)
-                    {
-                        switch(axis[0]){
-                            case "LeftEye":
-                                if(!clipData["mixamorig_LeftEye"])
-                                {
-                                    clipData["mixamorig_LeftEye"] = [];
-                                    clipData["mixamorig_LeftEye"].length = data.length;
-                                    clipData["mixamorig_LeftEye"] = clipData["mixamorig_LeftEye"].fill(null).map(() => new THREE.Euler( 0, 0, 0, 'XYZ' ));
-
-                                }
-                                clipData["mixamorig_LeftEye"][idx].z = value;
-                            break;
-
-                            case "RightEye":
-                                if(!clipData["mixamorig_RightEye"])
-                                {
-                                    clipData["mixamorig_RightEye"] = [];
-                                    clipData["mixamorig_RightEye"].length = data.length;
-                                    clipData["mixamorig_RightEye"] = clipData["mixamorig_RightEye"].fill(null).map(() => new THREE.Euler( 0, 0, 0, 'XYZ' ));
-
-                                }
-                                clipData["mixamorig_RightEye"][idx].z = -value;
-                            break;
-
-                            case "Head":
-                                if(!clipData["mixamorig_Head"])
-                                {
-                                    clipData["mixamorig_Head"] = [];
-                                    clipData["mixamorig_Head"].length = data.length;
-                                    clipData["mixamorig_Head"] = clipData["mixamorig_Head"].fill(null).map(() => new THREE.Euler( 0, 0, 0, 'XYZ' ));
-
-                                }
-                                clipData["mixamorig_Head"][idx].z = value;
-                            break;
-                        }
-                        continue;
-                    }
-                    else
-                        continue;
-                }
-                else if (typeof(map) == 'string'){
-                    if(!clipData[map])
-                    {
-                        clipData[map] = [];
-                        clipData[map].length = data.length;
-                        clipData[map].fill(0);
-                    }
-                    clipData[map][idx] = Math.max(clipData[map][idx], value );
-                }
-                else if( typeof(map) == 'object'){
-                    for(let j = 0; j < map.length; j++){
-                        if(!clipData[map[j]])
-                        {
-                            clipData[map[j]] = [];
-                            clipData[map[j]].length = data.length;
-                            clipData[map[j]].fill(0);
-                        }
-                        clipData[map[j]][idx] = Math.max(clipData[map[j]][idx], value );; 
-                    }
-                }
-              
-            }
-
-        }
-        let tracks = [];
-        for(let bs in clipData)
-        {
-
-            if(typeof(clipData[bs][0]) == 'object' )
-            {
-                let animData = []; 
-                clipData[bs].map((x) => {
-                    let q = new THREE.Quaternion().setFromEuler(x);
-                    animData.push(q.x);
-                    animData.push(q.y);
-                    animData.push(q.z);
-                    animData.push(q.w);
-                }, animData)
-                tracks.push( new THREE.QuaternionKeyframeTrack(bs + '.quaternion', times, data ));
-            }
-            else
-            {
-                
-                for(let mesh of this.skinnedMeshes)
-                {
-                    let mtIdx = mesh.morphTargetDictionary[bs]
-                    if(mtIdx>-1)
-                        tracks.push( new THREE.NumberKeyframeTrack(mesh.name +'.morphTargetInfluences['+ bs + ']', times, clipData[bs]) );
-
-                }
-            }
-        }
-        let auTracks = [];
-        for(let bs in auValues) {
-            auTracks.push( new THREE.NumberKeyframeTrack(bs, times, auValues[bs] ));
-        }
-
-        // use -1 to automatically calculate
-        // the length from the array of tracks
-        const length = -1;
-
-        let animation = new THREE.AnimationClip(name || "liveLinkAnim", length, tracks);
-        let auAnimation = new THREE.AnimationClip("au-animation", length, auTracks);
-        return [animation, auAnimation];
-    }
-
-    setBlendshapesTime(data, t) {
-        let timeAcc = 0;
-        let bs = null, lm = null;
-        let idx = -1;
-
-        for(let i = 0; i < data.blendshapesResults.length; i++) {
-            timeAcc += data.blendshapesResults[i].dt*0.001;
-            if(timeAcc <= t) {
-                idx = i
-                
-            }
-        }
-        if(idx >= 0) {
-            bs = data.blendshapesResults[idx];
-            if(data.landmarksResults)
-                lm = data.landmarksResults[idx];
-        }
-            
-        this.gui.updateCaptureGUI({blendshapesResults: bs, landmarksResults: lm}, false)
-    }
-
     loadAnimation( animation ) {
 
         const extension = UTILS.getExtension(animation.name);
@@ -727,21 +498,21 @@ class Editor {
         
         if( skeletonAnim.skeleton ) {
             skeletonAnim.clip.name = UTILS.removeExtension(this.clipName || skeletonAnim.clip.name);
-            this.animationClip = skeletonAnim.clip;
+            this.bodyAnimation = skeletonAnim.clip;
             let srcSkeleton = skeletonAnim.skeleton; 
             let tracks = [];
             
             // remove position changes (only keep i == 0, hips)
-            for (let i = 0; i < this.animationClip.tracks.length; i++) {
-                if(i && this.animationClip.tracks[i].name.includes('position')) {
+            for (let i = 0; i < this.bodyAnimation.tracks.length; i++) {
+                if(i && this.bodyAnimation.tracks[i].name.includes('position')) {
                     continue;
                 }
-                tracks.push( this.animationClip.tracks[i] );
+                tracks.push( this.bodyAnimation.tracks[i] );
             }
 
-            this.animationClip.tracks = tracks;
-            this.retargeting.loadAnimation(srcSkeleton, this.animationClip);
-            //this.retargeting.loadAnimationFromSkeleton(skinnedMesh, this.animationClip);
+            this.bodyAnimation.tracks = tracks;
+            this.retargeting.loadAnimation(srcSkeleton, this.bodyAnimation);
+            //this.retargeting.loadAnimationFromSkeleton(skinnedMesh, this.bodyAnimation);
         }
         
         // Load the target model (Eva) 
@@ -749,7 +520,7 @@ class Editor {
             let model = gltf.scene;
             model.visible = true;
             
-            this.skinnedMeshes = [];
+            let skinnedMeshes = [];
             model.traverse( o => {
                 if (o.isMesh || o.isSkinnedMesh) {
                     o.castShadow = true;
@@ -761,7 +532,7 @@ class Editor {
                     if(o.morphTargetDictionary)
                     {
                         this.morphTargets = o.morphTargetDictionary;
-                        this.skinnedMeshes.push(o);
+                        skinnedMeshes.push(o);
                     }
                     o.material.side = THREE.FrontSide;
                     
@@ -773,36 +544,39 @@ class Editor {
             model.rotateOnAxis(new THREE.Vector3(1,0,0), -Math.PI/2);
             this.skeletonHelper = this.retargeting.tgtSkeletonHelper || new THREE.SkeletonHelper(model);
             this.skeletonHelper.name = "SkeletonHelper";
+
+            //Create animations
             this.mixer = new THREE.AnimationMixer(model);
-            if(this.animationClip)
+            //Create body animation from mediapipe landmarks
+            if(this.bodyAnimation)
             {
-                this.animationClip = this.retargeting.createAnimation(model);
+                this.bodyAnimation = this.retargeting.createAnimation(model);
                 
                 this.validateAnimationClip();
-                this.mixer.clipAction(this.animationClip).setEffectiveWeight(1.0).play();
+                this.mixer.clipAction(this.bodyAnimation).setEffectiveWeight(1.0).play();
                 updateThreeJSSkeleton(this.retargeting.tgtBindPose);
                 
             }
             this.skeletonHelper.skeleton = this.skeleton; //= createSkeleton();
 
-
-            let anim = this.createAnimationFromBlendshapes(null, this.blendshapesArray);
-            this.faceAnimationClip = anim[0];
+            //Create face animation from mediapipe blendshapes
+            this.blendshapesManager = new BlendshapesManager(skinnedMeshes, this.morphTargets, this.mapNames);
+            let anim = this.blendshapesManager.createAnimationFromBlendshapes(null, this.blendshapesArray);
+            this.faceAnimation = anim[0];
             this.auAnimation = anim[1];
 
             if( blendshapesAnim )
                 this.mixer.clipAction(blendshapesAnim.clip).setEffectiveWeight(1.0).play();
-            else if(this.faceAnimationClip )
-                this.mixer.clipAction(this.faceAnimationClip).setEffectiveWeight(1.0).play();
+            else if(this.faceAnimation )
+                this.mixer.clipAction(this.faceAnimation).setEffectiveWeight(1.0).play();
 
             // guizmo stuff
-            
             this.scene.add( model );
             this.scene.add( this.skeletonHelper );
             //this.scene.add( this.retargeting.srcSkeletonHelper );
             
-            this.gui.loadClip(this.animationClip);
             this.gizmo.begin(this.skeletonHelper);
+            this.gui.loadKeyframeClip(this.bodyAnimation);
             this.setBoneSize(0.05);
             this.animate();
             $('#loading').fadeOut();
@@ -816,7 +590,7 @@ class Editor {
     }
 
     loadAnimationWithSkeleton(animation) {
-        this.animationClip = animation.clip || animation || this.animationClip;
+        this.bodyAnimation = animation.clip || animation || this.bodyAnimation;
         this.BVHloader.load( 'models/kateBVH.bvh' , (result) => {
     
             let skinnedMesh = result.skeleton;
@@ -824,25 +598,19 @@ class Editor {
             this.skeletonHelper.skeleton = this.skeleton = skinnedMesh;
             this.skeletonHelper.name = "SkeletonHelper";
 
-            // Correct mixamo skeleton rotation
-            //let obj = new THREE.Object3D();
-            //obj.add( this.skeletonHelper )
-            //obj.rotateOnAxis( new THREE.Vector3(1,0,0), Math.PI/2 );
-
             let boneContainer = new THREE.Group();
             boneContainer.add( result.skeleton.bones[0] );
             boneContainer.rotateOnAxis( new THREE.Vector3(1,0,0), Math.PI/2 );
             boneContainer.position.set(0, 0.85, 0);
             this.skeletonHelper.position.set(0, 0.85, 0);
 
-            //this.scene.add( obj );
             this.scene.add( boneContainer );
             this.scene.add( this.skeletonHelper );
 
             this.mixer = new THREE.AnimationMixer( this.skeletonHelper );
 
-            this.gui.loadClip(this.animationClip);
-            this.mixer.clipAction( this.animationClip ).setEffectiveWeight( 1.0 ).play();
+            this.gui.loadClip(this.bodyAnimation);
+            this.mixer.clipAction( this.bodyAnimation ).setEffectiveWeight( 1.0 ).play();
             
             this.mixer.update(0);
             this.gizmo.begin(this.skeletonHelper);
@@ -852,9 +620,11 @@ class Editor {
         } );
     }
 
+    /** Validate body animation clip created using ML */
     validateAnimationClip() {
+
         let newTracks = [];
-        let tracks = this.animationClip.tracks;
+        let tracks = this.bodyAnimation.tracks;
         let bones = this.skeleton.bones;
         let bonesNames = [];
         tracks.map((v) => { bonesNames.push(v.name.split(".")[0])});
@@ -872,59 +642,11 @@ class Editor {
             newTracks.push(track);
             
         }
-        this.animationClip.tracks = [...this.animationClip.tracks, ...newTracks] ;
+        this.bodyAnimation.tracks = [...this.bodyAnimation.tracks, ...newTracks] ;
     }
 
-    createSceneUI() {
 
-        $(this.orientationHelper.domElement).show();
-
-        let canvasArea = document.getElementById("canvasarea");
-        let timelineCanvas = document.getElementById("timelineCanvas");
-        const HEIGHT = canvasArea.clientHeight / 2
-                        - timelineCanvas.clientHeight
-                        - (CanvasButtons.items.length / 2) * 30;
-
-        for( let i = 0; i < CanvasButtons.items.length; ++i ) {
-
-            const b = CanvasButtons.items[i];
-            let content = null;
-
-            if(b.icon) {
-
-                switch(b.type) {
-                    case 'image': 
-                        content = document.createElement("img");
-                        content.style.opacity = 0.75;
-                        content.src = b.icon;
-                        break;
-                    default: 
-                        content = document.createElement("i");
-                        content.className = b.icon;
-                }
-            }
-
-            const btn = document.createElement('button');
-            btn.title = b.name;
-            btn.className = "litebutton";
-            btn.style = 'z-index: 2; position: absolute; right: 15px; font-size: 1.25em; width:25px; height: 25px';
-            btn.style.marginTop = (HEIGHT + i * 30) + "px";
-            btn.appendChild(content);
-            document.getElementById("canvasarea").prepend(btn);
-
-            CanvasButtons.onCreate.bind(this, b, content)();
-
-            btn.addEventListener("click", CanvasButtons.onChange.bind(this, b, content) );
-
-            if(b.callback)
-                btn.addEventListener("click", b.callback.bind(this) );
-        }
-    }
-
-    updateGUI() {
-        this.gui.updateSidePanel();
-    }
-
+    /** -------------------- BONES INTERACTION -------------------- */
     getSelectedBone() {
         const idx = this.gizmo.selectedBone;
         return idx == undefined ? idx : this.skeletonHelper.bones[ idx ];
@@ -936,6 +658,7 @@ class Editor {
         this.gizmo.bonePoints.geometry.setAttribute( 'size', new THREE.Float32BufferAttribute( new Array(positionAttribute.count).fill(newSize), 1 ) );
         this.gizmo.raycaster.params.Points.threshold = newSize/10;
     }
+
     getBoneSize() {
         const geometry = this.gizmo.bonePoints.geometry;
         return geometry.getAttribute('size').array[0];
@@ -952,6 +675,7 @@ class Editor {
         //this.gizmo.mustUpdate = true;
     }
 
+    /** -------------------- GIZMO INTERACTION -------------------- */
     hasGizmoSelectedBoneIk() { 
         return !!this.gizmo.ikSolver && !!this.gizmo.ikSolver.getChain( this.gizmo.skeleton.bones[this.gizmo.selectedBone].name );
     }
@@ -1001,7 +725,6 @@ class Editor {
         return this.getGizmoMode() === 'Translate' ? 
             this.gizmo.transform.translationSnap != null : 
             this.gizmo.transform.rotationSnap != null;
-
     }
     
     toggleGizmoSnap() {
@@ -1020,6 +743,7 @@ class Editor {
         this.gizmo.transform.setRotationSnap( THREE.MathUtils.degToRad( this.defaultRotationSnapValue ) );
     }
 
+    /** -------------------- BLENDSHAPES INTERACTION -------------------- */
     getSelectedActionUnit() {
         return this.selectedAU;
     }
@@ -1028,73 +752,16 @@ class Editor {
         this.selectedAU = au;
     }
 
-    setTime(t, force) {
-
-        // Don't change time if playing
-        if(this.state && !force)
-        return;
-
-        this.mixer.setTime(t);
-        this.gizmo.updateBones(0.0);
-        this.gui.updateBoneProperties();
-        //results = {faceBlendshapes: {}}
-        this.setBlendshapesTime({blendshapesResults: this.blendshapesArray}, t);
-        // Update video
-        this.video.currentTime = this.video.startTime + t;
-        if(this.state && force) {
-            try{
-                this.video.play();
-            }catch(ex) {
-                console.error("video warning");
-            }
-        }
-    }
-
-    onAnimationEnded() {
-
-        if(this.animLoop) {
-            this.setTime(0.0, true);
-        } else {
-            this.mixer.setTime(0);
-            this.mixer._actions[0].paused = true;
-            let stateBtn = document.getElementById("state_btn");
-            stateBtn.click();
-
-            this.video.pause();
-            this.video.currentTime = this.video.startTime;
-        }
-    }
-
-    stopAnimation() {
-        
-        this.mixer.setTime(0.0);
-        this.gizmo.updateBones(0.0);
-    }
-
-    updateAnimationAction(idx) {
-
-        const mixer = this.mixer;
-
-        if(!mixer._actions.length || mixer._actions[0]._clip != this.animationClip) 
-            return;
-
-        const track = this.animationClip.tracks[idx];
-
-        // Update times
-        mixer._actions[0]._interpolants[idx].parameterPositions = track.times;
-        // Update values
-        mixer._actions[0]._interpolants[idx].sampleValues = track.values;
-    }
-    
+    /** -------------------- BODY ANIMATION EDITION -------------------- */
     cleanTracks(excludeList) {
 
-        if(!this.animationClip)
+        if(!this.bodyAnimation)
         return;
 
-        for( let i = 0; i < this.animationClip.tracks.length; ++i ) {
+        for( let i = 0; i < this.bodyAnimation.tracks.length; ++i ) {
 
-            const track = this.animationClip.tracks[i];
-            const [boneName, type] = this.gui.timeline.getTrackName(track.name);
+            const track = this.bodyAnimation.tracks[i];
+            const [boneName, type] = this.gui.keyFramesTimeline.getTrackName(track.name);
 
             if(excludeList && excludeList.indexOf( boneName ) != -1)
             continue;
@@ -1103,23 +770,40 @@ class Editor {
             track.values = track.values.slice(0, type === 'quaternion' ? 4 : 3);
 
             this.updateAnimationAction(i);
-            this.gui.timeline.onPreProcessTrack( track );
+            this.gui.keyFramesTimeline.onPreProcessTrack( track );
         }
     }
 
     optimizeTracks() {
 
-        if(!this.animationClip)
+        if(!this.bodyAnimation)
         return;
 
-        for( let i = 0; i < this.animationClip.tracks.length; ++i ) {
-            const track = this.animationClip.tracks[i];
+        for( let i = 0; i < this.bodyAnimation.tracks.length; ++i ) {
+            const track = this.bodyAnimation.tracks[i];
             track.optimize( this.optimizeThreshold );
             this.updateAnimationAction(i);
 
-            this.gui.timeline.onPreProcessTrack( track );
+            this.gui.keyFramesTimeline.onPreProcessTrack( track );
         }
     }
+
+    updateAnimationAction(idx) {
+
+        const mixer = this.mixer;
+
+        if(!mixer._actions.length || mixer._actions[0]._clip != this.bodyAnimation) 
+            return;
+
+        const track = this.bodyAnimation.tracks[idx];
+
+        // Update times
+        mixer._actions[0]._interpolants[idx].parameterPositions = track.times;
+        // Update values
+        mixer._actions[0]._interpolants[idx].sampleValues = track.values;
+    }
+
+    /** -------------------- UPDATES, RENDER AND EVENTS -------------------- */
 
     animate() {
         
@@ -1155,6 +839,130 @@ class Editor {
             this.NMFController.update(this.state, dt);
     }
 
+    updateGUI() {
+        this.gui.updateSidePanel();
+    }
+
+    onChangeMode(mode) {
+        this.mode = mode;
+        if( this.mode == this.eModes.NMF ) {
+            this.gizmo.disable();
+        }
+        else {
+            this.gizmo.enable();
+        }
+    }
+    
+    setTime(t, force) {
+
+        // Don't change time if playing
+        if(this.state && !force)
+        return;
+
+        this.mixer.setTime(t);
+        this.gizmo.updateBones(0.0);
+        this.gui.updateBoneProperties();
+        //results = {faceBlendshapes: {}}
+        this.updateCaptureDataTime({blendshapesResults: this.blendshapesArray}, t);
+        // Update video
+        this.video.currentTime = this.video.startTime + t;
+        if(this.state && force) {
+            try{
+                this.video.play();
+            }catch(ex) {
+                console.error("video warning");
+            }
+        }
+    }
+
+    updateCaptureDataTime(data, t) {
+        let timeAcc = 0;
+        let bs = null, lm = null;
+        let idx = -1;
+
+        for(let i = 0; i < data.blendshapesResults.length; i++) {
+            timeAcc += data.blendshapesResults[i].dt*0.001;
+            if(timeAcc <= t) {
+                idx = i
+                
+            }
+        }
+        if(idx >= 0) {
+            bs = data.blendshapesResults[idx];
+            if(data.landmarksResults)
+                lm = data.landmarksResults[idx];
+        }
+            
+        this.gui.updateCaptureGUI({blendshapesResults: bs, landmarksResults: lm}, false)
+    }
+
+    // Play all animations
+    onPlay(element, e) {
+
+        this.state = !this.state;
+        element.innerHTML = "<i class='bi bi-" + (this.state ? "pause" : "play") + "-fill'></i>";
+        //element.style.border = "solid #268581";
+
+        if(this.state) {
+            this.mixer._actions[0].paused = false;
+            this.gizmo.stop();
+            if(this.NMFController)
+                this.NMFController.stop();
+            
+            this.gui.setBoneInfoState( false );
+            (this.video.paused && this.video.sync) ? this.video.play() : 0;    
+        } else{
+            this.gui.setBoneInfoState( true );
+
+            if(this.video.sync) {
+                try{
+                    this.video.paused ? 0 : this.video.pause();    
+                }catch(ex) {
+                    console.error("video warning");
+                }
+            }
+        }
+
+        element.blur();
+    }
+
+    // Stop all animations 
+    onStop(element, e) {
+
+        this.state = false;
+        element.innerHTML = "<i class='bi bi-play-fill'></i>";
+        //element.style.removeProperty("border");
+        this.gui.setBoneInfoState( true );
+        this.stopAnimation();
+
+        if(this.video.sync) {
+            this.video.pause();
+            this.video.currentTime = this.video.startTime;
+        }
+    }
+
+    stopAnimation() {
+        
+        this.mixer.setTime(0.0);
+        this.gizmo.updateBones(0.0);
+    }
+
+    onAnimationEnded() {
+
+        if(this.animLoop) {
+            this.setTime(0.0, true);
+        } else {
+            this.mixer.setTime(0);
+            this.mixer._actions[0].paused = true;
+            let stateBtn = document.getElementById("state_btn");
+            stateBtn.click();
+
+            this.video.pause();
+            this.video.currentTime = this.video.startTime;
+        }
+    }
+
+
     resize(width, height) {
         
         const aspect = width / height;
@@ -1168,7 +976,7 @@ class Editor {
     export(type = null) {
         switch(type){
             case 'BVH':
-                BVHExporter.export(this.mixer._actions[0], this.skeletonHelper, this.animationClip);
+                BVHExporter.export(this.mixer._actions[0], this.skeletonHelper, this.bodyAnimation);
                 break;
             case 'GLB':
                 let options = {
@@ -1196,7 +1004,7 @@ class Editor {
 
     showPreview() {
         
-        BVHExporter.copyToLocalStorage(this.mixer._actions[0], this.skeletonHelper, this.animationClip);
+        BVHExporter.copyToLocalStorage(this.mixer._actions[0], this.skeletonHelper, this.bodyAnimation);
         const url = "https://webglstudio.org/users/arodriguez/demos/animationLoader/?load=three_webgl_bvhpreview";
         window.open(url, '_blank').focus();
     }

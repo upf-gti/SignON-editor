@@ -372,7 +372,7 @@ class Gizmo {
             throw("No skeleton");
 
         let transform = this.transform;
-        let timeline = this.editor.gui.timeline;
+        let timeline = this.editor.gui.keyFramesTimeline;
 
         const canvas = document.getElementById("webgl-canvas");
 
@@ -404,7 +404,7 @@ class Gizmo {
                 this._setBoneById( intersection.index );
                 
                 let boneName = this.skeleton.bones[this.selectedBone].name;
-                this.editor.gui.timeline.setSelectedItem( boneName );
+                this.editor.gui.onSelectItem(boneName);
             }
         });
 
@@ -555,7 +555,7 @@ class Gizmo {
 
     updateTracks() {
 
-        let timeline = this.editor.gui.timeline;
+        let timeline = this.editor.gui.keyFramesTimeline;
         let keyType = Gizmo.ModeToKeyType[ this.editor.getGizmoMode() ];
 
         if(timeline.onUpdateTracks( keyType ))

@@ -5,7 +5,7 @@ import { UTILS, CompareThreshold, CompareThresholdRange } from '../utils.js';
 
 class Timeline {
 
-	constructor( animationClip, selectedItem , position = [0,0]) {
+	constructor(animationClip, selectedItem, position = [0,0]) {
 
 		this.name = null;
 		this.currentTime = 0;
@@ -31,6 +31,7 @@ class Timeline {
 		this._startTime = 0;
 		this._endTime = 1;
 
+		this.selectedItem = selectedItem;
 		this._lastMouse = [0,0];
 		this._lastClipsSelected = [];
 		this._trackState = [];
@@ -39,11 +40,20 @@ class Timeline {
 		this._clipboard = null;
 
 		this.animationClip = animationClip;
+
+		this.tracksPerItem = {};
+		this.tracksDictionary = {};
 		
 		this.trackHeight = 15;
 		this.onDrawContent = null;
 
 		this.active = true;
+	}
+
+	setAnimationClip = function(animation) {
+		this.animationClip = animation;
+		if(this.processTracks)
+			this.processTracks();
 	}
 
 	draw = function (ctx, currentTime, rect) {
@@ -321,6 +331,10 @@ class Timeline {
 		this._pixelsToSeconds = 1 / this._secondsToPixels;
 	}
 	
+	setFramerate = function (v) {
+		this.framerate = v;
+	}
+
 	processMouse = function (e) {
 
 		if(!this._canvas)
@@ -599,6 +613,33 @@ class Timeline {
 		//ctx.restore();
 		
 	}
+
+	/**
+         * @method resize
+         * @param {*} size
+         * ...
+         * TODO
+         */
+
+	resize( size = [this.parent.root.clientWidth, this.parent.root.clientHeight]) {
+		// this.root.style.width = size[0] + 'px';
+		// this.root.style.height = size[1] + 'px';
+		let w = size[0];
+		this.size = [w , size[1]];
+		this.#resizecanvas(this.size)
+		// this.canvas.style.width = size[0] + 'px';
+		// this.canvas.style.height = size[1] + 'px';
+		
+	}
+
+	#resizecanvas( size ) {
+		if(this._canvas) {
+
+			this._canvas.width = size[0];
+			this._canvas.height = size[1];
+		}
+		// this.draw(this.currentTime);
+	}
 }
 
 export { Timeline };
@@ -852,12 +893,32 @@ class KeyFramesTimeline extends Timeline {
 			let keyFrameIndex = this.getCurrentKeyFrame( track, this.xToTime( localX ), this._pixelsToSeconds * 5 );
 			if(keyFrameIndex != undefined) {
 				
-				const [name, type] = this.getTrackName(track.name);
-				let t = this.tracksPerItem[ name ][track.idx];
+				const name = this.tracksDictionary[track.name];
+
+				let t = null;
+				let item = name;
+				if(this.tracksPerItem[ name ]) {
+					t = this.tracksPerItem[ name ][track.idx];	
+				} else {
+					for(item in this.tracksPerItem) {
+						for(let i = 0; i < this.tracksPerItem[item].length; i++) {
+							if(this.tracksPerItem[item][i].name == name) {
+								t = this.tracksPerItem[item][i];
+								item = item;
+								break;
+							}
+							
+						}
+						if( t ) 
+							break;
+						
+					}
+				}
+				
 
 				removeHover();
 					
-				this.lastHovered = [name, track.idx, keyFrameIndex];
+				this.lastHovered = [item , track.idx, keyFrameIndex];
 				t.hovered[keyFrameIndex] = true;
 
 			}else {
@@ -871,11 +932,11 @@ class KeyFramesTimeline extends Timeline {
 
 	onDrawContent = function (ctx, timeStart, timeEnd) {
 	
-		ctx.save();
 		
 		if(this.selectedItem == null || !this.tracksPerItem)
 			return;
 		
+		ctx.save();
 		let tracks = this.tracksPerItem[this.selectedItem] ? this.tracksPerItem[this.selectedItem] : [{name: this.selectedItem}];
 		//if(!tracks) return;
 		
@@ -949,7 +1010,7 @@ class KeyFramesTimeline extends Timeline {
 			const trackIndex = this.tracksPerItem[name].length - 1;
 			this.tracksPerItem[name][trackIndex].idx = trackIndex;
 			this.tracksPerItem[name][trackIndex].clipIdx = i;
-
+			this.tracksDictionary[track.name] = name;
 			// Save index also in original track
 			track.idx = trackIndex;
 		}
@@ -990,7 +1051,7 @@ class KeyFramesTimeline extends Timeline {
 	}
 
 	onPreProcessTrack = function( track ) {
-		const name = this.getTrackName(track.name)[0];
+		const name = this.tracksDictionary[track.name];
 		let trackInfo = this.tracksPerItem[name][track.idx];
 		trackInfo.selected = [];
 		trackInfo.edited = [];
@@ -1004,7 +1065,7 @@ class KeyFramesTimeline extends Timeline {
 	saveState = function(clipIdx) {
 
 		const localIdx = this.animationClip.tracks[clipIdx].idx;
-		const name = this.getTrackName(this.animationClip.tracks[clipIdx].name)[0];
+		const name = this.tracksDictionary[track.name];
 		const trackInfo = this.tracksPerItem[name][localIdx];
 
 		this._trackState.push({
@@ -1025,7 +1086,7 @@ class KeyFramesTimeline extends Timeline {
 		this.animationClip.tracks[state.idx].values = state.v;
 
 		const localIdx = this.animationClip.tracks[state.idx].idx;
-		const name = this.getTrackName(this.animationClip.tracks[state.idx].name)[0];
+		const name = this.tracksDictionary[track.name];
 		this.tracksPerItem[name][localIdx].edited = state.editedTracks;
 
 		// Update animation action interpolation info
@@ -1423,7 +1484,7 @@ class KeyFramesTimeline extends Timeline {
 			this.unSelectAllKeyFrames();
 		}
 						
-		const [name, type] = this.getTrackName( track.name );
+		const name = this.tracksDictionary[track.name];
 		let t = this.tracksPerItem[ name ][track.idx];
 		let currentSelection = [name, track.idx, keyFrameIndex];
 		
@@ -1450,7 +1511,8 @@ export {KeyFramesTimeline}
 
 class ClipsTimeline extends Timeline {
 
-	constructor(animationClip, selectedItem, position = [0,0]) {
+	constructor(animationClip = {}, selectedItem, position = [0,0]) {
+
 		super(animationClip, selectedItem, position);
 	}
 
@@ -1648,11 +1710,11 @@ class ClipsTimeline extends Timeline {
 
 	onDrawContent = function (ctx, timeStart, timeEnd)  {
 
-		ctx.save();
-		 			
+		
 		let tracks = this.animationClip.tracks|| [{name: "NMF", clips: []}];
 		if(!tracks) return;
 		
+		ctx.save();
 		const height = this.trackHeight*1.2;
 		for(let i = 0; i < tracks.length; i++) {
 			let track = tracks[i];

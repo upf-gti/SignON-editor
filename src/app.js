@@ -380,7 +380,7 @@ class App {
                             -moz-transform:rotateY(0deg); /* Firefox */"
         }
         await VideoUtils.bind(video, canvas);
-        VideoUtils.onSetTime = this.editor.setBlendshapesTime.bind(this.editor, results);
+        VideoUtils.onSetTime = this.editor.updateCaptureDataTime.bind(this.editor, results);
 
         let trimBtn = document.getElementById("trim_btn");
         trimBtn.style.display = "block";
