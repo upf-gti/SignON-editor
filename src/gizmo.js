@@ -35,7 +35,7 @@ class Gizmo {
 
                 // ik tool update on this.update. Compute ik once per frame only
 
-                editor.gui.updateBoneProperties();
+                editor.updateBoneProperties();
             }
             this.updateBones();
         });
@@ -414,7 +414,7 @@ class Gizmo {
 
                 case 'q':
                     transform.setSpace( transform.space === 'local' ? 'world' : 'local' );
-                    this.editor.gui.updateSidePanel();
+                    this.editor.gui.updateSkeletonPanel();
                     break;
 
                 case 'Shift':
@@ -428,18 +428,18 @@ class Gizmo {
                         return;
                     this.setTool( Gizmo.Tools.joint );
                     this.setMode( "translate" );
-                    this.editor.gui.updateSidePanel();
+                    this.editor.gui.updateSkeletonPanel();
                     break;
 
                 case 'e':
                     this.setTool( Gizmo.Tools.joint );
                     this.setMode( "rotate" );
-                    this.editor.gui.updateSidePanel();
+                    this.editor.gui.updateSkeletonPanel();
                     break;
 
                 case 'r':
                     this.setTool( Gizmo.Tools.ik );
-                    this.editor.gui.updateSidePanel();
+                    this.editor.gui.updateSkeletonPanel();
                     break;
     
                 case 'x':
@@ -515,7 +515,7 @@ class Gizmo {
         if ( this.ikSelectedChain ){
             this.ikSolver.update(); 
             this.updateBones();
-            this.editor.gui.updateBoneProperties();
+            this.editor.updateBoneProperties();
         }
         //this.transform.attach( this.skeletonHelper.bones[this.selectedBone] );
         //this.mustUpdate = false; 
@@ -564,8 +564,8 @@ class Gizmo {
         if(!timeline.getNumKeyFramesSelected())
         return;
 
-        let [name, trackIndex, keyFrameIndex] = timeline._lastKeyFramesSelected[0];
-        let track = timeline.getTrack(timeline._lastKeyFramesSelected[0]);
+        let [name, trackIndex, keyFrameIndex] = timeline.lastKeyFramesSelected[0];
+        let track = timeline.getTrack(timeline.lastKeyFramesSelected[0]);
 
         // Don't store info if we are using wrong mode for that track
         if(keyType != track.type)
@@ -578,7 +578,7 @@ class Gizmo {
         if ( this.toolSelected == Gizmo.Tools.ik ){
             if ( !this.ikSelectedChain ){ return; }
             
-            const effectorFrameTime = this.editor.animationClip.tracks[ track.clipIdx ].times[ keyFrameIndex ];
+            const effectorFrameTime = this.editor.activeTimeline.animationClip.tracks[ track.clipIdx ].times[ keyFrameIndex ];
             const timeThreshold = ( timeline.framerate < 60 ) ? 0.008 : ( 0.5 * 1.0 / timeline.framerate );
             
             const chain = this.ikSelectedChain.chain;
@@ -593,7 +593,7 @@ class Gizmo {
                 let values = boneToProcess[ track.type ].toArray();
                 if( !values ){ continue; }
 
-                let nearestTime = timeline.getNearestKeyFrame( this.editor.animationClip.tracks[ track.clipIdx ], effectorFrameTime );
+                let nearestTime = timeline.getNearestKeyFrame( this.editor.activeTimeline.animationClip.tracks[ track.clipIdx ], effectorFrameTime );
                 let keyframe = null;
                 
                 // find nearest frame or create one if too far
@@ -604,19 +604,19 @@ class Gizmo {
                     timeline.currentTime = currentTime;
                 }
                 else{ 
-                    keyframe = timeline.getCurrentKeyFrame( this.editor.animationClip.tracks[ track.clipIdx ], nearestTime, 0.0001 );
+                    keyframe = timeline.getCurrentKeyFrame( this.editor.activeTimeline.animationClip.tracks[ track.clipIdx ], nearestTime, 0.0001 );
                 }
                 if ( isNaN(keyframe) ){ continue; }
                 
                 let start = 4 * keyframe;
                 for( let j = 0; j < values.length; ++j ) {
-                    this.editor.animationClip.tracks[ track.clipIdx ].values[ start + j ] = values[j];
+                    this.editor.activeTimeline.animationClip.tracks[ track.clipIdx ].values[ start + j ] = values[j];
                 }
 
                 track.edited[ keyframe ] = true;
 
                 // Update animation interpolants
-                this.editor.updateAnimationAction(this.editor.animationClip, track.clipIdx );
+                this.editor.updateAnimationAction(this.editor.activeTimeline.animationClip, track.clipIdx );
                 timeline.onSetTime( timeline.currentTime );
 
             }
@@ -633,11 +633,11 @@ class Gizmo {
 
             // supports position and quaternion types
             for( let i = 0; i < values.length; ++i ) {
-                this.editor.animationClip.tracks[ idx ].values[ start + i ] = values[i];
+                this.editor.activeTimeline.animationClip.tracks[ idx ].values[ start + i ] = values[i];
             }
 
             // Update animation interpolants
-            this.editor.updateAnimationAction( this.editor.animationClip, idx );
+            this.editor.updateAnimationAction( this.editor.activeTimeline.animationClip, idx );
             timeline.onSetTime( timeline.currentTime );
 
         }
@@ -710,7 +710,7 @@ class Gizmo {
             this.transform.attach( this.skeleton.bones[this.selectedBone] );
         }
 
-        this.editor.gui.updateSidePanel(null, this.skeleton.bones[ this.selectedBone ].name );
+        // this.editor.gui.updateSkeletonPanel(null, this.skeleton.bones[ this.selectedBone ].name );
 
     }
 
@@ -735,8 +735,11 @@ class Gizmo {
         inspector.addCheckbox( "Depth test", depthTestEnabled, (v) => { this.bonePoints.material.depthTest = v; })
     }
 
-    onGUI() {
-
+    onGUI(mode) {
+        if(mode == 'position')
+            mode = 'translate';
+        if(this.mode != mode) 
+            this.setMode(mode);
         this.updateBones();
         this.updateTracks();
     }

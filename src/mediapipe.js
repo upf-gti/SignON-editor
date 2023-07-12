@@ -87,7 +87,7 @@ const MediaPipe = {
                 drawConnectors(canvasCtx, results.poseLandmarks, POSE_CONNECTIONS,
                     {color: '#1a2025', lineWidth: 4}); //'#00FF00'
                 drawLandmarks(canvasCtx, results.poseLandmarks,
-                                {color: '#1a2025',fillColor: 'rgba(58, 161, 156, 1)', lineWidth: 2}); //'#00FF00'
+                                {color: '#1a2025',fillColor: 'rgba(255, 255, 255, 1)', lineWidth: 2}); //'#00FF00'
                 // drawConnectors(canvasCtx, results.faceLandmarks, FACEMESH_TESSELATION,
                 //                 {color: '#C0C0C070', lineWidth: 1});
                 drawConnectors(canvasCtx, results.leftHandLandmarks, HAND_CONNECTIONS,
@@ -97,7 +97,7 @@ const MediaPipe = {
                 drawConnectors(canvasCtx, results.rightHandLandmarks, HAND_CONNECTIONS,
                                 {color: '#1a2025', lineWidth: 4}); //#00CC00
                 drawLandmarks(canvasCtx, results.rightHandLandmarks,
-                                {color: '#1a2025',fillColor: 'rgba(58, 161, 156, 1)', lineWidth: 2});
+                                {color: '#1a2025',fillColor: 'rgba(196, 113, 35, 1)', lineWidth: 2});
                                         
             }
             canvasCtx.restore();

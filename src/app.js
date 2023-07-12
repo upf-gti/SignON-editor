@@ -2,8 +2,10 @@ import { MediaPipe } from "./mediapipe.js";
 import { Editor } from "./editor.js";
 import { VideoUtils } from "./video.js";
 import { FileSystem } from "./libs/filesystem.js";
+import { Gui } from "./gui.js";
 
 const appMode = {LIVE:0, VIDEO:1};
+
 class App {
 
     constructor() {
@@ -17,7 +19,6 @@ class App {
         this.chunks = [];
         this.captureMode = null;
         this.editor = new Editor(this);
-
         // Create the fileSystem and log the user
         this.FS = new FileSystem("signon", "signon", () => console.log("Auto login of guest user"));
 
@@ -28,7 +29,6 @@ class App {
 
     init( settings ) {
 
-        let that = this;
         settings = settings || {};
 
         const mode = settings.mode ?? 'capture';
@@ -58,90 +58,87 @@ class App {
         this.recording = value;
     }
 
-    onBeginEdition() {
-
-        // Update header
-        let capture = document.getElementById("capture_btn");
-        capture.disabled = true;
-        capture.style.display = "none";
-
-        let redo = document.getElementById("redo_btn");
-        if(redo){
-            redo.disabled = true;
-            redo.style.display = "none";
-        } 
-            
-
-        let trimBtn = document.getElementById("trim_btn");
-        trimBtn.disabled = true;
-        trimBtn.style.display = "none";
-
-        let stateBtn = document.getElementById("state_btn");
-        stateBtn.style.display = "block";
-        let stopBtn = document.getElementById("stop_btn");
-        stopBtn.style.display = "block";
-
-        // let captureInfo = document.getElementById("capture-info");
-        // captureInfo.classList.add("hidden");
-
-        let timelineDiv = document.getElementById("timeline");
-        timelineDiv.classList.remove("hidden");
-    }
-
+    //Start mediapipe recording 
     onBeginCapture() {
         
         // Run mediapipe to extract landmarks
         if(!MediaPipe.loaded)
-        MediaPipe.start( true, () => {
-            $('#loading').fadeOut();
-            let videoElement = document.getElementById("inputVideo")
-            this.mediaRecorder = new MediaRecorder(videoElement.srcObject);
-
-            this.mediaRecorder.onstop =  (e) => {
-
-                video.addEventListener("play", function() {});
-                video.addEventListener("pause", function() {});
-                video.setAttribute('controls', 'name');
-                video.controls = false;
-                video.loop = true;
+            
+            MediaPipe.start( true, () => {
+                $('#loading').fadeOut();
                 
-                let blob = new Blob(this.chunks, { "type": "video/mp4; codecs=avc1" });
-                let videoURL = URL.createObjectURL(blob);
-                video.src = videoURL;
-                console.log("Recording correctly saved");
-            }
+                let videoElement = document.getElementById("inputVideo");
+                this.mediaRecorder = new MediaRecorder(videoElement.srcObject);
 
-            this.mediaRecorder.ondataavailable =  (e) => {
-                this.chunks.push(e.data);
-            }
-        }, this.editor.gui.updateCaptureGUI.bind(this.editor.gui) );
+                this.mediaRecorder.onstop =  (e) => {
 
-        // Show video
-        let video = document.getElementById("recording");
-        $("#capture").removeClass("hidden")
+                    video.addEventListener("play", function() {});
+                    video.addEventListener("pause", function() {});
+                    video.setAttribute('controls', 'name');
+                    video.controls = false;
+                    video.loop = true;
+                    
+                    let blob = new Blob(this.chunks, { "type": "video/mp4; codecs=avc1" });
+                    let videoURL = URL.createObjectURL(blob);
+                    video.src = videoURL;
+                    console.log("Recording correctly saved");
+                }
 
-        video.addEventListener('loadedmetadata', async function () {
-            while(video.duration === Infinity) {
-                await new Promise(r => setTimeout(r, 1000));
-                video.currentTime = 10000000*Math.random();
-            }
-            video.currentTime = video.startTime > 0 ? video.startTime : 0;
-        });
+                this.mediaRecorder.ondataavailable =  (e) => {
+                    this.chunks.push(e.data);
+                }
+            }, this.editor.gui.updateCaptureGUI.bind(this.editor.gui) );
 
-        // this.mediaDevicesSupported(video, this, ()=> {     
+            // Show video
+            let video = document.getElementById("recording");
+            $("#capture").removeClass("hidden");
 
-        // }, (err) => {
-        //     if(!err)
-        //         err = "This app is not supported in your browser";
-        //     console.error(err);
-        // });
+            video.addEventListener('loadedmetadata', async function () {
+                while(video.duration === Infinity) {
+                    await new Promise(r => setTimeout(r, 1000));
+                    video.currentTime = 10000000*Math.random();
+                }
+                video.currentTime = video.startTime > 0 ? video.startTime : 0;
+            });
 
-        this.setEvents(true);
+            this.setEvents(true);
     }
+
+    onBeginEdition() {
+
+        this.editor.startEdition();
+        // // Update header
+        // let capture = document.getElementById("capture_btn");
+        // capture.disabled = true;
+        // capture.style.display = "none";
+
+        // let redo = document.getElementById("redo_btn");
+        // if(redo){
+        //     redo.disabled = true;
+        //     redo.style.display = "none";
+        // } 
+            
+        // this.editor.gui.updateMenubar();
+        // let trimBtn = document.getElementById("trim_btn");
+        // trimBtn.disabled = true;
+        // trimBtn.style.display = "none";
+
+        // let stateBtn = document.getElementById("state_btn");
+        // stateBtn.style.display = "block";
+        // let stopBtn = document.getElementById("stop_btn");
+        // stopBtn.style.display = "block";
+
+        // let captureInfo = document.getElementById("capture-info");
+        // captureInfo.classList.add("hidden");
+
+        // let timelineDiv = document.getElementById("timeline");
+        // timelineDiv.classList.remove("hidden");
+    }
+
 
     onLoadAnimation( animation ) {
     
-        this.onBeginEdition();
+        this.editor.startEdition();// this.onBeginEdition();
 
         const name = animation.name;
         this.editor.clipName = name;
@@ -192,32 +189,8 @@ class App {
     }
 
     onRecordLandmarks(startTime, endTime) {
-    
-        let that = this;
-        
-        this.onBeginEdition();
-    
-        // Reposition the canvas elements
-        let videoDiv = document.getElementById("capture");
-        videoDiv.classList.remove("expanded");
+
         let videoRec = document.getElementById("recording");
-        videoRec.classList.remove("hidden");
-        videoRec.style.width = "100%";
-        videoRec.style.height = "100%";
-        
-
-        videoRec.style.cssText+= "transform: rotateY(0deg);\
-        -webkit-transform:rotateY(0deg); /* Safari and Chrome */\
-        -moz-transform:rotateY(0deg); /* Firefox */"
-    
-        // Solve the aspect ratio problem of the video
-        let videoCanvas = document.getElementById("outputVideo");
-        let aspectRatio = videoDiv.width / videoDiv.height;
-        videoRec.width  = videoDiv.width  = videoCanvas.width  = videoDiv.clientWidth;
-        videoRec.height = videoDiv.height = videoCanvas.height = videoCanvas.width / aspectRatio;
-
-        $(videoDiv).draggable({containment: "#canvasarea"}).resizable({ aspectRatio: true, containment: "#canvasarea"});
-
         const updateFrame = (now, metadata) => {
             
             // Do something with the frame.
@@ -245,11 +218,10 @@ class App {
         // Creates the scene and loads the animation
         this.editor.trimTimes = [startTime, endTime];
         this.editor.buildAnimation( {landmarks: MediaPipe.landmarks, blendshapes: MediaPipe.blendshapes} );
-        
+
         const name = "Unnamed";
         this.editor.clipName = name;
-        this.editor.updateGUI();
-        this.editor.gui.hiddeCaptureArea();
+
     }
 
     setEvents(live) {
@@ -281,10 +253,8 @@ class App {
                 }
 
                 capture.innerHTML = " <i class='fa fa-stop' style= 'margin:5px; font-size:initial;'></i>"//"Stop" + " <i class='bi bi-stop-fill'></i>"
-                // capture.style.backgroundColor = "lightcoral";
-                // capture.style.border = "solid #924242";
+               
                 capture.classList.add("stop");
-               // videoCanvas.style.border = "solid var(--global-color-highlight)";
                 videoCanvas.classList.add("border-animation");
                 // Start the capture
                 this.recording = true;
@@ -308,11 +278,7 @@ class App {
                 this.recording = false;
                 
                 console.log("Stop recording");
-                // Back to initial values
-                //capture.innerHTML = " <i class='bi bi-record-circle' style= 'margin:5px; font-size:initial;'></i> Start recording";
-                // capture.style.removeProperty("background-color");
-                // capture.style.removeProperty("border");
-                //videoCanvas.style.removeProperty("border");
+              
                 this.mediaRecorder.stop();
                 
                 videoCanvas.classList.remove("border-animation");
@@ -325,7 +291,6 @@ class App {
                     let endTime = Date.now();
                     this.duration = endTime - this.startTime;
                     // Show modal to redo or load the animation in the scene
-                    //elem.style.display = "flex";
                     elem.style.display = "none";
                     setTimeout(()=>{
                         MediaPipe.stop();
@@ -353,10 +318,7 @@ class App {
             this.onRecordLandmarks(0, null);
         };
 
-        // let trimBtn = document.getElementById("trim_btn");
-        // trimBtn.onclick = () => {
-        //     VideoUtils.unbind( (start, end) => this.onRecordLandmarks(start, end) );
-        // };
+    
     }
     
     async processVideo(live, results) {
@@ -388,73 +350,6 @@ class App {
         redoBtn.style.display = "block";
     }
 
-    mediaDevicesSupported(video, scope, callback, onError) {
-        
-        // prepare the device to capture the video
-        if (navigator.mediaDevices) {
-            console.log("UserMedia supported");
-                       
-            
-
-            navigator.mediaDevices.enumerateDevices()
-            .then(function(devices) {
-                let deviceId = null;
-                for (const deviceInfo of devices) {
-                    if(deviceInfo.kind === 'videoinput') {
-                        deviceId = deviceInfo.deviceId;
-                        break;
-                    }
-                };
-                let constraints = { "video": true, "audio": false };
-                navigator.mediaDevices.getUserMedia(constraints)
-                .then( (stream) => {
-
-                    let videoElement = document.getElementById("inputVideo");
-                    
-                    if(!videoElement.srcObject)
-                        videoElement.srcObject = stream;
-                        
-                    scope.mediaRecorder = new MediaRecorder(videoElement.srcObject);
-
-                    scope.mediaRecorder.onstop = function (e) {
-
-                        video.addEventListener("play", function() {});
-                        video.addEventListener("pause", function() {});
-                        video.setAttribute('controls', 'name');
-                        video.controls = false;
-                        video.loop = true;
-                        
-                        let blob = new Blob(scope.chunks, { "type": "video/mp4; codecs=avc1" });
-                        let videoURL = URL.createObjectURL(blob);
-                        video.src = videoURL;
-                        console.log("Recording correctly saved");
-                    }
-
-                    scope.mediaRecorder.ondataavailable = function (e) {
-                        scope.chunks.push(e.data);
-                    }
-                    if(callback)
-                        callback();
-                })
-                .catch(function (err) {
-                    console.error("The following error occurred: " + err);
-                    if(err == "NotReadableError: Could not start video source")
-                        alert("Camera error: Make sure your webcam is not used in another application.")
-                    if(onError)
-                        onError(err);
-                });
-                
-            })
-            .catch(function(err) {
-             console.log(err.name + ": " + err.message);
-            });
-            
-        }
-        else {
-            if(onError)
-                onError();
-        }
-    }
 
     async storeAnimation() {
 
@@ -499,15 +394,15 @@ class App {
 
     onResize() {
 
-        let canvasArea = document.getElementById("canvasarea");
+        // let canvasArea = document.getElementById("canvasarea");
 
-        const CANVAS_WIDTH = canvasArea.clientWidth;
-        const CANVAS_HEIGHT = canvasArea.clientHeight;
+        // const CANVAS_WIDTH = canvasArea.clientWidth;
+        // const CANVAS_HEIGHT = canvasArea.clientHeight;
 
-        const timelineCanvas = document.getElementById("timelineCanvas");
-        timelineCanvas.width = CANVAS_WIDTH;
+        // const timelineCanvas = document.getElementById("timelineCanvas");
+        // timelineCanvas.width = CANVAS_WIDTH;
 
-        this.editor.resize(CANVAS_WIDTH, CANVAS_HEIGHT);
+        this.editor.resize();
     }
 }
 

@@ -1,4 +1,4 @@
-import { ClipsTimeline, KeyFramesTimeline, Timeline } from "./libs/timeline.module.js";
+// import { ClipsTimeline, KeyFramesTimeline, Timeline } from "./libs/timeline.module.js";
 import { UTILS } from "./utils.js";
 import { VideoUtils } from "./video.js"; 
 
@@ -7,20 +7,6 @@ class Gui {
     constructor(editor) {
        
         this.showTimeline = true;
-
-        this.keyFramesTimeline = new KeyFramesTimeline("Bones", {canvas: document.getElementById("timelineCanvas"), trackHeight: 15});
-        this.keyFramesTimeline.setFramerate(30);
-        this.keyFramesTimeline.setScale(400);
-
-        this.clipsTimeline = new ClipsTimeline("Non manual features", {canvas: document.getElementById("timelineNMFCanvas")});
-        this.clipsTimeline.setFramerate(30);
-        this.clipsTimeline.setScale(400);
-        this.clipsTimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.bodyAnimation.duration - 0.001) );
-        this.clipsTimeline.onSetDuration = (t) => {this.duration = this.keyFramesTimeline.duration = this.keyFramesTimeline.animationClip.duration = t};
-        this.clipsTimeline.onSelectClip = this.showClipInfo.bind(this);
-       
-        this.clipsTimeline.animationClip = {duration: this.keyFramesTimeline.duration, tracks: []};
-        // this.clipsTimeline.addClip( new ANIM.FaceLexemeClip());
 
         this.showVideo = true;
         this.currentTime = 0;
@@ -45,7 +31,7 @@ class Gui {
 
         // this.timeline = new KeyFramesTimeline( this.editor.bodyAnimation, boneName);
         this.keyFramesTimeline.setAnimationClip(this.clip);
-        this.keyFramesTimeline.setSelectedItem(boneName);
+        this.keyFramesTimeline.setSelectedItems([boneName]);
         this.keyFramesTimeline.resize([this.keyFramesTimeline.canvas.parentElement.clientWidth, this.keyFramesTimeline.canvas.parentElement.clientHeight]);
         this.keyFramesTimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.bodyAnimation.duration - 0.001) );
         this.keyFramesTimeline.onSetDuration = (t) => {this.duration = this.keyFramesTimeline.duration = this.clip.duration = this.editor.bodyAnimation.duration = t};
@@ -72,10 +58,9 @@ class Gui {
 
         this.updateMenubar();
         this.createSidePanel();
-        this.hiddeCaptureArea();
+        this.hideCaptureArea();
 
-        let canvasArea = document.getElementById("canvasarea");
-        this.editor.resize(canvasArea.clientWidth, canvasArea.clientHeight);
+        this.editor.resize(this.timelineArea.clientWidth, this.timelineArea.clientHeight);
 
         // automatic optimization of keyframes
         this.editor.optimizeTracks();
@@ -84,26 +69,30 @@ class Gui {
 
     create() {
 
-        LiteGUI.init(); 
-        
-        this.createCaptureGUI();
+        this.mainArea = LX.init({id: "canvasarea"});
+        this.createTimelines(this.mainArea);
+        this.createCaptureGUI(this.mainArea);
         // Create menu bar
-        this.createMenubar();
+        this.createMenubar(this.mainArea);
         
         // Create main area
-        this.mainArea = new LiteGUI.Area({id: "mainarea", content_id:"canvasarea", height: "calc( 100% - 31px )", main: true});
-        LiteGUI.add( this.mainArea );
+        // this.mainArea = new LiteGUI.Area({id: "mainarea", content_id:"canvasarea", height: "calc( 100% - 31px )", main: true});
+        // LiteGUI.add( this.mainArea );
+        // split main area
         
-        const canvasArea = document.getElementById("canvasarea");
+        this.mainArea.split({sizes:["75%","25%"]});
+        var [left,right] = this.mainArea.sections;
+        
+        // const canvasArea = document.getElementById("canvasarea");
 
-        canvasarea.appendChild( document.getElementById("timeline") );
+        // canvasarea.appendChild( document.getElementById("timeline") );
         // let timeline = document.getElementById("timeline")
         // timeline.style.display = "block";
 
-        this.mainArea.onresize = window.onresize;
+        // this.mainArea.onresize = window.onresize;
 
         if(this.keyFramesTimeline)
-            this.keyFramesTimeline.setVisibility(true);
+            this.keyFramesTimeline.hide();
         // let timelineCanvas = document.getElementById("timelineCanvas");
         // timelineCanvas.width = canvasArea.clientWidth;
         // this.timelineCTX = timelineCanvas.getContext("2d");
@@ -125,7 +114,7 @@ class Gui {
             }
         });
         if(this.clipsTimeline)
-            this.clipsTimeline.setVisibility(false);
+            this.clipsTimeline.hide();
         // let timelineNMFCanvas = document.getElementById("timelineNMFCanvas");
         // timelineNMFCanvas.width = timelineCanvas.width;
         // timelineNMFCanvas.style.display = "none";
@@ -301,25 +290,60 @@ class Gui {
 
     }
 
-    /** -------------------- MENU BAR -------------------- */
-    createMenubar() {
+    /** TIMELINES */
 
-        var that = this;
+    createTimelines( area ) {
 
-        var menubar = new LiteGUI.Menubar("mainmenubar");
-        LiteGUI.add( menubar );
+        this.keyFramesTimeline = new LX.KeyFramesTimeline("Bones", {canvas: document.getElementById("timelineCanvas"), trackHeight: 15});
+        this.keyFramesTimeline.setFramerate(30);
+        this.keyFramesTimeline.setScale(400);
+
+        this.clipsTimeline = new LX.ClipsTimeline("Non manual features", {canvas: document.getElementById("timelineNMFCanvas")});
+        this.clipsTimeline.setFramerate(30);
+        this.clipsTimeline.setScale(400);
+        this.clipsTimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.bodyAnimation.duration - 0.001) );
+        this.clipsTimeline.onSetDuration = (t) => {this.duration = this.keyFramesTimeline.duration = this.keyFramesTimeline.animationClip.duration = t};
+        this.clipsTimeline.onSelectClip = this.showClipInfo.bind(this);
+       
+        this.clipsTimeline.animationClip = {duration: this.keyFramesTimeline.duration, tracks: []};
         
-        window.menubar = menubar;
+        this.timelineArea = new LX.Area({ height: 400, overlay:"bottom", resize: true});
+        this.timelineArea.attach(this.keyFramesTimeline.root);
+        this.timelineArea.attach(this.clipsTimeline.root);
 
-        const logo = document.createElement("img");
-        logo.id = "signOn-logo"
-        logo.src = "data/imgs/logo_SignON.png";
-        logo.alt = "SignON"
-        logo.addEventListener('click', () => window.open('https://signon-project.eu/'));
-        menubar.root.prepend(logo);
-        this.appendButtons( menubar );
+        this.timelineArea.onresize = (bounding) => {this.keyFramesTimeline.resize( [ bounding.width, bounding.height ] );}
+        this.timelineArea.onresize = (bounding) => {this.clipsTimeline.resize( [ bounding.width, bounding.height ] );}
+        this.timelineArea.hide();
+
+        area.attach(this.timelineArea)
+        // this.clipsTimeline.addClip( new ANIM.FaceLexemeClip());
     }
 
+    /** -------------------- MENU BAR -------------------- */
+    createMenubar(area) {
+
+        // var that = this;
+
+        // var menubar = new LiteGUI.Menubar("mainmenubar");
+        // LiteGUI.add( menubar );
+        
+        // window.menubar = menubar;
+
+        // const logo = document.createElement("img");
+        // logo.id = "signOn-logo"
+        // logo.src = "data/imgs/logo_SignON.png";
+        // logo.alt = "SignON"
+        // logo.addEventListener('click', () => window.open('https://signon-project.eu/'));
+        // menubar.root.prepend(logo);
+        // this.appendButtons( menubar );
+
+        this.menubar = area.addMenubar( m => {
+
+            m.setButtonIcon("Github", "fa-brands fa-github", () => {window.open("https://github.com/upf-gti/SignON-editor")});
+            m.setButtonImage("SignON", "data/imgs/logo_SignON.png", () => {window.open("https://signon-project.eu/")}, {position: "left"});
+
+        });
+    }
     
     appendButtons(menubar) {
 
@@ -369,8 +393,8 @@ class Gui {
     }
 
     updateMenubar() {
-        var that = this;
-        let menubar = window.menubar;
+        // var that = this;
+        let menubar = this.menubar;
         menubar.add("Project/Upload animation", {icon: "<i class='bi bi-upload float-right'></i>", callback: () => this.editor.getApp().storeAnimation() });
  
         menubar.add("Project/");
@@ -416,6 +440,30 @@ class Gui {
             const tl = document.getElementById("timeline");
             tl.style.display = this.showTimeline ? "block": "none";
         }});
+
+        menubar.addButtons( [
+            {
+                title: "Play",
+                icon: "fa-solid fa-play",
+                callback:  (domEl) => { 
+                    this.editor.onPlay(this.editor, domEl);
+                    console.log("play!"); 
+                    domEl.classList.toggle('fa-play'), domEl.classList.toggle('fa-stop');
+                }
+            },
+            {
+                title: "Pause",
+                icon: "fa-solid fa-pause",
+                disabled: true,
+                callback:  (domEl) => { 
+                    this.editor.onStop(this.editor, domEl);
+                    console.log("pause!") }
+            },
+            {
+                icon: "fa-solid fa-magnifying-glass",
+                callback:  (domEl) => { console.log("glass!") }
+            }
+        ]);
        
     }
 
@@ -471,11 +519,11 @@ class Gui {
             this.keyFramesTimeline.active = false;
             // this.keyFramesTimeline.resize([this.keyFramesTimeline.size[0], this.keyFramesTimeline.size[1]*2 + 20])
            
-            this.clipsTimeline.setVisibility(true);
+            this.clipsTimeline.show();
             // let canvas = document.getElementById("timelineNMFCanvas")
             // canvas.style.display =  'block';
-            let canvasArea = document.getElementById("canvasarea");
-            this.editor.resize(canvasArea.clientWidth, canvasArea.clientHeight);
+            // let canvasArea = document.getElementById("canvasarea");
+            this.editor.resize(this.timelineArea.clientWidth, this.timelineArea.clientHeight);
             
             if(this.clipsTimeline.selectedClip)
                 this.showClipInfo(this.clipsTimeline.selectedClip);
@@ -487,7 +535,7 @@ class Gui {
             // splitbar.classList.add("hidden");
             this.keyFramesTimeline.active = true;
             // this.keyFramesTimeline.resize([this.keyFramesTimeline.size[0], this.keyFramesTimeline.size[1]/2 - 20])
-            this.clipsTimeline.setVisibility(false);
+            this.clipsTimeline.hide();
             // let canvas = document.getElementById("timelineNMFCanvas")
             // canvas.style.display =  'none';
             nmfmenu.data.checkbox = false;
@@ -505,7 +553,7 @@ class Gui {
     /** ------------------------------------------------------------ */
 
     /** -------------------- CAPTURE GUI (app) --------------------  */
-    createCaptureGUI() {
+    createCaptureGUI(area) {
         // Create capture info area
         let mainCapture = document.getElementById("capture");
         let captureArea = document.getElementById("capture-area");
@@ -605,42 +653,44 @@ class Gui {
 
         i.addEventListener("click", () => this.changeCaptureGUIVisivility());
 
-        let inspector = new LiteGUI.Inspector("capture-inspector");
+        let inspector = new LX.Panel({id:"capture-inspector"});//new LiteGUI.Inspector("capture-inspector");
         inspector.root.hidden = true;
         inspector.addTitle("User positioning");
-        inspector.addInfo(null, 'Position yourself centered on the image with the hands and troso visible. If the conditions are not met, reposition yourself or the camera.') 
-        inspector.addInfo(null, 'Distance to the camera');
+        inspector.addLabel('Position yourself centered on the image with the hands and troso visible. If the conditions are not met, reposition yourself or the camera.') 
+        inspector.addLabel('Distance to the camera');
+        inspector.addProgress('Distance to the camera', 0, {min:0, max:1, id: 'progressbar-torso'});
+        // let progressBar = document.createElement('div');
+        // progressBar.className = "progress mb-3";
+        // progressBar.innerHTML = 
+        //    '<div id="progressbar-torso" class="progress-bar bg-danger" role="progressbar" style="width: 50%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>'
 
-        let progressBar = document.createElement('div');
-        progressBar.className = "progress mb-3";
-        progressBar.innerHTML = 
-           '<div id="progressbar-torso" class="progress-bar bg-danger" role="progressbar" style="width: 50%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>'
-
-        inspector.root.appendChild(progressBar);
-        inspector.addInfo(null, 'Left Hand visibility');
-        let progressBarLH = document.createElement('div');
-        progressBarLH.className = "progress mb-3";
-        progressBarLH.innerHTML = 
-           '<div id="progressbar-lefthand" class="progress-bar bg-danger" role="progressbar" style="width: 50%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>'
+        // inspector.root.appendChild(progressBar);
+        inspector.addLabel('Left Hand visibility');
+        inspector.addProgress('Left Hand visibility', 0, {min:0, max:1, id: 'progressbar-lefthand'});
+        // let progressBarLH = document.createElement('div');
+        // progressBarLH.className = "progress mb-3";
+        // progressBarLH.innerHTML = 
+        //    '<div id="progressbar-lefthand" class="progress-bar bg-danger" role="progressbar" style="width: 50%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>'
            
-        inspector.root.appendChild(progressBarLH);
+        // inspector.root.appendChild(progressBarLH);
 
-        inspector.addInfo(null, 'Right hand visibility');
-        let progressBarRH = document.createElement('div');
-        progressBarRH.className = "progress mb-3";
-        progressBarRH.innerHTML = 
-           '<div id="progressbar-righthand" class="progress-bar bg-danger" role="progressbar" style="width: 50%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>'
+        inspector.addLabel('Right hand visibility');
+        inspector.addProgress('LeRightft Hand visibility', 0, {min:0, max:1, id: 'progressbar-righthand'});
+        // let progressBarRH = document.createElement('div');
+        // progressBarRH.className = "progress mb-3";
+        // progressBarRH.innerHTML = 
+        //    '<div id="progressbar-righthand" class="progress-bar bg-danger" role="progressbar" style="width: 50%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>'
         
-        inspector.root.appendChild(progressBarRH);
-        mainCapture.appendChild(i);
-        mainCapture.appendChild(inspector.root)
+        // inspector.root.appendChild(progressBarRH);
+        // mainCapture.appendChild(i);
+        // mainCapture.appendChild(inspector.root)
         videoArea.appendChild(buttonContainer);
 
-        let section = inspector.addSection("Blendshapes weights");
-        let inspect = this.createBlendShapesInspector(this.editor.mapNames, inspector);
-        inspector = inspect;
-        inspector.root.style.maxHeight = "calc(100% - 57px)";
-        inspector.root.style.overflowY = "scroll";
+        let section = inspector.branch("Blendshapes weights");
+        // let inspect = this.createBlendShapesInspector(this.editor.mapNames, inspector);
+        // inspector = inspect;
+        // inspector.root.style.maxHeight = "calc(100% - 57px)";
+        // inspector.root.style.overflowY = "scroll";
  
     }
 
@@ -667,66 +717,66 @@ class Gui {
             let rightHand = (poseLandmarks[16].visibility + poseLandmarks[18].visibility + poseLandmarks[20].visibility)/3;
         
   
-            let progressBarT = document.getElementById("progressbar-torso");
-            progressBarT.setAttribute("aria-valuenow", distance*100);
-            progressBarT.style.width = distance*100 + '%';
-            progressBarT.className = "progress-bar";
-            if(distance < 0.3) 
-                progressBarT.classList.add("bg-danger")
-            else if(distance > 0.3 && distance < 0.7) 
-                progressBarT.classList.add("bg-warning")
-            else 
-                progressBarT.classList.add("bg-success")
+        //     let progressBarT = document.getElementById("progressbar-torso");
+        //     progressBarT.setAttribute("aria-valuenow", distance*100);
+        //     progressBarT.style.width = distance*100 + '%';
+        //     progressBarT.className = "progress-bar";
+        //     if(distance < 0.3) 
+        //         progressBarT.classList.add("bg-danger")
+        //     else if(distance > 0.3 && distance < 0.7) 
+        //         progressBarT.classList.add("bg-warning")
+        //     else 
+        //         progressBarT.classList.add("bg-success")
             
-            let progressBarLH = document.getElementById("progressbar-lefthand");
-            progressBarLH.setAttribute("aria-valuenow", leftHand*100);
-            progressBarLH.style.width = leftHand*100 + '%';
-            progressBarLH.className = "progress-bar";
-            if(leftHand < 0.3) 
-                progressBarLH.classList.add("bg-danger")
-            else if(leftHand > 0.3 && leftHand < 0.7) 
-                progressBarLH.classList.add("bg-warning")
-            else 
-                progressBarLH.classList.add("bg-success")
+        //     let progressBarLH = document.getElementById("progressbar-lefthand");
+        //     progressBarLH.setAttribute("aria-valuenow", leftHand*100);
+        //     progressBarLH.style.width = leftHand*100 + '%';
+        //     progressBarLH.className = "progress-bar";
+        //     if(leftHand < 0.3) 
+        //         progressBarLH.classList.add("bg-danger")
+        //     else if(leftHand > 0.3 && leftHand < 0.7) 
+        //         progressBarLH.classList.add("bg-warning")
+        //     else 
+        //         progressBarLH.classList.add("bg-success")
 
-            let progressBarRH = document.getElementById("progressbar-righthand");
-            progressBarRH.setAttribute("aria-valuenow", rightHand*100);
-            progressBarRH.style.width = rightHand*100 + '%';
-            progressBarRH.className = "progress-bar";
-            if(leftHand < 0.3) 
-                progressBarRH.classList.add("bg-danger")
-            else if(leftHand > 0.3 && leftHand < 0.7) 
-                progressBarRH.classList.add("bg-warning")
-            else 
-                progressBarRH.classList.add("bg-success")
-        }        
+        //     let progressBarRH = document.getElementById("progressbar-righthand");
+        //     progressBarRH.setAttribute("aria-valuenow", rightHand*100);
+        //     progressBarRH.style.width = rightHand*100 + '%';
+        //     progressBarRH.className = "progress-bar";
+        //     if(leftHand < 0.3) 
+        //         progressBarRH.classList.add("bg-danger")
+        //     else if(leftHand > 0.3 && leftHand < 0.7) 
+        //         progressBarRH.classList.add("bg-warning")
+        //     else 
+        //         progressBarRH.classList.add("bg-success")
+        // }        
 
-        if(blendshapesResults) {
+        // if(blendshapesResults) {
 
-            for(let i in blendshapesResults)
-            {
-                let progressBar = document.getElementById("progressbar-"+i);
-                if(!progressBar) 
-                    continue;
-                let value = blendshapesResults[i];
-                value = value.toFixed(2);
-                // progressBar.setAttribute("aria-valuenow", value*100);
-                // progressBar.style.width = value*100 + '%';
-                // progressBar.className = "progress-bar";
-                // if(value < 0.25) 
-                //     progressBar.classList.add("bg-danger")
-                // else if(value > 0.25 && value < 0.5) 
-                //     progressBar.classList.add("bg-warning")
-                // else 
-                //     progressBar.classList.add("bg-success")
-                progressBar.value = value;
-                if(document.getElementById('progressvalue-' + i ))
-				    document.getElementById('progressvalue-' + i ).innerText = value;
-            }
+        //     for(let i in blendshapesResults)
+        //     {
+        //         let progressBar = document.getElementById("progressbar-"+i);
+        //         if(!progressBar) 
+        //             continue;
+        //         let value = blendshapesResults[i];
+        //         value = value.toFixed(2);
+        //         // progressBar.setAttribute("aria-valuenow", value*100);
+        //         // progressBar.style.width = value*100 + '%';
+        //         // progressBar.className = "progress-bar";
+        //         // if(value < 0.25) 
+        //         //     progressBar.classList.add("bg-danger")
+        //         // else if(value > 0.25 && value < 0.5) 
+        //         //     progressBar.classList.add("bg-warning")
+        //         // else 
+        //         //     progressBar.classList.add("bg-success")
+        //         progressBar.value = value;
+        //         if(document.getElementById('progressvalue-' + i ))
+		// 		    document.getElementById('progressvalue-' + i ).innerText = value;
+        //     }
         }
     }
 
-    hiddeCaptureArea() {
+    hideCaptureArea() {
         let e = document.getElementById("video-area");
         e.classList.remove("video-area");
         
@@ -735,6 +785,8 @@ class Gui {
 
         let ci = document.getElementById("capture-inspector");
         ci.classList.add("hidden");
+
+        this.timelineArea.show();
         
     }
     /** ------------------------------------------------------------ */
@@ -742,98 +794,104 @@ class Gui {
     /** -------------------- SIDE PANEL (editor) -------------------- */
     createSidePanel() {
         this.mainArea.split("horizontal", [null,"300px"], true);
-
+        let [top, bottom] = bsArea.sections;
         //create tabs
-        let tabs = new LiteGUI.Tabs("mode-tabs", {size: "full"});
+        // let tabs = new LiteGUI.Tabs("mode-tabs", {size: "full"});
 
-        let skeletonPanel = new LiteGUI.Panel("sidePanel", {title: 'Skeleton', scroll: true});  
-        $(skeletonPanel).bind("closed", function() { this.mainArea.merge(); });
-        this.sidePanel = skeletonPanel;
+        // let skeletonPanel = new LiteGUI.Panel("sidePanel", {title: 'Skeleton', scroll: true});  
+        // $(skeletonPanel).bind("closed", function() { this.mainArea.merge(); });
+        // this.sidePanel = skeletonPanel;
+        // skeletonPanel.content.id = "main-inspector-content";
+        // skeletonPanel.content.style.width = "100%";
+        this.sidePanel  = new LX.Panel({ className: "sidePanel", id: 'Skeleton', scroll: true});  
+        bottom.attach(this.sidePanel);
+        // $(skeletonPanel).bind("closed", function() { this.mainArea.merge(); });
+        // this.sidePanel = skeletonPanel;
+        // skeletonPanel.content.id = "main-inspector-content";
+        // skeletonPanel.content.style.width = "100%";
 
-        skeletonPanel.content.id = "main-inspector-content";
-        skeletonPanel.content.style.width = "100%";
 
+        // let bsPanel = new LiteGUI.Panel("sidePanel", {title: 'Blendshapes', scroll: true});  
+        let bsPanel = new LX.Panel({className: "sidePanel", id: 'Blendshapes', scroll: true});  
+        let bsArea = new LX.Area({id: "blenshapes-area"});
+        bsArea.split({type: "vertical", sizes: ["50%", "50%"]});
 
-        let bsPanel = new LiteGUI.Panel("sidePanel", {title: 'Blendshapes', scroll: true});  
-        let bsArea = new LiteGUI.Area({content_id: "blenshapes-area"});
-        bsArea.split("vertical", [null, "50%"], true);
+        // //Create face areas selector
+        // let canvas = document.createElement("canvas");
+        // canvas.style.width = "100%";
+        // let section = bsArea.getSection(0);
+        // section.content.appendChild(canvas);
+        // bsPanel.add(bsArea);
+        // bsPanel.content.style.height = "calc(100% - 20px)";
+        // let areas = {
+        //     "rgb(255,0,0)": "Nose", 
+        //     "rgb(0,0,255)": "Brow Right",
+        //     "rgb(255,0,255)": "Brow Left",
+        //     "rgb(0,255,255)": "Eye Right",
+        //     "rgb(0,255,0)": "Eye Left",
+        //     "rgb(255,255,255)": "Cheek Right",
+        //     "rgb(255,255,0)": "Cheek Left",
+        //     "rgb(0,125,0)": "Jaw",
+        //     "rgb(125,0,0)": "Mouth"
+        // }
+        // let ctx = canvas.getContext("2d");
+        // let img = document.createElement("img");
+        // img.src = "./data/imgs/face areas2.png";
+        // img.onload = (e) =>
+        // {
+        //     //canvas.height = bsArea.getSection(0).getHeight();
+        //     ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
+        // }
 
-        //Create face areas selector
-        let canvas = document.createElement("canvas");
-        canvas.style.width = "100%";
-        let section = bsArea.getSection(0);
-        section.content.appendChild(canvas);
-        bsPanel.add(bsArea);
-        bsPanel.content.style.height = "calc(100% - 20px)";
-        let areas = {
-            "rgb(255,0,0)": "Nose", 
-            "rgb(0,0,255)": "Brow Right",
-            "rgb(255,0,255)": "Brow Left",
-            "rgb(0,255,255)": "Eye Right",
-            "rgb(0,255,0)": "Eye Left",
-            "rgb(255,255,255)": "Cheek Right",
-            "rgb(255,255,0)": "Cheek Left",
-            "rgb(0,125,0)": "Jaw",
-            "rgb(125,0,0)": "Mouth"
-        }
-        let ctx = canvas.getContext("2d");
-        let img = document.createElement("img");
-        img.src = "./data/imgs/face areas2.png";
-        img.onload = (e) =>
-        {
-            //canvas.height = bsArea.getSection(0).getHeight();
-            ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
-        }
+        // let clon = canvas.cloneNode(true);
+        // clon.hidde = true;
+        // let ctxClon = clon.getContext("2d");
+        // let mask = document.createElement("img");
+        // mask.src = "./data/imgs/face mask.png";
+        // mask.onload = (e) =>
+        // {
+        //     //clon.height = canvas.height;
+        //     ctxClon.drawImage(mask, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
+        //     let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        //     let maskData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
+        //     updateAreasColor([null,null,null], currentData, maskData);
+        //     ctx.putImageData(currentData, 0, 0);
+        // }
 
-        let clon = canvas.cloneNode(true);
-        clon.hidde = true;
-        let ctxClon = clon.getContext("2d");
-        let mask = document.createElement("img");
-        mask.src = "./data/imgs/face mask.png";
-        mask.onload = (e) =>
-        {
-            //clon.height = canvas.height;
-            ctxClon.drawImage(mask, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
-            let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            let maskData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
-            updateAreasColor([null,null,null], currentData, maskData);
-            ctx.putImageData(currentData, 0, 0);
-        }
+        // canvas.onmousemove = (e) => {
+        //     e.preventDefault();
+        //     e.stopPropagation();
+        //     ctxClon = clon.getContext("2d");
+        //     var pos = findPos(canvas);
+        //     var x = e.pageX - pos.x;
+        //     var y = e.pageY - pos.y;
+        //     ctx.globalCompositeOperation = "source-over";
+        //     ctx.globalAlpha = 1;
+        //     ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
 
-        canvas.onmousemove = (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            ctxClon = clon.getContext("2d");
-            var pos = findPos(canvas);
-            var x = e.pageX - pos.x;
-            var y = e.pageY - pos.y;
-            ctx.globalCompositeOperation = "source-over";
-            ctx.globalAlpha = 1;
-            ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
-
-            let data = ctxClon.getImageData(x, y, 1, 1).data;
-            let color = "rgb(" + data[0] + "," + data[1] + "," + data[2] + ")";
-            let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            let maskData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
+        //     let data = ctxClon.getImageData(x, y, 1, 1).data;
+        //     let color = "rgb(" + data[0] + "," + data[1] + "," + data[2] + ")";
+        //     let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        //     let maskData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
             
-            if(this.editor.getSelectedActionUnit()) {
+        //     if(this.editor.getSelectedActionUnit()) {
                 
-                let idx = Object.values(areas).indexOf(this.editor.getSelectedActionUnit());
-                let area = Object.keys(areas)[idx];
-                let c = area.replace("rgb(", "").replace(")","").split(",");
+        //         let idx = Object.values(areas).indexOf(this.editor.getSelectedActionUnit());
+        //         let area = Object.keys(areas)[idx];
+        //         let c = area.replace("rgb(", "").replace(")","").split(",");
                 
-                updateAreasColor(c, currentData, maskData, null);
+        //         updateAreasColor(c, currentData, maskData, null);
                 
-            }
-            if(areas[color]) {                
-                updateAreasColor(data, currentData, maskData);
+        //     }
+        //     if(areas[color]) {                
+        //         updateAreasColor(data, currentData, maskData);
                 
-            }
-            else {                
-                updateAreasColor([null,null,null], currentData, maskData);          
-            }
-            ctx.putImageData(currentData, 0, 0)
-        }   
+        //     }
+        //     else {                
+        //         updateAreasColor([null,null,null], currentData, maskData);          
+        //     }
+        //     ctx.putImageData(currentData, 0, 0)
+        // }   
 
         function updateAreasColor(data, currentData, maskData, threshold = 50, ctx) {
             let color = [73, 100, 141];
@@ -864,7 +922,8 @@ class Gui {
         let inspector = this.createBlendShapesInspector(this.editor.mapNames);
         inspector.root.style.padding = "10px";
         inspector.hidde = true;
-        bsArea.getSection(1).add(inspector);
+       
+        bottom.add(inspector);
         bsArea.onResize = (e) => {
             canvas.height = bsArea.getSection(0).getHeight();
             clon.height = canvas.height;
@@ -944,18 +1003,19 @@ class Gui {
 
         
         this.updateSidePanel( skeletonPanel, 'root', {firstBone: true} );
-        
-        tabs.addTab("Skeleton", { size: "full", content: skeletonPanel.content, callback: (tab, content, e) => {
-            this.keyFramesTimeline.processTracks = KeyFramesTimeline.prototype.processTracks;
+
+
+        let tabs = bototm.addTabs();
+        tabs.add("Skeleton", skeletonPanel.content, true, (info) => {
+            // this.keyFramesTimeline.processTracks = LX.KeyFramesTimeline.prototype.processTracks;
             this.keyFramesTimeline.setAnimationClip(this.editor.bodyAnimation);
             let bone = this.editor.getSelectedBone();
-            this.keyFramesTimeline.selectedItem = bone ? bone.name : null;
+            this.keyFramesTimeline.selectedItems = bone ? [bone.name] : null;
             // if(this.timeline.clip != this.editor.bodyAnimation)
             //     this.loadClip(this.editor.bodyAnimation);
-        } });
+        });
 
-        tabs.addTab("Blendshapes", { size: "full" , content: bsPanel.content, callback: (tab, content, e) => {
-            e.stopPropagation();
+        tabs.add("Blendshapes", bsPanel.content, false, (info) => {
             // this.loadClip(this.editor.auAnimation);
             canvas.height = bsArea.getSection(0).getHeight();
             bsArea.onResize();
@@ -998,18 +1058,17 @@ class Gui {
                 }
             }
             this.keyFramesTimeline.setAnimationClip(this.editor.auAnimation);
-            this.keyFramesTimeline.selectedItem = this.editor.getSelectedActionUnit();
+            this.keyFramesTimeline.setSelectedItems( [this.editor.getSelectedActionUnit()]);
             // this.keyFramesTimeline.resize(this.keyFramesTimeline.size)
-        } });
+        });
 
-        this.mainArea.getSection(1).add( tabs );
 
         this.resize();
     }
 
     createBlendShapesInspector(bsNames, inspector = null) {
         
-        inspector = inspector || new LiteGUI.Inspector("blendshapes-inspector");
+        inspector = inspector || new LX.Panel({id:"blendshapes-inspector"});
         if(document.getElementById('blendshapes-inspector')) {
                 document.getElementById('blendshapes-inspector').innerHTML = "";
             document.getElementById('blendshapes-inspector').remove();    
@@ -1034,7 +1093,7 @@ class Gui {
             // '<div id="progressbar-' + name + '" class="progress-bar bg-danger" role="progressbar" style="width: 0%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>'
           
             // info.appendChild(progressBar);
-            inspector.addProgressbar(name, 0, {min: 0, max: 1, low: 0.3, optimum: 1, high: 0.6, showValue: true, editable: true, callback: this.updateBlendshapesProperties.bind(this)});
+            inspector.addProgress(name, 0, {min: 0, max: 1, low: 0.3, optimum: 1, high: 0.6, showValue: true, editable: true, callback: this.updateBlendshapesProperties.bind(this)});
         }
         
         return inspector;
@@ -1051,63 +1110,114 @@ class Gui {
         this.boneProperties = {};
         this.itemSelected = itemSelected;
         root = root || this.sidePanel;
-        $(root.content).empty();
+        // $(root.content).empty();
         
         var mytree = this.updateNodeTree();
     
-        var litetree = new LiteGUI.Tree(mytree, {id: "tree"});
-        litetree.setSelectedItem(itemSelected);
-        var that = this;
+        // var litetree = new LiteGUI.Tree(mytree, {id: "tree"});
+        // litetree.setSelectedItem(itemSelected);
+        let litetree = this.sidePanel.addTree("Skeleton bones", mytree, { 
+            // icons: tree_icons, 
+            // filter: false,
+            onevent: (event) => { 
+                console.log(event.string());
     
-        // Click right mouse
-        litetree.onItemContextMenu = (e, el) => { 
+                switch(event.type) {
+                    case LX.TreeEvent.NODE_SELECTED: 
+                        if(event.multiple)
+                            console.log("Selected: ", event.node); 
+                        else {
+                            itemSelected = event.node.id;
+                            this.expandItem(itemSelected);
+                            widgets.onRefresh();
+                
+                            if(!that.editor)
+                                throw("No editor attached");
+                
+                            that.editor.setSelectedBone( data.id );
+                            that.keyFramesTimeline.setSelectedItems( [data.id] );
+                            console.log(itemSelected+ " selected"); 
+                        }
+                        break;
+                    case LX.TreeEvent.NODE_DBLCLICKED: 
+                        console.log(event.node.id + " dbl clicked"); 
+                        break;
+                    case LX.TreeEvent.NODE_CONTEXTMENU: 
+                        LX.addContextMenu( event.multiple ? "Selected Nodes" : event.node.id, event.value, m => {
     
-            e.preventDefault();
-            var boneId = el.data.id;
+                            // {options}: callback, color
     
-            const bone = this.editor.skeletonHelper.getBoneByName(boneId);
-            if(!bone)
-            return;
-    
-            const boneEnabled = true;
-
-            var actions = [
-                {
-                    title: (boneEnabled?"Disable":"Enable") + "<i class='bi bi-" + (boneEnabled?"dash":"check") + "-circle float-right'></i>",
-                    disabled: true,
-                    callback: () => console.log("TODO: Disable")
-                },
-                {
-                    title: "Copy" + "<i class='bi bi-clipboard float-right'></i>",
-                    callback: () => LiteGUI.toClipboard( bone )
+                            m.add( "Move before sibling" );
+                            m.add( "Move after sibling" );
+                            m.add( "Move to parent" );
+                            
+                        });
+                        break;
+                    case LX.TreeEvent.NODE_DRAGGED: 
+                        console.log(event.node.id + " is now child of " + event.value.id); 
+                        break;
+                    case LX.TreeEvent.NODE_RENAMED:
+                        console.log(event.node.id + " is now called " + event.value); 
+                        break;
+                    case LX.TreeEvent.NODE_VISIBILITY:
+                        console.log(event.node.id + " visibility: " + event.value); 
+                        break;
                 }
-            ];
-            
-            new LiteGUI.ContextMenu( actions, { event: e });
-        };
-    
-        litetree.onItemSelected = function(data){
-            this.expandItem(data.id);
-            itemSelected = data.id;
-            widgets.onRefresh();
-
-            if(!that.editor)
-            throw("No editor attached");
-
-            that.editor.setSelectedBone( data.id );
-            that.keyFramesTimeline.setSelectedItem( data.id );
-        };
-    
-        litetree.root.addEventListener("item_dblclicked", function(e){
-            e.preventDefault();
+            },
         });
+        
+        var that = this;
+        root.attach(litetree)
+        // // Click right mouse
+        // litetree.onItemContextMenu = (e, el) => { 
+    
+        //     e.preventDefault();
+        //     var boneId = el.data.id;
+    
+        //     const bone = this.editor.skeletonHelper.getBoneByName(boneId);
+        //     if(!bone)
+        //     return;
+    
+        //     const boneEnabled = true;
+
+        //     var actions = [
+        //         {
+        //             title: (boneEnabled?"Disable":"Enable") + "<i class='bi bi-" + (boneEnabled?"dash":"check") + "-circle float-right'></i>",
+        //             disabled: true,
+        //             callback: () => console.log("TODO: Disable")
+        //         },
+        //         {
+        //             title: "Copy" + "<i class='bi bi-clipboard float-right'></i>",
+        //             callback: () => LiteGUI.toClipboard( bone )
+        //         }
+        //     ];
+            
+        //     new LiteGUI.ContextMenu( actions, { event: e });
+        // };
+    
+        // litetree.onItemSelected = function(data){
+        //     this.expandItem(data.id);
+        //     itemSelected = data.id;
+        //     widgets.onRefresh();
+
+        //     if(!that.editor)
+        //     throw("No editor attached");
+
+        //     that.editor.setSelectedBone( data.id );
+        //     that.keyFramesTimeline.setSelectedItems( [data.id] );
+        // };
+    
+        // litetree.root.addEventListener("item_dblclicked", function(e){
+        //     e.preventDefault();
+        // });
     
         this.tree = litetree;
     
         $(root.content).append( litetree.root );
     
         // Editor widgets 
-        var widgets = new LiteGUI.Inspector();
+        // var widgets = new LiteGUI.Inspector();
+        var widgets = new LX.Panel();
         $(root.content).append(widgets.root);
     
         const makePretitle = (src) => { return "<img src='data/imgs/mini-icon-"+src+".png' style='margin-right: 4px;'>"; }
@@ -1551,7 +1661,7 @@ class Gui {
             actions.push(
                 {
                     title: "Add" + " <i class='bi bi-plus float-right'></i>",
-                    callback: () => this.timkeyFramesTimelineeline.addKeyFrame( track )
+                    callback: () => this.timkeyFramesTimeline.addKeyFrame( track )
                 }
             );
         }
@@ -1562,7 +1672,7 @@ class Gui {
 
     /** -------------------- ON EVENTS -------------------- */
     onSelectItem(item) {
-        this.keyFramesTimeline.setSelectedItem( item );
+        this.keyFramesTimeline.setSelectedItems( [item] );
     }
 
     onMouse(e, nmf = null) {
@@ -1600,10 +1710,9 @@ class Gui {
             s.setValue(null);
         }
 
-        const canvasArea = document.getElementById("canvasarea");
         let timelineCanvas = document.getElementById("timelineCanvas");
         let timelineNMFCanvas = document.getElementById("timelineNMFCanvas");
-        timelineCanvas.width = timelineNMFCanvas.width = canvasArea.clientWidth;
+        timelineCanvas.width = timelineNMFCanvas.width = this.timelineArea.clientWidth;
     }
 };
 

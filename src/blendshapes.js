@@ -7,8 +7,18 @@ class BlendshapesManager {
         this.mapNames = mapNames;
         this.skinnedMeshes = skinnedMeshes;
         this.morphTargetDictionary = morphTargetDictionary;
+        this.faceAreas =  [
+            "Nose", 
+            "Brow Right",
+            "Brow Left",
+            "Eye Right",
+            "Eye Left",
+            "Cheek Right",
+            "Cheek Left",
+            "Jaw",
+            "Mouth"
+        ]
     }
-
     createAnimationFromBlendshapes = function(name, data, applyRotation = false) {
 
         let clipData = {};
@@ -215,7 +225,23 @@ class BlendshapesManager {
         }
         let auTracks = [];
         for(let bs in auValues) {
-            auTracks.push( new THREE.NumberKeyframeTrack(bs, times, auValues[bs] ));
+            let bsname = bs;
+            for(let i = 0; i < this.faceAreas.length; i++)
+            {
+                let toCompare = this.faceAreas[i].toLowerCase().split(" ");
+                let found = true;
+                for(let j = 0; j < toCompare.length; j++) {
+
+                    if(!bs.toLowerCase().includes(toCompare[j])) {
+                        found = false;
+                        break;
+                    }
+                }
+                if(found)
+                    bsname = this.faceAreas[i] + "." + bs;
+
+            }
+            auTracks.push( new THREE.NumberKeyframeTrack(bsname, times, auValues[bs] ));
         }
 
         // use -1 to automatically calculate

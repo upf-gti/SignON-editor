@@ -73,7 +73,7 @@ const UTILS = {
 
 	loadGLTF(animationFile, onLoaded) {
         
-        this.makeLoading("Loading GLTF [" + animationFile +"]...", 0.75)
+        this.makeLoading("Loading GLTF [" + animationFile +"]...")
         const gltfLoader = new MiniGLTFLoader();
 
         if(typeof(Worker) !== 'undefined') {

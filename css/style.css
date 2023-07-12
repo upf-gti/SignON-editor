@@ -217,6 +217,7 @@ canvas {
 	position: absolute;
 	margin-right: 20px;
 	right: 0px;
+	top: 0px;
 }
 
 #timeline {
@@ -615,4 +616,8 @@ dark mode:
 	display: flex;
 	flex-direction: row;
 	align-items: center;
+}
+
+area:hover{ 
+	cursor: pointer;
 }

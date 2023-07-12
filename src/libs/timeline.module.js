@@ -300,32 +300,7 @@ class Timeline {
 			this.onSetDuration( t );	 
 	}
 
-	optimizeTracks () {
-		
-		let tracks = [];
-		for(let i = 0; i < this.animationClip.tracks.length; i++)
-		{
-			if(this.animationClip.tracks[i].clips.length) {
-				this.animationClip.tracks[i].idx = tracks.length;
-				for(let j = 0; j < this.animationClip.tracks[i].clips.length; j++)
-				{
-					this.animationClip.tracks[i].clips[j].trackIdx = tracks.length;
-				}
-				let selectedIdx = 0;
-				for(let l = 0; l < this.lastClipsSelected.length; l++)
-				{
-					let [t,c] = this.lastClipsSelected[l];
-				
-					if(t > i)
-						this.lastClipsSelected[l][1] = t - 1;
-					if(t == i)
-						selectedIdx = l;
-				}
-				this.lastClipsSelected = [...this.lastClipsSelected.slice(0, selectedIdx), ...this.lastClipsSelected.slice(selectedIdx + 1, this.lastClipsSelected.length)];
-				tracks.push(this.animationClip.tracks[i]);
-			}			
-		}
-	}
+	
 
 	// Converts distance in pixels to time
 	xToTime (x, global) {
@@ -2022,6 +1997,32 @@ class ClipsTimeline extends Timeline {
 		return indices;
 	}
 
+	optimizeTracks () {
+		
+		let tracks = [];
+		for(let i = 0; i < this.animationClip.tracks.length; i++)
+		{
+			if(this.animationClip.tracks[i].clips.length) {
+				this.animationClip.tracks[i].idx = tracks.length;
+				for(let j = 0; j < this.animationClip.tracks[i].clips.length; j++)
+				{
+					this.animationClip.tracks[i].clips[j].trackIdx = tracks.length;
+				}
+				let selectedIdx = 0;
+				for(let l = 0; l < this.lastClipsSelected.length; l++)
+				{
+					let [t,c] = this.lastClipsSelected[l];
+				
+					if(t > i)
+						this.lastClipsSelected[l][1] = t - 1;
+					if(t == i)
+						selectedIdx = l;
+				}
+				this.lastClipsSelected = [...this.lastClipsSelected.slice(0, selectedIdx), ...this.lastClipsSelected.slice(selectedIdx + 1, this.lastClipsSelected.length)];
+				tracks.push(this.animationClip.tracks[i]);
+			}			
+		}
+	}
 }
 
 export {ClipsTimeline};

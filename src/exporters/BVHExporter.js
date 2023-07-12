@@ -117,8 +117,8 @@ const BVHExporter = {
             if(!bone.children.length)
             return data;
 
-            const tracks = clip.tracks.filter( t => t.name.split(".")[0] === bone.name );
-
+            const tracks = clip.tracks.filter( t => t.name.replaceAll(".bones").split(".")[0].includes(bone.name) );
+            
             // No animation info            
             if(!tracks.length)
                 data += this.quatToEulerString(bone.quaternion);
@@ -130,7 +130,7 @@ const BVHExporter = {
                     const interpolant = interpolants[ trackIndex ];
                     const values = interpolant.evaluate(time);
     
-                    const type = t.name.split(".")[1];
+                    const type = t.name.replaceAll(".bones").split(".")[1];
                     switch(type) {
                         case 'position':
                             const pos = new THREE.Vector3();
@@ -199,7 +199,7 @@ const BVHExporter = {
             if(!bone.children.length)
             return data;
 
-            const tracks = clip.tracks.filter( t => t.name.split(".")[0] === bone.name );
+            const tracks = clip.tracks.filter( t => t.name.replaceAll(".bones").split(".")[0].includes(bone.name) );
 
             if(tracks.length) {
                 data += "\n" + bone.name;
@@ -208,7 +208,7 @@ const BVHExporter = {
             for(var i = 0; i < tracks.length; ++i) {
 
                 const t = tracks[i];
-                const type = t.name.split(".")[1];
+                const type = t.name.replaceAll(".bones").split(".")[1];
                 data += "\n" + type + " @";
 
                 for( let j = 0; j < t.times.length; ++j ) {
