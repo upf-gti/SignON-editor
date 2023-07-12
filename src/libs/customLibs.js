@@ -508,6 +508,92 @@ Inspector.prototype.addImageButton = function(name, value, options)
 	
 }
 
+Inspector.prototype.addProgressbar = function(name, value, options = {}) {
+	
+	let w = "150px";
+	if(options.width) {
+		w = options.width + "px";
+	}
+	if(document.getElementById('progressbar-' + name ))
+		document.getElementById('progressbar-' + name ).remove();
+	
+	let info = this.addInfo(null, name, {width: w});
+	let container = document.createElement('div');
+	container.className = "flex-row";
+
+	let barContainer = document.createElement('div');
+	barContainer.className = "progress mb-3";
+	
+	let progressBar = document.createElement('meter');
+	progressBar.id = "progressbar-" + name;
+	progressBar.className = "progress-bar";
+	progressBar.min = options.min ?? 0;
+	progressBar.max = options.max ?? 1;
+	progressBar.value = value;
+
+	if(options.low)
+		progressBar.low = options.low;
+	if(options.high)
+		progressBar.high = options.high;
+	if(options.optimum)
+		progressBar.optimum = options.optimum;
+
+
+	// if(value < 0.3) 
+	// 	progressBar.classList.add("bg-danger");
+	// else if(value > 0.3 && value < 0.7) 
+	// 	progressBar.classList.add("bg-warning");
+	// else 
+	// 	progressBar.classList.add("bg-success");
+	
+	if(options.showValue) {
+		if(document.getElementById('progressvalue-' + name ))
+			document.getElementById('progressvalue-' + name ).remove();
+		let span = document.createElement("span");
+		span.id = "progressvalue-" + name;
+		span.innerText = value;
+		container.appendChild(span);
+	}
+
+	barContainer.appendChild(progressBar);
+	container.appendChild(barContainer);
+	info.appendChild(container);
+	
+	if(options.editable) {
+		progressBar.classList.add("editable");
+		barContainer.addEventListener("mousemove", inner_mousemove.bind(this, value));
+		barContainer.addEventListener("mouseup", inner_mouseup.bind(this, progressBar));
+
+		function inner_mousemove(value, e) {
+		
+			if(e.which < 1)
+				return;
+			let progressBar = document.getElementById('progressbar-' + name );
+			let v = progressBar.value;
+			v+=e.movementX/100;
+			v = v.toFixed(2);
+			progressBar.value = v;
+			progressBar.className = "progress-bar";
+			// if(value < 0.3) 
+			// 	progressBar.classList.add("bg-danger");
+			// else if(value > 0.3 && value < 0.7) 
+			// 	progressBar.classList.add("bg-warning");
+			// else 
+			// 	progressBar.classList.add("bg-success");
+			
+			if(document.getElementById('progressvalue-' + name ))
+				document.getElementById('progressvalue-' + name ).innerText = v;
+
+			if(options.callback)
+				options.callback(name, v, e);
+		}
+
+		function inner_mouseup(el) {
+			el.removeEventListener("mousemove", inner_mousemove);
+		}
+	}
+}
+
 /*
 	reads a string array (lines) from a BVHE file
 	and outputs a skeleton structure including motion data

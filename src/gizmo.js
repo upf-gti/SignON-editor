@@ -616,7 +616,7 @@ class Gizmo {
                 track.edited[ keyframe ] = true;
 
                 // Update animation interpolants
-                this.editor.updateAnimationAction( track.clipIdx );
+                this.editor.updateAnimationAction(this.editor.animationClip, track.clipIdx );
                 timeline.onSetTime( timeline.currentTime );
 
             }
@@ -637,7 +637,7 @@ class Gizmo {
             }
 
             // Update animation interpolants
-            this.editor.updateAnimationAction( idx );
+            this.editor.updateAnimationAction( this.editor.animationClip, idx );
             timeline.onSetTime( timeline.currentTime );
 
         }

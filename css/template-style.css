@@ -5014,22 +5014,71 @@ textarea.form-control-lg {
   height: 1rem;
   overflow: hidden;
   font-size: 0.75rem;
-  background-color: var(--background);
+  /* background-color: var(--background); */
   border-radius: 0.25rem;
   margin: 10px;
+  width: 100%;
 }
 
 .progress-bar {
-  display: flex;
+  /* display: flex;
   flex-direction: column;
   justify-content: center;
   overflow: hidden;
   color: #fff;
   text-align: center;
   white-space: nowrap;
-  background-color: #f4623a;
-  transition: width 0.6s ease;
+  /* background-color: #f4623a; */
+  /* transition: width 0.6s ease; */
+  /* width: 100%; */ 
+  border: none !important;
+  width: 100%;
+  outline: none;
+  opacity: 0.7;
+  -webkit-transition: .2s;
+  transition: opacity .2s;
+  margin-top: 2px;
 }
+
+.progress-bar.editable:hover{
+  cursor: grab;
+}
+
+.progress-bar.editable:active{
+  cursor: grabbing;
+}
+
+/* The gray background in Chrome, etc. */
+meter::-webkit-meter-bar {
+  background: var(--bs-body-color);
+  height: 12px;
+}
+
+/* (optimum) */
+meter:-moz-meter-optimum::-moz-meter-bar {
+  background: var(--bs-success);
+}
+meter::-webkit-meter-optimum-value {
+  background: var(--bs-success);
+}
+
+/* (sub-optimum)*/
+meter:-moz-meter-sub-optimum::-moz-meter-bar {
+  background: var(--bs-warning);
+}
+meter::-webkit-meter-suboptimum-value {
+  background: var(--bs-warning);
+}
+
+/* (even less good)*/
+meter:-moz-meter-sub-sub-optimum::-moz-meter-bar {
+  background: var(--bs-danger);
+}
+meter::-webkit-meter-even-less-good-value {
+  background: var(--bs-danger);
+}
+
+
 @media (prefers-reduced-motion: reduce) {
   .progress-bar {
     transition: none;
@@ -5050,6 +5099,11 @@ textarea.form-control-lg {
     -webkit-animation: none;
             animation: none;
   }
+}
+
+.progress-bar-container {
+  display: flex;
+  
 }
 
 .list-group {

@@ -229,7 +229,7 @@ canvas {
 	z-index: 5;
 	position: absolute;
 	bottom: 0px;
-	display: flex;
+	/* display: flex; */
 	justify-content: center;
 	align-content: center;
 	align-items: center;
@@ -609,4 +609,10 @@ dark mode:
 ::-webkit-scrollbar {
     width: 5px !important;
     border-radius: 6px;
+}
+
+.flex-row{
+	display: flex;
+	flex-direction: row;
+	align-items: center;
 }

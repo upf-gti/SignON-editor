@@ -755,12 +755,12 @@ class Editor {
     /** -------------------- BODY ANIMATION EDITION -------------------- */
     cleanTracks(excludeList) {
 
-        if(!this.bodyAnimation)
+        if(!this.gui.keyFramesTimeline.animationClip)
         return;
 
-        for( let i = 0; i < this.bodyAnimation.tracks.length; ++i ) {
+        for( let i = 0; i < this.gui.keyFramesTimeline.animationClip.tracks.length; ++i ) {
 
-            const track = this.bodyAnimation.tracks[i];
+            const track = this.gui.keyFramesTimeline.animationClip.tracks[i];
             const [boneName, type] = this.gui.keyFramesTimeline.getTrackName(track.name);
 
             if(excludeList && excludeList.indexOf( boneName ) != -1)
@@ -769,38 +769,49 @@ class Editor {
             track.times = new Float32Array( [track.times[0]] );
             track.values = track.values.slice(0, type === 'quaternion' ? 4 : 3);
 
-            this.updateAnimationAction(i);
+            this.updateAnimationAction(this.gui.keyFramesTimeline.animationClip,i);
             this.gui.keyFramesTimeline.onPreProcessTrack( track );
         }
     }
 
     optimizeTracks() {
 
-        if(!this.bodyAnimation)
+        if(!this.gui.keyFramesTimeline.animationClip)
         return;
 
-        for( let i = 0; i < this.bodyAnimation.tracks.length; ++i ) {
-            const track = this.bodyAnimation.tracks[i];
+        for( let i = 0; i < this.gui.keyFramesTimeline.animationClip.tracks.length; ++i ) {
+            const track = this.gui.keyFramesTimeline.animationClip.tracks[i];
             track.optimize( this.optimizeThreshold );
-            this.updateAnimationAction(i);
+            this.updateAnimationAction(this.gui.keyFramesTimeline.animationClip, i);
 
             this.gui.keyFramesTimeline.onPreProcessTrack( track );
         }
     }
 
-    updateAnimationAction(idx) {
+    updateAnimationAction(animation, idx) {
 
         const mixer = this.mixer;
 
-        if(!mixer._actions.length || mixer._actions[0]._clip != this.bodyAnimation) 
+        if(!mixer._actions.length) 
             return;
 
-        const track = this.bodyAnimation.tracks[idx];
+        if(typeof idx == 'number')
+            idx = [idx];
 
-        // Update times
-        mixer._actions[0]._interpolants[idx].parameterPositions = track.times;
-        // Update values
-        mixer._actions[0]._interpolants[idx].sampleValues = track.values;
+        for(let i = 0; i< mixer._actions.length; i++) {
+            if(mixer._actions[i]._clip == animation) {
+                for(let j = 0; j < idx.length; j++) {
+
+                    const track = animation.tracks[j];
+            
+                    // Update times
+                    mixer._actions[i]._interpolants[j].parameterPositions = track.times;
+                    // Update values
+                    mixer._actions[i]._interpolants[j].sampleValues = track.values;
+                }
+                return;
+            }
+        }
     }
 
     /** -------------------- UPDATES, RENDER AND EVENTS -------------------- */

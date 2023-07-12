@@ -8,13 +8,19 @@ class Gui {
        
         this.showTimeline = true;
 
-        this.keyFramesTimeline = new KeyFramesTimeline();
+        this.keyFramesTimeline = new KeyFramesTimeline("Bones", {canvas: document.getElementById("timelineCanvas"), trackHeight: 15});
         this.keyFramesTimeline.setFramerate(30);
         this.keyFramesTimeline.setScale(400);
 
-        this.clipsTimeline = new ClipsTimeline();
+        this.clipsTimeline = new ClipsTimeline("Non manual features", {canvas: document.getElementById("timelineNMFCanvas")});
         this.clipsTimeline.setFramerate(30);
         this.clipsTimeline.setScale(400);
+        this.clipsTimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.bodyAnimation.duration - 0.001) );
+        this.clipsTimeline.onSetDuration = (t) => {this.duration = this.keyFramesTimeline.duration = this.keyFramesTimeline.animationClip.duration = t};
+        this.clipsTimeline.onSelectClip = this.showClipInfo.bind(this);
+       
+        this.clipsTimeline.animationClip = {duration: this.keyFramesTimeline.duration, tracks: []};
+        // this.clipsTimeline.addClip( new ANIM.FaceLexemeClip());
 
         this.showVideo = true;
         this.currentTime = 0;
@@ -40,6 +46,7 @@ class Gui {
         // this.timeline = new KeyFramesTimeline( this.editor.bodyAnimation, boneName);
         this.keyFramesTimeline.setAnimationClip(this.clip);
         this.keyFramesTimeline.setSelectedItem(boneName);
+        this.keyFramesTimeline.resize([this.keyFramesTimeline.canvas.parentElement.clientWidth, this.keyFramesTimeline.canvas.parentElement.clientHeight]);
         this.keyFramesTimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.bodyAnimation.duration - 0.001) );
         this.keyFramesTimeline.onSetDuration = (t) => {this.duration = this.keyFramesTimeline.duration = this.clip.duration = this.editor.bodyAnimation.duration = t};
         this.keyFramesTimeline.onSelectKeyFrame = (e, info, index) => {
@@ -55,8 +62,11 @@ class Gui {
             this.showKeyFrameOptions(e, info, index);
             return true; // Handled
         };
+        this.keyFramesTimeline.showContextMenu = (e, track) => {
+            this.showKeyFrameOptions(e, track);
+        }
         this.keyFramesTimeline.onItemUnselected = () => this.editor.gizmo.stop();
-        this.keyFramesTimeline.onUpdateTrack = (idx) => this.editor.updateAnimationAction(idx);
+        this.keyFramesTimeline.onUpdateTrack = (idx) => this.editor.updateAnimationAction(this.keyFramesTimeline.animationClip, idx);
         this.keyFramesTimeline.onGetSelectedItem = () => { return this.editor.getSelectedBone(); };
         this.keyFramesTimeline.onGetOptimizeThreshold = () => { return this.editor.optimizeThreshold; }
 
@@ -87,22 +97,24 @@ class Gui {
         const canvasArea = document.getElementById("canvasarea");
 
         canvasarea.appendChild( document.getElementById("timeline") );
-        let timeline = document.getElementById("timeline")
-        timeline.style.display = "block";
+        // let timeline = document.getElementById("timeline")
+        // timeline.style.display = "block";
 
         this.mainArea.onresize = window.onresize;
 
-        let timelineCanvas = document.getElementById("timelineCanvas");
-        timelineCanvas.width = canvasArea.clientWidth;
-        this.timelineCTX = timelineCanvas.getContext("2d");
+        if(this.keyFramesTimeline)
+            this.keyFramesTimeline.setVisibility(true);
+        // let timelineCanvas = document.getElementById("timelineCanvas");
+        // timelineCanvas.width = canvasArea.clientWidth;
+        // this.timelineCTX = timelineCanvas.getContext("2d");
 
-        timelineCanvas.addEventListener("mouseup", this.onMouse.bind(this));
-        timelineCanvas.addEventListener("mousedown", this.onMouse.bind(this));
-        timelineCanvas.addEventListener("mousemove", this.onMouse.bind(this));
-        timelineCanvas.addEventListener("wheel", this.onMouse.bind(this));
-        timelineCanvas.addEventListener('contextmenu', (e) => e.preventDefault(), false);
+        // timelineCanvas.addEventListener("mouseup", this.onMouse.bind(this));
+        // timelineCanvas.addEventListener("mousedown", this.onMouse.bind(this));
+        // timelineCanvas.addEventListener("mousemove", this.onMouse.bind(this));
+        // timelineCanvas.addEventListener("wheel", this.onMouse.bind(this));
+        // timelineCanvas.addEventListener('contextmenu', (e) => e.preventDefault(), false);
 
-        timelineCanvas.addEventListener( 'keydown', (e) => {
+        this.clipsTimeline.canvas.addEventListener( 'keydown', (e) => {
             switch ( e.key ) {
                 case " ": // Spacebar
                     e.preventDefault();
@@ -112,40 +124,41 @@ class Gui {
                     break;
             }
         });
+        if(this.clipsTimeline)
+            this.clipsTimeline.setVisibility(false);
+        // let timelineNMFCanvas = document.getElementById("timelineNMFCanvas");
+        // timelineNMFCanvas.width = timelineCanvas.width;
+        // timelineNMFCanvas.style.display = "none";
+        // this.timelineNMFCTX = timelineNMFCanvas.getContext("2d");
 
-        let timelineNMFCanvas = document.getElementById("timelineNMFCanvas");
-        timelineNMFCanvas.width = timelineCanvas.width;
-        timelineNMFCanvas.style.display = "none";
-        this.timelineNMFCTX = timelineNMFCanvas.getContext("2d");
-
-        // timelineNMFCanvas.addEventListener("mouseup", (e) => { e.preventDefault(); if(this.NMFtimeline) this.NMFtimeline.processMouse(e); });
-        // timelineNMFCanvas.addEventListener("mousedown", (e) => { e.preventDefault(); if(this.NMFtimeline) this.NMFtimeline.processMouse(e); });
-        // timelineNMFCanvas.addEventListener("mousemove", (e) => { e.preventDefault(); if(this.NMFtimeline) this.NMFtimeline.processMouse(e); });
-        // timelineNMFCanvas.addEventListener("wheel", (e) => { e.preventDefault(); if(this.NMFtimeline) this.NMFtimeline.processMouse(e); });
-        timelineNMFCanvas.addEventListener("mouseup", this.onMouse.bind(this));
-        timelineNMFCanvas.addEventListener("mousedown", this.onMouse.bind(this));
-        timelineNMFCanvas.addEventListener("mousemove", this.onMouse.bind(this));
-        timelineNMFCanvas.addEventListener("wheel", this.onMouse.bind(this));
-        timelineNMFCanvas.addEventListener('contextmenu', (e) => {
+        // timelineNMFCanvas.addEventListener("mouseup", (e) => { e.preventDefault(); if(this.clipsTimeline) this.clipsTimeline.processMouse(e); });
+        // timelineNMFCanvas.addEventListener("mousedown", (e) => { e.preventDefault(); if(this.clipsTimeline) this.clipsTimeline.processMouse(e); });
+        // timelineNMFCanvas.addEventListener("mousemove", (e) => { e.preventDefault(); if(this.clipsTimeline) this.clipsTimeline.processMouse(e); });
+        // timelineNMFCanvas.addEventListener("wheel", (e) => { e.preventDefault(); if(this.clipsTimeline) this.clipsTimeline.processMouse(e); });
+        // timelineNMFCanvas.addEventListener("mouseup", this.onMouse.bind(this));
+        // timelineNMFCanvas.addEventListener("mousedown", this.onMouse.bind(this));
+        // timelineNMFCanvas.addEventListener("mousemove", this.onMouse.bind(this));
+        // timelineNMFCanvas.addEventListener("wheel", this.onMouse.bind(this));
+        this.clipsTimeline.showContextMenu = (e) => {
             e.preventDefault()
             let actions = [];
-            //let track = this.NMFtimeline.clip.tracks[0];
-            if(this.NMFtimeline._lastClipsSelected.length) {
+            //let track = this.clipsTimeline.clip.tracks[0];
+            if(this.clipsTimeline.lastClipsSelected.length) {
                 actions.push(
                     {
                         title: "Copy" + " <i class='bi bi-clipboard-fill float-right'></i>",
-                        callback: () => {this.clipsToCopy = [...this.NMFtimeline._lastClipsSelected];}
+                        callback: () => {this.clipsToCopy = [...this.clipsTimeline.lastClipsSelected];}
                     }
                 )
                 actions.push(
                     {
                         title: "Delete" + " <i class='bi bi-trash float-right'></i>",
                         callback: () => {
-                            let clipstToDelete = this.NMFtimeline._lastClipsSelected;
+                            let clipstToDelete = this.clipsTimeline.lastClipsSelected;
                             for(let i = 0; i < clipstToDelete.length; i++){
-                                this.NMFtimeline.deleteClip(clipstToDelete[i], this.showClipInfo.bind(this));
+                                this.clipsTimeline.deleteClip(clipstToDelete[i], this.showClipInfo.bind(this));
                             }
-                            this.NMFtimeline.optimizeTracks();
+                            this.clipsTimeline.optimizeTracks();
                             this.editor.NMFController.updateTracks();
                         }
                     }
@@ -154,12 +167,12 @@ class Gui {
                     {
                         title: "Create preset" + " <i class='bi bi-file-earmark-plus-fill float-right'></i>",
                         callback: () => {
-                            this.NMFtimeline._lastClipsSelected.sort((a,b) => {
+                            this.clipsTimeline.lastClipsSelected.sort((a,b) => {
                                 if(a[0]<b[0]) 
                                     return -1;
                                 return 1;
                             });
-                            this.createNewPresetDialog(this.NMFtimeline._lastClipsSelected);
+                            this.createNewPresetDialog(this.clipsTimeline.lastClipsSelected);
                         }
                     }
                 )
@@ -189,9 +202,9 @@ class Gui {
 
                                 for(let i = 0; i < this.clipsToCopy.length; i++){
                                     let [trackIdx, clipIdx] = this.clipsToCopy[i];
-                                    let clipToCopy = this.NMFtimeline.clip.tracks[trackIdx].clips[clipIdx];
+                                    let clipToCopy = this.clipsTimeline.clip.tracks[trackIdx].clips[clipIdx];
                                     let clip = new ANIM.FaceLexemeClip(clipToCopy);
-                                    this.NMFtimeline.addClip(clip, this.clipsToCopy.length > 1 ? clipToCopy.start : 0); 
+                                    this.clipsTimeline.addClip(clip, this.clipsToCopy.length > 1 ? clipToCopy.start : 0); 
                                 }
                                 this.clipsToCopy = null;
                             }
@@ -201,10 +214,10 @@ class Gui {
                 
             }
             new LiteGUI.ContextMenu( actions, { event: e });
-        }, false);
+        };
 
-        timelineNMFCanvas.addEventListener("dblclick", (e) => { e.preventDefault(); if(this.NMFtimeline) this.NMFtimeline.processMouse(e); });
-        timelineNMFCanvas.addEventListener( 'keydown', (e) => {
+        // this.clipsTimeline.onDblClick = (e) => { e.preventDefault(); if(this.clipsTimeline) this.clipsTimeline.processMouse(e); };
+        this.clipsTimeline.canvas.addEventListener( 'keydown', (e) => {
             switch ( e.key ) {
                 case " ": // Spacebar
                     e.preventDefault();
@@ -212,26 +225,33 @@ class Gui {
                     const stateBtn = document.getElementById("state_btn");
                     stateBtn.click();
                     break;
-                case "Delete": // Spacebar
+                case "Delete": // Delete
                     e.preventDefault();
                     e.stopImmediatePropagation();
-                    this.NMFtimeline.deleteClip();
-                    this.NMFtimeline.optimizeTracks();
+                    this.clipsTimeline.deleteClip();
+                    this.clipsTimeline.optimizeTracks();
+                    break;
+                case "Backspace":
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    this.clipsTimeline.deleteClip();
+                    this.clipsTimeline.optimizeTracks();
                     break;
             }
         });
 
         let splitbar = document.getElementById("timeline-splitbar");
         splitbar.addEventListener("mousedown", innerMousedown.bind(this));
-
+        
         let lastPos = [0,0];
         let isGrabbing = false;
 		function innerMousedown(e)
 		{
             isGrabbing = true;
 			var doc = document;
-			doc.addEventListener("mousemove",innerMousemove.bind(this));
-			doc.addEventListener("mouseup",innerMouseup.bind(this));
+            doc.addEventListener("mousemove",innerMousemove.bind(this));
+            doc.addEventListener("mouseup",innerMouseup.bind(this));
+
 			lastPos[0] = e.pageX;
 			lastPos[1] = e.pageY;
 			e.stopPropagation();
@@ -248,8 +268,8 @@ class Gui {
 				let size = timeline.offsetHeight - delta;
 				timeline.style.height = size + "px";
                 timelineNMFCanvas.height = size;
-                if(this.NMFtimeline)
-                    this.NMFtimeline.height = size;
+                if(this.clipsTimeline)
+                    this.clipsTimeline.height = size;
             }
 			
 
@@ -266,10 +286,12 @@ class Gui {
 			// doc.removeEventListener("mousemove",innerMousemove);
 			// doc.removeEventListener("mouseup",innerMouseup);
 			//timeline.offsetHeight = lastPos[1];
+            if(!isGrabbing)
+                return;
             isGrabbing = false;
             e.stopPropagation();
 			e.preventDefault();
-
+            
             if(this.keyFramesTimeline)
                 this.keyFramesTimeline.resize([this.keyFramesTimeline.size[0], e.y - 5]);
             
@@ -413,38 +435,50 @@ class Gui {
             nmfmenu.disable();
             window.menubar.showMenu( menubar, null, menubar.element, false );
 
-            if(!this.NMFtimeline) {
+            if(!this.clipsTimeline) {
                         
-                this.NMFtimeline = new ClipsTimeline(null, null, [this.keyFramesTimeline.size[0], this.keyFramesTimeline.size[1]], false);
-                this.NMFtimeline.name = "Non-Manual Features";
-                this.NMFtimeline.framerate = 30;
-                this.NMFtimeline.setScale(400);
-                this.NMFtimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.bodyAnimation.duration - 0.001) );
-                this.NMFtimeline.onSetDuration = (t) => {this.duration = this.keyFramesTimeline.duration = this.keyFramesTimeline.animationClip.duration = t};
-                this.NMFtimeline.onSelectClip = this.showClipInfo.bind(this);
-                this.NMFtimeline.onClipMoved = ()=> {
+                this.clipsTimeline = new ClipsTimeline(null, null, [this.keyFramesTimeline.size[0], this.keyFramesTimeline.size[1]], false);
+                this.clipsTimeline.name = "Non-Manual Features";
+                this.clipsTimeline.framerate = 30;
+                this.clipsTimeline.setScale(400);
+                this.clipsTimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.bodyAnimation.duration - 0.001) );
+                this.clipsTimeline.onSetDuration = (t) => {this.duration = this.keyFramesTimeline.duration = this.keyFramesTimeline.animationClip.duration = t};
+                this.clipsTimeline.onSelectClip = this.showClipInfo.bind(this);
+                this.clipsTimeline.onClipMoved = ()=> {
                     this.editor.NMFController.updateTracks();
-                    this.NMFtimeline.onSetTime(this.NMFtimeline.currentTime) 
+                    this.clipsTimeline.onSetTime(this.clipsTimeline.currentTime) 
                 };
-                this.NMFtimeline.animationClip = {duration: this.keyFramesTimeline.duration, tracks: []};
-                // this.NMFtimeline.addClip( new ANIM.FaceLexemeClip());
+                this.clipsTimeline.animationClip = {duration: this.keyFramesTimeline.duration, tracks: []};
+                // this.clipsTimeline.addClip( new ANIM.FaceLexemeClip());
                 
-                this.NMFtimeline.onUpdateTrack = this.editor.NMFController.updateTracks.bind(this.editor.NMFController);
-                this.editor.NMFController.begin(this.NMFtimeline);
+                this.clipsTimeline.onUpdateTrack = this.editor.NMFController.updateTracks.bind(this.editor.NMFController);
+                this.editor.NMFController.begin(this.clipsTimeline);
                 this.showNMFGuide();
                 
             }
+            else if( !this.clipsTimeline.animationClip) {
+                this.clipsTimeline.onClipMoved = ()=> {
+                    this.editor.NMFController.updateTracks();
+                    this.clipsTimeline.onSetTime(this.clipsTimeline.currentTime) 
+                };
+                this.clipsTimeline.onSetDuration(this.keyFramesTimeline.duration);
+                this.clipsTimeline.onUpdateTrack = this.editor.NMFController.updateTracks.bind(this.editor.NMFController);
+                this.editor.NMFController.begin(this.clipsTimeline);
+                this.showNMFGuide();
+            }
             // splitbar.classList.remove("hidden");
+            this.clipsTimeline.resize(this.keyFramesTimeline.size);
             this.keyFramesTimeline.active = false;
-            let c = document.getElementById("timeline")
-            c.style.height =  this.timelineCTX.canvas.height*2 + 20 + 'px';
-            let canvas = document.getElementById("timelineNMFCanvas")
-            canvas.style.display =  'block';
+            // this.keyFramesTimeline.resize([this.keyFramesTimeline.size[0], this.keyFramesTimeline.size[1]*2 + 20])
+           
+            this.clipsTimeline.setVisibility(true);
+            // let canvas = document.getElementById("timelineNMFCanvas")
+            // canvas.style.display =  'block';
             let canvasArea = document.getElementById("canvasarea");
             this.editor.resize(canvasArea.clientWidth, canvasArea.clientHeight);
             
-            if(this.NMFtimeline.selectedClip)
-                this.showClipInfo(this.NMFtimeline.selectedClip);
+            if(this.clipsTimeline.selectedClip)
+                this.showClipInfo(this.clipsTimeline.selectedClip);
             this.updateSidePanel();
             document.querySelector("[title='skeleton']").click()
 
@@ -452,10 +486,10 @@ class Gui {
         else{
             // splitbar.classList.add("hidden");
             this.keyFramesTimeline.active = true;
-            let c = document.getElementById("timeline")
-            c.style.height =  this.timelineCTX.canvas.height + 'px';
-            let canvas = document.getElementById("timelineNMFCanvas")
-            canvas.style.display =  'none';
+            // this.keyFramesTimeline.resize([this.keyFramesTimeline.size[0], this.keyFramesTimeline.size[1]/2 - 20])
+            this.clipsTimeline.setVisibility(false);
+            // let canvas = document.getElementById("timelineNMFCanvas")
+            // canvas.style.display =  'none';
             nmfmenu.data.checkbox = false;
             nmfmenu.enable();
             mfmenu.disable();
@@ -577,27 +611,27 @@ class Gui {
         inspector.addInfo(null, 'Position yourself centered on the image with the hands and troso visible. If the conditions are not met, reposition yourself or the camera.') 
         inspector.addInfo(null, 'Distance to the camera');
 
-        let progressVar = document.createElement('div');
-        progressVar.className = "progress mb-3";
-        progressVar.innerHTML = 
+        let progressBar = document.createElement('div');
+        progressBar.className = "progress mb-3";
+        progressBar.innerHTML = 
            '<div id="progressbar-torso" class="progress-bar bg-danger" role="progressbar" style="width: 50%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>'
 
-        inspector.root.appendChild(progressVar);
+        inspector.root.appendChild(progressBar);
         inspector.addInfo(null, 'Left Hand visibility');
-        let progressVarLH = document.createElement('div');
-        progressVarLH.className = "progress mb-3";
-        progressVarLH.innerHTML = 
+        let progressBarLH = document.createElement('div');
+        progressBarLH.className = "progress mb-3";
+        progressBarLH.innerHTML = 
            '<div id="progressbar-lefthand" class="progress-bar bg-danger" role="progressbar" style="width: 50%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>'
            
-        inspector.root.appendChild(progressVarLH);
+        inspector.root.appendChild(progressBarLH);
 
         inspector.addInfo(null, 'Right hand visibility');
-        let progressVarRH = document.createElement('div');
-        progressVarRH.className = "progress mb-3";
-        progressVarRH.innerHTML = 
+        let progressBarRH = document.createElement('div');
+        progressBarRH.className = "progress mb-3";
+        progressBarRH.innerHTML = 
            '<div id="progressbar-righthand" class="progress-bar bg-danger" role="progressbar" style="width: 50%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>'
         
-        inspector.root.appendChild(progressVarRH);
+        inspector.root.appendChild(progressBarRH);
         mainCapture.appendChild(i);
         mainCapture.appendChild(inspector.root)
         videoArea.appendChild(buttonContainer);
@@ -671,19 +705,23 @@ class Gui {
 
             for(let i in blendshapesResults)
             {
-                let value = blendshapesResults[i];
                 let progressBar = document.getElementById("progressbar-"+i);
                 if(!progressBar) 
                     continue;
-                progressBar.setAttribute("aria-valuenow", value*100);
-                progressBar.style.width = value*100 + '%';
-                progressBar.className = "progress-bar";
-                if(value < 0.25) 
-                    progressBar.classList.add("bg-danger")
-                else if(value > 0.25 && value < 0.5) 
-                    progressBar.classList.add("bg-warning")
-                else 
-                    progressBar.classList.add("bg-success")
+                let value = blendshapesResults[i];
+                value = value.toFixed(2);
+                // progressBar.setAttribute("aria-valuenow", value*100);
+                // progressBar.style.width = value*100 + '%';
+                // progressBar.className = "progress-bar";
+                // if(value < 0.25) 
+                //     progressBar.classList.add("bg-danger")
+                // else if(value > 0.25 && value < 0.5) 
+                //     progressBar.classList.add("bg-warning")
+                // else 
+                //     progressBar.classList.add("bg-success")
+                progressBar.value = value;
+                if(document.getElementById('progressvalue-' + i ))
+				    document.getElementById('progressvalue-' + i ).innerText = value;
             }
         }
     }
@@ -763,6 +801,8 @@ class Gui {
         }
 
         canvas.onmousemove = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             ctxClon = clon.getContext("2d");
             var pos = findPos(canvas);
             var x = e.pageX - pos.x;
@@ -851,6 +891,10 @@ class Gui {
         // bsPanel.content.appendChild(inspector.root);
 
         canvas.onmouseup = (e) => {
+
+            e.preventDefault();
+            e.stopPropagation();
+
             ctxClon = clon.getContext("2d");
             var pos = findPos(canvas);
             var x = e.pageX - pos.x;
@@ -901,7 +945,7 @@ class Gui {
         
         this.updateSidePanel( skeletonPanel, 'root', {firstBone: true} );
         
-        tabs.addTab("Skeleton", { size: "full", content: skeletonPanel.content, callback: () => {
+        tabs.addTab("Skeleton", { size: "full", content: skeletonPanel.content, callback: (tab, content, e) => {
             this.keyFramesTimeline.processTracks = KeyFramesTimeline.prototype.processTracks;
             this.keyFramesTimeline.setAnimationClip(this.editor.bodyAnimation);
             let bone = this.editor.getSelectedBone();
@@ -909,7 +953,9 @@ class Gui {
             // if(this.timeline.clip != this.editor.bodyAnimation)
             //     this.loadClip(this.editor.bodyAnimation);
         } });
-        tabs.addTab("Blendshapes", { size: "full" , content: bsPanel.content, callback: () => {
+
+        tabs.addTab("Blendshapes", { size: "full" , content: bsPanel.content, callback: (tab, content, e) => {
+            e.stopPropagation();
             // this.loadClip(this.editor.auAnimation);
             canvas.height = bsArea.getSection(0).getHeight();
             bsArea.onResize();
@@ -953,6 +999,7 @@ class Gui {
             }
             this.keyFramesTimeline.setAnimationClip(this.editor.auAnimation);
             this.keyFramesTimeline.selectedItem = this.editor.getSelectedActionUnit();
+            // this.keyFramesTimeline.resize(this.keyFramesTimeline.size)
         } });
 
         this.mainArea.getSection(1).add( tabs );
@@ -977,16 +1024,17 @@ class Gui {
         //inspector.addSection("User positioning");
 
         for(let name in bsNames) {
-            let info = inspector.addInfo(null, name, {width: "150px"});
-            if(document.getElementById('progressbar-' + name ))
-                document.getElementById('progressbar-' + name ).remove();
+            // let info = inspector.addInfo(null, name, {width: "150px"});
+            // if(document.getElementById('progressbar-' + name ))
+            //     document.getElementById('progressbar-' + name ).remove();
 
-            let progressVar = document.createElement('div');
-            progressVar.className = "progress mb-3";
-            progressVar.innerHTML = 
-            '<div id="progressbar-' + name + '" class="progress-bar bg-danger" role="progressbar" style="width: 0%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>'
+            // let progressBar = document.createElement('div');
+            // progressBar.className = "progress mb-3";
+            // progressBar.innerHTML = 
+            // '<div id="progressbar-' + name + '" class="progress-bar bg-danger" role="progressbar" style="width: 0%" aria-valuenow="15" aria-valuemin="0" aria-valuemax="100"></div>'
           
-            info.appendChild(progressVar);
+            // info.appendChild(progressBar);
+            inspector.addProgressbar(name, 0, {min: 0, max: 1, low: 0.3, optimum: 1, high: 0.6, showValue: true, editable: true, callback: this.updateBlendshapesProperties.bind(this)});
         }
         
         return inspector;
@@ -1166,7 +1214,7 @@ class Gui {
                 callback: function(v, e) { 
                     
                     dialog.close();
-                    that.NMFtimeline.addClip( new ANIM.FaceLexemeClip({lexeme:this.name}));
+                    that.clipsTimeline.addClip( new ANIM.FaceLexemeClip({lexeme:this.name}));
                     
                    // that.editor.NMFController.updateTracks.bind(that.editor.NMFController) ;
                 }
@@ -1191,7 +1239,7 @@ class Gui {
                     dialog.close();
                     let presetClip = new ANIM.FacePresetClip({preset: v});
                     for(let i = 0; i < presetClip.clips.length; i++){
-                        that.NMFtimeline.addClip( presetClip.clips[i], presetClip.clips[i].start);
+                        that.clipsTimeline.addClip( presetClip.clips[i], presetClip.clips[i].start);
                     }
                     //that.editor.NMFController.updateTracks.bind(that.editor.NMFController) 
                 }
@@ -1215,7 +1263,7 @@ class Gui {
             let presetInfo = {preset: v, clips:[]};
             for(let i = 0; i < clips.length; i++){
                 let [trackIdx, clipIdx] = clips[i];
-                presetInfo.clips.push(this.NMFtimeline.clip.tracks[trackIdx].clips[clipIdx]);
+                presetInfo.clips.push(this.clipsTimeline.clip.tracks[trackIdx].clips[clipIdx]);
             }
             let preset = new ANIM.FacePresetClip(presetInfo);
         }, {title: "Create preset"} )
@@ -1243,8 +1291,8 @@ class Gui {
             inspector.addSection("Time");
             const updateTracks = () => {
                 this.showClipInfo(clip);
-                if(clip.start + clip.duration > this.NMFtimeline) {
-                    this.NMFtimeline.onSetDuration(clip.start + clip.duration);
+                if(clip.start + clip.duration > this.clipsTimeline) {
+                    this.clipsTimeline.onSetDuration(clip.start + clip.duration);
                 }
                 this.editor.NMFController.updateTracks(); 
             }
@@ -1341,7 +1389,7 @@ class Gui {
                     }
                 }
             }
-            inspector.addButton(null, "Delete", () => this.NMFtimeline.deleteClip(this.NMFtimeline._lastClipsSelected[0], () => {clip = null;  this.NMFtimeline.optimizeTracks(); updateTracks()}));
+            inspector.addButton(null, "Delete", () => this.clipsTimeline.deleteClip(this.clipsTimeline.lastClipsSelected[0], () => {clip = null;  this.clipsTimeline.optimizeTracks(); updateTracks()}));
         }
         this.sidePanel.content.replaceChild(inspector.root, this.sidePanel.content.getElementsByClassName("inspector")[0]);
     }
@@ -1358,6 +1406,34 @@ class Gui {
         }
     }
     
+    updateBlendshapesProperties(name, value) {
+        value = Number(value);
+        let tracksIdx = [];                    
+        for(let i = 0; i < this.editor.auAnimation.tracks.length; i++) {
+            if(name == this.editor.auAnimation.tracks[i].name) {
+                let idx = this.keyFramesTimeline.getCurrentKeyFrame(this.keyFramesTimeline.animationClip.tracks[i], this.keyFramesTimeline.currentTime, 0.1)
+                this.keyFramesTimeline.animationClip.tracks[i].values[idx] = value;
+                this.editor.auAnimation.tracks[i].values[idx] = value;
+                this.editor.blendshapesArray[idx][name] = value;
+                let map = this.editor.blendshapesManager.getBlendshapesMap(name);
+                for(let j = 0; j < map.length; j++){
+                    for(let t = 0; t < this.editor.faceAnimation.tracks.length; t++) {
+                        
+                        if(this.editor.faceAnimation.tracks[t].name == map[j]) {
+                            this.editor.faceAnimation.tracks[t].values[idx] = value;
+                            tracksIdx.push(t);
+                            break;
+                        }
+                    }
+                }
+                // Update animation interpolants
+                this.editor.updateAnimationAction(this.editor.faceAnimation, tracksIdx );
+                return true;
+            }
+        }
+        //update clip
+    }
+
     openSettings( settings ) {
         
         let prevDialog = document.getElementById("settings-dialog");
@@ -1420,7 +1496,7 @@ class Gui {
 
     drawTimeline() {
         
-        const canvas = this.timelineCTX.canvas;
+        // const canvas = this.timelineCTX.canvas;
         this.currentTime = this.editor.mixer.time;
 
         if(this.currentTime > this.duration) {
@@ -1428,26 +1504,25 @@ class Gui {
             this.editor.onAnimationEnded();
         }
 
-        this.keyFramesTimeline.draw(this.timelineCTX, this.currentTime, [0, 0, canvas.width, canvas.height]);
-        if(this.NMFtimeline)
+        this.keyFramesTimeline.draw(this.currentTime); //  [0, 0, canvas.width, canvas.height]
+        if(this.clipsTimeline)
         {
            
-            this.NMFtimeline.draw(this.timelineNMFCTX, this.currentTime, [0, 0, this.timelineNMFCTX.canvas.width, this.timelineNMFCTX.canvas.height], false);    
+            this.clipsTimeline.draw(this.currentTime, null, false);    // [0, 0, this.timelineNMFCTX.canvas.width, this.timelineNMFCTX.canvas.height]
         }
         
     }
 
-    showKeyFrameOptions(e, info, index) {
+    showKeyFrameOptions(e, track) {
 
         let actions = [];
-
-        let track = this.keyFramesTimeline.getTrack(info);
-
+        let keyframes = this.keyFramesTimeline.lastKeyFramesSelected;
+        let index = keyframes.map((x) => x[2]);
         if(index !== undefined) {
             if(!track)
             return;
     
-            e.multipleSelection &= this.keyFramesTimeline.isKeyFrameSelected(track, index);
+            e.multipleSelection = index.length > 1//this.keyFramesTimeline.isKeyFrameSelected(track, index);
     
             actions.push(
                 {
@@ -1493,11 +1568,11 @@ class Gui {
     onMouse(e, nmf = null) {
 
         e.preventDefault();
-        //let rect = this.timeline._canvas.getBoundingClientRect();
+        //let rect = this.timeline.canvas.getBoundingClientRect();
         // if( e.x >= rect.left && e.x <= rect.right && e.y >= rect.top && e.y <= rect.bottom)
         // {
-        //     if(e.type == "mousedown" && this.NMFtimeline)
-        //         this.NMFtimeline.selectedClip = null;
+        //     if(e.type == "mousedown" && this.clipsTimeline)
+        //         this.clipsTimeline.selectedClip = null;
         //     this.timeline.processMouse(e);
         //     return;
         // }
@@ -1506,11 +1581,11 @@ class Gui {
             this.keyFramesTimeline.processMouse(e);
             return;
         }
-        else if(this.NMFtimeline)
+        else if(this.clipsTimeline)
         {
             // if(e.type == "mousedown")
             //     this.timeline.deselectAll();
-            this.NMFtimeline.processMouse(e);
+            this.clipsTimeline.processMouse(e);
             if(e.type == "wheel")
                 this.keyFramesTimeline.processMouse(e);
 

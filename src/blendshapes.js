@@ -226,5 +226,22 @@ class BlendshapesManager {
         let auAnimation = new THREE.AnimationClip("au-animation", length, auTracks);
         return [animation, auAnimation];
     }
+
+
+    getBlendshapesMap = function(name) {
+        let map = this.mapNames[name];
+        let bs = [];
+        if(typeof map == 'string') {
+            map = [map];
+        }
+    
+        for(let mesh of this.skinnedMeshes) {
+
+            for(let i = 0; i < map.length; i++) {
+                bs.push(mesh.name +'.morphTargetInfluences['+ map[i] + ']');
+            }
+        }
+        return bs;
+    }
 }
 export {BlendshapesManager}

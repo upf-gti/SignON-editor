@@ -100,16 +100,16 @@ const VideoUtils = {
         ctx.fillRect(this.playButtonWidth + this.offsetWidth, this.height - 0.5*(this.markerHeight + this.offsetHeight*3) - 1  , this.width - this.offsetWidth*2 - this.playButtonWidth, 2);
 
         ctx.globalAlpha = 1;
-        ctx.fillStyle = 'rgb(58, 161, 156)';
+        ctx.fillStyle = '#5f88c9';
         ctx.fillRect(this.playButtonWidth + this.offsetWidth + this.timeToX(this.startTime), this.height - 0.5*(this.markerHeight + this.offsetHeight*3) - 1 , this.timeToX(this.endTime - this.startTime), 2);
         
         ctx.strokeStyle = ctx.fillStyle;
         this.renderPlayButton();
 
         // Min-Max time markers
-        this.renderTimeMarker('start', this.startTime, { color: null, fillColor: 'rgb(58, 161, 156, 1)', width: 15 });
-        this.renderTimeMarker('end', this.endTime, { color: null, fillColor: 'rgb(58, 161, 156, 1)', width: 15 });
-        this.renderTimeMarker('current', this.video.currentTime, { color: '#e5e5e5', fillColor: '#e5e5e5', width: 2 });
+        this.renderTimeMarker('start', this.startTime, { color: null, fillColor: '#5f88c9', width: 15 });
+        this.renderTimeMarker('end', this.endTime, { color: null, fillColor: '#5f88c9', width: 15 });
+        this.renderTimeMarker('current', this.video.currentTime, { color: '#e5e5e5', fillColor: '#5f88c9', width: 2 });
 
         ctx.restore();
     },
@@ -123,7 +123,7 @@ const VideoUtils = {
             ctx.beginPath();
             ctx.moveTo(this.offsetWidth + 2, this.height - this.markerHeight - this.offsetHeight*2 + 4);
             ctx.lineTo(this.offsetWidth + 2, this.height - this.offsetHeight*2 - 4);
-            ctx.lineTo( this.playButtonWidth - 2, this.height - 0.5*(this.markerHeight + this.offsetHeight*3) );
+            ctx.lineTo( this.playButtonWidth - 2, this.height - 0.5*(this.markerHeight + this.offsetHeight*2 ) -4);
             ctx.closePath();
             ctx.fill();
 
@@ -136,9 +136,9 @@ const VideoUtils = {
             {
                 ctx.globalAlpha = 0.2;
                 ctx.beginPath();
-                ctx.moveTo(this.offsetWidth, this.height - this.markerHeight - this.offsetHeight*2);
-                ctx.lineTo(this.offsetWidth, this.height - this.offsetHeight*2);
-                ctx.lineTo( this.playButtonWidth, this.height - 0.5*(this.markerHeight + this.offsetHeight*3) );
+                ctx.moveTo(this.offsetWidth - 0.5, this.height - this.markerHeight - this.offsetHeight*2 +3);
+                ctx.lineTo(this.offsetWidth - 0.5, this.height - this.offsetHeight*2 -3);
+                ctx.lineTo( this.playButtonWidth + 0.5 , this.height - 0.5*(this.markerHeight + this.offsetHeight*2 ) - 4);
                 ctx.closePath();
                 ctx.fill();
                 ctx.stroke();
