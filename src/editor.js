@@ -46,7 +46,7 @@ class Editor {
 	    this.onDrawSettings = null;
         this.gui = new Gui(this);
 
-        this.optimizeThreshold = 0.01;
+        this.optimizeThreshold = 0.001;
         this.defaultTranslationSnapValue = 1;
         this.defaultRotationSnapValue = 30; // Degrees
 
@@ -301,6 +301,11 @@ class Editor {
             
             } );
 
+        } else if (urlParams.get('load') == 'IK') {
+
+            // TODO
+            // ...
+
         } else {// -- default -- if ( urlParams.get('load') == 'NN' ) {
             this.animationClip = createAnimationFromRotations(this.clipName, this.nn);
             if (urlParams.get('skin') && urlParams.get('skin') == 'false') {
@@ -478,7 +483,7 @@ class Editor {
             
             this.mixer.update(0);
             this.gizmo.begin(this.skeletonHelper);
-            this.setBoneSize(0.2);
+            this.setBoneSize(0.07);
             this.animate();
             $('#loading').fadeOut();
         } );

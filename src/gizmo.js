@@ -184,7 +184,7 @@ class Gizmo {
         this.ikSolver = new CCDIKSolver( this.skeleton );
         this.ikSolver.setIterations( 1 );
         this.ikSolver.setSquaredDistanceThreshold( 0.000001 );
-        this.ikSolver.constraintsEnabler = false;
+        this.ikSolver.constraintsEnabler = false; // this line disable the constraints
 
         // this.ikHelper = new IKHelper();
         // this.ikHelper.begin(this.ikSolver, scene);
@@ -706,7 +706,7 @@ class Gizmo {
         }});
         inspector.addTitle("Bone markers")
         inspector.addSlider( "Size", this.editor.getGizmoSize(), { min: 0.01, max: 1, step: 0.01, callback: (v) => {
-            this.editor.setBoneSize(v);
+            this.editor.setBoneSize(v*0.3); // scaled to 0.3 since it is the realistic max, 1 is left to give user a better control
         }});
 
         const depthTestEnabled = this.bonePoints.material.depthTest;
