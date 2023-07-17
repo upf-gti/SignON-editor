@@ -911,7 +911,6 @@ class Gui {
                 //ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
                 this.keyFramesTimeline.selectedItem = areas[color];
                 updateAreasColor(data, currentData, maskData);
-                console.log(areas[color])
                 let names = {};
                 for(let i in this.editor.mapNames) {
                     let toCompare = areas[color].toLowerCase().split(" ");

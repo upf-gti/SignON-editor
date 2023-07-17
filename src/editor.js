@@ -843,6 +843,7 @@ class Editor {
 
             this.mixer.update(dt);
             this.gui.updateBoneProperties();
+            this.updateCaptureDataTime({blendshapesResults: this.blendshapesArray}, this.mixer.time);
         }
 
         this.gizmo.update(this.state, dt);

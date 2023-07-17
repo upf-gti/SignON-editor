@@ -144,8 +144,9 @@ const MediaPipe = {
             webcamera.start();
         } else {
             videoElement.play();
-            videoElement.controls = true;
+            // videoElement.controls = true;
             videoElement.loop = true;
+            videoElement.muted = true;
             videoElement.requestVideoFrameCallback( this.sendVideo.bind(this, holistic, videoElement) );  
         }
     },
