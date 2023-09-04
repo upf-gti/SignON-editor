@@ -2873,7 +2873,7 @@
                     }
 
                     if(e.altKey) {
-                        let trackRange = [this.tracksDrawn[track.clipIdx][1], this.tracksDrawn[track.clipIdx][1] + this.trackHeight];
+                        let trackRange = [this.tracksDrawn[track.idx][1], this.tracksDrawn[track.idx][1] + this.trackHeight];
                         localY = Math.min( trackRange[1], Math.max(trackRange[0], localY) );
                         
                         //convert to range track values
@@ -3596,11 +3596,13 @@
             if(uglyName.includes("[")) {
                 const nameIndex = uglyName.indexOf('['),
                     trackNameInfo = uglyName.substr(nameIndex+1).split("].");
-                name = trackNameInfo[0];
+                name = trackNameInfo[0].replaceAll(/[\[\]]/g,"");
+                name = name.replaceAll("_", " ");
                 type = trackNameInfo[1];
             }else {
                 const trackNameInfo = uglyName.split(".");
-                name = trackNameInfo[0];
+                name = trackNameInfo[0].replaceAll(/[\[\]]/g,"");
+                name = name.replaceAll("_", " ");
                 type = trackNameInfo[1];
             }
 

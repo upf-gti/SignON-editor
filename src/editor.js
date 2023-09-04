@@ -748,8 +748,11 @@ class Editor {
     updateBlendshapesProperties(name, value) {
         value = Number(value);
         let tracksIdx = [];                    
-        for(let i = 0; i < this.auAnimation.tracks.length; i++) {
-            if(this.auAnimation.tracks[i].name.includes(name)) {
+        for(let i = 0; i < this.activeTimeline.tracksDrawn.length; i++) {
+            let info = this.activeTimeline.tracksDrawn[i][0];
+            if(info.type == name){
+                i = info.clipIdx;
+        
                 let idx = this.activeTimeline.getCurrentKeyFrame(this.activeTimeline.animationClip.tracks[i], this.activeTimeline.currentTime, 0.01)
                 this.activeTimeline.animationClip.tracks[i].values[idx] = value;
                 this.auAnimation.tracks[i].values[idx] = value;
@@ -862,8 +865,8 @@ class Editor {
             }
             if(this.bodyAnimation.name == animation.name)
                 this.bodyAnimation = animation;
-            else if(this.auAnimation.name == animation.name)
-                this.auAnimation = animation;
+            else if(this.faceAnimation.name == animation.name)
+                this.faceAnimation = animation;
         }
         else {
             for(let i = 0; i< mixer._actions.length; i++) {
@@ -880,8 +883,8 @@ class Editor {
                     }
                     if(this.bodyAnimation.name == animation.name)
                         this.bodyAnimation = animation;
-                    else if(this.auAnimation.name == animation.name)
-                        this.auAnimation = animation;
+                    else if(this.faceAnimation.name == animation.name)
+                        this.faceAnimation = animation;
                     return;
                 }
             }
