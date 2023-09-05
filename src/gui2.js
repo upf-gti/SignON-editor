@@ -148,7 +148,7 @@ class Gui {
 
         for(let name in bsNames) {
     
-            inspector.addProgress(name, 0, {min: 0, max: 1, low: 0.3, optimum: 1, high: 0.6, editable: options.editable, showNumber: options.showNumber, callback: (v,e) => this.editor.updateBlendshapesProperties(name, v)});
+            inspector.addProgress(name, 0, {min: 0, max: 1, low: 0.3, optimum: 1, high: 0.6, editable: options.editable, showNumber: options.showNumber, callback: (v,e) => this.editor.updateBlendshapesProperties(name, v), signal: "@on_change_" + name});
         }
         
         return inspector;
@@ -166,6 +166,11 @@ class Gui {
         this.curvesTimeline.setFramerate(30);
         this.curvesTimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.auAnimation.duration - 0.001) );
         this.curvesTimeline.onUpdateTrack = (idx) => this.editor.updateAnimationAction(this.curvesTimeline.animationClip, idx);
+        this.curvesTimeline.onMouse = (e, time) => {
+            if(e.type == "mousemove") {
+
+            }
+        }
         this.curvesTimeline.hide();
 
         this.clipsTimeline = new LX.ClipsTimeline("Non manual features", {});

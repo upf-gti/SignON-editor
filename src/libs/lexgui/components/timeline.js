@@ -2880,6 +2880,7 @@
                         let value = (((localY - trackRange[1]) * (this.range[1] - this.range[0])) / (trackRange[0] - trackRange[1])) + this.range[0];
                         track.edited[keyIndex] = true;
                         this.animationClip.tracks[ track.clipIdx ].values[ keyIndex ] = value;
+                        LX.emit( "@on_change_" + this.tracksDrawn[track.idx][0].type, value );
                     }
                 }
                 return
