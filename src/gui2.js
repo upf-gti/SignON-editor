@@ -695,6 +695,8 @@ class Gui {
         let map = document.createElement("map");
         map.name = "areasmap";
 
+        let div = document.createElement("div");
+        div.style.position = "fixed";
         let mapHovers = document.createElement("div");
         for(let area in this.faceAreas) {
             let maparea = document.createElement("area");
@@ -702,35 +704,67 @@ class Gui {
             maparea.name = this.faceAreas[area];
             switch(this.faceAreas[area]) {
                 case "Eye Left":
-                    maparea.coords = "76,347,145,317,212,318,225,327,228,366,212,379,92,375";
-                    break;
-                case "Eye Right":
                     maparea.coords = "305,325,377,316,449,341,452,366,314,377,301,366";
                     break;
+                    case "Eye Right":
+                    maparea.coords = "76,347,145,317,212,318,225,327,228,366,212,379,92,375";
+                    break;
                 case "Mouth":
-                    maparea.coords = "196,504,314,504,352,550,331,572,,200,578,167,550";
-                break;
+                    maparea.coords = "196,504,314,504,352,550,331,572,200,578,167,550";
+                    break;
+                case "Nose":
+                    maparea.coords = "244,332,283,331,316,478,206,483";
+                    break;
+                case "Brow Left":
+                    maparea.coords = "279,269,375,262,467,317,465,317,465,336,392,310,285,321";
+                    break;
+                case "Brow Right":
+                    maparea.coords = "252,269,142,264,66,314,69,314,69,333,133,307,264,321";
+                    break;
+                case "Cheek Left":
+                    maparea.coords = "305,384,378,388,441,380,461,389,463,409,436,507,390,582,357,532,33,499,321,451";
+                    break;
+                case "Cheek Right":
+                    maparea.coords = "69,388,83,377,139,387,216,384,193,482,185,499,159,533,123,584,82,496";
+                    break;
+                case "Jaw":
+                    maparea.coords = "155,569,184,583,258,592,342,579,364,567,377,597,311,666,259,681,205,671,132,610,130,595";
+                    break;
             }
-            maparea.addEventListener("click", () => {
+            maparea.addEventListener("click", (e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 this.updateActionUnitsPanel(maparea.name);
                 let m = mapHovers.querySelector("[alt='" + maparea.name + "']");
-                m.setAttribute("selected", true);
+                // for(let i = 0; i < m.parentElement.children.length; i++) {
+                //     m.parentElement.children[i].setAttribute( "selected", false);
+                // }
+                // m.setAttribute("selected", true);
+                img.src = "./data/imgs/face areas2 " + maparea.name + ".png";
 
             });
-            maparea.addEventListener("mouseenter", () => { 
-                mapHovers.style.top = img.getBoundingClientRect().y + "px";
+            maparea.addEventListener("mouseover", (e) => { 
+                e.preventDefault();
+                e.stopPropagation();
+                div.style.top = img.getBoundingClientRect().y + "px";
                 let m = mapHovers.querySelector("[alt='" + maparea.name + "']");
-                if(!m.getAttribute("selected")) {
-
-                    m.style.display = "block";
+                //if(!m.getAttribute("selected")) {
+                    
+                    if(m.style.display == "none")
+                        m.style.display = "block";
                     m.width = img.width;
                     m.height = img.height;
-                }
+               //}
             });
-            maparea.addEventListener("mouseleave", () => { 
+            maparea.addEventListener("mouseleave", (e) => { 
+                e.preventDefault();
+                e.stopPropagation();
                 let m = mapHovers.querySelector("[alt='" + maparea.name + "']");
-                if(!m.getAttribute("selected"))
-                    m.style.display = "none";
+                //if(!m.getAttribute("selected")) {
+                    if(m.style.display == "block")
+                        m.style.display = "none";
+                    
+                //}
             });
 
             map.appendChild(maparea);
@@ -742,10 +776,11 @@ class Gui {
             imgHover.style.height = "100%";
             mapHovers.appendChild(imgHover);
         }
-        container.appendChild(map);
-        container.appendChild(mapHovers);
+        div.appendChild(mapHovers);
+        mapHovers.style.position = "relative";
+        container.appendChild(div);
         root.root.appendChild(container);
-        mapHovers.style.position = "fixed";
+        container.appendChild(map);
         
         container.style.height = "100%";
         container.style.display = "flex";
@@ -759,6 +794,13 @@ class Gui {
 
             
             this.imageMap = new ImageMap(map, w, h);
+            // map.style.width = w + "px";
+            // map.style.height = h + "px";
+            // map.style.position = "absolute";
+            // for(let i = 0; i < map.children.length; i++) {
+            //     map.children[i].style.width =  w + "px";
+            //     map.children[i].style.height = h + "px";
+            // }
         }
 
         var ImageMap = function(map, w, h){

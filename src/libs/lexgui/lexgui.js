@@ -20,6 +20,8 @@
     function round(num, n) { return +num.toFixed(n); }
     function deepCopy(o) { return JSON.parse(JSON.stringify(o)) }
 
+    LX.deepCopy = deepCopy;
+
     function hexToRgb(string) {
         const red = parseInt(string.substring(1, 3), 16) / 255;
         const green = parseInt(string.substring(3, 5), 16) / 255;
@@ -424,8 +426,9 @@
             if( obj.constructor === Widget )
             {
                 obj.set( value );
+                
                 if(obj.options && obj.options.callback)
-                    obj.options.callback(value, data)
+                    obj.options.callback(value, data);
             }else
             {
                 obj[signal_name].call(obj, value);
@@ -1130,6 +1133,8 @@
 
         constructor( area, options = {} )  {
 
+            this.onclose = options.onclose;
+
             let container = document.createElement('div');
             container.className = "lexareatabs";
 
@@ -1179,17 +1184,21 @@
             this.selected = null;
             this.root = container;
             this.tabs = {};
+            this.tabDOMs = {};
         }
 
         add( name, content, isSelected, callback, options = {} ) {
 
-            if( isSelected )
+            if( isSelected ) {
                 this.root.querySelectorAll('span').forEach( s => s.classList.remove('selected'));
+                this.area.root.querySelectorAll('.lextabcontent').forEach( c => c.style.display = 'none');
+            }
             
             isSelected = !Object.keys( this.tabs ).length ? true : isSelected;
 
             let contentEl = content.root ? content.root : content;
             contentEl.style.display = isSelected ? "block" : "none";
+            contentEl.classList.add("lextabcontent");
 
             // Create tab
             let tabEl = document.createElement('span');
@@ -1197,7 +1206,9 @@
             tabEl.className = "lexareatab" + (isSelected ? " selected" : "");
             tabEl.innerHTML = name;
             tabEl.id = name.replace(/\s/g, '') + Tabs.TAB_ID++;
+            tabEl.title = options.title;
             tabEl.selected = isSelected;
+            tabEl.fixed = options.fixed;
             if(tabEl.selected)
                 this.selected = name;
             tabEl.instance = this;
@@ -1212,15 +1223,30 @@
             tabEl.addEventListener("click", e => {
                 e.preventDefault();
                 e.stopPropagation();
-                // Manage selected
-                tabEl.parentElement.querySelectorAll('span').forEach( s => s.classList.remove('selected'));
-                tabEl.classList.toggle('selected');
-                // Manage visibility
-                tabEl.instance.area.root.childNodes.forEach( c => c.style.display = 'none');
-                contentEl.style.display = "block";
-                tabEl.instance.selected = tabEl.dataset.name;
+
+                if( !tabEl.fixed )
+                {
+                    // Manage selected
+                    tabEl.parentElement.querySelectorAll('span').forEach( s => s.classList.remove('selected'));
+                    tabEl.classList.toggle('selected');
+                    // Manage visibility 
+                    tabEl.instance.area.root.querySelectorAll('.lextabcontent').forEach( c => c.style.display = 'none');
+                    contentEl.style.display = "block";
+                    tabEl.instance.selected = tabEl.dataset.name;
+                }
+
                 if(options.onSelect) 
                     options.onSelect(e, tabEl.dataset.name);
+            });
+
+            tabEl.addEventListener("mouseup", e => {
+                e.preventDefault();
+                e.stopPropagation();
+                if(e.button == 1 ) {
+                    if(this.onclose)
+                        this.onclose( tabEl.dataset["name"] );
+                    this.delete( tabEl.dataset["name"] );
+                }
             });
             
             tabEl.setAttribute('draggable', true);
@@ -1233,12 +1259,43 @@
             });
             
             // Attach content
-            this.root.prepend(tabEl);
+            this.root.appendChild( tabEl );
             this.area.attach( contentEl );
+            this.tabDOMs[ name ] = tabEl;
             this.tabs[ name ] = content;
 
             if( callback ) callback.call(this, this.area.root.getBoundingClientRect());
         }
+
+        select( name ) {
+
+            if(!this.tabDOMs[ name ] )
+            return;
+
+            this.tabDOMs[ name ].click();
+        }
+
+        delete( name ) {
+
+            const tabEl = this.tabDOMs[ name ];
+
+            if(!tabEl || tabEl.fixed)
+            return;
+
+            // Delete tab element
+            this.tabDOMs[ name ].remove();
+            delete this.tabDOMs[ name ];
+
+            // Delete content
+            this.tabs[ name ].remove();
+            delete this.tabs[ name ];
+
+            // Select last tab
+            const last_tab = this.root.lastChild;
+            if(last_tab && !last_tab.fixed)
+                this.root.lastChild.click();
+        }
+
     }
 
     LX.Tabs = Tabs;
@@ -2694,11 +2751,15 @@
          * @param {Number} height
          */
 
-        addBlank( height = 8 ) {
+        addBlank( height = 8, width ) {
 
             let widget = this.create_widget(null, Widget.addBlank);
             widget.domEl.className += " blank";
             widget.domEl.style.height = height + "px";
+
+            if(width)
+                widget.domEl.style.width = width;
+
             return widget;
         }
 
@@ -2742,6 +2803,7 @@
          * placeholder: Add input placeholder
          * trigger: Choose onchange trigger (default, input) [default]
          * inputWidth: Width of the text input
+         * float: Justify text
          */
 
         addText( name, value, callback, options = {} ) {
@@ -2776,6 +2838,7 @@
             let wValue = document.createElement('input');
             wValue.value = wValue.iValue = value || "";
             wValue.style.width = "100%";
+            wValue.style.textAlign = options.float ?? "";
             Object.assign(wValue.style, options.style ?? {});
 
             if(options.disabled ?? false) wValue.setAttribute("disabled", true);
@@ -2921,9 +2984,10 @@
          * @param {String} value Information string
          */
 
-        addLabel( value ) {
+        addLabel( value, options = {} ) {
 
-            return this.addText( null, value, null, { disabled: true, className: "auto" } );
+            options.disabled = true;
+            return this.addText( null, value, null, options );
         }
         
         /**
@@ -2953,7 +3017,7 @@
                 (options.icon ? "<a class='" + options.icon + "'></a>" : 
                 ( options.img  ? "<img src='" + options.img + "'>" : (value || ""))) + "</span>";
 
-            wValue.style.width = "calc( 100% - " + LX.DEFAULT_NAME_WIDTH + ")";
+            wValue.style.width = "calc( 100% - " + (options.nameWidth ?? LX.DEFAULT_NAME_WIDTH) + ")";
           
             if(options.disabled)
                 wValue.setAttribute("disabled", true);
