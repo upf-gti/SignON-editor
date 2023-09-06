@@ -666,8 +666,10 @@ class Gui {
         let bodyArea = new LX.Area({className: "sidePanel", id: 'Body', scroll: true});  
         let faceArea = new LX.Area({className: "sidePanel", id: 'Face', scroll: true});  
         tabs.add( "Body", bodyArea, true, null, {onSelect: (e,v) => {this.editor.changeAnimation(v)}}  );
-        tabs.add( "Face", faceArea, false, null, {onSelect: (e,v) => {this.imageMap.resize();this.editor.changeAnimation(v); 
-            this.updateActionUnitsPanel(this.editor.getSelectedActionUnit());} });
+        tabs.add( "Face", faceArea, false, null, {onSelect: (e,v) => {this.editor.changeAnimation(v); 
+            this.updateActionUnitsPanel(this.editor.getSelectedActionUnit());
+            this.imageMap.resize();
+        } });
 
         faceArea.split({type: "vertical", sizes: ["50%", "50%"]});
         let [faceTop, faceBottom] = faceArea.sections;
@@ -710,10 +712,10 @@ class Gui {
                     maparea.coords = "76,347,145,317,212,318,225,327,228,366,212,379,92,375";
                     break;
                 case "Mouth":
-                    maparea.coords = "196,504,314,504,352,550,331,572,200,578,167,550";
+                    maparea.coords = "190,508,204,500,311,500,327,506,350,537,350,554,338,566,304,577,214,582,157,566,166,551,166,540"//"196,504,314,504,352,550,331,572,200,578,167,550";
                     break;
                 case "Nose":
-                    maparea.coords = "244,332,283,331,316,478,206,483";
+                    maparea.coords = "244,332,286,331,316,478,286,488,244,488,206,483";
                     break;
                 case "Brow Left":
                     maparea.coords = "279,269,375,262,467,317,465,317,465,336,392,310,285,321";
@@ -722,7 +724,7 @@ class Gui {
                     maparea.coords = "252,269,142,264,66,314,69,314,69,333,133,307,264,321";
                     break;
                 case "Cheek Left":
-                    maparea.coords = "305,384,378,388,441,380,461,389,463,409,436,507,390,582,357,532,33,499,321,451";
+                    maparea.coords = "305,384,378,388,441,380,461,389,463,409,436,507,390,582,357,532,333,499,321,451";
                     break;
                 case "Cheek Right":
                     maparea.coords = "69,388,83,377,139,387,216,384,193,482,185,499,159,533,123,584,82,496";
@@ -731,42 +733,7 @@ class Gui {
                     maparea.coords = "155,569,184,583,258,592,342,579,364,567,377,597,311,666,259,681,205,671,132,610,130,595";
                     break;
             }
-            maparea.addEventListener("click", (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.updateActionUnitsPanel(maparea.name);
-                let m = mapHovers.querySelector("[alt='" + maparea.name + "']");
-                // for(let i = 0; i < m.parentElement.children.length; i++) {
-                //     m.parentElement.children[i].setAttribute( "selected", false);
-                // }
-                // m.setAttribute("selected", true);
-                img.src = "./data/imgs/face areas2 " + maparea.name + ".png";
-
-            });
-            maparea.addEventListener("mouseover", (e) => { 
-                e.preventDefault();
-                e.stopPropagation();
-                div.style.top = img.getBoundingClientRect().y + "px";
-                let m = mapHovers.querySelector("[alt='" + maparea.name + "']");
-                //if(!m.getAttribute("selected")) {
-                    
-                    if(m.style.display == "none")
-                        m.style.display = "block";
-                    m.width = img.width;
-                    m.height = img.height;
-               //}
-            });
-            maparea.addEventListener("mouseleave", (e) => { 
-                e.preventDefault();
-                e.stopPropagation();
-                let m = mapHovers.querySelector("[alt='" + maparea.name + "']");
-                //if(!m.getAttribute("selected")) {
-                    if(m.style.display == "block")
-                        m.style.display = "none";
-                    
-                //}
-            });
-
+            maparea.src = "./data/imgs/"+ maparea.name + " selected.png";
             map.appendChild(maparea);
             let imgHover = document.createElement("img");
             imgHover.src = "./data/imgs/"+ maparea.name + " selected.png";
@@ -786,24 +753,28 @@ class Gui {
         container.style.display = "flex";
         container.style.justifyContent = "center";
         
+        map.addEventListener("mousedown", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            this.updateActionUnitsPanel(e.target.name);
+           
+            img.src = "./data/imgs/face areas2 " + e.target.name + ".png";
+
+        });
+
         img.onload = (e) =>
         {
             let w = img.width;
             let h = img.height;
             img.style.height = "100%";
+            if(!this.imageMap) {
 
-            
-            this.imageMap = new ImageMap(map, w, h);
-            // map.style.width = w + "px";
-            // map.style.height = h + "px";
-            // map.style.position = "absolute";
-            // for(let i = 0; i < map.children.length; i++) {
-            //     map.children[i].style.width =  w + "px";
-            //     map.children[i].style.height = h + "px";
-            // }
+                this.imageMap = new ImageMap(map, img, w, h);
+                //setTimeout(this.imageMap.resize, 1000);
+            }
         }
 
-        var ImageMap = function(map, w, h){
+        var ImageMap = function(map, img, w, h){
             var n,
                 areas = map.getElementsByTagName('area'),
                 len = areas.length,
@@ -813,6 +784,14 @@ class Gui {
             for (n = 0; n < len; n++) {
                 coords[n] = areas[n].coords.split(',');
             }
+            this.img = img;
+            this.highlighter = new ImageMapHighlighter(img, {
+                strokeColor: '67aae9',
+                lineJoin: "round", 
+                lineCap: "round"
+            });
+            this.highlighter.init();
+           
             this.resize =  () => {
                 var n, m, clen,
                     x = root.root.clientHeight / previousHeight;
@@ -825,179 +804,15 @@ class Gui {
                 }
                 previousWidth = root.root.clientWidth;
                 previousHeight = root.root.clientHeight;
+                this.highlighter.element.parentElement.querySelector("canvas").width = this.img.width || previousWidth;
+                this.highlighter.element.parentElement.querySelector("canvas").height = root.root.clientHeight;
+                this.highlighter.element.parentElement.style.width = (this.img.width || previousWidth) + "px";
+                this.highlighter.element.parentElement.style.height = root.root.clientHeight + "px";
                 return true;
             };
             root.onresize = this.resize;
         }
-        //Create face areas selector
-        // let canvas = document.createElement("canvas");
-        // canvas.style.width = "100%";
-        // root.root.appendChild(canvas);
 
-        // let ctx = canvas.getContext("2d");
-        // let img = document.createElement("img");
-        // img.src = "./data/imgs/face areas2.png";
-        // img.onload = (e) =>
-        // {
-        //     //canvas.height = bsArea.getSection(0).getHeight();
-        //     ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
-        // }
-
-        
-        // let clon = canvas.cloneNode(true);
-        // clon.hidde = true;
-        // let ctxClon = clon.getContext("2d");
-        // let mask = document.createElement("img");
-        // mask.src = "./data/imgs/face mask.png";
-        // mask.onload = (e) =>
-        // {
-        //     //clon.height = canvas.height;
-        //     ctxClon.drawImage(mask, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
-        //     let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        //     let maskData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
-        //     updateAreasColor([null,null,null], currentData, maskData);
-        //     ctx.putImageData(currentData, 0, 0);
-        // }
-
-        // canvas.onmousemove = (e) => {
-        //     e.preventDefault();
-        //     e.stopPropagation();
-        //     ctxClon = clon.getContext("2d");
-        //     var pos = findPos(canvas);
-        //     var x = e.pageX - pos.x;
-        //     var y = e.pageY - pos.y;
-        //     ctx.globalCompositeOperation = "source-over";
-        //     ctx.globalAlpha = 1;
-        //     ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
-
-        //     let data = ctxClon.getImageData(x, y, 1, 1).data;
-        //     let color = "rgb(" + data[0] + "," + data[1] + "," + data[2] + ")";
-        //     let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        //     let maskData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
-            
-        //     if(this.editor.getSelectedActionUnit()) {
-                
-        //         let idx = Object.values(areas).indexOf(this.editor.getSelectedActionUnit());
-        //         let area = Object.keys(areas)[idx];
-        //         let c = area.replace("rgb(", "").replace(")","").split(",");
-                
-        //         updateAreasColor(c, currentData, maskData, null);
-                
-        //     }
-        //     if(this.faceAreas[color]) {                
-        //         updateAreasColor(data, currentData, maskData);
-                
-        //     }
-        //     else {                
-        //         updateAreasColor([null,null,null], currentData, maskData);          
-        //     }
-        //     ctx.putImageData(currentData, 0, 0)
-        // }   
-
-        // function updateAreasColor(data, currentData, maskData, threshold = 50, ctx) {
-        //     let color = [73, 100, 141];
-        //     for (var i = 0; i < maskData.length-4; i+=4) {
-                
-        //         if(maskData[i] == data[0] && maskData[i+1] == data[1] && maskData[i+2] == data[2]) {
-        //             currentData.data[i+3] = 250;    
-        //         }
-        //         else if(!(currentData.data[i] == color[0] && currentData.data[i+1] == color[1] && currentData.data[i+2] == color[2] && currentData.data[i+3] == 250) && maskData[i+3]!=0) {
-        //             currentData.data[i+3] = 160;
-        //         }
-        //     }
-        // }
-
-        // function findPos(obj) {
-        //     var curleft = 0, curtop = 0;
-        //     if (obj.offsetParent) {
-        //         do {
-        //             curleft += obj.offsetLeft;
-        //             curtop += obj.offsetTop;
-        //         } while (obj = obj.offsetParent);
-        //         return { x: curleft, y: curtop };
-        //     }
-        //     return undefined;
-        // }
-
-        // //Create blendshapes panel
-        // let inspector = this.createBlendShapesInspector(this.editor.mapNames);
-        // inspector.root.style.padding = "10px";
-        // inspector.hidde = true;
-       
-        // bottom.add(inspector);
-        // bsArea.onResize = (e) => {
-        //     canvas.height = bsArea.getSection(0).getHeight();
-        //     clon.height = canvas.height;
-        //     ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
-        //     ctxClon.drawImage(mask, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
-        //     let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        //     let maskData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
-        //     if(this.editor.getSelectedActionUnit()) {
-
-        //         let idx = Object.values(areas).indexOf(this.editor.getSelectedActionUnit());
-        //         let area = Object.keys(areas)[idx];
-        //         let c = area.replace("rgb(", "").replace(")","").split(",");
-                
-        //         updateAreasColor(c, currentData, maskData);
-        //         //ctx.clearRect(0,0, canvas.width,canvas.height);
-        //         ctx.putImageData(currentData, 0, 0)
-        //     }else{
-        //         updateAreasColor([null,null,null], currentData, maskData);
-        //         //ctx.clearRect(0,0, canvas.width,canvas.height);
-        //         ctx.putImageData(currentData, 0, 0)
-        //     }
-
-        // }
-        // bsPanel.content.appendChild(inspector.root);
-
-        // canvas.onmouseup = (e) => {
-
-        //     e.preventDefault();
-        //     e.stopPropagation();
-
-        //     ctxClon = clon.getContext("2d");
-        //     var pos = findPos(canvas);
-        //     var x = e.pageX - pos.x;
-        //     var y = e.pageY - pos.y;
-        //     ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
-
-        //     let data = ctxClon.getImageData(x, y, 1, 1).data;
-        //     let color = "rgb(" + data[0] + "," + data[1] + "," + data[2] + ")";
-        //     let currentData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        //     let maskData = ctxClon.getImageData(0, 0, clon.width, clon.height).data;
-
-        //     let area = this.faceAreas[color];
-        //     if(area) {
-        //         this.editor.setSelectedActionUnit(area);
-        //         //ctx.drawImage(img, Math.abs(canvas.height*img.width/img.height - canvas.width)/2, 0, canvas.height*img.width/img.height, canvas.height);
-        //         this.keyFramesTimeline.selectedItem = area;
-        //         updateAreasColor(data, currentData, maskData);
-        //         let names = {};
-        //         for(let i in this.editor.mapNames) {
-        //             let toCompare = area.toLowerCase().split(" ");
-        //             let found = true;
-        //             for(let j = 0; j < toCompare.length; j++) {
-
-        //                 if(!i.toLowerCase().includes(toCompare[j])) {
-        //                     found = false;
-        //                     break;
-        //                 }
-        //             }
-        //             if(found)
-        //                 names[i] = this.editor.mapNames[i]
-        //         }
-
-        //         this.updateActionUnitsPanel(area);
-        //         ctx.clearRect(0,0, canvas.width,canvas.height);
-        //         ctx.putImageData(currentData, 0, 0)
-        //     }else {
-        //         this.editor.setSelectedActionUnit();
-        //         updateAreasColor([null,null,null], currentData, maskData);
-        //         //TO DO--hide panel
-        //         //ctx.clearRect(0,0, canvas.width,canvas.height);
-        //         ctx.putImageData(currentData, 0, 0)
-        //     }
-        // }   
     }
 
     createActionUnitsPanel(root) {

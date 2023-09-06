@@ -621,3 +621,15 @@ dark mode:
 area:hover{ 
 	cursor: pointer;
 }
+
+.map-container {
+	position: relative;
+	background-repeat: no-repeat;
+    background-size: contain;
+	background-position: center;
+  }
+  .map-container canvas { position: absolute; }
+  .map-container img {
+	opacity: 0;
+	position: absolute;
+  }
