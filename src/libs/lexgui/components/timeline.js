@@ -1173,10 +1173,10 @@
             let discard = e.discard;
             
             if(e.shiftKey) {
-
+                e.multipleSelection = true;
                 // Multiple selection
                 if(!discard && track) {
-                    this.processCurrentKeyFrame( e, null, track, localX, e.multipleSelection ); 
+                    this.processCurrentKeyFrame( e, null, track, localX, true ); 
                 }
                 // Box selection
                 else{
@@ -1193,7 +1193,7 @@
                             
                         if(keyFrameIndices) {
                             for(let index of keyFrameIndices)
-                                this.processCurrentKeyFrame( e, index, t, null, e.multipleSelection );
+                                this.processCurrentKeyFrame( e, index, t, null, true );
                         }
                     }
                 }
@@ -1239,7 +1239,6 @@
 
                 this.boxSelection = true;
                 this.boxSelectionStart = [localX, localY - 20];
-
                 e.multipleSelection = true;
             }
             else if(e.ctrlKey && track && !track.locked) {
@@ -2741,14 +2740,13 @@
 
             let track = e.track;
             let localX = e.localX;
-            
             let discard = e.discard;
             
             if(e.shiftKey) {
-
+                e.multipleSelection = true;
                 // Multiple selection
                 if(!discard && track) {
-                    this.processCurrentKeyFrame( e, null, track, localX, e.multipleSelection ); 
+                    this.processCurrentKeyFrame( e, null, track, localX, true ); 
                 }
                 // Box selection
                 else{
@@ -2765,7 +2763,7 @@
                             
                         if(keyFrameIndices) {
                             for(let index of keyFrameIndices)
-                                this.processCurrentKeyFrame( e, index, t, null, e.multipleSelection );
+                                this.processCurrentKeyFrame( e, index, t, null, true );
                         }
                     }
                 }
@@ -2813,9 +2811,10 @@
 
                 this.boxSelection = true;
                 this.boxSelectionStart = [localX, localY - 20];
+                e.multipleSelection = true;
 
             }
-            else if(track) {
+            else if((e.ctrlKey || e.altKey) && track && !track.locked) {
 
                     const keyFrameIndex = this.getCurrentKeyFrame( track, this.xToTime( localX ), this.pixelsToSeconds * 5 );
                     if( keyFrameIndex != undefined ) {

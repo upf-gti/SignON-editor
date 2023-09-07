@@ -759,6 +759,7 @@ class Gui {
             this.updateActionUnitsPanel(e.target.name);
            
             img.src = "./data/imgs/face areas2 " + e.target.name + ".png";
+            document.getElementsByClassName("map-container")[0].style.backgroundImage ="url('" +img.src +"')";
 
         });
 
@@ -770,7 +771,6 @@ class Gui {
             if(!this.imageMap) {
 
                 this.imageMap = new ImageMap(map, img, w, h);
-                //setTimeout(this.imageMap.resize, 1000);
             }
         }
 
@@ -802,12 +802,12 @@ class Gui {
                     }
                     areas[n].coords = coords[n].join(',');
                 }
-                previousWidth = root.root.clientWidth;
+                previousWidth = previousWidth*x;
                 previousHeight = root.root.clientHeight;
-                this.highlighter.element.parentElement.querySelector("canvas").width = this.img.width || previousWidth;
-                this.highlighter.element.parentElement.querySelector("canvas").height = root.root.clientHeight;
-                this.highlighter.element.parentElement.style.width = (this.img.width || previousWidth) + "px";
-                this.highlighter.element.parentElement.style.height = root.root.clientHeight + "px";
+                this.highlighter.element.parentElement.querySelector("canvas").width = previousWidth;
+                this.highlighter.element.parentElement.querySelector("canvas").height = previousHeight;
+                this.highlighter.element.parentElement.style.width = previousWidth + "px";
+                this.highlighter.element.parentElement.style.height = previousHeight + "px";
                 return true;
             };
             root.onresize = this.resize;
@@ -843,7 +843,12 @@ class Gui {
         for(let area in areas) {
             let panel = new LX.Panel({id: "au-"+ area});
             panel = this.createBlendShapesInspector(areas[area], {inspector: panel, editable: true, showNumber:true});
-            tabs.add(area, panel, this.editor.getSelectedActionUnit() == area, null, {onSelect : (e, v) => {this.showTimeline();this.editor.setSelectedActionUnit(v)}});
+            tabs.add(area, panel, this.editor.getSelectedActionUnit() == area, null, {onSelect : (e, v) => {
+                this.showTimeline();
+                this.editor.setSelectedActionUnit(v);
+                document.getElementsByClassName("map-container")[0].style.backgroundImage ="url('" +"./data/imgs/face areas2 " + v + ".png"+"')";
+            }
+            });
         }
         this.facePanel = tabs;
         // let inspector = new LX.Panel({id:"aus"});
@@ -1388,16 +1393,8 @@ class Gui {
 
     resize(width, height) {
         this.timelineArea.setSize([width, null]);
-        this.keyFramesTimeline.resize();
-        // for(let s of LiteGUI.SliderList) {
-        //     // Resize canvas
-        //     s.root.width = s.root.parentElement.offsetWidth + 35;
-        //     s.setValue(null);
-        // }
+        this.editor.activeTimeline.resize();
 
-        // let timelineCanvas = document.getElementById("timelineCanvas");
-        // let timelineNMFCanvas = document.getElementById("timelineNMFCanvas");
-        // timelineCanvas.width = timelineNMFCanvas.width = this.timelineArea.clientWidth;
     }
 };
 

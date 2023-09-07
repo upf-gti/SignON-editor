@@ -869,22 +869,42 @@ class Editor {
                 this.faceAnimation = animation;
         }
         else {
+            let valueDeletedInfo = null;
             for(let i = 0; i< mixer._actions.length; i++) {
                 if(mixer._actions[i]._clip.name == animation.name) {
                     for(let j = 0; j < idx.length; j++) {
     
-                        const track = animation.tracks[j];
+                        const track = animation.tracks[idx[j]];
                         if(!track.active)
                             continue;
+
+                        if( mixer._actions[i]._interpolants[idx[j]].parameterPositions.length > track.times.length )
+                            valueDeletedInfo = track;
+
                         // Update times
-                        mixer._actions[i]._interpolants[j].parameterPositions = track.times;
+                        mixer._actions[i]._interpolants[idx[j]].parameterPositions = track.times;
                         // Update values
-                        mixer._actions[i]._interpolants[j].sampleValues = track.values;
+                        mixer._actions[i]._interpolants[idx[j]].sampleValues = track.values;
+
+                        
                     }
                     if(this.bodyAnimation.name == animation.name)
                         this.bodyAnimation = animation;
-                    else if(this.faceAnimation.name == animation.name)
+                    else if(this.faceAnimation.name == animation.name) {
                         this.faceAnimation = animation;
+                        
+                        //update timeline animation track if a value is deleted
+                        if(this.auAnimation.name == animation.name && valueDeletedInfo) {
+
+                            for(let a = 0; a < this.auAnimation.tracks.length; a++) {
+                                if(this.auAnimation.tracks[a].name == valueDeletedInfo.fullname) {
+                                    this.auAnimation.tracks[a].values = valueDeletedInfo.values;
+                                    this.auAnimation.tracks[a].times = valueDeletedInfo.times;
+                                }
+                            }
+                            
+                         }
+                    }
                     return;
                 }
             }
