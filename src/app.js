@@ -2,7 +2,7 @@ import { MediaPipe } from "./mediapipe.js";
 import { Editor } from "./editor.js";
 import { VideoUtils } from "./video.js";
 import { FileSystem } from "./libs/filesystem.js";
-import { Gui } from "./gui.js";
+import { UTILS } from "./utils.js";
 
 const appMode = {LIVE:0, VIDEO:1};
 
@@ -30,19 +30,47 @@ class App {
     init( settings ) {
 
         settings = settings || {};
+        // if(settings.projectType == "keyframes") {
+        //     const dialog = new LX.Dialog( "Select input", p => {
+        //         p.addFile("From disk", (data) => { 
+        //             const extension = UTILS.getExtension(data.name);
+		// 	        let mode = extension.includes('bvh') ? 'bvh' : 'video';
+                    
+        //             switch(mode) {
+        //                 case 'bvh': 
+        //                     this.onLoadAnimation( data );
+        //                     break;
+        //                 case 'video': 
+        //                     this.captureMode = appMode.VIDEO;
+        //                     this.onLoadVideo( data );
+        //                     break;
+        //             }
+        //             dialog.close()
+        //             window.addEventListener("resize", this.onResize.bind(this));
+        //          }, {read: false} );
 
+              
+        //         p.addButton(null, "Capture", () => {
+        //             this.captureMode = appMode.LIVE;
+        //             this.onBeginCapture();
+        //             dialog.close()
+        //             window.addEventListener("resize", this.onResize.bind(this));
+        //         });
+        //     }, {modal:true})
+        // }
+        
         const mode = settings.mode ?? 'capture';
 
         switch(mode) {
             case 'capture': 
-                this.captureMode = appMode.LIVE;
+                // this.captureMode = appMode.LIVE;
                 this.onBeginCapture();
                 break;
             case 'bvh': 
                 this.onLoadAnimation( settings.data );
                 break;
             case 'video': 
-                this.captureMode = appMode.VIDEO;
+                // this.captureMode = appMode.VIDEO;
                 this.onLoadVideo( settings.data );
                 break;
         }
@@ -61,6 +89,8 @@ class App {
     //Start mediapipe recording 
     onBeginCapture() {
         
+        this.captureMode = appMode.LIVE;
+
         // Run mediapipe to extract landmarks
         if(!MediaPipe.loaded)
             
@@ -91,15 +121,15 @@ class App {
 
             // Show video
             let video = document.getElementById("recording");
-            $("#capture").removeClass("hidden");
+            // $("#capture").removeClass("hidden");
 
-            video.addEventListener('loadedmetadata', async function () {
-                while(video.duration === Infinity) {
-                    await new Promise(r => setTimeout(r, 1000));
-                    video.currentTime = 10000000*Math.random();
-                }
-                video.currentTime = video.startTime > 0 ? video.startTime : 0;
-            });
+            // video.addEventListener('loadedmetadata', async function () {
+            //     while(video.duration === Infinity) {
+            //         await new Promise(r => setTimeout(r, 1000));
+            //         video.currentTime = 10000000*Math.random();
+            //     }
+            //     video.currentTime = video.startTime > 0 ? video.startTime : 0;
+            // });
 
             this.setEvents(true);
     }
@@ -147,6 +177,7 @@ class App {
 
     onLoadVideo( videoFile ) {
 
+        this.captureMode = appMode.VIDEO;
         this.setEvents();
 
         let url = "";
@@ -244,9 +275,9 @@ class App {
             
             if (!this.recording) {
                 
+                videoElement.loop = false;
                 if(!live) {
                     videoElement.currentTime = 0;
-                    videoElement.loop = false;
                     videoElement.onended = () => {
                         capture.click();
                     }
@@ -284,6 +315,9 @@ class App {
                 videoCanvas.classList.remove("border-animation");
                 
 
+                let selector = document.getElementById("select-mode");
+                selector.style.display = "none";
+        
                 
                 if(MediaPipe.landmarks.length) {
                     
@@ -335,7 +369,8 @@ class App {
         video.classList.remove("hidden");
         video.style.width = canvas.width + "px";
         video.style.height = canvas.height + "px";
-
+        video.width = canvas.width;
+        video.height = canvas.height;
         if(live === undefined || !live){
             video.style.cssText+= "transform: rotateY(0deg);\
                             -webkit-transform:rotateY(0deg); /* Safari and Chrome */\

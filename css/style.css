@@ -633,3 +633,10 @@ area:hover{
 	opacity: 0;
 	position: absolute;
   }
+
+option {
+	background-color:var(--global-color-primary);
+}
+select option:hover, select option:focus{
+	background-color: var(--background);
+}

@@ -39,12 +39,16 @@
                 <div id="init-dialog" class="row gx-4 gx-lg-5 h-100 align-items-center justify-content-center text-center">
                     <div class="col-lg-8 align-self-end">
                         <h1 class="text-white font-weight-bold">SignON 3D animation platform</h1>
-                        <hr class="divider" />
                     </div>
                     <div class="col-lg-8 align-self-baseline">
-                        <p class="text-white-75 mb-5">End-to-end system able to generate animations of the signing avatar from user input</p>
-						<a id="from-file" class="btn btn-primary btn-xl">From Video or Animation</a>
-						<a id="new-capture" class="btn btn-primary btn-xl">New Capture</a>
+                        <p class="text-white-75 mb-5">End-to-end system able to generate animations of the signing avatar from user input.</p>
+						<hr class="divider" />
+
+						<p class="text-white-75 mb-5">Start new animation project based on</p>
+						<!-- <a id="from-file" class="btn btn-primary btn-xl">From Video or Animation</a>
+						<a id="new-capture" class="btn btn-primary btn-xl">New Capture</a> -->
+						<a id="keyframe-project" class="btn btn-primary btn-xl" title="From video or webcam input">Keyframe animation</a>
+						<a id="bml-project" class="btn btn-primary btn-xl" title="From text instructions">Script animation</a>
                     </div>
                 </div>
             </div>
@@ -125,6 +129,29 @@
 			
 			const app = new App();
 			app.init(settings);
+			// let gui = LX.init();
+			// const dialog = new LX.Dialog( "Select input", p => {
+            //     p.addFile("From disk", (data) => { 
+            //         const extension = UTILS.getExtension(data.name);
+			//         let mode = extension.includes('bvh') ? 'bvh' : 'video';
+                    
+            //         let settings = {mode, data}
+            //         dialog.close()
+			// 		const app = new App();
+			// 		app.init(settings);
+            //         window.addEventListener("resize", this.onResize.bind(this));
+            //      }, {read: false, local: false} );
+
+              
+            //     p.addButton(null, "Capture", () => {
+			// 		const app = new App();
+            //         app.init()
+            //         dialog.close()
+            //         window.addEventListener("resize", this.onResize.bind(this));
+            //     });
+            // }, {modal:true})
+			
+			
 		}
 	
 		const dialog = $("#init-dialog")[0];
@@ -155,7 +182,13 @@
 		$( function() {
 	
 			//$("#loading").fadeOut();
-	
+			$("#keyframe-project").click(() => {
+				createApp({projectType: "keyframes"});
+			});
+			$("#bml-project").click(() => {
+				createApp({projectType: "bml"});
+			});
+
 			$("#from-file").click(onloadfile);
 			$("#new-capture").click(() => {
 				createApp();

@@ -31,23 +31,28 @@ const MediaPipe = {
         const videoElement = document.getElementById("inputVideo");
         const canvasElement = document.getElementById("outputVideo");
         const canvasCtx = canvasElement.getContext("2d");
-
+        MediaPipe.stop();
         //Holistic 
-        const holistic = await new Holistic({locateFile: (file) => {
-            return `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`;
-        }});
+        if(!this.holistic) {
 
-        holistic.setOptions({
-            modelComplexity: 1,
-            smoothLandmarks: true,
-            enableSegmentation: true,
-            smoothSegmentation: true,
-            refineFaceLandmarks: true,
-            minDetectionConfidence: 0.5,
-            minTrackingConfidence: 0.5
-        });
-
-        holistic.onResults(((results) => {
+            this.holistic = await new Holistic({locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`;
+            }});
+    
+            this.holistic.setOptions({
+                modelComplexity: 1,
+                smoothLandmarks: true,
+                enableSegmentation: true,
+                smoothSegmentation: true,
+                refineFaceLandmarks: true,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+        }
+        else {
+            this.holistic.reset();
+        }
+        this.holistic.onResults(((results) => {
 
             if (window.globals.app.isRecording()) // store MediaPipe data
             {
@@ -107,47 +112,61 @@ const MediaPipe = {
         }).bind(this));
 
         // Face blendshapes
-        const filesetResolver = await FilesetResolver.forVisionTasks(
-            'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm'
-        );
+        if(!this.faceLandmarker) {
 
-        this.faceLandmarker = await FaceLandmarker.createFromOptions( filesetResolver, {
-            baseOptions: {
-                modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
-                delegate: 'GPU'
-            },
-            outputFaceBlendshapes: true,
-            outputFacialTransformationMatrixes: true,
-            runningMode: 'VIDEO',
-            numFaces: 1
-        } );
-
-        
-        if(live) {
-            const webcamera = new Camera(videoElement, {
-                onFrame: async () => {
-                    await holistic.send({image: videoElement});
-
-                    if(!this.loaded) {
-                        this.loaded = true;
-                        if(this.onload) this.onload();
-                    }
-
-                    const faceResults = this.faceLandmarker.detectForVideo(videoElement, Date.now() );
-                    if(faceResults)
-                        this.onFaceResults(faceResults);
-                },
-                width: 1280,
-                height: 720
-            });
+            const filesetResolver = await FilesetResolver.forVisionTasks(
+                'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm'
+            );
     
-            webcamera.start();
-        } else {
-            videoElement.play();
-            videoElement.controls = true;
-            videoElement.loop = true;
-            videoElement.requestVideoFrameCallback( this.sendVideo.bind(this, holistic, videoElement) );  
+            this.faceLandmarker = await FaceLandmarker.createFromOptions( filesetResolver, {
+                baseOptions: {
+                    modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task',
+                    delegate: 'GPU'
+                },
+                outputFaceBlendshapes: true,
+                outputFacialTransformationMatrixes: true,
+                runningMode: 'VIDEO',
+                numFaces: 1
+            } );
         }
+
+        this.loaded = false;
+        if(live) {
+            this.startWebcam(videoElement, this, () => videoElement.play());
+            // if(!this.webcamera) {
+
+            //     this.webcamera = new Camera(videoElement, {
+            //         onFrame: async () => {
+            //             await this.holistic.send({image: videoElement});
+
+            //             if(!this.loaded) {
+            //                 this.loaded = true;
+            //                 if(this.onload) this.onload();
+            //             }
+
+            //             const faceResults = this.faceLandmarker.detectForVideo(videoElement, Date.now() );
+            //             if(faceResults)
+            //                 this.onFaceResults(faceResults);
+            //         },
+            //         width: 1280,
+            //         height: 720
+            //     });
+            // }
+            // else{
+            //     this.loaded = false;
+            // }
+    
+            // this.webcamera.start();
+        } else {
+            // if(this.webcamera) {
+            //     this.webcamera.stop();
+            //     this.loaded = false;
+            // }
+        }
+        videoElement.play();
+        videoElement.controls = true;
+        videoElement.loop = true;
+        videoElement.requestVideoFrameCallback( this.sendVideo.bind(this, this.holistic, videoElement) );  
     },
 
     async sendVideo(holistic, videoElement){
@@ -192,7 +211,7 @@ const MediaPipe = {
         if(!$feed.srcObject)
             $feed.srcObject = $feed.captureStream();
         $feed.srcObject.getTracks().forEach(a => a.stop());
-       // $feed.srcObject = null;
+        $feed.srcObject = null;
     },
 
     onStartRecording() {
@@ -263,7 +282,77 @@ const MediaPipe = {
         }
 
         return blends;
+    },
+
+    startWebcam(video, scope, callback, on_error) {
+                
+        // prepare the device to capture the video
+        if (navigator.mediaDevices) {
+            console.log("UserMedia supported");
+                    
+            
+
+            navigator.mediaDevices.enumerateDevices()
+            .then(function(devices) {
+                let deviceId = null;
+                for (const deviceInfo of devices) {
+                    if(deviceInfo.kind === 'videoinput') {
+                        deviceId = deviceInfo.deviceId;
+                        break;
+                    }
+                };
+                let constraints = { "video": true, "audio": false, width: 1280, height: 720 };
+                navigator.mediaDevices.getUserMedia(constraints)
+                .then( (stream) => {
+
+                    let videoElement = document.getElementById("inputVideo");
+                    
+                    if(!videoElement.srcObject)
+                        videoElement.srcObject = stream;
+                    videoElement.width = "1280px";
+                    videoElement.height = "720px";
+                    scope.mediaRecorder = new MediaRecorder(videoElement.srcObject);
+
+                    scope.mediaRecorder.onstop = function (e) {
+
+                        video.addEventListener("play", function() {});
+                        video.addEventListener("pause", function() {});
+                        video.setAttribute('controls', 'name');
+                        video.controls = false;
+                        video.loop = true;
+                        
+                        let blob = new Blob(scope.chunks, { "type": "video/mp4; codecs=avc1" });
+                        let videoURL = URL.createObjectURL(blob);
+                        video.src = videoURL;
+                        console.log("Recording correctly saved");
+                    }
+
+                    scope.mediaRecorder.ondataavailable = function (e) {
+                        scope.chunks.push(e.data);
+                    }
+                    if(callback)
+                        callback();
+                })
+                .catch(function (err) {
+                    console.error("The following error occurred: " + err);
+                    if(err == "NotReadableError: Could not start video source")
+                        alert("Camera error: Make sure your webcam is not used in another application.")
+                    if(on_error)
+                        on_error(err);
+                });
+                
+            })
+            .catch(function(err) {
+            console.log(err.name + ": " + err.message);
+            });
+            
+        }
+        else {
+            if(on_error)
+                on_error();
+        }
     }
+
 }
 
 export { MediaPipe };
