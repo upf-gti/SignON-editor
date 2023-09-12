@@ -309,8 +309,8 @@ const MediaPipe = {
                     
                     if(!videoElement.srcObject)
                         videoElement.srcObject = stream;
-                    videoElement.width = "1280px";
-                    videoElement.height = "720px";
+                    // videoElement.width = "1280px";
+                    // videoElement.height = "720px";
                     scope.mediaRecorder = new MediaRecorder(videoElement.srcObject);
 
                     scope.mediaRecorder.onstop = function (e) {

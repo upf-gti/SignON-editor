@@ -28,11 +28,11 @@ class BlendshapesManager {
         // let {dt, weights} = data;
 
         for (let idx = 0; idx < data.length; idx++) {
-            let dt = data[idx].dt;
+            let dt = data[idx].dt * 0.001;
             let weights = data[idx];
 
             if(times.length)
-                times.push(times[idx-1] + dt* 0.001);
+                times.push(times[idx-1] + dt);
             else
                 times.push(dt);
 

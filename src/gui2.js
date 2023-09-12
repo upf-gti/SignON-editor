@@ -313,7 +313,7 @@ class Gui {
         videoRec.width  = videoDiv.width  = videoCanvas.width  = videoDiv.clientWidth;
         videoRec.height = videoDiv.height = videoCanvas.height = videoCanvas.width / aspectRatio;
 
-        $(videoDiv).draggable({containment: "#canvasarea"}).resizable({ aspectRatio: true, containment: "#canvasarea"});
+        $(videoDiv).draggable({containment: "#canvasarea"}).resizable({ aspectRatio: true, containment: "#capture"});
 
         this.hideCaptureArea();
         //Update menu bar
@@ -690,6 +690,9 @@ class Gui {
     }
 
     hideCaptureArea() {
+        let selector = document.getElementById("select-mode");
+        selector.style.display = "none";
+
         let e = document.getElementById("video-area");
         e.classList.remove("video-area");
         

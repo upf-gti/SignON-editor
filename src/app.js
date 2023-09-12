@@ -95,8 +95,8 @@ class App {
         if(!MediaPipe.loaded)
             
             MediaPipe.start( true, () => {
+                this.setEvents(true);
                 $('#loading').fadeOut();
-                
                 let videoElement = document.getElementById("inputVideo");
                 this.mediaRecorder = new MediaRecorder(videoElement.srcObject);
 
@@ -131,7 +131,7 @@ class App {
             //     video.currentTime = video.startTime > 0 ? video.startTime : 0;
             // });
 
-            this.setEvents(true);
+            
     }
 
     onBeginEdition() {
@@ -262,10 +262,12 @@ class App {
         $(captureDiv).removeClass("hidden");
         let videoCanvas = document.getElementById("outputVideo");
         let videoElement = document.getElementById("inputVideo");
-        let h = captureDiv.clientHeight * 0.8;
-        let aspectRatio = videoCanvas.width / videoCanvas.height;
-        videoCanvas.height = captureDiv.height = videoCanvas.style.height = h;
-        videoCanvas.width = captureDiv.width = videoCanvas.style.width = h * aspectRatio;
+        let h = videoElement.videoHeight || videoCanvas.height;
+        let w = videoElement.videoWidth || videoCanvas.width;
+        let aspectRatio = w / h;
+        h = captureDiv.clientHeight * 0.8;
+        videoCanvas.height = captureDiv.height = h;
+        videoCanvas.width = captureDiv.width = h * aspectRatio;
 
         // configurate buttons
         let elem = document.getElementById("endOfCapture");
@@ -312,12 +314,10 @@ class App {
               
                 this.mediaRecorder.stop();
                 
-                videoCanvas.classList.remove("border-animation");
-                
+                videoCanvas.classList.remove("border-animation");  
 
                 let selector = document.getElementById("select-mode");
-                selector.style.display = "none";
-        
+                selector.style.minHeight = selector.clientHeight + "px";
                 
                 if(MediaPipe.landmarks.length) {
                     
