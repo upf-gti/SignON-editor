@@ -715,15 +715,18 @@ class Gui {
         let bodyArea = new LX.Area({className: "sidePanel", id: 'Body', scroll: true});  
         let faceArea = new LX.Area({className: "sidePanel", id: 'Face', scroll: true});  
         tabs.add( "Body", bodyArea, true, null, {onSelect: (e,v) => {this.editor.changeAnimation(v)}}  );
-        tabs.add( "Face", faceArea, false, null, {onSelect: (e,v) => {this.editor.changeAnimation(v); 
-            this.updateActionUnitsPanel(this.editor.getSelectedActionUnit());
-            this.imageMap.resize();
-        } });
+        if(this.editor.auAnimation) {
 
-        faceArea.split({type: "vertical", sizes: ["50%", "50%"]});
-        let [faceTop, faceBottom] = faceArea.sections;
-        this.createFacePanel(faceTop);
-        this.createActionUnitsPanel(faceBottom);
+            tabs.add( "Face", faceArea, false, null, {onSelect: (e,v) => {this.editor.changeAnimation(v); 
+                this.updateActionUnitsPanel(this.editor.getSelectedActionUnit());
+                this.imageMap.resize();
+            } });
+    
+            faceArea.split({type: "vertical", sizes: ["50%", "50%"]});
+            let [faceTop, faceBottom] = faceArea.sections;
+            this.createFacePanel(faceTop);
+            this.createActionUnitsPanel(faceBottom);
+        }
 
         bodyArea.split({type: "vertical", resize: false, sizes: "auto"});
         let [bodyTop, bodyBottom] = bodyArea.sections;

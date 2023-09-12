@@ -49,6 +49,10 @@
 						<a id="new-capture" class="btn btn-primary btn-xl">New Capture</a> -->
 						<a id="keyframe-project" class="btn btn-primary btn-xl" title="From video or webcam input">Keyframe animation</a>
 						<a id="bml-project" class="btn btn-primary btn-xl" title="From text instructions">Script animation</a>
+						<br>
+						<br>
+						<p class="text-white-75 ">or</p>
+						<a id="import" class="btn btn-drag btn-xl" title="Import video or animation">Import source</a>
                     </div>
                 </div>
             </div>
@@ -192,9 +196,7 @@
 			});
 
 			$("#from-file").click(onloadfile);
-			$("#new-capture").click(() => {
-				createApp();
-			});
+			$("#import").click(onloadfile);
 		} );
 	
 	</script>

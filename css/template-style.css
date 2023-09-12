@@ -3487,6 +3487,21 @@ textarea.form-control-lg {
   border-radius: 0.2rem;
 }
 
+.btn-drag {
+  border: 2px dashed #bbb !important;
+  -webkit-border-radius: 5px;
+  border-radius: 5px;
+  /* padding: 50px; */
+  text-align: center;
+  /* font: 21pt bold arial; */
+  color: #bbb;
+  background: rgba(255,255,255,0.15);
+}
+
+.btn-drag:hover{
+  color: #fff;
+}
+
 .fade {
   transition: opacity 0.15s linear;
 }
