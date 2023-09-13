@@ -2688,9 +2688,8 @@
         }
 
         _trigger( event, callback ) {
-
             if(callback)
-                callback.call(this, event.value, event.domEvent);
+                callback.call(this, event.value, event.domEvent, event.name);
 
             if(this.onevent)
                 this.onevent.call(this, event);
@@ -4076,6 +4075,7 @@
                 slider.min = options.min;
                 slider.max = options.max;
                 slider.type = "range";
+                slider.value = value;
                 slider.addEventListener("input", function(e) {
                     let new_value = +this.valueAsNumber;
                     let fract = new_value % 1;
@@ -5802,7 +5802,8 @@
             this.current_data = this.data;
             this.path = ['@'];
 
-            this._create_tree_panel(this.area);
+            if(!this.skip_browser)
+                this._create_tree_panel(this.area);
             this._refresh_content();
 
             this.onevent = onevent;

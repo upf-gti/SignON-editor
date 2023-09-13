@@ -3,7 +3,7 @@ import { OrbitControls } from "./controls/OrbitControls.js";
 import { BVHLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/BVHLoader.js';
 import { BVHExporter } from "./exporters/BVHExporter.js";
 import { createSkeleton, createAnimation, createAnimationFromRotations, updateThreeJSSkeleton, injectNewLandmarks, postProcessAnimation } from "./skeleton.js";
-import { Gui } from "./gui2.js";
+import { KeyframesGui, ScriptGui } from "./gui2.js";
 import { Gizmo } from "./gizmo.js";
 import { UTILS } from "./utils.js"
 import { NN } from "./ML.js"
@@ -11,7 +11,7 @@ import { OrientationHelper } from "./libs/OrientationHelper.js";
 import { AnimationRetargeting } from './retargeting.js'
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { GLTFExporter } from './exporters/GLTFExporoter.js' 
-import { Controller } from "./controller.js"
+import { BMLController } from "./controller.js"
 import { BlendshapesManager } from "./blendshapes.js"
 
 const MapNames = await import('../data/mapnames.json', {assert: { type: 'json' }});
@@ -25,7 +25,7 @@ THREE.ShaderChunk[ 'morphtarget_vertex' ] = "#ifdef USE_MORPHTARGETS\n	transform
 
 class Editor {
     
-    constructor(app) {
+    constructor(app, mode) {
         
         this.clock = new THREE.Clock();
         this.BVHloader = new BVHLoader();
@@ -40,8 +40,8 @@ class Editor {
         this.gizmo = null;
         this.renderer = null;
         this.state = false; // defines how the animation starts (moving/static)
-        this.eModes = {MF: "MF Editor", NMF: "NMF Editor", MOUTHING: "Mouthing Editor"};
-        this.mode = this.eModes.MF;
+        this.eModes = {keyframes: "keyframes editor", script: "BML editor", MOUTHING: "Mouthing Editor"};
+        this.mode = this.eModes[mode];
         this.NMFController = null;
 
         this.boneUseDepthBuffer = true;
@@ -74,7 +74,10 @@ class Editor {
 	    this.onDrawSettings = null;
 
         this.activeTimeline = null;
-        this.gui = new Gui(this);
+        if(this.mode == this.eModes.keyframes)
+            this.gui = new KeyframesGui(this);
+        else
+            this.gui = new ScriptGui(this);
 
         this.optimizeThreshold = 0.01;
         this.defaultTranslationSnapValue = 1;
@@ -286,12 +289,6 @@ class Editor {
                 this.scene.add(this.skeletonHelper);
                 this.scene.add(model);
                 
-                this.NMFController = new Controller(this);
-                this.NMFController.onUpdateTracks = () => {
-                    if(this.mixer._actions.length > 1) this.mixer._actions.pop();
-                    this.mixer.clipAction( this.NMFclip ).setEffectiveWeight( 1.0 ).play();
-                }
-                this.NMFController.begin();
 
                 // load the actual animation to play
                 this.mixer = new THREE.AnimationMixer( model );
@@ -417,6 +414,69 @@ class Editor {
         return blendshapes;
     }
 
+    loadModel(clip) {
+        // Load the target model (Eva) 
+        UTILS.loadGLTF("models/Eva_Y.glb", (gltf) => {
+            let model = gltf.scene;
+            model.visible = true;
+            
+            let skinnedMeshes = [];
+            model.traverse( o => {
+                if (o.isMesh || o.isSkinnedMesh) {
+                    o.castShadow = true;
+                    o.receiveShadow = true;
+                    o.frustumCulled = false;
+                    if ( o.skeleton ){ 
+                        this.skeleton = o.skeleton;
+                    }
+                    if(o.morphTargetDictionary)
+                    {
+                        this.morphTargets = o.morphTargetDictionary;
+                        skinnedMeshes.push(o);
+                    }
+                    o.material.side = THREE.FrontSide;
+                    
+                }
+            } );
+            
+            // correct model
+            model.position.set(0,0.85,0);
+            model.rotateOnAxis(new THREE.Vector3(1,0,0), -Math.PI/2);
+            this.skeletonHelper = this.retargeting.tgtSkeletonHelper || new THREE.SkeletonHelper(model);
+            this.skeletonHelper.name = "SkeletonHelper";
+
+            //Create animations
+            this.mixer = new THREE.AnimationMixer(model);
+            
+            this.skeletonHelper.skeleton = this.skeleton; //= createSkeleton();
+
+            //Create face animation from mediapipe blendshapes
+            // this.blendshapesManager = new BlendshapesManager(skinnedMeshes, this.morphTargets, this.mapNames);
+            
+            // guizmo stuff
+            this.scene.add( model );
+            this.scene.add( this.skeletonHelper );
+            //this.scene.add( this.retargeting.srcSkeletonHelper );
+            
+            // this.gui.createScriptTimeline();
+            // this.gui.updateMenubar();// this.onBeginEdition();
+            
+            this.animationClip = clip ||{duration:0, tracks:[]};
+            this.setAnimation();
+            this.gui.loadBMLClip(this.animationClip);
+          
+            this.NMFController = new BMLController(this, skinnedMeshes, this.morphTargets);
+            this.NMFController.onUpdateTracks = () => {
+                if(this.mixer._actions.length > 1) this.mixer._actions.pop();
+                this.mixer.clipAction( this.NMFclip  ).setEffectiveWeight( 1.0 ).play();
+            }
+            this.gui.clipsTimeline.onUpdateTrack = this.NMFController.updateTracks.bind(this.NMFController);
+            this.NMFController.begin(this.gui.clipsTimeline);
+            this.animate();
+            $('#loading').fadeOut();
+            
+        });   
+    }
 
     loadAnimation( animation ) {
 
@@ -456,7 +516,7 @@ class Editor {
 
     loadAnimationWithSkin(skeletonAnim, blendshapesAnim = null) {
         
-        if( skeletonAnim.skeleton ) {
+        if(skeletonAnim && skeletonAnim.skeleton ) {
             skeletonAnim.clip.name = UTILS.removeExtension(this.clipName || skeletonAnim.clip.name);
             this.bodyAnimation = skeletonAnim.clip;
             let srcSkeleton = skeletonAnim.skeleton; 
@@ -546,12 +606,6 @@ class Editor {
             this.animate();
             if(this.bodyAnimation )
                 $('#loading').fadeOut();
-            this.NMFController = new Controller(this);
-            this.NMFController.onUpdateTracks = () => {
-                if(this.mixer._actions.length > 1) this.mixer._actions.pop();
-                this.mixer.clipAction( this.NMFclip  ).setEffectiveWeight( 1.0 ).play();
-            }
-            this.NMFController.begin();
         });   
     }
 
@@ -956,18 +1010,18 @@ class Editor {
 
             this.mixer.update(dt);
             this.currentTime = this.activeTimeline.currentTime = this.mixer.time;
-            this.updateBoneProperties();
-            this.updateCaptureDataTime({blendshapesResults: this.blendshapesArray}, this.mixer.time);
+
+            if(this.mode == this.eModes.keyframes) {
+
+                this.updateBoneProperties();
+                this.updateCaptureDataTime({blendshapesResults: this.blendshapesArray}, this.mixer.time);
+            }
         }
        
        
         this.gizmo.update(this.state, dt);
         if(this.NMFController)
             this.NMFController.update(this.state, dt);
-    }
-
-    updateGUI() {
-        //this.gui.updateSkeletonPanel();
     }
 
     onChangeMode(mode) {
@@ -988,22 +1042,25 @@ class Editor {
             return;
 
         this.mixer.setTime(t);
-        this.gizmo.updateBones(0.0);
-        this.updateBoneProperties();
-        //results = {faceBlendshapes: {}}
-        this.updateCaptureDataTime({blendshapesResults: this.blendshapesArray}, t);
-        // Update video
-        this.video.currentTime = this.video.startTime + t;
-        if(this.state && force) {
-            try{
-                this.video.play();
-            }catch(ex) {
-                console.error("video warning");
+        if(this.mode == this.eModes.keyframes) {
+
+            this.gizmo.updateBones(0.0);
+            this.updateBoneProperties();
+            //results = {faceBlendshapes: {}}
+            this.updateCaptureDataTime({blendshapesResults: this.blendshapesArray}, t);
+            // Update video
+            this.video.currentTime = this.video.startTime + t;
+            if(this.state && force) {
+                try{
+                    this.video.play();
+                }catch(ex) {
+                    console.error("video warning");
+                }
             }
         }
     }
 
-    changeAnimation(type) {
+    setAnimation(type) {
         if(this.activeTimeline) {
             this.activeTimeline.hide()
         }
@@ -1020,8 +1077,12 @@ class Editor {
             
                 this.activeTimeline = this.gui.keyFramesTimeline;
                 this.activeTimeline.setAnimationClip( this.bodyAnimation );
+                this.activeTimeline.show();            
+                break;
+
+             default:
+                this.activeTimeline = this.gui.clipsTimeline;
                 this.activeTimeline.show();
-                
                 break;
         }
     }

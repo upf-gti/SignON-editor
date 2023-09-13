@@ -2,19 +2,14 @@ import * as THREE from 'three';
 import {BehaviourManager} from './libs/BehaviourManager.js'
 import {FacialExpr} from './libs/BehaviourRealizer.js'
 
-class Controller {
+class BMLController {
 
-    constructor(editor) {
+    constructor(editor, skinnedMeshes, morphTargetDictionary) {
 
         if(!editor)
         throw("No editor to attach Controller!");
 
         this.undoSteps = [];
-
-        let scene = editor.scene;
-
-        this.camera = editor.camera;
-        this.scene = scene;
 
         this.editor = editor;
         
@@ -23,6 +18,9 @@ class Controller {
         this.mustUpdate = false; //true; 
         if(!editor.morphTargets)
             console.warn("No morph targets to attach Controller!");
+        
+        this.skinnedMeshes = skinnedMeshes;
+        this.morphTargetDictionary = morphTargetDictionary;
         this.morphDictionary = editor.morphTargets;
         this.morphTargets = [];
         this.morphTargets.length = Object.keys(this.morphDictionary).length; 
@@ -44,13 +42,13 @@ class Controller {
 
     bindEvents(timeline) {
 
-        timeline = timeline || this.editor.gui.NMFtimeline;
+        this.timeline = timeline || this.editor.activeTimeline;
         if(!timeline)
             return;
 
-        let canvas = timeline._canvas;
+        let canvas = this.timeline.canvas;
         if(!canvas)
-            canvas = this.editor.gui.timelineNMFCTX.canvas;
+            canvas = this.editor.activeTimeline.canvas;
 
         canvas.onkeyup = (e) => {
 
@@ -71,7 +69,7 @@ class Controller {
                     }
                     break;
                 case 'Delete':
-                    timeline.deleteClip();
+                    this.timeline.deleteClip();
                     break;
             }
 
@@ -111,7 +109,7 @@ class Controller {
 
     updateTracks(trackIdx) {
 
-        let timeline = this.editor.gui.NMFtimeline;
+        let timeline = this.timeline || this.editor.activeTimeline;
         
         // if(timeline.onUpdateTracks( keyType ))
         // return; // Return if event handled
@@ -160,8 +158,11 @@ class Controller {
             values.forEach(element => {
                 v.push(element[i]);
             });
-            tracks.push(new THREE.NumberKeyframeTrack('Body.morphTargetInfluences['+ morph +']', times, v));
-            tracks.push(new THREE.NumberKeyframeTrack('Eyelashes.morphTargetInfluences['+ morph +']', times, v));
+
+            for(let mesh of this.skinnedMeshes)
+            {
+                tracks.push(new THREE.NumberKeyframeTrack(mesh.name + '.morphTargetInfluences['+ morph +']', times, v));                
+            }
         }
         this.editor.NMFclip = new THREE.AnimationClip("nmf", timeline.duration, tracks);
         console.log(this.editor.NMFclip )
@@ -208,4 +209,4 @@ class Controller {
     
 };
 
-export { Controller };
+export { BMLController };

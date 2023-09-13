@@ -18,7 +18,7 @@ class App {
         this.mediaRecorder = null
         this.chunks = [];
         this.captureMode = null;
-        this.editor = new Editor(this);
+       
         // Create the fileSystem and log the user
         this.FS = new FileSystem("signon", "signon", () => console.log("Auto login of guest user"));
 
@@ -60,21 +60,29 @@ class App {
         // }
         
         const mode = settings.mode ?? 'capture';
+        let type = "keyframes";
 
         switch(mode) {
             case 'capture': 
                 // this.captureMode = appMode.LIVE;
+                this.editor = new Editor(this, type);
                 this.onBeginCapture();
                 break;
             case 'bvh': 
+                this.editor = new Editor(this, type);
                 this.onLoadAnimation( settings.data );
                 break;
             case 'video': 
                 // this.captureMode = appMode.VIDEO;
+                this.editor = new Editor(this, type);
                 this.onLoadVideo( settings.data );
                 break;
+            default:
+                type = "script";
+                this.editor = new Editor(this, type);
+                this.onBMLProject();
+                break;
         }
-
         window.addEventListener("resize", this.onResize.bind(this));
     }
 
@@ -253,6 +261,14 @@ class App {
         const name = "Unnamed";
         this.editor.clipName = name;
 
+    }
+
+    onBMLProject() {
+        
+        const name = "bml based";
+        this.editor.clipName = name;
+        this.editor.loadModel();
+        // this.editor.loadAnimation( animation );
     }
 
     setEvents(live) {

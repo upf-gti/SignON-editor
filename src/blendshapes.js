@@ -19,6 +19,7 @@ class BlendshapesManager {
             "Mouth"
         ]
     }
+    
     createAnimationFromBlendshapes = function(name, data, applyRotation = false) {
 
         let clipData = {};

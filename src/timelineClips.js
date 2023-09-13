@@ -647,6 +647,7 @@ FaceLexemeClip.prototype.fromJSON = function( json )
 	/*this.properties.permanent = json.permanent;*/
 
 }
+
 function roundedRect(ctx, x, y, width, height, radiusStart, radiusEnd, fill = true) {
 	ctx.beginPath();
 	ctx.moveTo(x, y + radiusStart);
@@ -659,6 +660,7 @@ function roundedRect(ctx, x, y, width, height, radiusStart, radiusEnd, fill = tr
 	else
 		ctx.stroke();
 }
+
 const HexToRgb = (hex) => {
     var c;
     if(/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)){
@@ -671,6 +673,7 @@ const HexToRgb = (hex) => {
     }
     throw new Error('Bad Hex');
 }
+
 FaceLexemeClip.prototype.drawTimeline = function( ctx, w,h, selected, timeline )
 {
 	//ctx.globalCompositeOperation =  "source-over";
@@ -731,14 +734,18 @@ FaceLexemeClip.prototype.drawTimeline = function( ctx, w,h, selected, timeline )
 	if( textInfo.width < (w - 24) )
 		ctx.fillText( this.id, 24, h/2 + 11/2);
 }
+
 FaceLexemeClip.prototype.showInfo = function(panel, callback)
 {
 	for(var i in this.properties)
 	{
 		var property = this.properties[i];
 		if(i=="lexeme"){
-			panel.addCombo(i, property,{values: FaceLexemeClip.lexemes, thumbnail: true, callback: function(i,v)
-			{
+			let values = [];
+			for(let id in FaceLexemeClip.lexemes) {
+				values.push({ value: FaceLexemeClip.lexemes[id], src: "./data/imgs/thumbnails/" + FaceLexemeClip.lexemes[id].toLowerCase() + ".png" })
+			}
+			panel.addDropdown(i, values, property, (v, e, name) => {
 				if(v.includes("LIP") || v.includes("MOUTH") || v.includes("DIMPLER"))
 					this.clipColor = 'cyan';
 				else if(v.includes("BROW"))
@@ -750,11 +757,10 @@ FaceLexemeClip.prototype.showInfo = function(panel, callback)
 				else
 					this.clipColor = 'green';
 
-				this.properties[i] = v;
+				this.properties[name] = v;
 				this.id = v + "-" + Math.ceil(getTime());
-				if(callback)
-					callback();
-			}.bind(this, i)});
+				
+			}, {filter: true});
 		}
 		else
 		{
@@ -762,53 +768,57 @@ FaceLexemeClip.prototype.showInfo = function(panel, callback)
 			{
 
 				case String:
-					panel.addString(i, property, {callback: function(i,v)
+					panel.addText(i, property, (v, e, name) =>
 					{
-						this.properties[i] = v;
+						this.properties[name] = v;
 						if(callback)
 							callback();
-					}.bind(this, i)});
+					});
 					break;
+
 				case Number:
 					if(i=="amount")
 					{
-						panel.addNumber(i, property, {min:0, max:1,callback: function(i,v)
+						panel.addNumber(i, property, (v, e, name) =>
 						{
-							this.properties[i] = v;
+							this.properties[name] = v;
 							if(callback)
 								callback();
-						}.bind(this,i)});
+						},
+						{min:0, max:1, step: 0.01});
 					}
 					else{
-						panel.addNumber(i, property, {callback: function(i,v)
+						panel.addNumber(i, property, (v, e, name) =>
 						{
-							if(i == "start"){
-								var dt = v - this.properties[i];
+							if(name == "start"){
+								var dt = v - this.properties[name];
 								this.properties.attackPeak += dt;
 								this.properties.relax += dt;
 							}
-							this.properties[i] = v;
+							this.properties[name] = v;
 							if(callback)
 								callback();
-						}.bind(this,i)});
+						});
 					}
 					break;
+				
 				case Boolean:
-					panel.addCheckbox(i, property, {callback: function(i,v)
+					panel.addCheckbox(i, property, (v, e, name) =>
 					{
-						this.properties[i] = v;
+						this.properties[name] = v;
 						if(callback)
 							callback();
-					}.bind(this,i)});
-						break;
+					});
+					break;
+				
 				case Array:
-					panel.addArray(i, property, {callback: function(i,v)
+					panel.addArray(i, property, (v, e, name) =>
 					{
-						this.properties[i] = v;
+						this.properties[name] = v;
 						if(callback)
 							callback();
-					}.bind(this,i)});
-						break;
+					});
+					break;
 			}
 		}
 	}

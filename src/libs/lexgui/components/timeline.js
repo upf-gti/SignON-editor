@@ -2314,7 +2314,6 @@
             e.stopPropagation();
 
             let actions = [];
-            //let track = this.NMFtimeline.clip.tracks[0];
             if(this.lastClipsSelected.length) {
                 actions.push(
                     {
@@ -2334,19 +2333,6 @@
                         }
                     }
                 )
-                // actions.push(
-                //     {
-                //         title: "Create preset" + " <i class='bi bi-file-earmark-plus-fill float-right'></i>",
-                //         callback: () => {
-                //             this.NMFtimeline.lastClipsSelected.sort((a,b) => {
-                //                 if(a[0]<b[0]) 
-                //                     return -1;
-                //                 return 1;
-                //             });
-                //             this.createNewPresetDialog(this.NMFtimeline.lastClipsSelected);
-                //         }
-                //     }
-                // )
             }
             else{
                 
@@ -2365,7 +2351,6 @@
                                 for(let i = 0; i < this.clipsToCopy.length; i++){
                                     let [trackIdx, clipIdx] = this.clipsToCopy[i];
                                     let clipToCopy = Object.assign({}, this.animationClip.tracks[trackIdx].clips[clipIdx]);
-                                    // let clip = new ANIM.FaceLexemeClip(clipToCopy);
                                     this.addClip(clipToCopy, this.clipsToCopy.length > 1 ? clipToCopy.start : 0); 
                                 }
                                 this.clipsToCopy = null;
