@@ -596,8 +596,8 @@ FaceLexemeClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
 	this.duration = o.duration || 1;
-	this.attackPeak = o.attackPeak || 0.25;
-	this.relax = o.relax || 0.75;
+	this.attackPeak = this.fadein = o.attackPeak || 0.25;
+	this.relax = this.fadeout = o.relax || 0.75;
 	this.properties.lexeme = o.lexeme || this.properties.lexeme;
 	if(o.properties)
 	{
@@ -640,8 +640,8 @@ FaceLexemeClip.prototype.fromJSON = function( json )
 	this.id = json.id;
 	this.properties.amount = json.amount;
 	this.start = json.start;
-	this.attackPeak = json.attackPeak;
-	this.relax = json.relax;
+	this.attackPeak = this.fadein = json.attackPeak;
+	this.relax = this.fadeout = json.relax;
 	this.duration = json.duration;
 	this.properties.lexeme = json.lexeme;
 	/*this.properties.permanent = json.permanent;*/
@@ -674,7 +674,7 @@ const HexToRgb = (hex) => {
     throw new Error('Bad Hex');
 }
 
-FaceLexemeClip.prototype.drawTimeline = function( ctx, w,h, selected, timeline )
+FaceLexemeClip.prototype.drawClip = function( ctx, w,h, selected, timeline )
 {
 	//ctx.globalCompositeOperation =  "source-over";
 	ctx.font = "11px Calibri";
@@ -684,8 +684,8 @@ FaceLexemeClip.prototype.drawTimeline = function( ctx, w,h, selected, timeline )
 		// var gradient = ctx.createLinearGradient(0, 0, w, h);
 		
 		// ctx.globalCompositeOperation = "darken";
-		let attackX = timeline._secondsToPixels * (this.attackPeak - this.start);
-		let relaxX = timeline._secondsToPixels * (this.relax - this.start);
+		let attackX = timeline.secondsToPixels * (this.attackPeak - this.start);
+		let relaxX = timeline.secondsToPixels * (this.relax - this.start);
 		// Add three color stops
 		// gradient.addColorStop(0, "gray");
 		// gradient.addColorStop(attackX/w, this.clipColor);
@@ -884,7 +884,7 @@ FaceFACSClip.prototype.fromJSON = function( json )
 	this.properties.side = json.side;
 }
 
-FaceFACSClip.prototype.drawTimeline = function( ctx, w,h, selected )
+FaceFACSClip.prototype.drawClip = function( ctx, w,h, selected )
 {
 	ctx.globalCompositeOperation =  "source-over";
 	var textInfo = ctx.measureText( this.id );
@@ -1004,7 +1004,7 @@ FaceEmotionClip.prototype.fromJSON = function( json )
 
 }
 
-FaceEmotionClip.prototype.drawTimeline = function( ctx, w,h, selected )
+FaceEmotionClip.prototype.drawClip = function( ctx, w,h, selected )
 {
 	ctx.globalCompositeOperation =  "source-over";
 	var textInfo = ctx.measureText( this.id );
@@ -1296,7 +1296,7 @@ FacePresetClip.prototype.fromJSON = function( json )
 
 }
 
-FacePresetClip.prototype.drawTimeline = function( ctx, w,h, selected )
+FacePresetClip.prototype.drawClip = function( ctx, w,h, selected )
 {
 	ctx.globalCompositeOperation =  "source-over";
 	var textInfo = ctx.measureText( this.id );
@@ -1441,7 +1441,7 @@ GazeClip.prototype.fromJSON = function( json )
 	/*this.properties.permanent = json.permanent;*/
 }
 
-GazeClip.prototype.drawTimeline = function( ctx, w,h, selected )
+GazeClip.prototype.drawClip = function( ctx, w,h, selected )
 {
 	ctx.globalCompositeOperation =  "source-over";
 	var textInfo = ctx.measureText( this.id );
@@ -1575,7 +1575,7 @@ GestureClip.prototype.fromJSON = function( json )
 
 }
 
-GestureClip.prototype.drawTimeline = function( ctx, w,h, selected )
+GestureClip.prototype.drawClip = function( ctx, w,h, selected )
 {
 	//ctx.globalCompositeOperation =  "source-over";
 	var textInfo = ctx.measureText( this.id );
@@ -1706,7 +1706,7 @@ HeadClip.prototype.fromJSON = function( json )
 	this.duration = json.duration;
 }
 
-HeadClip.prototype.drawTimeline = function( ctx, w,h, selected )
+HeadClip.prototype.drawClip = function( ctx, w,h, selected )
 {
 	//ctx.globalCompositeOperation =  "source-over";
 	var textInfo = ctx.measureText( this.id );
@@ -1818,7 +1818,7 @@ HeadDirectionShiftClip.prototype.fromJSON = function( json )
 	this.duration = json.duration;
 }
 
-HeadDirectionShiftClip.prototype.drawTimeline = function( ctx, w,h, selected )
+HeadDirectionShiftClip.prototype.drawClip = function( ctx, w,h, selected )
 {
 	ctx.globalCompositeOperation =  "source-over";
 	var textInfo = ctx.measureText( this.id );
@@ -1882,7 +1882,7 @@ PostureClip.prototype.fromJSON = function( json )
 	/*this.properties.permanent = json.permanent;*/
 }
 
-PostureClip.prototype.drawTimeline = function( ctx, w,h, selected )
+PostureClip.prototype.drawClip = function( ctx, w,h, selected )
 {
 	ctx.globalCompositeOperation =  "source-over";
 	var textInfo = ctx.measureText( this.id );
@@ -1941,7 +1941,7 @@ SpeechClip.prototype.fromJSON = function( json )
 		this.audioId = json.audioId;
 }
 
-SpeechClip.prototype.drawTimeline = function( ctx, w,h, selected )
+SpeechClip.prototype.drawClip = function( ctx, w,h, selected )
 {
 	if(this.id == "")
 		this.id = this.text;
@@ -2167,7 +2167,7 @@ AudioClip.prototype.preload = function( time, isVisible )
 		this._audio.currentTime = this.offsetTime;
 }
 
-AudioClip.prototype.drawTimeline = function( ctx, w,h, selected )
+AudioClip.prototype.drawClip = function( ctx, w,h, selected )
 {
 	//draw waveform...
 	if(this.id == "")

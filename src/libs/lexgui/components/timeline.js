@@ -941,16 +941,16 @@
                     if(fadeoutX)
                         ctx.roundRect( x + w - fadeoutX, y + offset, fadeoutX, trackHeight, {tl: 0, bl: 0, tr:5, br:5}, true);
                     
-                    //draw clip content
-                    if( clip.drawClip )
-                    {
-                        ctx.save();
-                        ctx.translate(x,y);
-                        ctx.strokeStyle = "#AAA";
-                        ctx.fillStyle = "#AAA";
-                        clip.drawClip( ctx, x2-x, trackHeight, this.selectedClip == clip || track.selected[j], this );
-                        ctx.restore();
-                    }
+                    // //draw clip content
+                    // if( clip.drawClip )
+                    // {
+                    //     ctx.save();
+                    //     ctx.translate(x,y);
+                    //     ctx.strokeStyle = "#AAA";
+                    //     ctx.fillStyle = "#AAA";
+                    //     clip.drawClip( ctx, x2-x, trackHeight, this.selectedClip == clip || track.selected[j], this );
+                    //     ctx.restore();
+                    // }
                     //draw clip outline
                     if(clip.hidden)
                         ctx.globalAlpha = trackAlpha * 0.5;

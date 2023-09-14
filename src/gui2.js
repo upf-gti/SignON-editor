@@ -1394,7 +1394,7 @@ class ScriptGui extends Gui {
                 )
                 actions.push(
                     {
-                        title: "Create preset" + " <i class='bi bi-file-earmark-plus-fill float-right'></i>",
+                        title: "Create preset",
                         callback: () => {
                             this.clipsTimeline.lastClipsSelected.sort((a,b) => {
                                 if(a[0]<b[0]) 
@@ -1526,57 +1526,35 @@ class ScriptGui extends Gui {
             widgets.clear();
             if(!clip)
                 return;
+            
+            const updateTracks = () => {
+
+
+                if(clip && clip.start + clip.duration > this.clipsTimeline.duration) {
+                    this.clipsTimeline.setDuration(clip.start + clip.duration);
+                }
+                this.editor.NMFController.updateTracks(); 
+                               
+                if(this.curve) {
+                    let syncvalues = [];
+                    syncvalues.push([clip.start, 0]);
+
+                    if(clip.attackPeak != undefined)
+                        syncvalues.push([clip.attackPeak, clip.properties.amount]);
+                    
+                    if(clip.relax != undefined) 
+                        syncvalues.push([clip.relax, clip.properties.amount]);
+                    
+                    syncvalues.push([clip.duration + clip.start, 0]);
+                    this.curve.curve_instance.element.value = syncvalues;
+                    this.curve.curve_instance.redraw()
+                }
+            }
+
             widgets.widgets_per_row = 1;
             widgets.addTitle( clip.constructor.name );
             widgets.addText("Id", clip.id, (v) => this.clipInPanel.id = v)
-            widgets.branch("Time", {icon: "fa-solid fa-clock"})
-
-            const updateTracks = () => {
-                this.updateClipPanel(clip);
-
-                if(clip && clip.start + clip.duration > this.clipsTimeline.duration) {
-                    this.clipsTimeline.onSetDuration(clip.start + clip.duration);
-                }
-                this.editor.NMFController.updateTracks(); 
-            }
-
-            widgets.addNumber("Start", clip.start, (v) =>
-            {              
-                this.clipInPanel.start = v;
-                clip.start = v;
-                updateTracks();
-                
-            }, {min:0, step:0.01, precision:2});
-
-            widgets.addNumber("Duration", clip.duration, (v) =>
-            {
-                this.clipInPanel.duration = v;
-                clip.relax = Math.min(v +   clip.start, clip.relax);
-                clip.attackPeak = Math.min(v +  clip.start, clip.attackPeak);
-                updateTracks();
-            }, {min:0.01, step:0.01, precision:2});
-
-            widgets.branch("Sync points", {icon: "fa-solid fa-arrows-left-right-to-line"});
-
-            if(clip.attackPeak != undefined)
-            {
-                widgets.addNumber("Attack Peak", clip.attackPeak - clip.start, (v) =>
-                {              
-                   clip.attackPeak = v + clip.start;
-                   updateTracks();
-                }, {min:0, max: clip.relax - clip.start, step:0.01, precision:2});
-            }
-
-            if(clip.relax != undefined) 
-            {
-                widgets.addNumber("Relax", clip.relax  - clip.start, (v) =>
-                    {              
-                       clip.relax = v + clip.start;
-                       clip.attackPeak = Math.min(clip.relax, clip.attackPeak);
-                       updateTracks();
-                    }, {min: clip.attackPeak - clip.start, max: clip.duration , step:0.01, precision:2});
-            }
-
+            
             widgets.branch("Content");
             if(clip.showInfo)
             {
@@ -1602,6 +1580,7 @@ class ScriptGui extends Gui {
                                 {
                                     this.clipInPanel.properties[n] = v;
                                     updateTracks();
+                                    this.updateClipPanel(clip);
                                 }, {min:0, max:1, step:0.01});
                             }
                         else{
@@ -1629,6 +1608,68 @@ class ScriptGui extends Gui {
                     }
                 }
             }
+
+            widgets.branch("Time", {icon: "fa-solid fa-clock"});
+            
+            widgets.addNumber("Start", clip.start, (v) =>
+            {              
+                this.clipInPanel.start = v;
+                clip.start = v;
+                updateTracks();
+                this.updateClipPanel(clip);
+                
+            }, {min:0, step:0.01, precision:2});
+
+            widgets.addNumber("Duration", clip.duration, (v) =>
+            {
+                this.clipInPanel.duration = v;
+                clip.relax = clip.fadeout = Math.min(v +   clip.start, clip.relax);
+                clip.attackPeak = clip.fadein = Math.min(v +  clip.start, clip.attackPeak);
+                updateTracks();
+                this.updateClipPanel(clip);
+            }, {min:0.01, step:0.01, precision:2});
+
+            widgets.branch("Sync points", {icon: "fa-solid fa-chart-line"});
+
+            const syncvalues = [];
+            
+            if(clip.attackPeak != undefined)
+            {
+                syncvalues.push([clip.attackPeak, clip.properties.amount]);
+                widgets.addNumber("Attack Peak", clip.attackPeak - clip.start, (v) =>
+                {              
+                   clip.attackPeak = clip.fadein = v + clip.start;
+                   updateTracks();
+                }, {min:0, max: clip.relax - clip.start, step:0.01, precision:2});
+            }
+
+            if(clip.relax != undefined) 
+            {
+                syncvalues.push([clip.relax, clip.properties.amount]);
+                widgets.addNumber("Relax", clip.relax  - clip.start, (v) =>
+                {              
+                    clip.relax = clip.fadeout = v + clip.start;
+                    clip.attackPeak = Math.min(clip.relax, clip.attackPeak);
+                    updateTracks();
+                }, {min: clip.attackPeak - clip.start, max: clip.duration , step:0.01, precision:2});
+            }
+
+            if(syncvalues.length) {
+                this.curve = widgets.addCurve("Synchronization", syncvalues, (value, event) => {
+                    if(event && event.type != "mouseup") return;
+                    if(clip.attackPeak) {
+                        clip.attackPeak =  clip.fadein = value[1][0];
+                    }
+                    if(clip.relax) {
+                        clip.relax = clip.fadeout = value[2][0];
+                    }
+                    updateTracks();
+                    this.updateClipPanel(clip);
+    
+                });
+            }
+            
+            
             widgets.addButton(null, "Delete", () => this.clipsTimeline.deleteClip(this.clipsTimeline.lastClipsSelected[0], () => {clip = null;  this.clipsTimeline.optimizeTracks(); updateTracks()}));
         }
         widgets.onRefresh(clip);
@@ -1642,14 +1683,14 @@ class ScriptGui extends Gui {
     }
 
     createNewPresetDialog(clips) {
-        LX.prompt( "Preset name", (v) => {
+        LX.prompt( "Preset name", "Create preset", (v) => {
            let presetInfo = {preset: v, clips:[]};
            for(let i = 0; i < clips.length; i++){
                let [trackIdx, clipIdx] = clips[i];
-               presetInfo.clips.push(this.clipsTimeline.clip.tracks[trackIdx].clips[clipIdx]);
+               presetInfo.clips.push(this.clipsTimeline.animationClip.tracks[trackIdx].clips[clipIdx]);
            }
            let preset = new ANIM.FacePresetClip(presetInfo);
-       }, {title: "Create preset"} )
+       }, {} )
    }
 
     createLexemesDialog() {
@@ -1665,21 +1706,36 @@ class ScriptGui extends Gui {
             for(let i = 0; i < values.length; i++){
                 let data = {
                     id: values[i], 
-                    type: "image",
+                    type: "clip",
                     src: "data/imgs/thumbnails/" + values[i].toLowerCase() + ".png",
                 }
                 asset_data.push(data);
             }
             
-            asset_browser.load( asset_data, e => {
+            asset_browser.load( asset_data, (e,v) => {
                 switch(e.type) {
                     case LX.AssetViewEvent.ASSET_SELECTED: 
                         if(e.multiple)
                             console.log("Selected: ", e.item); 
                         else
                             console.log(e.item.id + " selected"); 
-                        dialog.close();
-                        that.clipsTimeline.addClip( new ANIM.FaceLexemeClip({lexeme: e.item.id}))
+                        // dialog.close();
+                        let asset_panel = document.querySelector("#Asset");
+                        let button = asset_panel.getElementsByTagName("button")[0];
+                        let new_button = button.cloneNode()
+                        new_button.innerText = "Add clip";
+                        new_button.addEventListener("click", () => {that.clipsTimeline.addClip( new ANIM.FaceLexemeClip({lexeme: e.item.id})); dialog.close();});
+                        let parent = button.parentElement;
+                        let to_remove = [];
+                        for(let i = 3; i < asset_panel.children.length-1; i++) {
+                            if(asset_panel.children[i].classList.contains("lexwidget"))
+                                to_remove.push(asset_panel.children[i])
+                        }
+                        for(let i = 0; i < to_remove.length; i++) {
+                            asset_panel.removeChild(to_remove[i]);
+                        }
+                        button.remove();
+                        parent.appendChild(new_button);
                         break;
                     case LX.AssetViewEvent.ASSET_DELETED: 
                         console.log(e.item.id + " deleted"); 
@@ -1692,39 +1748,54 @@ class ScriptGui extends Gui {
                         break;
                 }
             })
-        },{ title:'Lexemes', close: true, minimize: false, scroll: true, resizable: true, draggable: true });
+        },{ title:'Lexemes', close: true, minimize: false, size: ["80%"], scroll: true, resizable: true, draggable: true });
        
     }
 
     
     createPresetsDialog() {
+        
+        let that = this;
         // Create a new dialog
-        let dialog = new LiteGUI.Dialog('Non Manual Features presets', { title:'Presets', close: true, minimize: false, width: 500, height: 400, scroll: true, resizable: true, draggable: true });
-        var that = this;
-        // Create a collection of widgets
-        let widgets = new LiteGUI.Inspector();
-        let values = ANIM.FacePresetClip.facePreset;//["Yes/No-Question", "Negative", "WH-word Questions", "Topic", "RH-Questions"];
-        for(let i = 0; i < values.length; i++) {
-            widgets.addButton(null, values[i], {
-                width: 100,
-                callback: function(v, e,) { 
-                    dialog.close();
-                    let presetClip = new ANIM.FacePresetClip({preset: v});
-                    for(let i = 0; i < presetClip.clips.length; i++){
-                        that.clipsTimeline.addClip( presetClip.clips[i], presetClip.clips[i].start);
-                    }
-                    //that.editor.NMFController.updateTracks.bind(that.editor.NMFController) 
+        let dialog = new LX.Dialog('Non Manual Features presets', (p) => {
+
+            let values = ANIM.FacePresetClip.facePreset; //["Yes/No-Question", "Negative", "WH-word Questions", "Topic", "RH-Questions"];
+            let asset_browser = new LX.AssetView({ skip_browser: true, skip_preview: true  });
+            p.attach( asset_browser );
+            let asset_data = [];
+            
+            // Create a collection of widgets values
+            for(let i = 0; i < values.length; i++){
+                let data = { id: values[i], type: "clips" };
+                asset_data.push(data);
+            }
+            
+            asset_browser.load( asset_data, e => {
+                switch(e.type) {
+                    case LX.AssetViewEvent.ASSET_SELECTED: 
+                        if(e.multiple)
+                            console.log("Selected: ", e.item); 
+                        else
+                            console.log(e.item.id + " selected"); 
+
+                        dialog.close();
+                        let presetClip = new ANIM.FacePresetClip({preset: e.item.id});
+                        for(let i = 0; i < presetClip.clips.length; i++){
+                            that.clipsTimeline.addClip( presetClip.clips[i], presetClip.clips[i].start);
+                        }
+                        break;
+                    case LX.AssetViewEvent.ASSET_DELETED: 
+                        console.log(e.item.id + " deleted"); 
+                        break;
+                    case LX.AssetViewEvent.ASSET_CLONED: 
+                        console.log(e.item.id + " cloned"); 
+                        break;
+                    case LX.AssetViewEvent.ASSET_RENAMED:
+                        console.log(e.item.id + " is now called " + e.value); 
+                        break;
                 }
-            } )
-        }
-
-        // Placeholder function to show the new settings. Normally you would do something usefull here
-        // with the new settings.
-        function applySettings() {
-            console.log("Expression is " + expressions.getValue() );
-        }
-
-
+            })
+        }, { title:'Presets', close: true, minimize: false, size: [800], scroll: true, resizable: true, draggable: true});
     }
 
 }
