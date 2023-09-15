@@ -65,6 +65,7 @@ class App {
         switch(mode) {
             case 'capture': 
                 // this.captureMode = appMode.LIVE;
+                type = "capture";
                 this.editor = new Editor(this, type);
                 this.onBeginCapture();
                 break;
@@ -80,7 +81,7 @@ class App {
             default:
                 type = "script";
                 this.editor = new Editor(this, type);
-                this.onBMLProject();
+                this.onBMLProject( settings.data );
                 break;
         }
         window.addEventListener("resize", this.onResize.bind(this));
@@ -263,11 +264,27 @@ class App {
 
     }
 
-    onBMLProject() {
+    onBMLProject(dataFile) {
         
-        const name = "bml based";
-        this.editor.clipName = name;
-        this.editor.loadModel();
+        if(dataFile)
+        {
+            const fr = new FileReader();
+
+            
+                fr.readAsText( dataFile );
+                fr.onload = e => { 
+                    let anim = JSON.parse(e.currentTarget.result);
+                    this.editor.clipName = anim.name;
+                    this.editor.loadModel(anim);    
+                };
+    
+        }
+        else {
+            const name = "bml based";
+            this.editor.clipName = name;
+            this.editor.loadModel();    
+        }
+
         // this.editor.loadAnimation( animation );
     }
 

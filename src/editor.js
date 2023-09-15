@@ -40,7 +40,7 @@ class Editor {
         this.gizmo = null;
         this.renderer = null;
         this.state = false; // defines how the animation starts (moving/static)
-        this.eModes = {keyframes: "keyframes editor", script: "BML editor", MOUTHING: "Mouthing Editor"};
+        this.eModes = {keyframes: "keyframes editor", capture: "keyframes editor", script: "BML editor", MOUTHING: "Mouthing Editor"};
         this.mode = this.eModes[mode];
         this.NMFController = null;
 
@@ -421,26 +421,33 @@ class Editor {
             model.visible = true;
             
             let skinnedMeshes = [];
-            model.traverse( o => {
-                if (o.isMesh || o.isSkinnedMesh) {
-                    o.castShadow = true;
-                    o.receiveShadow = true;
-                    o.frustumCulled = false;
-                    if ( o.skeleton ){ 
-                        this.skeleton = o.skeleton;
+             model.traverse( (object) => {
+                    if ( object.isMesh || object.isSkinnedMesh ) {
+                        object.material.side = THREE.FrontSide;
+                        object.frustumCulled = false;
+                        object.castShadow = true;
+                        object.receiveShadow = true;
+
+                        if (object.name == "Eyelashes")
+                            object.castShadow = false;
+
+                        if(object.material.map)
+                            object.material.map.anisotropy = 16; 
+
+                        this.help = object.skeleton;
+                        if(object.morphTargetDictionary) {
+
+                            this.morphTargets = object.morphTargetDictionary;
+                            skinnedMeshes.push(object)
+                        }
+                        
+                    } else if (object.isBone) {
+                        object.scale.set(1.0, 1.0, 1.0);
                     }
-                    if(o.morphTargetDictionary)
-                    {
-                        this.morphTargets = o.morphTargetDictionary;
-                        skinnedMeshes.push(o);
-                    }
-                    o.material.side = THREE.FrontSide;
-                    
-                }
-            } );
+                } );
             
             // correct model
-            model.position.set(0,0.85,0);
+            // model.position.set(0, 0.75, 0);            
             model.rotateOnAxis(new THREE.Vector3(1,0,0), -Math.PI/2);
             this.skeletonHelper = this.retargeting.tgtSkeletonHelper || new THREE.SkeletonHelper(model);
             this.skeletonHelper.name = "SkeletonHelper";
@@ -448,14 +455,14 @@ class Editor {
             //Create animations
             this.mixer = new THREE.AnimationMixer(model);
             
-            this.skeletonHelper.skeleton = this.skeleton; //= createSkeleton();
+            this.skeletonHelper.skeleton = this.help; //= createSkeleton();
 
             //Create face animation from mediapipe blendshapes
             // this.blendshapesManager = new BlendshapesManager(skinnedMeshes, this.morphTargets, this.mapNames);
             
             // guizmo stuff
             this.scene.add( model );
-            this.scene.add( this.skeletonHelper );
+            // this.scene.add( this.skeletonHelper );
             //this.scene.add( this.retargeting.srcSkeletonHelper );
             
             // this.gui.createScriptTimeline();
@@ -505,7 +512,7 @@ class Editor {
         reader.onload = (e) => {
             const text = e.currentTarget.result;
             let data = null;
-            if(extension == 'bvh')
+            if(extension.includes('bvh'))
                 data = this.BVHloader.parse( text );
             else
                 data = this.BVHloader.parseExtended( text );
@@ -1225,6 +1232,24 @@ class Editor {
                 BVHExporter.exportMorphTargets(this.mixer._actions[1], this.morphTargets, this.NMFclip);
                 break;
             default:
+                let json =  {
+                    tracks: [],
+                    name : this.name || "bml animation",
+                    duration: this.animationClip.duration
+                }
+
+                for(let i = 0; i < this.animationClip.tracks.length; i++ ) {
+                    let track = { clips: [] };
+                    for(let j = 0; j < this.animationClip.tracks[i].clips.length; j++) {
+                        let data = this.animationClip.tracks[i].clips[j].toJSON();
+                        if(data)
+                        {
+                            track.clips.push( data );
+                        }
+                    }
+                    json.tracks.push(track);
+                }
+                BVHExporter.download(JSON.stringify(json), json.name, "application/json");
                 console.log(type + " ANIMATION EXPORTATION IS NOT YET SUPPORTED");
                 break;
         }

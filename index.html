@@ -169,7 +169,7 @@
 	
 			const file = e.dataTransfer.files[0];
 			const extension = UTILS.getExtension(file.name);
-			createApp({mode: extension.includes('bvh') ? 'bvh' : 'video', data: file});
+			createApp({mode: extension, data: file});
 		};
 	
 		const onloadfile = function() {
@@ -181,7 +181,7 @@
 			input.onchange = (e) => {
 				const file = e.currentTarget.files[0];
 				const extension = UTILS.getExtension(file.name);
-				createApp({mode: extension.includes('bvh') ? extension : 'video', data: file});
+				createApp({mode: extension, data: file});
 			}
 		}
 	

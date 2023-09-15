@@ -509,9 +509,14 @@ class KeyframesGui extends Gui {
         const option1 = document.createElement("option");
         option1.innerText = "Webcam";
         option1.setAttribute("value", "webcam");
+        if(this.editor.mode == this.editor.eModes.capture)
+            option1.selected = true;
         const option2 = document.createElement("option");
         option2.innerText = "Video";
         option2.setAttribute("value", "video");
+        if(this.editor.mode == this.editor.eModes.keyframes)
+            option2.selected = true;
+
         let input = document.createElement("input");
         input.setAttribute("type", "file");
         input.addEventListener("change", (e) => {
@@ -531,9 +536,11 @@ class KeyframesGui extends Gui {
             if(value == "video") {
                 input.value = "";
                 input.click();
+                this.editor.mode = this.editor.eModes.keyframes;
             }
             else if( value == "webcam") {
                 this.editor.__app.onBeginCapture();
+                this.editor.mode = this.editor.eModes.capture;
             }
             console.log(value)
         }
@@ -1352,10 +1359,17 @@ class ScriptGui extends Gui {
     
     loadBMLClip(clip) {
         
-        //else
-            //to do -- parse bml animation clip
-    
+        
         this.clip = this.clipsTimeline.animationClip = clip;
+        if(clip && clip.duration) {
+            for(let i = 0; i < clip.tracks.length; i++) {
+                let c = clip.tracks[i].clips;
+                //to do -- parse bml animation clip
+                // 
+                //add clip --> new ANIM.FaceLexemeClip({lexeme: e.item.id}
+            }
+           // this.clipsTimeline.setAnimationClip(clip);
+        }
         this.duration = this.clip.duration;
 
         this.clipsTimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
@@ -1386,7 +1400,7 @@ class ScriptGui extends Gui {
                         callback: () => {
                             let clipstToDelete = this.clipsTimeline.lastClipsSelected;
                             for(let i = 0; i < clipstToDelete.length; i++){
-                                this.deleteClip(clipstToDelete[i], null);
+                                this.clipsTimeline.deleteClip(clipstToDelete[i], null);
                             }
                             // this.optimizeTracks();
                         }
@@ -1432,9 +1446,9 @@ class ScriptGui extends Gui {
 
                                 for(let i = 0; i < this.clipsTimeline.clipsToCopy.length; i++){
                                     let [trackIdx, clipIdx] = this.clipsTimeline.clipsToCopy[i];
-                                    let clipToCopy = Object.assign({}, this.animationClip.tracks[trackIdx].clips[clipIdx]);
+                                    let clipToCopy = Object.assign({}, this.clipsTimeline.animationClip.tracks[trackIdx].clips[clipIdx]);
                                     // let clip = new ANIM.FaceLexemeClip(clipToCopy);
-                                    this.addClip(clipToCopy, this.clipsTimeline.clipsToCopy.length > 1 ? clipToCopy.start : 0); 
+                                    this.clipsTimeline.addClip(clipToCopy, this.clipsTimeline.clipsToCopy.length > 1 ? clipToCopy.start : 0); 
                                 }
                                 this.clipsTimeline.clipsToCopy = null;
                             }
@@ -1454,8 +1468,9 @@ class ScriptGui extends Gui {
         this.createSidePanel();
         this.updateMenubar()
         this.showGuide();
-        this.showTimeline()
-
+        this.showTimeline();
+        // Canvas UI buttons
+        this.createSceneUI(this.canvasArea);
     }
 
 
@@ -1537,17 +1552,19 @@ class ScriptGui extends Gui {
                                
                 if(this.curve) {
                     let syncvalues = [];
-                    syncvalues.push([clip.start, 0]);
+                    // syncvalues.push([clip.start, 0]);
 
-                    if(clip.attackPeak != undefined)
-                        syncvalues.push([clip.attackPeak, clip.properties.amount]);
+                    if(clip.fadein != undefined)
+                        syncvalues.push([clip.fadein - clip.start, clip.properties.amount]);
                     
-                    if(clip.relax != undefined) 
-                        syncvalues.push([clip.relax, clip.properties.amount]);
+                    if(clip.fadeout != undefined) 
+                        syncvalues.push([clip.fadeout - clip.start, clip.properties.amount]);
                     
-                    syncvalues.push([clip.duration + clip.start, 0]);
-                    this.curve.curve_instance.element.value = syncvalues;
-                    this.curve.curve_instance.redraw()
+                    // syncvalues.push([clip.duration + clip.start, 0]);
+                    // this.curve.curve_instance.element.value = syncvalues;
+                    // this.curve.curve_instance.element.xrange = [0, clip.duration];
+                    
+                    this.curve.curve_instance.redraw({value: syncvalues, xrange: [0, clip.duration]})
                 }
             }
 
@@ -1612,7 +1629,10 @@ class ScriptGui extends Gui {
             widgets.branch("Time", {icon: "fa-solid fa-clock"});
             
             widgets.addNumber("Start", clip.start, (v) =>
-            {              
+            {     
+                let diff = v - clip.start;         
+                clip.attackPeak = clip.fadein += diff;
+                clip.relax = clip.fadeout += diff;
                 this.clipInPanel.start = v;
                 clip.start = v;
                 updateTracks();
@@ -1623,8 +1643,8 @@ class ScriptGui extends Gui {
             widgets.addNumber("Duration", clip.duration, (v) =>
             {
                 this.clipInPanel.duration = v;
-                clip.relax = clip.fadeout = Math.min(v +   clip.start, clip.relax);
-                clip.attackPeak = clip.fadein = Math.min(v +  clip.start, clip.attackPeak);
+                clip.relax = clip.fadeout = Math.min(v + clip.start, clip.relax);
+                clip.attackPeak = clip.fadein = Math.min(v + clip.start, clip.attackPeak);
                 updateTracks();
                 this.updateClipPanel(clip);
             }, {min:0.01, step:0.01, precision:2});
@@ -1633,40 +1653,40 @@ class ScriptGui extends Gui {
 
             const syncvalues = [];
             
-            if(clip.attackPeak != undefined)
+            if(clip.fadein != undefined)
             {
-                syncvalues.push([clip.attackPeak, clip.properties.amount]);
-                widgets.addNumber("Attack Peak", clip.attackPeak - clip.start, (v) =>
+                syncvalues.push([clip.fadein - clip.start, clip.properties.amount]);
+                widgets.addNumber("Attack Peak", clip.fadein - clip.start, (v) =>
                 {              
                    clip.attackPeak = clip.fadein = v + clip.start;
                    updateTracks();
-                }, {min:0, max: clip.relax - clip.start, step:0.01, precision:2});
+                }, {min:0, max: clip.fadeout - clip.start, step:0.01, precision:2});
             }
 
-            if(clip.relax != undefined) 
+            if(clip.fadeout != undefined) 
             {
-                syncvalues.push([clip.relax, clip.properties.amount]);
-                widgets.addNumber("Relax", clip.relax  - clip.start, (v) =>
+                syncvalues.push([clip.fadeout - clip.start, clip.properties.amount]);
+                widgets.addNumber("Relax", clip.fadeout - clip.start, (v) =>
                 {              
                     clip.relax = clip.fadeout = v + clip.start;
-                    clip.attackPeak = Math.min(clip.relax, clip.attackPeak);
+                    clip.attackPeak = Math.min(clip.fadeout, clip.fadein);
                     updateTracks();
-                }, {min: clip.attackPeak - clip.start, max: clip.duration , step:0.01, precision:2});
+                }, {min: clip.fadein - clip.start, max: clip.duration , step:0.01, precision:2});
             }
 
             if(syncvalues.length) {
                 this.curve = widgets.addCurve("Synchronization", syncvalues, (value, event) => {
                     if(event && event.type != "mouseup") return;
-                    if(clip.attackPeak) {
-                        clip.attackPeak =  clip.fadein = value[1][0];
+                    if(clip.fadein) {
+                        clip.attackPeak =  clip.fadein = (value[0][0] + clip.start).toFixed(2);
                     }
-                    if(clip.relax) {
-                        clip.relax = clip.fadeout = value[2][0];
+                    if(clip.fadeout) {
+                        clip.relax = clip.fadeout = (value[1][0] + clip.start).toFixed(2);
                     }
                     updateTracks();
                     this.updateClipPanel(clip);
     
-                });
+                }, {xrange: [0, clip.duration]});
             }
             
             
@@ -1678,7 +1698,7 @@ class ScriptGui extends Gui {
 
     showGuide() {
         
-        LX.message("Right click on the Non-Manual Features timeline to create a new clip. You can create a clip from a selected lexeme or from a preset configuration.", "");
+        LX.message("Right click on the Non-Manual Features timeline to create a new clip. You can create a clip from a selected lexeme or from a preset configuration.", "How to start?");
 
     }
 
@@ -1796,6 +1816,53 @@ class ScriptGui extends Gui {
                 }
             })
         }, { title:'Presets', close: true, minimize: false, size: [800], scroll: true, resizable: true, draggable: true});
+    }
+
+    createSceneUI(area) {
+
+        $(this.editor.orientationHelper.domElement).show();
+
+        let editor = this.editor;
+        let canvasButtons = [
+            {
+                name: 'GUI',
+                property: 'showGUI',
+                icon: 'fa-solid fa-table-cells',
+                selectable: true,
+                selected: true,
+                callback: (v, e) => {
+                    editor.showGUI = !editor.showGUI;
+
+                    editor.scene.getObjectByName('Grid').visible = editor.showGUI;
+                    
+                    if(!editor.showGUI) {
+
+                        this.hideTimeline();
+
+                    } else {
+                        this.showTimeline();
+                    }
+                    
+                    
+                    const video = document.getElementById("capture");
+                    video.style.display = editor.showGUI ? "flex" : "none";
+                }
+            },
+    
+            {
+                name: 'Animation loop',
+                property: 'animLoop',
+                selectable: true,
+                selected: true,
+                icon: 'fa-solid fa-person-walking-arrow-loop-left',
+                callback: (v) =>  {
+                    editor.animLoop = !editor.animLoop;
+                    editor.setAnimationLoop(editor.animLoop);
+                    
+                }
+            }
+        ]
+        area.addOverlayButtons(canvasButtons, { float: "htc" } );
     }
 
 }

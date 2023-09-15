@@ -19,6 +19,7 @@
     function clamp (num, min, max) { return Math.min(Math.max(num, min), max) }
     function round(num, n) { return +num.toFixed(n); }
     function deepCopy(o) { return JSON.parse(JSON.stringify(o)) }
+    function getExtension(s) { return s.split('.').pop(); }
 
     LX.deepCopy = deepCopy;
 
@@ -1264,7 +1265,9 @@
             this.tabDOMs[ name ] = tabEl;
             this.tabs[ name ] = content;
 
-            if( callback ) callback.call(this, this.area.root.getBoundingClientRect());
+            setTimeout( () => {
+                if( callback ) callback.call(this, this.area.root.getBoundingClientRect());
+            }, 10 );
         }
 
         select( name ) {
@@ -2609,6 +2612,7 @@
             element.className += " lexfilter noname";
             
             let input = document.createElement('input');
+            input.id = 'input-filter';
             input.setAttribute("placeholder", options.placeholder);
             input.style.width =  "calc( 100% - 17px )";
             input.value = options.filterValue || "";
@@ -2622,6 +2626,8 @@
                 if(options.callback)
                     options.callback(input.value, e); 
             });
+
+            return element;
         }
 
         #search_widgets(branchName, value) {
@@ -2683,7 +2689,7 @@
                 // insert filtered widget
                 filteredOptions.push(o);
             }
- 
+
             this.refresh(filteredOptions);
         }
 
@@ -3287,7 +3293,6 @@
             list.hidden = true;
 
             list.addEventListener('focusout', function(e) {
-                
                 e.stopPropagation();
                 e.stopImmediatePropagation();
                 if(e.relatedTarget === selectedOption.querySelector("button")) {
@@ -3295,34 +3300,29 @@
                     setTimeout(() => delete this.unfocus_event, 200);
                 } else if (e.relatedTarget && e.relatedTarget.tagName == "INPUT") {
                     return;
+                }else if (e.target.id == 'input-filter') {
+                    return;
                 }
                 this.toggleAttribute('hidden', true);
             });
 
             // Add filter options
+            let filter = null;
             if(options.filter ?? false)
-                this.#add_filter("Search option", {container: list, callback: this.#search_options.bind(list, values)});
+                filter = this.#add_filter("Search option", {container: list, callback: this.#search_options.bind(list, values)});
+
+            if(filter)
+                list.appendChild(filter);
+
+            // Create option list to empty it easily..
+            const list_options = document.createElement('span');
+            list.appendChild(list_options);
 
             // Add dropdown options list
             list.refresh = (options) => {
-                if(!options.length)
-                    return;
-
-                let children = [];
-                let filter = "";
-                for(let i = 0; i < list.children.length; i++) {
-                    
-                    if(list.children[i].classList.contains('lexfilter')) {
-                        filter = list.children[i];
-                        continue;
-                    }
-                    children.push(list.children[i]);
-                }
 
                 // Empty list
-                list.innerHTML = "";
-                if(filter)
-                    list.appendChild(filter);
+                list_options.innerHTML = "";
 
                 for(let i = 0; i < options.length; i++)
                 {
@@ -3333,7 +3333,8 @@
                     li.appendChild(option);
                     li.addEventListener("click", (e) => {
                         element.querySelector(".lexoptions").toggleAttribute('hidden', true);
-                        element.querySelector(".lexoptions .selected").classList.remove("selected");
+                        const currentSelected = element.querySelector(".lexoptions .selected");
+                        if(currentSelected) currentSelected.classList.remove("selected");
                         value = e.currentTarget.getAttribute("value");
                         e.currentTarget.toggleAttribute('hidden', false);
                         e.currentTarget.classList.add("selected");
@@ -3342,7 +3343,14 @@
                         let btn = element.querySelector(".lexwidgetname .lexicon");
                         if(btn) btn.style.display = (value != wValue.iValue ? "block" : "none");
                         that._trigger( new IEvent(name, value, null), callback ); 
-                    })
+
+                        // Reset filter
+                        if(filter)
+                        {
+                            filter.querySelector('input').value = "";
+                            this.#search_options.bind(list, values, "")();
+                        }
+                    });
 
                     // Add string option
                     if(typeof iValue == 'string') {
@@ -3374,7 +3382,7 @@
                         if(value == iValue.value)
                             li.classList.add("selected");
                     }      
-                    list.appendChild(li);
+                    list_options.appendChild(li);
                 }
             }
 
@@ -5524,19 +5532,27 @@
 
             //value to canvas
             function convert(v) {
-                return [ canvas.width * ( (element.xrange[1] - element.xrange[0]) * v[0] + element.xrange[0]),
-                    canvas.height * ((element.yrange[1] - element.yrange[0]) * v[1] + element.yrange[0])];
+                return [ canvas.width * ( v[0] - element.xrange[0])/ (element.xrange[1]),
+                    canvas.height * (v[1] - element.yrange[0])/ (element.yrange[1])];
+                // return [ canvas.width * ( (element.xrange[1] - element.xrange[0]) * v[0] + element.xrange[0]),
+                //     canvas.height * ((element.yrange[1] - element.yrange[0]) * v[1] + element.yrange[0])];
             }
 
             //canvas to value
             function unconvert(v) {
-                return [(v[0] / canvas.width - element.xrange[0]) / (element.xrange[1] - element.xrange[0]),
-                        (v[1] / canvas.height - element.yrange[0]) / (element.yrange[1] - element.yrange[0])];
+                return [(v[0] * element.xrange[1] / canvas.width + element.xrange[0]),
+                        (v[1] * element.yrange[1] / canvas.height + element.yrange[0])];
+                // return [(v[0] / canvas.width - element.xrange[0]) / (element.xrange[1] - element.xrange[0]),
+                //         (v[1] / canvas.height - element.yrange[0]) / (element.yrange[1] - element.yrange[0])];
             }
 
             var selected = -1;
 
-            element.redraw = function()  {
+            element.redraw = function(o = {} )  {
+                
+                if(o.value) element.value = o.value;
+                if(o.xrange) element.xrange = o.xrange;
+                if(o.yrange) element.yrange = o.yrange;
 
                 var rect = canvas.parentElement.getBoundingClientRect();
                 if(canvas.parentElement.parentElement) rect = canvas.parentElement.parentElement.getBoundingClientRect();
@@ -5721,8 +5737,8 @@
             return this;
         }
 
-        redraw() {
-            this.element.redraw();
+        redraw(options = {}) {
+            this.element.redraw(options);
         }
     }
 
@@ -5776,8 +5792,11 @@
             div.appendChild(area.root);
 
             let left, right, content_area = area;
+
             this.skip_browser = options.skip_browser ?? false;
             this.skip_preview = options.skip_preview ?? false;
+            this.skip_navigation = options.skip_navigation ?? false;
+            this.preview_actions = options.preview_actions ?? [];
 
             if( !this.skip_browser )
             {
@@ -5785,10 +5804,10 @@
                 content_area = right;
             }
 
-            if( !this.skip_preview)
+            if( !this.skip_preview )
                 [content_area, right] = content_area.split({ type: "horizontal", sizes: ["80%", "20%"]});
             
-            this.allowed_types = ["None", "Image", "Mesh", "Script", "JSON"];
+            this.allowed_types = ["None", "Image", "Mesh", "Script", "JSON", "Clip"];
 
             this.prev_data = [];
             this.next_data = [];
@@ -5805,7 +5824,7 @@
             this._create_content_panel(content_area);
             
             // Create resource preview panel
-            if(! this.skip_preview )
+            if( !this.skip_preview )
                 this.previewPanel = right.addPanel({className: 'lexassetcontentpanel', style: { overflow: 'scroll' }});
         }
 
@@ -5934,14 +5953,17 @@
                 this.rightPanel = area.addPanel({className: 'lexassetcontentpanel'});
             }
 
-            function on_sort(value, event) {
-                addContextMenu( "Sort by", event, c => {
+            const on_sort = (value, event) => {
+                const cmenu = addContextMenu( "Sort by", event, c => {
                     c.add("Name", () => this._sort_data('id') );
                     c.add("Type", () => this._sort_data('type') );
                     c.add("");
                     c.add("Ascending", () => this._sort_data() );
                     c.add("Descending", () => this._sort_data(null, true) );
                 } );
+                const parent = this.parent.root.parentElement;
+                if( parent.classList.contains('lexdialog') )
+                    cmenu.root.style.zIndex = (+getComputedStyle( parent ).zIndex) + 1;
             }
 
             this.rightPanel.sameLine();
@@ -5950,38 +5972,41 @@
             this.rightPanel.addButton(null, "<a class='fa fa-arrow-up-short-wide'></a>", on_sort.bind(this), { width: "3%" });
             this.rightPanel.endLine();
 
-            this.rightPanel.sameLine();
-            this.rightPanel.addComboButtons( null, [
-                {
-                    value: "Left",
-                    icon: "fa-solid fa-left-long",
-                    callback:  (domEl) => { 
-                        if(!this.prev_data.length) return;
-                        this.next_data.push( this.current_data );
-                        this.current_data = this.prev_data.pop();
-                        this._refresh_content();
-                        this._update_path( this.current_data );
+            if( !this.skip_navigation )
+            {
+                this.rightPanel.sameLine();
+                this.rightPanel.addComboButtons( null, [
+                    {
+                        value: "Left",
+                        icon: "fa-solid fa-left-long",
+                        callback:  (domEl) => { 
+                            if(!this.prev_data.length) return;
+                            this.next_data.push( this.current_data );
+                            this.current_data = this.prev_data.pop();
+                            this._refresh_content();
+                            this._update_path( this.current_data );
+                        }
+                    },
+                    {
+                        value: "Right",
+                        icon: "fa-solid fa-right-long",
+                        callback:  (domEl) => { 
+                            if(!this.next_data.length) return;
+                            this.prev_data.push( this.current_data );
+                            this.current_data = this.next_data.pop();
+                            this._refresh_content();
+                            this._update_path( this.current_data );
+                        }
+                    },
+                    {
+                        value: "Refresh",
+                        icon: "fa-solid fa-arrows-rotate",
+                        callback:  (domEl) => { this._refresh_content(); }
                     }
-                },
-                {
-                    value: "Right",
-                    icon: "fa-solid fa-right-long",
-                    callback:  (domEl) => { 
-                        if(!this.next_data.length) return;
-                        this.prev_data.push( this.current_data );
-                        this.current_data = this.next_data.pop();
-                        this._refresh_content();
-                        this._update_path( this.current_data );
-                    }
-                },
-                {
-                    value: "Refresh",
-                    icon: "fa-solid fa-arrows-rotate",
-                    callback:  (domEl) => { this._refresh_content(); }
-                }
-            ], { width: "auto", noSelection: true } );
-            this.rightPanel.addText(null, this.path.join('/'), null, { disabled: true, signal: "@on_folder_change", style: { fontSize: "16px", color: "#aaa" } });
-            this.rightPanel.endLine();
+                ], { width: "auto", noSelection: true } );
+                this.rightPanel.addText(null, this.path.join('/'), null, { disabled: true, signal: "@on_folder_change", style: { fontSize: "16px", color: "#aaa" } });
+                this.rightPanel.endLine();
+            }
 
             this.content = document.createElement('ul');
             this.content.className = "lexassetscontent";
@@ -6036,7 +6061,8 @@
                 if( !that.skip_preview ) {
 
                     let preview = document.createElement('img');
-                    preview.src = is_image || item.src ? item.src : "../images/" + item.type.toLowerCase() + ".png";
+                    const has_image = item.src && ['png', 'jpg'].indexOf( getExtension( item.src ) ) > -1;
+                    preview.src = has_image ? item.src : "../images/" + item.type.toLowerCase() + ".png";
                     itemEl.appendChild(preview);
                 }
 
@@ -6126,19 +6152,36 @@
 
             if( file.type == 'image' || file.src )
             {
-                this.previewPanel.addImage(file.src, { style: {width:"100%"} });
+                const has_image = ['png', 'jpg'].indexOf( getExtension( file.src ) ) > -1;
+                const source = has_image ? file.src : "../images/" + file.type.toLowerCase() + ".png";
+                this.previewPanel.addImage(source, { style: { width: "100%" } });
             }
 
-            this.previewPanel.addText("Filename", file.id);
-            this.previewPanel.addText("URL", file.src);
-            // this.previewPanel.addText("Folder", file.id);
+            const options = { disabled: true };
+
+            this.previewPanel.addText("Filename", file.id, null, options);
+            this.previewPanel.addText("URL", file.src, null, options);
+            this.previewPanel.addText("Path", this.path.join('/'), null, options);
             this.previewPanel.sameLine();
-            this.previewPanel.addText("Type", file.type);
-            this.previewPanel.addText("Size", file.bytesize ?? "0 KBs");
+            this.previewPanel.addText("Type", file.type, null, options);
+            this.previewPanel.addText("Size", file.bytesize ?? "0 KBs", null, options);
             this.previewPanel.endLine();
             this.previewPanel.addSeparator();
             
-            this.previewPanel.addButton(null, "Download", () => LX.downloadURL(file.src, file.id));
+            const preview_actions = [...this.preview_actions];
+
+            // By default
+            preview_actions.push({
+                name: 'Download', 
+                callback: () => LX.downloadURL(file.src, file.id)
+            });
+
+            for( let action of preview_actions )
+            {
+                if( action.type && action.type !== file.type )
+                    continue;
+                this.previewPanel.addButton( null, action.name, action.callback.bind( this, file ) );
+            }
 
             this.previewPanel.merge();
         }

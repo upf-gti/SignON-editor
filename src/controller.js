@@ -124,7 +124,7 @@ class BMLController {
             let track = timeline.animationClip.tracks[i];
             for(let j = 0; j < track.clips.length; j++){
                 let clip = track.clips[j];
-                var data = ANIM.clipToJSON( clip );
+                var data = ANIM.clipToJSON( timeline.animationClip.tracks[i].clips[j] );
                 if(data)
                 {
                     data[3].end = data[3].end || data[3].start + data[3].duration;
