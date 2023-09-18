@@ -468,14 +468,14 @@ class Editor {
             // this.gui.createScriptTimeline();
             // this.gui.updateMenubar();// this.onBeginEdition();
             
-            this.animationClip = clip ||{duration:0, tracks:[]};
+            this.animationClip = clip || {duration:0, tracks:[]};
             this.setAnimation();
             this.gui.loadBMLClip(this.animationClip);
           
             this.NMFController = new BMLController(this, skinnedMeshes, this.morphTargets);
             this.NMFController.onUpdateTracks = () => {
                 if(this.mixer._actions.length > 1) this.mixer._actions.pop();
-                this.mixer.clipAction( this.NMFclip  ).setEffectiveWeight( 1.0 ).play();
+                this.mixer.clipAction( this.animationClip  ).setEffectiveWeight( 1.0 ).play();
             }
             this.gui.clipsTimeline.onUpdateTrack = this.NMFController.updateTracks.bind(this.NMFController);
             this.NMFController.begin(this.gui.clipsTimeline);
@@ -985,6 +985,38 @@ class Editor {
         }
     }
 
+    /** BML ANIMATION */ 
+    
+    updateTracks(tracks) {
+        this.NMFController.updateTracks();
+
+        if(tracks) {
+            for(let t = 0; t < tracks.length; t++) {
+                let [trackIdx, clipIdx] = tracks[t];
+                let clip = this.gui.clipsTimeline.animationClip.tracks[trackIdx].clips[clipIdx].toJSON();
+                if(this.animationClip.tracks.length == trackIdx)
+                    this.animationClip.tracks.push([clip]);
+                else
+                    this.animationClip.tracks[trackIdx][clipIdx] = clip;
+            }
+        }
+        // else if(trackIdx != null) {
+        //     for(let i = 0; i < this.gui.clipsTimeline.animationClip.tracks[trackIdx].clips.length; i++) {
+
+        //         this.animationClip.tracks[trackIdx][i] = this.gui.clipsTimeline.animationClip.tracks[trackIdx].clips[i];
+        //     }
+        // }
+         else {
+            for(let idx = 0; idx < this.gui.clipsTimeline.animationClip.tracks.length; idx++) {
+                for(let i = 0; i < this.gui.clipsTimeline.animationClip.tracks[idx].clips.length; i++) {
+
+                    this.animationClip.tracks[idx][i] = this.gui.clipsTimeline.animationClip.tracks[idx].clips[i].toJSON();
+                }
+            }
+        }
+    }
+
+
     /** -------------------- UPDATES, RENDER AND EVENTS -------------------- */
 
     animate() {
@@ -1229,22 +1261,28 @@ class Editor {
             );
                 break;
             case 'BVH extended':
-                BVHExporter.exportMorphTargets(this.mixer._actions[1], this.morphTargets, this.NMFclip);
+                BVHExporter.exportMorphTargets(this.mixer._actions[1], this.morphTargets, this.animationClip);
                 break;
             default:
                 let json =  {
                     tracks: [],
-                    name : this.name || "bml animation",
+                    name : this.animationClip.name || "bml animation",
                     duration: this.animationClip.duration
                 }
 
-                for(let i = 0; i < this.animationClip.tracks.length; i++ ) {
-                    let track = { clips: [] };
-                    for(let j = 0; j < this.animationClip.tracks[i].clips.length; j++) {
-                        let data = this.animationClip.tracks[i].clips[j].toJSON();
+                if(!this.gui.clipsTimeline.animationClip) {
+
+                    alert("You can't export an animation with empty tracks.")
+                    return;
+                }
+                for(let i = 0; i < this.gui.clipsTimeline.animationClip.tracks.length; i++ ) {
+                    let track = [];
+                    for(let j = 0; j < this.gui.clipsTimeline.animationClip.tracks[i].clips.length; j++) {
+                        let data = this.gui.clipsTimeline.animationClip.tracks[i].clips[j];
+                        if(data.toJSON) data = data.toJSON()
                         if(data)
                         {
-                            track.clips.push( data );
+                            track.push( data );
                         }
                     }
                     json.tracks.push(track);

@@ -1066,7 +1066,7 @@ class KeyframesGui extends Gui {
             const numBones = this.editor.skeletonHelper.bones.length;
             widgets.clear();
             widgets.branch("Animation Clip", {icon: "fa-solid fa-child-reaching"});
-            widgets.addText("Name", this.clip.name || "Unnamed", v => this.clip.name = v );
+            widgets.addText("Name", this.editor.animationClip.name || "Unnamed", v => this.editor.animationClip.name = v );
             widgets.addText("Num bones", numBones, null, {disabled: true});
             widgets.addText("Frame rate", this.keyFramesTimeline.framerate, null, {disabled: true});
             widgets.addText("Duration", this.duration.toFixed(2), null, {disabled: true});
@@ -1360,26 +1360,31 @@ class ScriptGui extends Gui {
     loadBMLClip(clip) {
         
         
-        this.clip = this.clipsTimeline.animationClip = clip;
         if(clip && clip.duration) {
             for(let i = 0; i < clip.tracks.length; i++) {
-                let c = clip.tracks[i].clips;
+                let track = clip.tracks[i];
+                for(let j = 0; j < track.length; j++) {
+
+                    this.clipsTimeline.addClip(new ANIM.FaceLexemeClip(track[j]));
+                }
                 //to do -- parse bml animation clip
                 // 
                 //add clip --> new ANIM.FaceLexemeClip({lexeme: e.item.id}
             }
-           // this.clipsTimeline.setAnimationClip(clip);
         }
-        this.duration = this.clip.duration;
+        this.clip = this.clipsTimeline.animationClip || clip ;
+        this.duration = clip.duration || 0;
 
         this.clipsTimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
         // this.clipsTimeline.onSetDuration = (t) => {this.duration = this.keyFramesTimeline.duration = this.keyFramesTimeline.animationClip.duration = t};
         this.clipsTimeline.onSelectClip = this.updateClipPanel.bind(this);
-        this.clipsTimeline.onClipMoved = ()=> {
+        this.clipsTimeline.onClipMoved = (selected)=> {
+            // this.editor.updateTracks(selected);
             this.editor.NMFController.updateTracks();
+
             this.clipsTimeline.onSetTime(this.clipsTimeline.currentTime) 
         };
-
+        // this.clipsTimeline.onUpdateTrack = (idx) 
         this.clipsTimeline.showContextMenu = ( e ) => {
 
             e.preventDefault();
@@ -1514,7 +1519,7 @@ class ScriptGui extends Gui {
             o = o || {};
             widgets.clear();
             widgets.branch("Animation Clip", {icon: "fa-solid fa-child-reaching"});
-            widgets.addText("Name", this.clip.name || "Unnamed", v => this.clip.name = v );
+            widgets.addText("Name", this.editor.animationClip.name || "Unnamed", v => this.editor.animationClip.name = v );
             widgets.addText("Frame rate", this.clipsTimeline.framerate, null, {disabled: true});
             widgets.addText("Duration", this.duration.toFixed(2), null, {disabled: true});
             widgets.addNumber("Speed", this.editor.mixer.timeScale, v => {
@@ -1719,7 +1724,9 @@ class ScriptGui extends Gui {
         let dialog = new LX.Dialog('Non Manual Features lexemes', (p) => {
 
             let values = ANIM.FaceLexemeClip.lexemes;//["Yes/No-Question", "Negative", "WH-word Questions", "Topic", "RH-Questions"];
-            let asset_browser = new LX.AssetView({ skip_browser: true  });
+            let asset_browser = new LX.AssetView({ skip_browser: true, preview_actions: [{
+                name: 'Add clip', 
+                callback: (asset, action) => {that.clipsTimeline.addClip( new ANIM.FaceLexemeClip({lexeme: asset.id})); dialog.close()}}]  });
             p.attach( asset_browser );
             let asset_data = [];
 
@@ -1731,7 +1738,7 @@ class ScriptGui extends Gui {
                 }
                 asset_data.push(data);
             }
-            
+            asset_browser.allowed_types = ["Clip"];
             asset_browser.load( asset_data, (e,v) => {
                 switch(e.type) {
                     case LX.AssetViewEvent.ASSET_SELECTED: 
@@ -1740,22 +1747,22 @@ class ScriptGui extends Gui {
                         else
                             console.log(e.item.id + " selected"); 
                         // dialog.close();
-                        let asset_panel = document.querySelector("#Asset");
-                        let button = asset_panel.getElementsByTagName("button")[0];
-                        let new_button = button.cloneNode()
-                        new_button.innerText = "Add clip";
-                        new_button.addEventListener("click", () => {that.clipsTimeline.addClip( new ANIM.FaceLexemeClip({lexeme: e.item.id})); dialog.close();});
-                        let parent = button.parentElement;
-                        let to_remove = [];
-                        for(let i = 3; i < asset_panel.children.length-1; i++) {
-                            if(asset_panel.children[i].classList.contains("lexwidget"))
-                                to_remove.push(asset_panel.children[i])
-                        }
-                        for(let i = 0; i < to_remove.length; i++) {
-                            asset_panel.removeChild(to_remove[i]);
-                        }
-                        button.remove();
-                        parent.appendChild(new_button);
+                        // let asset_panel = document.querySelector("#Asset");
+                        // let button = asset_panel.getElementsByTagName("button")[0];
+                        // let new_button = button.cloneNode()
+                        // new_button.innerText = "Add clip";
+                        // new_button.addEventListener("click", () => {that.clipsTimeline.addClip( new ANIM.FaceLexemeClip({lexeme: e.item.id})); dialog.close();});
+                        // let parent = button.parentElement;
+                        // let to_remove = [];
+                        // for(let i = 3; i < asset_panel.children.length-1; i++) {
+                        //     if(asset_panel.children[i].classList.contains("lexwidget"))
+                        //         to_remove.push(asset_panel.children[i])
+                        // }
+                        // for(let i = 0; i < to_remove.length; i++) {
+                        //     asset_panel.removeChild(to_remove[i]);
+                        // }
+                        // button.remove();
+                        // parent.appendChild(new_button);
                         break;
                     case LX.AssetViewEvent.ASSET_DELETED: 
                         console.log(e.item.id + " deleted"); 

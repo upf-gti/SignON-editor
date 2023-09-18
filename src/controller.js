@@ -30,9 +30,8 @@ class BMLController {
     begin(timeline) {
         
         this.bindEvents(timeline);
-        
-        // First update to get bones in place
-        this.update(true, 0.0);
+    
+        this.updateTracks();
 
     }
 
@@ -110,7 +109,8 @@ class BMLController {
     updateTracks(trackIdx) {
 
         let timeline = this.timeline || this.editor.activeTimeline;
-        
+        if(!timeline.animationClip)
+            return;
         // if(timeline.onUpdateTracks( keyType ))
         // return; // Return if event handled
 
@@ -164,8 +164,8 @@ class BMLController {
                 tracks.push(new THREE.NumberKeyframeTrack(mesh.name + '.morphTargetInfluences['+ morph +']', times, v));                
             }
         }
-        this.editor.NMFclip = new THREE.AnimationClip("nmf", timeline.duration, tracks);
-        console.log(this.editor.NMFclip )
+        this.editor.animationClip = new THREE.AnimationClip("nmf", timeline.duration, tracks);
+        console.log(this.editor.animationClip )
         if(this.onUpdateTracks)
             this.onUpdateTracks();
         // let [name, trackIndex, keyFrameIndex] = timeline._lastKeyFramesSelected[0];

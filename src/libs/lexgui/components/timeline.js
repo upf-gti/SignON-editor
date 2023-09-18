@@ -62,7 +62,7 @@
 
             this.canvas = options.canvas ?? document.createElement('canvas');
 
-            this.duration = 5;
+            this.duration = 1;
             this.position = [options.x ?? 0, options.y ?? 0];
             this.size = [ options.width ?? 400, options.height ?? 100];
             
@@ -706,8 +706,8 @@
                 const discard = this.movingKeys || (LX.UTILS.getTime() - this.clickTime) > 420; // ms
                 this.movingKeys ? innerSetTime( this.currentTime ) : 0;
 
-                if(this.grabbing && this.onClipMoved){
-                    this.onClipMoved();
+                if(this.grabbing && this.onClipMoved && this.lastClipsSelected.length){
+                    this.onClipMoved(this.lastClipsSelected);
                 }
 
                 this.grabbing_timeline = false;
@@ -2480,7 +2480,7 @@
 
             // Update clip information
             let trackIdx = null;
-            let newStart = this.currentTime + offsetTime;
+            let newStart = this.currentTime + offsetTime + clip.start;
 
             clip.fadein += (newStart - clip.start);
             clip.fadeout += (newStart - clip.start);
@@ -2493,7 +2493,7 @@
 
             for(let i = 0; i < this.animationClip.tracks.length; i++) {
                 clipInCurrentSlot = this.animationClip.tracks[i].clips.find( t => { 
-                    return LX.UTILS.compareThresholdRange(this.currentTime, clip.start + clip.duration, t.start, t.start+t.duration);
+                    return LX.UTILS.compareThresholdRange(newStart, clip.start + clip.duration, t.start, t.start+t.duration);
                     
                 });
                 if(!clipInCurrentSlot)
@@ -2512,7 +2512,7 @@
             //this.saveState(clipIdx);
 
             // Find new index
-            let newIdx = this.animationClip.tracks[trackIdx].clips.findIndex( t => t.start > this.currentTime );
+            let newIdx = this.animationClip.tracks[trackIdx].clips.findIndex( t => t.start > newStart );
 
             // Add as last index
             let lastIndex = false;
