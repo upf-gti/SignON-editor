@@ -126,7 +126,15 @@ class App {
                 this.mediaRecorder.ondataavailable =  (e) => {
                     this.chunks.push(e.data);
                 }
-            }, this.editor.gui.updateCaptureGUI.bind(this.editor.gui) );
+            }, this.editor.gui.updateCaptureGUI.bind(this.editor.gui), (err) => {
+                LX.prompt("Can not access to the camera. Do you want to load a video instead?", "Camera problem", (v)=> {
+                    
+                    this.editor.mode = this.editor.eModes.keyframes;
+                    let input = document.getElementById("video-input");
+                    input.value = "";
+                    input.click();
+                }, {input: false, on_cancel: () => window.location.reload()})
+            } );
 
             // Show video
             let video = document.getElementById("recording");

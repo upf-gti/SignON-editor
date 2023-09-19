@@ -2599,6 +2599,7 @@
                 if(callback)
                     callback();
             }
+            this.timelineClickedClips = [];
             this.selectedClip = null;
             //this.unSelectAllClips();
             // // Update animation action interpolation info

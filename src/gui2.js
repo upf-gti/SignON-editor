@@ -518,6 +518,7 @@ class KeyframesGui extends Gui {
             option2.selected = true;
 
         let input = document.createElement("input");
+        input.id = "video-input";
         input.setAttribute("type", "file");
         input.addEventListener("change", (e) => {
             e.stopPropagation();
@@ -1066,7 +1067,7 @@ class KeyframesGui extends Gui {
             const numBones = this.editor.skeletonHelper.bones.length;
             widgets.clear();
             widgets.branch("Animation Clip", {icon: "fa-solid fa-child-reaching"});
-            widgets.addText("Name", this.editor.animationClip.name || "Unnamed", v => this.editor.animationClip.name = v );
+            widgets.addText("Name", this.editor.bodyAnimation.name || "Unnamed", v => this.editor.bodyAnimationClip.name = v );
             widgets.addText("Num bones", numBones, null, {disabled: true});
             widgets.addText("Frame rate", this.keyFramesTimeline.framerate, null, {disabled: true});
             widgets.addText("Duration", this.duration.toFixed(2), null, {disabled: true});
@@ -1472,7 +1473,8 @@ class ScriptGui extends Gui {
 
         this.createSidePanel();
         this.updateMenubar()
-        this.showGuide();
+        if(!this.duration)
+            this.showGuide();
         this.showTimeline();
         // Canvas UI buttons
         this.createSceneUI(this.canvasArea);
@@ -1548,7 +1550,8 @@ class ScriptGui extends Gui {
                 return;
             
             const updateTracks = () => {
-
+                if(!clip)
+                    return;
 
                 if(clip && clip.start + clip.duration > this.clipsTimeline.duration) {
                     this.clipsTimeline.setDuration(clip.start + clip.duration);
@@ -1560,10 +1563,10 @@ class ScriptGui extends Gui {
                     // syncvalues.push([clip.start, 0]);
 
                     if(clip.fadein != undefined)
-                        syncvalues.push([clip.fadein - clip.start, clip.properties.amount]);
+                        syncvalues.push([clip.fadein - clip.start, clip.properties.amount || 1]);
                     
                     if(clip.fadeout != undefined) 
-                        syncvalues.push([clip.fadeout - clip.start, clip.properties.amount]);
+                        syncvalues.push([clip.fadeout - clip.start, clip.properties.amount || 1]);
                     
                     // syncvalues.push([clip.duration + clip.start, 0]);
                     // this.curve.curve_instance.element.value = syncvalues;
@@ -1635,8 +1638,11 @@ class ScriptGui extends Gui {
             
             widgets.addNumber("Start", clip.start, (v) =>
             {     
-                let diff = v - clip.start;         
-                clip.attackPeak = clip.fadein += diff;
+                let diff = v - clip.start;  
+                if(clip.attackPeak != undefined)      
+                    clip.attackPeak = clip.fadein += diff;
+                if(clip.ready != undefined)      
+                    clip.ready = clip.fadein += diff;
                 clip.relax = clip.fadeout += diff;
                 this.clipInPanel.start = v;
                 clip.start = v;
@@ -1648,8 +1654,11 @@ class ScriptGui extends Gui {
             widgets.addNumber("Duration", clip.duration, (v) =>
             {
                 this.clipInPanel.duration = v;
+                if(clip.attackPeak != undefined)  
+                    clip.attackPeak = clip.fadein = Math.min(v + clip.start, clip.attackPeak);
+                if(clip.ready != undefined)  
+                    clip.attackPeak = clip.fadein = Math.min(v + clip.start, clip.ready);
                 clip.relax = clip.fadeout = Math.min(v + clip.start, clip.relax);
-                clip.attackPeak = clip.fadein = Math.min(v + clip.start, clip.attackPeak);
                 updateTracks();
                 this.updateClipPanel(clip);
             }, {min:0.01, step:0.01, precision:2});
@@ -1660,33 +1669,79 @@ class ScriptGui extends Gui {
             
             if(clip.fadein != undefined)
             {
-                syncvalues.push([clip.fadein - clip.start, clip.properties.amount]);
-                widgets.addNumber("Attack Peak", clip.fadein - clip.start, (v) =>
-                {              
-                   clip.attackPeak = clip.fadein = v + clip.start;
-                   updateTracks();
-                }, {min:0, max: clip.fadeout - clip.start, step:0.01, precision:2});
+                syncvalues.push([clip.fadein - clip.start, clip.properties.amount || 1]);
+                if(clip.attackPeak != undefined)
+                    widgets.addNumber("Attack Peak", clip.fadein - clip.start, (v) =>
+                    {              
+                        clip.attackPeak = clip.fadein = v + clip.start;
+                        updateTracks();
+                    }, {min:0, max: clip.fadeout - clip.start, step:0.01, precision:2});
+                
+                if(clip.ready != undefined)
+                    widgets.addNumber("Ready", clip.fadein - clip.start, (v) =>
+                    {              
+                        clip.ready = clip.fadein = v + clip.start;
+                        updateTracks();
+                    }, {min:0, max: clip.fadeout - clip.start, step:0.01, precision:2});
             }
+
+            if(clip.strokeStart != undefined) {
+                widgets.addNumber("Stroke start", clip.strokeStart - clip.start, (v) =>
+                {              
+                    clip.strokeStart = v + clip.start;
+                    updateTracks();
+                }, {min: clip.ready - clip.start, max: clip.stroke - clip.start, step:0.01, precision:2});
+            }
+
+            if(clip.stroke != undefined) {
+                widgets.addNumber("Stroke ", clip.stroke - clip.start, (v) =>
+                {              
+                    clip.stroke = v + clip.start;
+                    updateTracks();
+                    this.updateClipPanel(clip);
+
+                }, {min: clip.strokeStart - clip.start, max: clip.strokeEnd - clip.start, step:0.01, precision:2});
+            }
+
+            if(clip.strokeEnd != undefined) {
+                widgets.addNumber("Stroke end", clip.strokeEnd - clip.start, (v) =>
+                {              
+                    clip.strokeEnd = v + clip.start;
+                    updateTracks();
+                    this.updateClipPanel(clip);
+
+                }, {min: clip.stroke - clip.start, max: clip.relax - clip.start, step:0.01, precision:2});
+            }
+
 
             if(clip.fadeout != undefined) 
             {
-                syncvalues.push([clip.fadeout - clip.start, clip.properties.amount]);
-                widgets.addNumber("Relax", clip.fadeout - clip.start, (v) =>
-                {              
-                    clip.relax = clip.fadeout = v + clip.start;
-                    clip.attackPeak = Math.min(clip.fadeout, clip.fadein);
-                    updateTracks();
-                }, {min: clip.fadein - clip.start, max: clip.duration , step:0.01, precision:2});
+                syncvalues.push([clip.fadeout - clip.start, clip.properties.amount || 1]);
+                
+                if(clip.relax != undefined)
+                    widgets.addNumber("Relax", clip.fadeout - clip.start, (v) =>
+                    {              
+                        clip.relax = clip.fadeout = v + clip.start;
+                        if(clip.attackPeak != undefined)
+                            clip.attackPeak = Math.min(clip.fadeout, clip.fadein);
+
+                        if(clip.ready != undefined)
+                            clip.ready = Math.min(clip.fadeout, clip.fadein);
+                        updateTracks();
+                    }, {min: clip.fadein - clip.start, max: clip.duration , step:0.01, precision:2});
             }
 
             if(syncvalues.length) {
                 this.curve = widgets.addCurve("Synchronization", syncvalues, (value, event) => {
                     if(event && event.type != "mouseup") return;
                     if(clip.fadein) {
-                        clip.attackPeak =  clip.fadein = (value[0][0] + clip.start).toFixed(2);
+                        if(clip.attackPeak != undefined)
+                            clip.attackPeak =  clip.fadein = Number((value[0][0] + clip.start).toFixed(2));
+                        if(clip.ready != undefined)
+                            clip.ready =  clip.fadein = Number((value[0][0] + clip.start).toFixed(2));
                     }
                     if(clip.fadeout) {
-                        clip.relax = clip.fadeout = (value[1][0] + clip.start).toFixed(2);
+                        clip.relax = clip.fadeout = Number((value[1][0] + clip.start).toFixed(2));
                     }
                     updateTracks();
                     this.updateClipPanel(clip);
@@ -1723,21 +1778,74 @@ class ScriptGui extends Gui {
         let that = this;
         let dialog = new LX.Dialog('Non Manual Features lexemes', (p) => {
 
-            let values = ANIM.FaceLexemeClip.lexemes;//["Yes/No-Question", "Negative", "WH-word Questions", "Topic", "RH-Questions"];
-            let asset_browser = new LX.AssetView({ skip_browser: true, preview_actions: [{
-                name: 'Add clip', 
-                callback: (asset, action) => {that.clipsTimeline.addClip( new ANIM.FaceLexemeClip({lexeme: asset.id})); dialog.close()}}]  });
+            let asset_browser = new LX.AssetView({  
+                preview_actions: [{
+                    name: 'Add clip', 
+                    callback: (asset, action) => {
+                        switch(asset.folder.id) {
+                            case "Face":
+                                that.clipsTimeline.addClip( new ANIM.FaceLexemeClip({lexeme: asset.id})); 
+                                break;
+                            case "Gaze":
+                                that.clipsTimeline.addClip( new ANIM.GazeClip({properties: {influence: asset.id}})); 
+                                break;
+                            case "Head movement":
+                                that.clipsTimeline.addClip( new ANIM.HeadClip({properties: {lexeme: asset.id}})); 
+                                break;
+                            default:
+                                that.clipsTimeline.addClip( new ANIM[asset.id.replaceAll(" ", "") + "Clip"]())
+                                break;
+                        }
+                        dialog.close();
+                    }}]
+            });
             p.attach( asset_browser );
-            let asset_data = [];
-
+            let asset_data = [{id: "Face", type: "folder", children: []}, {id: "Gaze", type: "folder", children: []}, {id: "Head movement", type: "folder", children: []}, {id: "Body movement", type: "folder", children: []}];
+                
+            // FACE CLIP
+            let values = ANIM.FaceLexemeClip.lexemes;
             for(let i = 0; i < values.length; i++){
                 let data = {
                     id: values[i], 
                     type: "clip",
                     src: "data/imgs/thumbnails/" + values[i].toLowerCase() + ".png",
                 }
-                asset_data.push(data);
+                asset_data[0].children.push(data);
             }
+            
+            // GAZE CLIP
+            values = ANIM.GazeClip.influences;
+            for(let i = 0; i < values.length; i++){
+                let data = {
+                    id: values[i], 
+                    type: "clip",
+                    src: "data/imgs/thumbnails/" + values[i].toLowerCase() + ".png",
+                }
+                asset_data[1].children.push(data);
+            }
+
+            // HEAD CLIP
+            values = ANIM.HeadClip.lexemes;
+            for(let i = 0; i < values.length; i++){
+                let data = {
+                    id: values[i], 
+                    type: "clip",
+                    src: "data/imgs/thumbnails/" + values[i].toLowerCase() + ".png",
+                }
+                asset_data[2].children.push(data);
+            }
+
+            // GESTURE CLIP
+            values = ["Shoulder Raise", "Shoulder Hunch", "Body Movement", "Body Location", "Palm Orientation", "Extfidir", "Handshape", "Hand Constellation", "Circular Motion", "Wrist Motion", "Fingerplay Motion"]
+            for(let i = 0; i < values.length; i++){
+                let data = {
+                    id: values[i], 
+                    type: "clip",
+                    src: "data/imgs/thumbnails/" + values[i].toLowerCase() + ".png",
+                }
+                asset_data[3].children.push(data);
+            }
+
             asset_browser.allowed_types = ["Clip"];
             asset_browser.load( asset_data, (e,v) => {
                 switch(e.type) {
@@ -1746,23 +1854,6 @@ class ScriptGui extends Gui {
                             console.log("Selected: ", e.item); 
                         else
                             console.log(e.item.id + " selected"); 
-                        // dialog.close();
-                        // let asset_panel = document.querySelector("#Asset");
-                        // let button = asset_panel.getElementsByTagName("button")[0];
-                        // let new_button = button.cloneNode()
-                        // new_button.innerText = "Add clip";
-                        // new_button.addEventListener("click", () => {that.clipsTimeline.addClip( new ANIM.FaceLexemeClip({lexeme: e.item.id})); dialog.close();});
-                        // let parent = button.parentElement;
-                        // let to_remove = [];
-                        // for(let i = 3; i < asset_panel.children.length-1; i++) {
-                        //     if(asset_panel.children[i].classList.contains("lexwidget"))
-                        //         to_remove.push(asset_panel.children[i])
-                        // }
-                        // for(let i = 0; i < to_remove.length; i++) {
-                        //     asset_panel.removeChild(to_remove[i]);
-                        // }
-                        // button.remove();
-                        // parent.appendChild(new_button);
                         break;
                     case LX.AssetViewEvent.ASSET_DELETED: 
                         console.log(e.item.id + " deleted"); 
@@ -1775,7 +1866,7 @@ class ScriptGui extends Gui {
                         break;
                 }
             })
-        },{ title:'Lexemes', close: true, minimize: false, size: ["80%"], scroll: true, resizable: true, draggable: true });
+        },{ title:'Lexemes', close: true, minimize: false, size: ["80%", "70%"], scroll: true, resizable: true, draggable: true });
        
     }
 

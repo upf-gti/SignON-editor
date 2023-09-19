@@ -18,7 +18,7 @@ const MediaPipe = {
     bsPreviousTime: 0,
     landmarks: [],
     blendshapes : [],
-    async start( live, onload, onResults ) {
+    async start( live, onload, onresults, onerror ) {
 
         UTILS.makeLoading("Loading MediaPipe...");
 
@@ -26,7 +26,8 @@ const MediaPipe = {
         this.landmarks = [];
         this.blendshapes = [];
         this.onload = onload;
-        this.onResults = onResults;
+        this.onresults = onresults;
+        this.onerror = onerror;
         // Webcam and MediaPipe Set-up
         const videoElement = document.getElementById("inputVideo");
         const canvasElement = document.getElementById("outputVideo");
@@ -106,8 +107,8 @@ const MediaPipe = {
                                         
             }
             canvasCtx.restore();
-            if(this.onResults)
-                this.onResults({landmarksResults: results}, recording);
+            if(this.onresults)
+                this.onresults({landmarksResults: results}, recording);
 
         }).bind(this));
 
@@ -132,7 +133,7 @@ const MediaPipe = {
 
         this.loaded = false;
         if(live) {
-            this.startWebcam(videoElement, this, () => videoElement.play());
+            this.startWebcam(videoElement, this, () => videoElement.play(), this.onerror);
             // if(!this.webcamera) {
 
             //     this.webcamera = new Camera(videoElement, {
@@ -162,11 +163,11 @@ const MediaPipe = {
             //     this.webcamera.stop();
             //     this.loaded = false;
             // }
+            videoElement.play();
+            videoElement.controls = true;
+            videoElement.loop = true;
+            videoElement.requestVideoFrameCallback( this.sendVideo.bind(this, this.holistic, videoElement) );  
         }
-        videoElement.play();
-        videoElement.controls = true;
-        videoElement.loop = true;
-        videoElement.requestVideoFrameCallback( this.sendVideo.bind(this, this.holistic, videoElement) );  
     },
 
     async sendVideo(holistic, videoElement){
@@ -197,7 +198,7 @@ const MediaPipe = {
             faceBlendshapes = this.fillBlendshapes(results);
         }
 
-        this.onResults({blendshapesResults: faceBlendshapes}, window.globals.app.isRecording())
+        this.onresults({blendshapesResults: faceBlendshapes}, window.globals.app.isRecording())
     },
 
     // camera.stop() does not exist, therefore solved using jQuery, we can replace the methods with appropriate JavaScript methods
@@ -290,7 +291,6 @@ const MediaPipe = {
         if (navigator.mediaDevices) {
             console.log("UserMedia supported");
                     
-            
 
             navigator.mediaDevices.enumerateDevices()
             .then(function(devices) {
@@ -343,7 +343,8 @@ const MediaPipe = {
                 
             })
             .catch(function(err) {
-            console.log(err.name + ": " + err.message);
+                on_error();
+                console.log(err.name + ": " + err.message);
             });
             
         }

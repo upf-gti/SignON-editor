@@ -351,14 +351,16 @@
 
         const dialog = new Dialog(title, p => {
             p.addTextArea(null, text, null, { disabled: true });
-            p.addText(null, value, (v) => value = v, {placeholder: "..."} );
+            if(options.input != false)
+                p.addText(null, value, (v) => value = v, {placeholder: "..."} );
             p.sameLine(2);
             p.addButton(null, "OK", () => { callback.call(this, value); dialog.close() }, { buttonClass: "accept" });
-            p.addButton(null, "Cancel", () => dialog.close() );
+            p.addButton(null, "Cancel", () => {if(options.on_cancel) options.on_cancel(); dialog.close();} );
         }, options);
 
         // Focus text prompt
-        dialog.root.querySelector('input').focus();
+        if(options.input != false)
+            dialog.root.querySelector('input').focus();
     }
 
     LX.prompt = prompt;

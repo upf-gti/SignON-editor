@@ -11,7 +11,7 @@ import { OrientationHelper } from "./libs/OrientationHelper.js";
 import { AnimationRetargeting } from './retargeting.js'
 import { GLTFLoader } from 'https://cdn.skypack.dev/three@0.136/examples/jsm/loaders/GLTFLoader.js';
 import { GLTFExporter } from './exporters/GLTFExporoter.js' 
-import { BMLController } from "./controller.js"
+import { BMLController } from "./controller2.js"
 import { BlendshapesManager } from "./blendshapes.js"
 
 const MapNames = await import('../data/mapnames.json', {assert: { type: 'json' }});
@@ -253,6 +253,7 @@ class Editor {
             this.GLTFloader.load( 'models/Eva_Y.glb', (glb) => {
 
                 let model = glb.scene;
+                model.name = this.character;
                 model.rotateOnAxis (new THREE.Vector3(1,0,0), -Math.PI/2);
                 model.position.set(0, 0.75, 0);
                 model.castShadow = true;
@@ -418,6 +419,7 @@ class Editor {
         // Load the target model (Eva) 
         UTILS.loadGLTF("models/Eva_Y.glb", (gltf) => {
             let model = gltf.scene;
+            model.name = this.character;
             model.visible = true;
             
             let skinnedMeshes = [];
@@ -467,6 +469,24 @@ class Editor {
             
             // this.gui.createScriptTimeline();
             // this.gui.updateMenubar();// this.onBeginEdition();
+            // Behaviour Planner
+            this.eyesTarget = new THREE.Object3D(); //THREE.Mesh( new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthWrite: false }) );
+            this.eyesTarget.name = "eyesTarget";
+            this.eyesTarget.position.set(0, 2.5, 15); 
+            this.headTarget = new THREE.Object3D(); //THREE.Mesh( new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshPhongMaterial({ color: 0xff0000 , depthWrite: false }) );
+            this.headTarget.name = "headTarget";
+            this.headTarget.position.set(0, 2.5, 15); 
+            this.neckTarget = new THREE.Object3D(); //THREE.Mesh( new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshPhongMaterial({ color: 0x00fff0 , depthWrite: false }) );
+            this.neckTarget.name = "neckTarget";
+            this.neckTarget.position.set(0, 2.5, 15); 
+
+            this.scene.add(this.eyesTarget);
+            this.scene.add(this.headTarget);
+            this.scene.add(this.neckTarget);
+            
+            model.eyesTarget = this.eyesTarget;
+            model.headTarget = this.headTarget;
+            model.neckTarget = this.neckTarget;
             
             this.animationClip = clip || {duration:0, tracks:[]};
             this.setAnimation();
@@ -546,6 +566,7 @@ class Editor {
         // Load the target model (Eva) 
         UTILS.loadGLTF("models/Eva_Y.glb", (gltf) => {
             let model = gltf.scene;
+            model.name = this.character;
             model.visible = true;
             
             let skinnedMeshes = [];
@@ -867,11 +888,11 @@ class Editor {
 
     optimizeTracks(tracks) {
 
-        if(!this.animationClip)
+        if(!this.activeTimeline.animationClip)
             return;
 
-        for( let i = 0; i < this.animationClip.tracks.length; ++i ) {
-            const track = this.animationClip.tracks[i];
+        for( let i = 0; i < this.activeTimeline.animationClip.tracks.length; ++i ) {
+            const track = this.activeTimeline.animationClip.tracks[i];
             if(track.optimize) {
 
                 track.optimize( this.optimizeThreshold );
@@ -880,10 +901,11 @@ class Editor {
                 // this.gui.keyFramesTimeline.onPreProcessTrack( track, i );
             }
         }
-        this.gui.keyFramesTimeline.draw();
-        if(this.gui.clipsTimeline)
-            this.gui.clipsTimeline.optimizeTracks();
-        this.gui.clipsTimeline.draw();
+        this.activeTimeline.draw();
+        // this.gui.keyFramesTimeline.draw();
+        // if(this.gui.clipsTimeline)
+        //     this.gui.clipsTimeline.optimizeTracks();
+        // this.gui.clipsTimeline.draw();
     }
 
     updateAnimationAction(animation, idx, replace = false) {

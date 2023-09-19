@@ -1,6 +1,6 @@
 import * as THREE from 'three';
-import {BehaviourManager} from './libs/bml/BehaviourManager.js'
-import {FacialExpr} from './libs/bml/BehaviourRealizer.js'
+import { BehaviourManager } from './libs/bml/BML.js'
+import { CharacterController } from './libs/bml/CharacterController.js';
 
 class BMLController {
 
@@ -12,6 +12,13 @@ class BMLController {
         this.undoSteps = [];
 
         this.editor = editor;
+        fetch( "src/libs/bml/Eva_Yconfig.json" ).then(response => response.text()).then( (text) =>{
+            let config = JSON.parse( text );
+            let ECAcontroller = this.ECAcontroller = new CharacterController( {character: editor.scene.getObjectByName(editor.character), characterConfig: config} );
+            ECAcontroller.start();
+            ECAcontroller.reset();
+            
+        })
         
         this.bmlManager = new BehaviourManager();
         // Update in first iteration
@@ -118,7 +125,7 @@ class BMLController {
         // return;
         
         //convert each clip to BML json format
-        let json = { faceLexeme: [], gaze: []};
+        let json = { faceLexeme: [], gaze: [], head: [], gesture: []};
 
         for(let i = 0; i < timeline.animationClip.tracks.length; i++){
             let track = timeline.animationClip.tracks[i];
@@ -128,36 +135,60 @@ class BMLController {
                 if(data)
                 {
                     data[3].end = data[3].end || data[3].start + data[3].duration;
-                    switch(clip.constructor.name) {
-                        case "FaceLexemeClip":
-                            json.faceLexeme.push( data[3] );
-                            break;
-                        case "FaceLexemeClip":
-                            json.gaze.push( data[3] );
-                            break;
-                    }
+                    // switch(clip.constructor.name) {
+                    //     case "FaceLexemeClip":
+                    //         data[3].type = "faceLexeme";
+                    //         json.faceLexeme.push( data[3] );
+                    //         break;
+                    //     case "GazeClip":
+                    //         json.gaze.push( data[3] );
+                    //         break;
+                    //     case "HeadClip":
+                    //         json.head.push( data[3] );
+                    //         break;
+
+                    // }
+                    json[data[3].type].push( data[3] );
                 }
             }
         }    
-
+        this.ECAcontroller.time = 0;
+        this.ECAcontroller.processMsg(json);
         this.lexemes = [];
         //manage bml blocks sync
-        this.bmlManager.newBlock(json, 0);
+        // this.bmlManager.newBlock(json, 0);
         let dt = 1.0/timeline.framerate;
         let times = [];
         let values = [];
+        // for(let time = 0; time < timeline.duration; time+= dt){
+        //     this.morphTargets.fill(0);
+        //     times.push(time);
+        //     //update blendshapes weights based on lexemes
+        //     this.updateBlendShapes(dt);
+        //     let bs = [];
+        //     this.morphTargets.map((x) => bs.push(x));
+        //     values.push(bs);
+        //     //update bml blocks sync
+        //     this.bmlManager.update((type,faceData) => {
+        //         this.lexemes.push(new FacialExpr(faceData, false, this.morphTargets))
+        //     }, time);
+        // }
+        let transformations = {};
         for(let time = 0; time < timeline.duration; time+= dt){
             this.morphTargets.fill(0);
             times.push(time);
-            //update blendshapes weights based on lexemes
-            this.updateBlendShapes(dt);
+            this.ECAcontroller.update(dt, time);
             let bs = [];
-            this.morphTargets.map((x) => bs.push(x));
+            this.ECAcontroller.facialController._facialBSFinal.Body.map( x => bs.push(x));
             values.push(bs);
-            //update bml blocks sync
-            this.bmlManager.update((type,faceData) => {
-                this.lexemes.push(new FacialExpr(faceData, false, this.morphTargets))
-            }, time);
+            let bone = [];
+            this.ECAcontroller.bodyController.skeleton.bones.map( x => {
+                if(!transformations[x.name]) 
+                    transformations[x.name] = { position:[], quaternion:[] }; 
+                transformations[x.name].position = transformations[x.name].position.concat( x.position.toArray() );
+                transformations[x.name].quaternion = transformations[x.name].quaternion.concat( x.quaternion.toArray() )
+            });
+            // transformations.push(bone);
         }
 
         let tracks = [];
@@ -173,6 +204,13 @@ class BMLController {
             {
                 tracks.push(new THREE.NumberKeyframeTrack(mesh.name + '.morphTargetInfluences['+ morph +']', times, v));                
             }
+        }
+        // this.editor.animationClip = new THREE.AnimationClip("nmf", timeline.duration, tracks);
+
+        // tracks = [];
+        for(let bone in transformations) {
+           
+            tracks.push(new THREE.QuaternionKeyframeTrack(bone + '.quaternion', times, transformations[bone].quaternion));      
         }
         this.editor.animationClip = new THREE.AnimationClip("nmf", timeline.duration, tracks);
         console.log(this.editor.animationClip )
