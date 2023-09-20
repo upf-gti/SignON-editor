@@ -17,7 +17,7 @@ class BMLController {
             let ECAcontroller = this.ECAcontroller = new CharacterController( {character: editor.scene.getObjectByName(editor.character), characterConfig: config} );
             ECAcontroller.start();
             ECAcontroller.reset();
-            
+            this.updateTracks();
         })
         
         this.bmlManager = new BehaviourManager();
@@ -77,6 +77,10 @@ class BMLController {
                 case 'Delete':
                     this.timeline.deleteClip();
                     break;
+
+                case "Space":
+                    console.log("space");
+                    break;
             }
 
         };
@@ -116,14 +120,11 @@ class BMLController {
     updateTracks(trackIdx) {
 
         let timeline = this.timeline || this.editor.activeTimeline;
-        if(!timeline.animationClip)
+        if(!timeline.animationClip || !this.ECAcontroller)
             return;
-        // if(timeline.onUpdateTracks( keyType ))
-        // return; // Return if event handled
-
-        // if(!timeline.clip_selected)
-        // return;
         
+        this.ECAcontroller.reset();
+
         //convert each clip to BML json format
         let json = { faceLexeme: [], gaze: [], head: [], gesture: []};
 
@@ -135,64 +136,46 @@ class BMLController {
                 if(data)
                 {
                     data[3].end = data[3].end || data[3].start + data[3].duration;
-                    // switch(clip.constructor.name) {
-                    //     case "FaceLexemeClip":
-                    //         data[3].type = "faceLexeme";
-                    //         json.faceLexeme.push( data[3] );
-                    //         break;
-                    //     case "GazeClip":
-                    //         json.gaze.push( data[3] );
-                    //         break;
-                    //     case "HeadClip":
-                    //         json.head.push( data[3] );
-                    //         break;
-
-                    // }
                     json[data[3].type].push( data[3] );
                 }
             }
         }    
+
+        //send bml instructions to character controller to apply them
         this.ECAcontroller.time = 0;
         this.ECAcontroller.processMsg(json);
         this.lexemes = [];
+
         //manage bml blocks sync
-        // this.bmlManager.newBlock(json, 0);
         let dt = 1.0/timeline.framerate;
         let times = [];
         let values = [];
-        // for(let time = 0; time < timeline.duration; time+= dt){
-        //     this.morphTargets.fill(0);
-        //     times.push(time);
-        //     //update blendshapes weights based on lexemes
-        //     this.updateBlendShapes(dt);
-        //     let bs = [];
-        //     this.morphTargets.map((x) => bs.push(x));
-        //     values.push(bs);
-        //     //update bml blocks sync
-        //     this.bmlManager.update((type,faceData) => {
-        //         this.lexemes.push(new FacialExpr(faceData, false, this.morphTargets))
-        //     }, time);
-        // }
         let transformations = {};
+
         for(let time = 0; time < timeline.duration; time+= dt){
-            this.morphTargets.fill(0);
             times.push(time);
+
             this.ECAcontroller.update(dt, time);
+
+            //get computed bs weights
             let bs = [];
             this.ECAcontroller.facialController._facialBSFinal.Body.map( x => bs.push(x));
             values.push(bs);
-            let bone = [];
+
+            //get computed position and rotation of each bone
             this.ECAcontroller.bodyController.skeleton.bones.map( x => {
                 if(!transformations[x.name]) 
                     transformations[x.name] = { position:[], quaternion:[] }; 
                 transformations[x.name].position = transformations[x.name].position.concat( x.position.toArray() );
                 transformations[x.name].quaternion = transformations[x.name].quaternion.concat( x.quaternion.toArray() )
             });
-            // transformations.push(bone);
         }
 
         let tracks = [];
-        //convert blendshapes weights to animation clip
+
+        //create clip animation from computed weights, positions and rotations by character controller
+
+        //convert blendshapes' weights to animation clip
         for(let morph in this.morphDictionary){
             let i = this.morphDictionary[morph];
             let v = [];
@@ -205,49 +188,31 @@ class BMLController {
                 tracks.push(new THREE.NumberKeyframeTrack(mesh.name + '.morphTargetInfluences['+ morph +']', times, v));                
             }
         }
-        // this.editor.animationClip = new THREE.AnimationClip("nmf", timeline.duration, tracks);
 
-        // tracks = [];
+        //concatenate skeletal animation tracks to blendshapes tracks
         for(let bone in transformations) {
            
             tracks.push(new THREE.QuaternionKeyframeTrack(bone + '.quaternion', times, transformations[bone].quaternion));      
         }
+       
+        //set current animation to the model
         this.editor.animationClip = new THREE.AnimationClip("nmf", timeline.duration, tracks);
         console.log(this.editor.animationClip )
+      
         if(this.onUpdateTracks)
             this.onUpdateTracks();
-        // let [name, trackIndex, keyFrameIndex] = timeline._lastKeyFramesSelected[0];
-        // let track = timeline.getTrack(timeline._lastKeyFramesSelected[0]);
-
-        // // Don't store info if we are using wrong mode for that track
-        // if(keyType != track.type)
-        // return;
-       
-       
-       
-       
-        //     let start = track.dim * keyFrameIndex;
-        //     let values = bone[ track.type ].toArray();
-    
-        //     if(!values)
-        //         return;
-    
-        //     const idx = track.clip_idx;
-        //     track.edited[ keyFrameIndex ] = true;
-
-        //     // supports position and quaternion types
-        //     for( let i = 0; i < values.length; ++i ) {
-        //         this.editor.animationanimationClip.tracks[ idx ].values[ start + i ] = values[i];
-        //     }
-
-        //     // Update animation interpolants
-        //     this.editor.updateAnimationAction( idx );
-        //     timeline.onSetTime( timeline.current_time );
-
-       
 
     }
     
+    reset() {
+  
+        for(let mesh of this.skinnedMeshes)
+        {
+            mesh.morphTargetInfluences.fill(0);
+        }
+
+        this.editor.skeletonHelper.skeleton.pose()
+    }
     //on update values on gui inspector
     onGUI() {
 

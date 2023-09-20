@@ -195,7 +195,7 @@ class Editor {
         this.video.startTime = 0;
         this.gizmo = new Gizmo(this);
 
-        renderer.domElement.addEventListener( 'keydown', (e) => {
+        window.addEventListener( 'keydown', (e) => {
             switch ( e.key ) {
                 case " ": // Spacebar
                     e.preventDefault();
@@ -205,17 +205,23 @@ class Editor {
                 case "Delete":
                     e.preventDefault();
                     // e.stopImmediatePropagation();
-                    this.activeTimeline.deleteKeyFrame(e, null);
+                    // this.activeTimeline.deleteKeyFrame(e, null);
+                    if(this.activeTimeline.deleteKeyFrame)
+                        this.activeTimeline.deleteKeyFrame(e);
+                    if(this.activeTimeline.deleteClip)
+                        this.activeTimeline.deleteClip(e, null, this.NMFController.updateTracks.bind(this.NMFController));
+                    
                     break;
                 case "Escape":
-                    this.gui.timelineArea.hide();
-                    this.gui.updateSkeletonPanel();
-                    this.gui.tree.select()
-                    this.activeTimeline.unSelect();
+                    this.gui.hideTimeline()
+                    // this.gui.updateSkeletonPanel();
+                    // this.gui.tree.select()
+                    // this.activeTimeline.unSelect();
                     break;
                 case 'z':
                     if(e.ctrlKey) {
-                        this.activeTimeline.restoreState();
+                        if(this.activeTimeline.restoreState)
+                            this.activeTimeline.restoreState();
                     }
                     break;
             }
@@ -494,7 +500,7 @@ class Editor {
           
             this.NMFController = new BMLController(this, skinnedMeshes, this.morphTargets);
             this.NMFController.onUpdateTracks = () => {
-                if(this.mixer._actions.length > 1) this.mixer._actions.pop();
+                if(this.mixer._actions.length) this.mixer._actions.pop();
                 this.mixer.clipAction( this.animationClip  ).setEffectiveWeight( 1.0 ).play();
             }
             this.gui.clipsTimeline.onUpdateTrack = this.NMFController.updateTracks.bind(this.NMFController);
@@ -1229,10 +1235,11 @@ class Editor {
     }
 
     stopAnimation() {
-        
-        this.mixer.setTime(0.0);
-        this.gizmo.updateBones(0.0);
-        this.activeTimeline.onSetTime(0.0);
+        let t = 0.0;
+        this.mixer.setTime(t);
+        this.gizmo.updateBones(t);
+        this.activeTimeline.currentTime = t;
+        this.activeTimeline.onSetTime(t);
     }
 
     onAnimationEnded() {
@@ -1285,11 +1292,13 @@ class Editor {
             case 'BVH extended':
                 BVHExporter.exportMorphTargets(this.mixer._actions[1], this.morphTargets, this.animationClip);
                 break;
+
             default:
                 let json =  {
-                    tracks: [],
+                    behaviours: [],
+                    indices: [],
                     name : this.animationClip.name || "bml animation",
-                    duration: this.animationClip.duration
+                    duration: this.animationClip.duration,
                 }
 
                 if(!this.gui.clipsTimeline.animationClip) {
@@ -1297,17 +1306,18 @@ class Editor {
                     alert("You can't export an animation with empty tracks.")
                     return;
                 }
+               
                 for(let i = 0; i < this.gui.clipsTimeline.animationClip.tracks.length; i++ ) {
-                    let track = [];
                     for(let j = 0; j < this.gui.clipsTimeline.animationClip.tracks[i].clips.length; j++) {
                         let data = this.gui.clipsTimeline.animationClip.tracks[i].clips[j];
+                        let type = ANIM[data.constructor.name];
                         if(data.toJSON) data = data.toJSON()
                         if(data)
                         {
-                            track.push( data );
+                            json.behaviours.push( data );
+                            json.indices.push(type.id);
                         }
                     }
-                    json.tracks.push(track);
                 }
                 BVHExporter.download(JSON.stringify(json), json.name, "application/json");
                 console.log(type + " ANIMATION EXPORTATION IS NOT YET SUPPORTED");

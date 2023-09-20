@@ -5754,6 +5754,7 @@
         static ASSET_DELETED    = 2;
         static ASSET_RENAMED    = 3;
         static ASSET_CLONED     = 4;
+        static ASSET_DBCLICK    = 5;
 
         constructor( type, item, value ) {
             this.type = type || TreeEvent.NONE;
@@ -5769,6 +5770,7 @@
                 case AssetViewEvent.ASSET_DELETED: return "assetview_event_deleted";
                 case AssetViewEvent.ASSET_RENAMED:  return "assetview_event_renamed";
                 case AssetViewEvent.ASSET_CLONED:  return "assetview_event_cloned";
+                case AssetViewEvent.ASSET_DBCLICK:  return "assetview_event_dbclick";
             }
         }
     };
@@ -6091,7 +6093,7 @@
                         that._enter_folder( item );
 
                     if(that.onevent) {
-                        const event = new AssetViewEvent(AssetViewEvent.ASSET_SELECTED, e.shiftKey ? [item] : item );
+                        const event = new AssetViewEvent(e.detail === 1 ? AssetViewEvent.ASSET_SELECTED: AssetViewEvent.ASSET_DBCLICK, e.shiftKey ? [item] : item );
                         event.multiple = !!e.shiftKey;
                         that.onevent( event );
                     }

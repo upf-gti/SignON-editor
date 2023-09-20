@@ -163,11 +163,11 @@ const MediaPipe = {
             //     this.webcamera.stop();
             //     this.loaded = false;
             // }
-            videoElement.play();
-            videoElement.controls = true;
-            videoElement.loop = true;
-            videoElement.requestVideoFrameCallback( this.sendVideo.bind(this, this.holistic, videoElement) );  
         }
+        videoElement.play();
+        videoElement.controls = true;
+        videoElement.loop = true;
+        videoElement.requestVideoFrameCallback( this.sendVideo.bind(this, this.holistic, videoElement) );  
     },
 
     async sendVideo(holistic, videoElement){

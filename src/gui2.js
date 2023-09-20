@@ -1362,12 +1362,10 @@ class ScriptGui extends Gui {
         
         
         if(clip && clip.duration) {
-            for(let i = 0; i < clip.tracks.length; i++) {
-                let track = clip.tracks[i];
-                for(let j = 0; j < track.length; j++) {
-
-                    this.clipsTimeline.addClip(new ANIM.FaceLexemeClip(track[j]));
-                }
+            for(let i = 0; i < clip.behaviours.length; i++) {
+                
+                this.clipsTimeline.addClip(new ANIM.clipTypes[clip.indices[i]]( clip.behaviours[i]));
+                
                 //to do -- parse bml animation clip
                 // 
                 //add clip --> new ANIM.FaceLexemeClip({lexeme: e.item.id}
@@ -1406,8 +1404,9 @@ class ScriptGui extends Gui {
                         callback: () => {
                             let clipstToDelete = this.clipsTimeline.lastClipsSelected;
                             for(let i = 0; i < clipstToDelete.length; i++){
-                                this.clipsTimeline.deleteClip(clipstToDelete[i], null);
+                                this.clipsTimeline.deleteClip(e, clipstToDelete[i], null);
                             }
+                            this.editor.NMFController.updateTracks();
                             // this.optimizeTracks();
                         }
                     }
@@ -1549,7 +1548,7 @@ class ScriptGui extends Gui {
             if(!clip)
                 return;
             
-            const updateTracks = () => {
+            const updateTracks = (refreshPanel) => {
                 if(!clip)
                     return;
 
@@ -1574,6 +1573,8 @@ class ScriptGui extends Gui {
                     
                     this.curve.curve_instance.redraw({value: syncvalues, xrange: [0, clip.duration]})
                 }
+                if(refreshPanel)
+                    this.updateClipPanel(clip);
             }
 
             widgets.widgets_per_row = 1;
@@ -1604,8 +1605,8 @@ class ScriptGui extends Gui {
                                 widgets.addNumber(i, property, (v,e,n) => 
                                 {
                                     this.clipInPanel.properties[n] = v;
-                                    updateTracks();
-                                    this.updateClipPanel(clip);
+                                    updateTracks(true);
+                                    // this.updateClipPanel(clip);
                                 }, {min:0, max:1, step:0.01});
                             }
                         else{
@@ -1646,8 +1647,8 @@ class ScriptGui extends Gui {
                 clip.relax = clip.fadeout += diff;
                 this.clipInPanel.start = v;
                 clip.start = v;
-                updateTracks();
-                this.updateClipPanel(clip);
+                updateTracks(true);
+                // this.updateClipPanel(clip);
                 
             }, {min:0, step:0.01, precision:2});
 
@@ -1659,8 +1660,8 @@ class ScriptGui extends Gui {
                 if(clip.ready != undefined)  
                     clip.attackPeak = clip.fadein = Math.min(v + clip.start, clip.ready);
                 clip.relax = clip.fadeout = Math.min(v + clip.start, clip.relax);
-                updateTracks();
-                this.updateClipPanel(clip);
+                updateTracks(true);
+                // this.updateClipPanel(clip);
             }, {min:0.01, step:0.01, precision:2});
 
             widgets.branch("Sync points", {icon: "fa-solid fa-chart-line"});
@@ -1697,8 +1698,8 @@ class ScriptGui extends Gui {
                 widgets.addNumber("Stroke ", clip.stroke - clip.start, (v) =>
                 {              
                     clip.stroke = v + clip.start;
-                    updateTracks();
-                    this.updateClipPanel(clip);
+                    updateTracks(true);
+                    // this.updateClipPanel(clip);
 
                 }, {min: clip.strokeStart - clip.start, max: clip.strokeEnd - clip.start, step:0.01, precision:2});
             }
@@ -1707,8 +1708,8 @@ class ScriptGui extends Gui {
                 widgets.addNumber("Stroke end", clip.strokeEnd - clip.start, (v) =>
                 {              
                     clip.strokeEnd = v + clip.start;
-                    updateTracks();
-                    this.updateClipPanel(clip);
+                    updateTracks(true);
+                    // this.updateClipPanel(clip);
 
                 }, {min: clip.stroke - clip.start, max: clip.relax - clip.start, step:0.01, precision:2});
             }
@@ -1743,14 +1744,14 @@ class ScriptGui extends Gui {
                     if(clip.fadeout) {
                         clip.relax = clip.fadeout = Number((value[1][0] + clip.start).toFixed(2));
                     }
-                    updateTracks();
-                    this.updateClipPanel(clip);
+                    updateTracks(true);
+                    // this.updateClipPanel(clip);
     
                 }, {xrange: [0, clip.duration]});
             }
             
             
-            widgets.addButton(null, "Delete", () => this.clipsTimeline.deleteClip(this.clipsTimeline.lastClipsSelected[0], () => {clip = null;  this.clipsTimeline.optimizeTracks(); updateTracks()}));
+            widgets.addButton(null, "Delete", (v, e) => this.clipsTimeline.deleteClip(e, this.clipsTimeline.lastClipsSelected[0], () => {clip = null;  this.clipsTimeline.optimizeTracks(); updateTracks()}));
         }
         widgets.onRefresh(clip);
         
@@ -1825,7 +1826,7 @@ class ScriptGui extends Gui {
             }
 
             // HEAD CLIP
-            values = ANIM.HeadClip.lexemes;
+            values = Object.keys(ANIM.HeadClip.lexemes);
             for(let i = 0; i < values.length; i++){
                 let data = {
                     id: values[i], 
@@ -1863,6 +1864,25 @@ class ScriptGui extends Gui {
                         break;
                     case LX.AssetViewEvent.ASSET_RENAMED:
                         console.log(e.item.id + " is now called " + e.value); 
+                        break;
+                    case LX.AssetViewEvent.ASSET_DBCLICK: 
+                        dialog.close();
+                        let asset = e.item;
+                        switch(asset.folder.id) {
+                            case "Face":
+                                that.clipsTimeline.addClip( new ANIM.FaceLexemeClip({lexeme: asset.id})); 
+                                break;
+                            case "Gaze":
+                                that.clipsTimeline.addClip( new ANIM.GazeClip({properties: {influence: asset.id}})); 
+                                break;
+                            case "Head movement":
+                                that.clipsTimeline.addClip( new ANIM.HeadClip({properties: {lexeme: asset.id}})); 
+                                break;
+                            default:
+                                that.clipsTimeline.addClip( new ANIM[asset.id.replaceAll(" ", "") + "Clip"]())
+                                break;
+                        }
+                        
                         break;
                 }
             })

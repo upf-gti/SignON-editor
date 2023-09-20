@@ -33,18 +33,18 @@ ANIM.blendToOperation = {
 //clip types
 ANIM.MISSING_CLIP = -1; //used when after loading a clip the type is not found in the system
 ANIM.SPEECH = 0;
-ANIM.AUDIO = 1;
-ANIM.FACELEXEME = 2;
-ANIM.FACEFACS = 3;
-ANIM.FACEEMOTION = 4;
-ANIM.GAZE = 5;
-ANIM.GESTURE = 6;
-ANIM.HEAD = 7;
-ANIM.HEADDIRECTION = 8;
-ANIM.POSTURE = 9;
-ANIM.LOCOMOTION = 10;
+// ANIM.AUDIO = 1;
+// ANIM.FACELEXEME = 2;
+// ANIM.FACEFACS = 3;
+// ANIM.FACEEMOTION = 4;
+// ANIM.GAZE = 5;
+// ANIM.GESTURE = 6;
+// ANIM.HEAD = 7;
+// ANIM.HEADDIRECTION = 8;
+// ANIM.POSTURE = 9;
+// ANIM.LOCOMOTION = 10;
 
-ANIM.CUSTOM = 11;
+// ANIM.CUSTOM = 11;
 
 // ANIM.clipTypes = [FaceLexemeClip, FaceFACSClip, FaceEmotionClip, GazeClip, HeadClip, ShoulderRaiseClip, ShoulderHunchClip, BodyMovementClip] ;
 
@@ -428,7 +428,7 @@ FaceLexemeClip.lexemes = [
 	"NOSE_WRINKLER","UPPER_LIP_RAISER","DIMPLER", "DIMPLER_LEFT", "DIMPLER_RIGHT","JAW_DROP","MOUTH_STRETCH"];
 
 FaceLexemeClip.type = "faceLexeme";
-FaceLexemeClip.id = ANIM.FACELEXEME? ANIM.FACELEXEME:2;
+FaceLexemeClip.id = ANIM.FACELEXEME ? ANIM.FACELEXEME: ANIM.clipTypes.length;
 FaceLexemeClip.clipColor = "cyan";
 
 function FaceLexemeClip(o)
@@ -463,7 +463,8 @@ ANIM.registerClipType( FaceLexemeClip );
 FaceLexemeClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
-	this.duration = o.duration || 1;
+		if(o.duration) this.duration = o.duration || 1;
+	if(o.end) this.duration = (o.end - o.start) || 1;
 	this.attackPeak = this.fadein = o.attackPeak || 0.25;
 	this.relax = this.fadeout = o.relax || 0.75;
 	this.properties.lexeme = o.lexeme || this.properties.lexeme;
@@ -492,7 +493,7 @@ FaceLexemeClip.prototype.toJSON = function()
 	var json = {
 		id: this.id,
 		start: this.start,
-		duration: this.duration,
+		end: this.start + this.duration,
 		attackPeak: this.attackPeak,
 		relax : this.relax,
 		type: FaceLexemeClip.type
@@ -635,7 +636,7 @@ FaceLexemeClip.prototype.showInfo = function(panel, callback)
 FaceFACSClip.type = "faceFACS";
 FaceFACSClip.sides = ["LEFT", "RIGHT", "BOTH"];
 
-FaceFACSClip.id = ANIM.FACEFACS? ANIM.FACEFACS:3;
+FaceFACSClip.id = ANIM.FACEFACS ? ANIM.FACEFACS: ANIM.clipTypes.length;
 FaceFACSClip.clipColor = "#00BDFF";
 
 function FaceFACSClip()
@@ -665,14 +666,14 @@ FaceFACSClip.prototype.toJSON = function()
 	var json = {
 		id: this.id,
 		start: this.start,
-		duration: this.duration,
+		end: this.start + this.duration,
 
 	}
 	for(var i in this.properties)
 	{
 		if(i == "shift")
 		{
-			if(this.properties[i])
+			if(this.properties[i] != undefined)
 				json.type = "faceShift";
 			continue;
 		}
@@ -763,6 +764,10 @@ FaceFACSClip.prototype.showInfo = function(panel)
 //FaceEmotionClip
 FaceEmotionClip.type = "faceEmotion";
 FaceEmotionClip.emotions = ["HAPPINESS", "SADNESS", "SURPRISE", "FEAR","ANGER","DISGUST", "CONTEMPT"];
+
+FaceEmotionClip.id = ANIM.FACEEMOTION? ANIM.FACEEMOTION: ANIM.clipTypes.length;
+FaceEmotionClip.clipColor = "#00BDFF";
+
 function FaceEmotionClip()
 {
 	this.id= "faceEmotion-"+Math.ceil(getTime());;
@@ -781,8 +786,6 @@ function FaceEmotionClip()
 
 }
 
-FaceEmotionClip.id = ANIM.FACEEMOTION? ANIM.FACEEMOTION:4;
-FaceEmotionClip.clipColor = "#00BDFF";
 ANIM.registerClipType( FaceEmotionClip );
 
 FaceEmotionClip.prototype.toJSON = function()
@@ -790,7 +793,7 @@ FaceEmotionClip.prototype.toJSON = function()
 	var json = {
 		id: this.id,
 		start: this.start,
-		duration: this.duration,
+		end: this.start + this.duration,
 
 	}
 	for(var i in this.properties)
@@ -896,6 +899,11 @@ FaceEmotionClip.prototype.showInfo = function(panel, callback)
 FacePresetClip.type = "facePreset";
 FacePresetClip.facePreset = ["Yes/No-Question", "Negative", "WH-word Questions", "Topic", "RH-Questions", "Anger", "Happiness", "Fear", "Sadness", "Surprise", "Disgust", "Contempt"];
 FacePresetClip.customPresets = {};
+
+FacePresetClip.type = "facePreset";
+FacePresetClip.id = ANIM.FACEPRESET ? ANIM.FACEPRESET: ANIM.clipTypes.length;
+FacePresetClip.clipColor = "green";
+
 function FacePresetClip(o)
 {
 	let preset = FacePresetClip.facePreset[0];
@@ -922,15 +930,13 @@ function FacePresetClip(o)
   //this.icon_id = 37;
 }
 
-FacePresetClip.type = "facePreset";
-FacePresetClip.id = ANIM.FACEPRESET? ANIM.FACEPRESET:12;
-FacePresetClip.clipColor = "green";
 ANIM.registerClipType( FacePresetClip );
 
 FacePresetClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
-	this.duration = o.duration || 1;
+		if(o.duration) this.duration = o.duration || 1;
+	if(o.end) this.duration = (o.end - o.start) || 1;
 	this.properties.preset = o.preset || this.properties.preset;
 	if(FacePresetClip.facePreset.indexOf(this.properties.preset) < 0){
 		FacePresetClip.facePreset.push(this.properties.preset);
@@ -945,6 +951,7 @@ FacePresetClip.prototype.configure = function(o)
 		this.id = this.properties.preset + "-" + Math.ceil(getTime());
 	}
 }
+
 FacePresetClip.prototype.addPreset = function(preset){
 	let clip = null;
 	switch(preset){
@@ -1086,7 +1093,7 @@ FacePresetClip.prototype.toJSON = function()
 	var json = {
 		id: this.id,
 		start: this.start,
-		duration: this.duration,
+		end: this.start + this.duration,
 
 	}
 	for(var i in this.properties)
@@ -1193,6 +1200,9 @@ GazeClip.influences = ["EYES", "HEAD", "NECK"];
 GazeClip.directions = ["", "UPRIGHT", "UPLEFT", "DOWNRIGHT", "DOWNLEFT", "RIGHT", "LEFT", "UP", "DOWN"];
 GazeClip.targets = ["UPRIGHT", "UPLEFT", "DOWNRIGHT", "DOWNLEFT", "RIGHT", "LEFT", "UP", "DOWN", "FRONT"];
 
+GazeClip.id = ANIM.GAZE ? ANIM.GAZE: ANIM.clipTypes.length;
+GazeClip.clipColor = "fuchsia";
+
 function GazeClip(o)
 {
 	this.id= "gaze-"+Math.ceil(getTime());
@@ -1219,14 +1229,14 @@ function GazeClip(o)
 
 }
 
-GazeClip.id = ANIM.GAZE ? ANIM.GAZE:5;
-GazeClip.clipColor = "fuchsia";
+
 ANIM.registerClipType( GazeClip );
 
 GazeClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
-	this.duration = o.duration || 1;
+		if(o.duration) this.duration = o.duration || 1;
+	if(o.end) this.duration = (o.end - o.start) || 1;
 	if(o.ready) this.ready = this.fadein = o.ready;
 	if(o.relax) this.relax = this.fadeout = o.relax;
 	if(o.properties)
@@ -1240,7 +1250,7 @@ GazeClip.prototype.toJSON = function()
 	var json = {
 		id: this.id,
 		start: this.start,
-		duration: this.duration,
+		end: this.start + this.duration,
 		ready: this.ready,
 		relax: this.relax,
 		type: "gaze"
@@ -1249,7 +1259,7 @@ GazeClip.prototype.toJSON = function()
 	{
 		if(i == "shift")
 		{
-			if(this.properties[i])
+			if(this.properties[i] != undefined)
 				json.type = "gazeShift";
 			continue;
 		}
@@ -1386,8 +1396,8 @@ GazeClip.prototype.showInfo = function(panel, callback)
 /*----------------------------------Head Behaviour-----------------------------------*/
 //HeadClip
 HeadClip.type = "head";
-HeadClip.lexemes = ["NOD", "SHAKE", "TILT", "TILTLEFT", "TILTRIGHT", "TILTFORWARD", "TILTBACKWARD", "FORWARD", "BACKWARD"];
-HeadClip.id = ANIM.HEAD? ANIM.HEAD:7;
+HeadClip.lexemes = {"Nod": "NOD", "Shake": "SHAKE", "Tilt": "TILT", "Tilt left": "TILTLEFT", "Tilt right": "TILTRIGHT", "Tilt forward": "TILTFORWARD", "Tilt backward": "TILTBACKWARD", "Forward": "FORWARD", "Backward": "BACKWARD"};
+HeadClip.id = ANIM.HEAD ? ANIM.HEAD: ANIM.clipTypes.length;
 HeadClip.clipColor = "yellow";
 
 function HeadClip(o)
@@ -1405,7 +1415,7 @@ function HeadClip(o)
 	this._width = 0;
 
 	this.properties = {
-		lexeme : HeadClip.lexemes[0], //[NOD,SHAKE, TILD...]
+		lexeme : "NOD", //[NOD,SHAKE, TILD...]
 		repetition : 1, //[1,*] (optional)
 		amount : 1, //[0,1]
 	}
@@ -1413,8 +1423,9 @@ function HeadClip(o)
 	if(o)
 		this.configure(o);
 	this.color = "black";
-	this.font = "40px Arial";
+	this.font = "11px Calibri";
 	this.clipColor = HeadClip.clipColor;
+	this.type = HeadClip.type;
 }
 
 
@@ -1423,7 +1434,8 @@ ANIM.registerClipType( HeadClip );
 HeadClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
-	this.duration = o.duration || 1;
+		if(o.duration) this.duration = o.duration || 1;
+	if(o.end) this.duration = (o.end - o.start) || 1;
 	if(o.ready) this.ready = this.fadein = o.ready;
 	if(o.strokeStart) this.strokeStart = o.strokeStart;
 	if(o.stroke) this.stroke  = o.stroke ;
@@ -1441,7 +1453,7 @@ HeadClip.prototype.toJSON = function()
 	var json = {
 		id: this.id,
 		start: this.start,
-		duration: this.duration,
+		end: this.start + this.duration,
 		ready: this.ready,
 		strokeStart: this.strokeStart,
 		stroke : this.stroke ,
@@ -1463,7 +1475,7 @@ HeadClip.prototype.fromJSON = function( json )
 
 HeadClip.prototype.drawClip = function( ctx, w,h, selected )
 {
-	ctx.font = "11px Calibri";
+	ctx.font = this.font;
 	let textInfo = ctx.measureText( this.id );
 	ctx.fillStyle = this.color;
 	if( textInfo.width < (w - 24) )
@@ -1480,9 +1492,9 @@ HeadClip.prototype.showInfo = function(panel, callback)
 			for(let id in HeadClip.lexemes) {
 				values.push({ value: HeadClip.lexemes[id]})
 			}
-			panel.addDropdown(i, values, property, (v, e, name) => {
+			panel.addDropdown(i, values, Object.keys(HeadClip.lexemes).find(key => HeadClip.lexemes[key] === property), (v, e, name) => {
 				
-				this.properties[name] = v;
+				this.properties[name] = HeadClip.lexemes[v];
 				if(callback)
 					callback();
 				
@@ -1555,9 +1567,9 @@ HeadClip.prototype.showInfo = function(panel, callback)
 
 //ShoulderRaiseClip
 ShoulderRaiseClip.type = "gesture";
-ShoulderRaiseClip.hands = ["LEFT", "RIGHT", "BOTH"];
+ShoulderRaiseClip.hands = ["Left", "Right", "Both"];
 
-ShoulderRaiseClip.id = ANIM.SHOULDERRAISE ? ANIM.SHOULDERRAISE: 6;
+ShoulderRaiseClip.id = ANIM.SHOULDERRAISE ? ANIM.SHOULDERRAISE: ANIM.clipTypes.length;
 ShoulderRaiseClip.clipColor = "red";
 
 function ShoulderRaiseClip(o)
@@ -1579,7 +1591,7 @@ function ShoulderRaiseClip(o)
 		this.configure(o);
 
 	this.color = "black";
-	this.font = "40px Arial";
+	this.font = "11px Calibri";
 	this.clipColor = ShoulderRaiseClip.clipColor;
 }
 
@@ -1588,7 +1600,8 @@ ANIM.registerClipType( ShoulderRaiseClip );
 ShoulderRaiseClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
-	this.duration = o.duration || 1;
+		if(o.duration) this.duration = o.duration || 1;
+	if(o.end) this.duration = (o.end - o.start) || 1;
 	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
 	if(o.relax) this.relax = this.fadeout = o.relax;
 	if(o.properties)
@@ -1602,7 +1615,7 @@ ShoulderRaiseClip.prototype.toJSON = function()
 	var json = {
 		id: this.id,
 		start: this.start,
-		duration: this.duration,
+		end: this.start + this.duration,
 		attackPeak: this.attackPeak,
 		relax: this.relax,
 		type: "gesture"
@@ -1611,7 +1624,7 @@ ShoulderRaiseClip.prototype.toJSON = function()
 	{
 		if(i == "shift")
 		{
-			if(this.properties[i])
+			if(this.properties[i] != undefined)
 				json.type = "gesture";
 			continue;
 		}
@@ -1629,7 +1642,7 @@ ShoulderRaiseClip.prototype.fromJSON = function( json )
 
 ShoulderRaiseClip.prototype.drawClip = function( ctx, w,h, selected )
 {
-	ctx.font = "11px Calibri";
+	ctx.font = this.font;
 	ctx.globalCompositeOperation =  "source-over";
 	let textInfo = ctx.measureText( this.id );
 	ctx.fillStyle = this.color;
@@ -1647,7 +1660,7 @@ ShoulderRaiseClip.prototype.showInfo = function(panel, callback)
 			for(let id in ShoulderRaiseClip.hands) {
 				values.push({ value: ShoulderRaiseClip.hands[id] })
 			}
-			panel.addDropdown(i, values, property, (v, e, name) => {
+			panel.addDropdown(i, values, property.charAt(0).toUpperCase() + property.slice(1), (v, e, name) => {
 				
 				this.properties[name] = v.toLowerCase();
 				if(callback)
@@ -1720,8 +1733,8 @@ ShoulderRaiseClip.prototype.showInfo = function(panel, callback)
 
 //ShoulderHunchClip
 ShoulderHunchClip.type = "gesture";
-ShoulderHunchClip.hands = ["LEFT", "RIGHT", "BOTH"];
-ShoulderHunchClip.id = ANIM.SHOULDERHUNCH ? ANIM.SHOULDERHUNCH: 7;
+ShoulderHunchClip.hands = ["Left", "Right", "Both"];
+ShoulderHunchClip.id = ANIM.SHOULDERHUNCH ? ANIM.SHOULDERHUNCH: ANIM.clipTypes.length;
 ShoulderHunchClip.clipColor = "red";
 
 function ShoulderHunchClip(o)
@@ -1744,7 +1757,7 @@ function ShoulderHunchClip(o)
 		this.configure(o);
 
 	this.color = "black";
-	this.font = "40px Arial";
+	this.font = "11px Calibri";
 	this.clipColor = ShoulderHunchClip.clipColor;
 }
 
@@ -1753,7 +1766,8 @@ ANIM.registerClipType( ShoulderHunchClip );
 ShoulderHunchClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
-	this.duration = o.duration || 1;
+	if(o.duration) this.duration = o.duration || 1;
+	if(o.end) this.duration = (o.end - o.start) || 1;
 	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
 	if(o.relax) this.relax = this.fadeout = o.relax;
 	if(o.properties)
@@ -1767,7 +1781,7 @@ ShoulderHunchClip.prototype.toJSON = function()
 	var json = {
 		id: this.id,
 		start: this.start,
-		duration: this.duration,
+		end: this.start + this.duration,
 		attackPeak: this.attackPeak,
 		relax: this.relax,
 		type: "gesture"
@@ -1776,7 +1790,7 @@ ShoulderHunchClip.prototype.toJSON = function()
 	{
 		if(i == "shift")
 		{
-			if(this.properties[i])
+			if(this.properties[i] != undefined)
 				json.type = "gesture";
 			continue;
 		}
@@ -1794,7 +1808,7 @@ ShoulderHunchClip.prototype.fromJSON = function( json )
 
 ShoulderHunchClip.prototype.drawClip = function( ctx, w,h, selected )
 {
-	ctx.font = "11px Calibri";
+	ctx.font = this.font;
 	ctx.globalCompositeOperation =  "source-over";
 	let textInfo = ctx.measureText( this.id );
 	ctx.fillStyle = this.color;
@@ -1812,9 +1826,9 @@ ShoulderHunchClip.prototype.showInfo = function(panel, callback)
 			for(let id in ShoulderHunchClip.hands) {
 				values.push({ value: ShoulderHunchClip.hands[id] })
 			}
-			panel.addDropdown(i, values, property, (v, e, name) => {
+			panel.addDropdown(i, values, property.charAt(0).toUpperCase() + property.slice(1), (v, e, name) => {
 				
-				this.properties[name] = v;
+				this.properties[name] = v.toLowerCase();
 				if(callback)
 					callback();
 				
@@ -1886,7 +1900,7 @@ ShoulderHunchClip.prototype.showInfo = function(panel, callback)
 //BodyMovementClip
 BodyMovementClip.type = "gesture";
 BodyMovementClip.movements = {"Tilt forward": "TF", "Tilt backward": "TB", "Tilt left": "TL", "Tilt right": "TR", "Rotate left": "RL", "Rotate right": "RR"};
-BodyMovementClip.hands = ["LEFT", "RIGHT", "BOTH"];
+BodyMovementClip.hands = ["Left", "Right", "Both"];
 BodyMovementClip.id = ANIM.BODYMOVEMENT ? ANIM.BODYMOVEMENT: 8;
 BodyMovementClip.clipColor = "lima";
 
@@ -1910,7 +1924,7 @@ function BodyMovementClip(o)
 		this.configure(o);
 
 	this.color = "black";
-	this.font = "40px Arial";
+	this.font = "11px Calibri";
 	this.clipColor = BodyMovementClip.clipColor;
 }
 
@@ -1919,7 +1933,8 @@ ANIM.registerClipType( BodyMovementClip );
 BodyMovementClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
-	this.duration = o.duration || 1;
+	if(o.duration) this.duration = o.duration || 1;
+	if(o.end) this.duration = (o.end - o.start) || 1;
 	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
 	if(o.relax) this.relax = this.fadeout = o.relax;
 	if(o.properties)
@@ -1933,7 +1948,7 @@ BodyMovementClip.prototype.toJSON = function()
 	var json = {
 		id: this.id,
 		start: this.start,
-		duration: this.duration,
+		end: this.start + this.duration,
 		attackPeak: this.attackPeak,
 		relax: this.relax,
 		type: "gesture"
@@ -1942,7 +1957,7 @@ BodyMovementClip.prototype.toJSON = function()
 	{
 		if(i == "shift")
 		{
-			if(this.properties[i])
+			if(this.properties[i] != undefined)
 				json.type = "gesture";
 			continue;
 		}
@@ -1960,7 +1975,7 @@ BodyMovementClip.prototype.fromJSON = function( json )
 
 BodyMovementClip.prototype.drawClip = function( ctx, w,h, selected )
 {
-	ctx.font = "11px Calibri";
+	ctx.font = this.font;
 	ctx.globalCompositeOperation =  "source-over";
 	let textInfo = ctx.measureText( this.id );
 	ctx.fillStyle = this.color;
@@ -1978,9 +1993,9 @@ BodyMovementClip.prototype.showInfo = function(panel, callback)
 			for(let id in BodyMovementClip.hands) {
 				values.push({ value: BodyMovementClip.hands[id] })
 			}
-			panel.addDropdown(i, values, property, (v, e, name) => {
+			panel.addDropdown(i, values, property.charAt(0).toUpperCase() + property.slice(1), (v, e, name) => {
 				
-				this.properties[name] = v;
+				this.properties[name] = v.toLowerCase();
 				if(callback)
 					callback();
 				
@@ -2066,7 +2081,7 @@ BodyMovementClip.prototype.showInfo = function(panel, callback)
 BodyLocationClip.type = "gesture";
 BodyLocationClip.locations = ["head", "headtop", "forehead", "nose", "belownose", "chin", "underchin", "mouth", "earlobe", "earlobeR", "earlobeL", "ear ", "earR", "earL", "cheek ", "cheekR", "cheekL", "eye ", "eyeR", "eyeL", "eyebrow ", "eyebrowL", "eyebrowR", "mouth", "chest", "shoulderLine", "shoulder", "shoulderR", "shoulderL", "stomach", "belowstomach", "neutral"];
 BodyLocationClip.sides = { "Right": "rr", "Slightly right": "r", "Left": "ll", "Slightly left": "l"};
-BodyLocationClip.hands = ["LEFT", "RIGHT", "BOTH"];
+BodyLocationClip.hands = ["Left", "Right", "Both"];
 
 BodyLocationClip.id = ANIM.BODYLOCATION ? ANIM.BODYLOCATION: ANIM.clipTypes.length;
 BodyLocationClip.clipColor = "lima";
@@ -2120,7 +2135,8 @@ ANIM.registerClipType( BodyLocationClip );
 BodyLocationClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
-	this.duration = o.duration || 1;
+	if(o.duration) this.duration = o.duration || 1;
+	if(o.end) this.duration = (o.end - o.start) || 1;
 	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
 	if(o.relax) this.relax = this.fadeout = o.relax;
 	if(o.properties)
@@ -2134,7 +2150,7 @@ BodyLocationClip.prototype.toJSON = function()
 	var json = {
 		id: this.id,
 		start: this.start,
-		duration: this.duration,
+		end: this.start + this.duration,
 		attackPeak: this.attackPeak,
 		relax: this.relax,
 		type: "gesture"
@@ -2143,7 +2159,7 @@ BodyLocationClip.prototype.toJSON = function()
 	{
 		if(i == "shift")
 		{
-			if(this.properties[i])
+			if(this.properties[i] != undefined)
 				json.type = "gesture";
 			continue;
 		}
@@ -2161,7 +2177,7 @@ BodyLocationClip.prototype.fromJSON = function( json )
 
 BodyLocationClip.prototype.drawClip = function( ctx, w,h, selected )
 {
-	ctx.font = "11px Calibri";
+	ctx.font = this.font;
 	ctx.globalCompositeOperation =  "source-over";
 	let textInfo = ctx.measureText( this.id );
 	ctx.fillStyle = this.color;
@@ -2179,9 +2195,9 @@ BodyLocationClip.prototype.showInfo = function(panel, callback)
 			for(let id in BodyLocationClip.hands) {
 				values.push({ value: BodyLocationClip.hands[id] })
 			}
-			panel.addDropdown(i, values, property, (v, e, name) => {
+			panel.addDropdown(i, values, property.charAt(0).toUpperCase() + property.slice(1), (v, e, name) => {
 				
-				this.properties[name] = v;
+				this.properties[name] = v.toLowerCase();
 				if(callback)
 					callback();
 				
@@ -2298,7 +2314,7 @@ BodyLocationClip.prototype.showInfo = function(panel, callback)
 
 //PalmOrientationClip
 PalmOrientationClip.type = "gesture";
-PalmOrientationClip.hands = ["LEFT", "RIGHT", "BOTH"];
+PalmOrientationClip.hands = ["Left", "Right", "Both"];
 
 PalmOrientationClip.id = ANIM.PALMORIENTATION ? ANIM.PALMORIENTATION: ANIM.clipTypes.length;
 PalmOrientationClip.clipColor = "lima";
@@ -2334,7 +2350,8 @@ ANIM.registerClipType( PalmOrientationClip );
 PalmOrientationClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
-	this.duration = o.duration || 1;
+	if(o.duration) this.duration = o.duration || 1;
+	if(o.end) this.duration = (o.end - o.start) || 1;
 	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
 	if(o.relax) this.relax = this.fadeout = o.relax;
 	if(o.properties)
@@ -2348,7 +2365,7 @@ PalmOrientationClip.prototype.toJSON = function()
 	var json = {
 		id: this.id,
 		start: this.start,
-		duration: this.duration,
+		end: this.start + this.duration,
 		attackPeak: this.attackPeak,
 		relax: this.relax,
 		type: "gesture"
@@ -2357,7 +2374,7 @@ PalmOrientationClip.prototype.toJSON = function()
 	{
 		if(i == "shift")
 		{
-			if(this.properties[i])
+			if(this.properties[i] != undefined)
 				json.type = "gesture";
 			continue;
 		}
@@ -2375,7 +2392,7 @@ PalmOrientationClip.prototype.fromJSON = function( json )
 
 PalmOrientationClip.prototype.drawClip = function( ctx, w,h, selected )
 {
-	ctx.font = "11px Calibri";
+	ctx.font = this.font;
 	ctx.globalCompositeOperation =  "source-over";
 	let textInfo = ctx.measureText( this.id );
 	ctx.fillStyle = this.color;
@@ -2393,9 +2410,9 @@ PalmOrientationClip.prototype.showInfo = function(panel, callback)
 			for(let id in PalmOrientationClip.hands) {
 				values.push({ value: PalmOrientationClip.hands[id] })
 			}
-			panel.addDropdown(i, values, property, (v, e, name) => {
+			panel.addDropdown(i, values, property.charAt(0).toUpperCase() + property.slice(1), (v, e, name) => {
 				
-				this.properties[name] = v;
+				this.properties[name] = v.toLowerCase();
 				if(callback)
 					callback();
 				
@@ -2466,7 +2483,7 @@ PalmOrientationClip.prototype.showInfo = function(panel, callback)
 
 //ExtfidirClip
 ExtfidirClip.type = "gesture";
-ExtfidirClip.hands = ["LEFT", "RIGHT", "BOTH"];
+ExtfidirClip.hands = ["Left", "Right", "Both"];
 
 ExtfidirClip.id = ANIM.PALMORIENTATION ? ANIM.PALMORIENTATION: ANIM.clipTypes.length;
 ExtfidirClip.clipColor = "lima";
@@ -2502,7 +2519,8 @@ ANIM.registerClipType( ExtfidirClip );
 ExtfidirClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
-	this.duration = o.duration || 1;
+		if(o.duration) this.duration = o.duration || 1;
+	if(o.end) this.duration = (o.end - o.start) || 1;
 	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
 	if(o.relax) this.relax = this.fadeout = o.relax;
 	if(o.properties)
@@ -2516,7 +2534,7 @@ ExtfidirClip.prototype.toJSON = function()
 	var json = {
 		id: this.id,
 		start: this.start,
-		duration: this.duration,
+		end: this.start + this.duration,
 		attackPeak: this.attackPeak,
 		relax: this.relax,
 		type: "gesture"
@@ -2525,7 +2543,7 @@ ExtfidirClip.prototype.toJSON = function()
 	{
 		if(i == "shift")
 		{
-			if(this.properties[i])
+			if(this.properties[i] != undefined)
 				json.type = "gesture";
 			continue;
 		}
@@ -2543,7 +2561,7 @@ ExtfidirClip.prototype.fromJSON = function( json )
 
 ExtfidirClip.prototype.drawClip = function( ctx, w,h, selected )
 {
-	ctx.font = "11px Calibri";
+	ctx.font = this.font;
 	ctx.globalCompositeOperation =  "source-over";
 	let textInfo = ctx.measureText( this.id );
 	ctx.fillStyle = this.color;
@@ -2561,9 +2579,9 @@ ExtfidirClip.prototype.showInfo = function(panel, callback)
 			for(let id in ExtfidirClip.hands) {
 				values.push({ value: ExtfidirClip.hands[id] })
 			}
-			panel.addDropdown(i, values, property, (v, e, name) => {
+			panel.addDropdown(i, values, property.charAt(0).toUpperCase() + property.slice(1), (v, e, name) => {
 				
-				this.properties[name] = v;
+				this.properties[name] = v.toLowerCase();
 				if(callback)
 					callback();
 				
@@ -2625,7 +2643,7 @@ HandshapeClip.type = "gesture";
 HandshapeClip.handshapes = ["fist", "finger2", "finger23", "finger23spread", "finger2345", "flat", "pinch12", "pinch12open", "pinchall", "ceeall", "cee12", "cee12open"];
 HandshapeClip.thumbshapes = ["default", "out", "opposed", "across", "touch"];
 HandshapeClip.bendstates = ["straight", "halfbent", "bent", "round", "hooked", "dblbent", "dblhooked"];
-HandshapeClip.hands = ["LEFT", "RIGHT", "BOTH"];
+HandshapeClip.hands = ["Left", "Right", "Both"];
 
 
 HandshapeClip.id = ANIM.HANDSHAPE ? ANIM.HANDSHAPE: ANIM.clipTypes.length;
@@ -2672,7 +2690,8 @@ ANIM.registerClipType( HandshapeClip );
 HandshapeClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
-	this.duration = o.duration || 1;
+		if(o.duration) this.duration = o.duration || 1;
+	if(o.end) this.duration = (o.end - o.start) || 1;
 	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
 	if(o.relax) this.relax = this.fadeout = o.relax;
 	if(o.properties)
@@ -2686,7 +2705,7 @@ HandshapeClip.prototype.toJSON = function()
 	var json = {
 		id: this.id,
 		start: this.start,
-		duration: this.duration,
+		end: this.start + this.duration,
 		attackPeak: this.attackPeak,
 		relax: this.relax,
 		type: "gesture"
@@ -2695,7 +2714,7 @@ HandshapeClip.prototype.toJSON = function()
 	{
 		if(i == "shift")
 		{
-			if(this.properties[i])
+			if(this.properties[i] != undefined)
 				json.type = "gesture";
 			continue;
 		}
@@ -2713,7 +2732,7 @@ HandshapeClip.prototype.fromJSON = function( json )
 
 HandshapeClip.prototype.drawClip = function( ctx, w,h, selected )
 {
-	ctx.font = "11px Calibri";
+	ctx.font = this.font;
 	ctx.globalCompositeOperation =  "source-over";
 	let textInfo = ctx.measureText( this.id );
 	ctx.fillStyle = this.color;
@@ -2731,9 +2750,9 @@ HandshapeClip.prototype.showInfo = function(panel, callback)
 			for(let id in HandshapeClip.hands) {
 				values.push({ value: HandshapeClip.hands[id] })
 			}
-			panel.addDropdown(i, values, property, (v, e, name) => {
+			panel.addDropdown(i, values, property.charAt(0).toUpperCase() + property.slice(1), (v, e, name) => {
 				
-				this.properties[name] = v;
+				this.properties[name] = v.toLowerCase();
 				if(callback)
 					callback();
 				
@@ -2839,7 +2858,7 @@ HandConstellationClip.type = "gesture";
 HandConstellationClip.sides = ["Right", "Left", "Ulnar", "Radial", "Front", "Back", "Palmar"];
 HandConstellationClip.handlocations = ["Tip", "Pad", "Mid", "Base", "Thumbball", "Hand", "Wrist"];
 HandConstellationClip.armlocations = ["Forearm", "Elbow", "Upperarm"];
-HandConstellationClip.hands = ["LEFT", "RIGHT", "BOTH"];
+HandConstellationClip.hands = ["Left", "Right", "Both"];
 
 
 HandConstellationClip.id = ANIM.HANDSHAPE ? ANIM.HANDSHAPE: ANIM.clipTypes.length;
@@ -2858,18 +2877,14 @@ function HandConstellationClip(o)
 		hand: "right",
 		handConstellation: true,
 		//Location of the hand in the specified hand (or dominant hand)
-		srcContact: "2PadBack", // source contact location in a single variable. Strings must be concatenate as srcFinger + srcLocation + srcSide (whenever each variable is needed). Afterwards, there is no need to use srcFinger, srcLocation or srcSide
 		srcFinger: "2", // 1,2,3,4,5. If the location does not use a finger, do not include this
 		srcLocation: "Pad", // string from hand locations (although no forearm, elbow, upperarm are valid inputs here)
 		srcSide: "Back", // Ulnar, Radial, Palmar, Back
 		
 		//Location of the hand in the unspecified hand (or non dominant hand)
-		dstContact: "2Tip", // source contact location in a single variable. Strings must be concatenate as dstFinger + dstLocation + dstSide (whenever each variable is needed). Afterwards, there is no need to use dstFinger, dstLocation or dstSide
 		dstFinger: "2", // 1,2,3,4,5. If the location does not use a finger, do not include this
 		dstLocation: "Base", // string from hand locations or arm locations
 		dstSide: "Palmar", // Ulnar, Radial, Palmar, Back 
-		
-		hand: "dom", // if hand=="both", both hand will try to reach each other, meeting in the middle. Otherwise, only the specified hand will move.
 
 		// optionals
 		distance: 0, //[-ifinity,+ifninity] where 0 is touching and 1 is the arm size. Distance between endpoints. 
@@ -2893,7 +2908,8 @@ ANIM.registerClipType( HandConstellationClip );
 HandConstellationClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
-	this.duration = o.duration || 1;
+		if(o.duration) this.duration = o.duration || 1;
+	if(o.end) this.duration = (o.end - o.start) || 1;
 	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
 	if(o.relax) this.relax = this.fadeout = o.relax;
 	if(o.properties)
@@ -2907,7 +2923,7 @@ HandConstellationClip.prototype.toJSON = function()
 	var json = {
 		id: this.id,
 		start: this.start,
-		duration: this.duration,
+		end: this.start + this.duration,
 		attackPeak: this.attackPeak,
 		relax: this.relax,
 		type: "gesture"
@@ -2916,7 +2932,7 @@ HandConstellationClip.prototype.toJSON = function()
 	{
 		if(i == "shift")
 		{
-			if(this.properties[i])
+			if(this.properties[i] != undefined)
 				json.type = "gesture";
 			continue;
 		}
@@ -2934,7 +2950,7 @@ HandConstellationClip.prototype.fromJSON = function( json )
 
 HandConstellationClip.prototype.drawClip = function( ctx, w,h, selected )
 {
-	ctx.font = "11px Calibri";
+	ctx.font = this.font;
 	ctx.globalCompositeOperation =  "source-over";
 	let textInfo = ctx.measureText( this.id );
 	ctx.fillStyle = this.color;
@@ -2952,14 +2968,17 @@ HandConstellationClip.prototype.showInfo = function(panel, callback)
 			for(let id in HandConstellationClip.hands) {
 				values.push({ value: HandConstellationClip.hands[id] })
 			}
-			panel.addDropdown(i, values, property, (v, e, name) => {
+			panel.addDropdown(i, values, property.charAt(0).toUpperCase() + property.slice(1), (v, e, name) => {
 				
-				this.properties[name] = v;
+				this.properties[name] = v.toLowerCase();
 				if(callback)
 					callback();
 				
 			}, {filter: true});
 			
+		}
+		else if(i=="handConstellation") {
+			continue;
 		}
 		else if(i=="srcSide" || i=="dstSide"){
 			values = [];
@@ -3065,10 +3084,16 @@ HandConstellationClip.prototype.showInfo = function(panel, callback)
 }
 
 
+//DirectedMotionClip
+
+
 //CircularMotionClip
 CircularMotionClip.type = "gesture";
-CircularMotionClip.hands = ["LEFT", "RIGHT", "BOTH"];
-
+CircularMotionClip.hands = ["Left", "Right", "Both"];
+CircularMotionClip.directions = {"Up": "u", "Down":"d", "Left": "l", "Right": "r", "In": "i", "Out":"o", "Up Left": "ul", "Down Left": "dl", "Down Right": "dr", "Up Right": "ur", 
+	"Up Out": "uo", "Up Out Left": "uol", "Out Left": "ol", "Down Out Left": "dol", "Down Out": "do", "Down Out Right": "dor", "Out Right": "or", "Up Out Right": "uor",
+	"Up In": "ui", "Up In Left": "uil", "In Left": "il", "Down In Left": "dil", "Down In": "di", "Down In Right": "dir", "In Right": "ir", "Up In Right": "uir"
+}
 CircularMotionClip.id = ANIM.CIRCULARMOTION ? ANIM.CIRCULARMOTION: ANIM.clipTypes.length;
 CircularMotionClip.clipColor = "lima";
 
@@ -3087,14 +3112,15 @@ function CircularMotionClip(o)
 		direction: "o", // string 26 directions. Axis of rotation
 		
 		// optionals
-		secondDirection: "l", // string 8 directions. Will compute midpoint between direction and secondDirection.
+		secondDirection: null, // string 8 directions. Will compute midpoint between direction and secondDirection.
 		distance: 0.05, // number, radius in metres of the circle. Default 0.05 m (5 cm)
 		startAngle: 0, // where in the circle to start. 0º indicates up. Indicated in degrees. Default to 0º. [-infinity, +infinity]
 		endAngle: 360, // where in the circle to finish. 0º indicates up. Indicated in degrees. Default to 360º. [-infinity, +infinity]
-		zigzag: "l", // string 26 directions
-		zigzagSize: 0.05, // amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
-		zigzagSpeed: 3, // oscillations per second. Default 2
+		zigzag: null, // string 26 directions
+		zigzagSize: null, // amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
+		zigzagSpeed: null, // oscillations per second. Default 2
 	}
+	this.zigzag = false;
 
 	if(o)
 		this.configure(o);
@@ -3109,7 +3135,8 @@ ANIM.registerClipType( CircularMotionClip );
 CircularMotionClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
-	this.duration = o.duration || 1;
+	if(o.duration) this.duration = o.duration || 1;
+	if(o.end) this.duration = (o.end - o.start) || 1;
 	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
 	if(o.relax) this.relax = this.fadeout = o.relax;
 	if(o.properties)
@@ -3123,7 +3150,7 @@ CircularMotionClip.prototype.toJSON = function()
 	var json = {
 		id: this.id,
 		start: this.start,
-		duration: this.duration,
+		end: this.start + this.duration,
 		attackPeak: this.attackPeak,
 		relax: this.relax,
 		type: "gesture"
@@ -3132,7 +3159,7 @@ CircularMotionClip.prototype.toJSON = function()
 	{
 		if(i == "shift")
 		{
-			if(this.properties[i])
+			if(this.properties[i] != undefined)
 				json.type = "gesture";
 			continue;
 		}
@@ -3150,7 +3177,7 @@ CircularMotionClip.prototype.fromJSON = function( json )
 
 CircularMotionClip.prototype.drawClip = function( ctx, w,h, selected )
 {
-	ctx.font = "11px Calibri";
+	ctx.font = this.font;
 	ctx.globalCompositeOperation =  "source-over";
 	let textInfo = ctx.measureText( this.id );
 	ctx.fillStyle = this.color;
@@ -3163,19 +3190,24 @@ CircularMotionClip.prototype.showInfo = function(panel, callback)
 	for(var i in this.properties)
 	{
 		var property = this.properties[i];
+		if(property == undefined) continue;
+
 		let values = [];
 		if(i=="hand"){
 			for(let id in CircularMotionClip.hands) {
 				values.push({ value: CircularMotionClip.hands[id] })
 			}
-			panel.addDropdown(i, values, property, (v, e, name) => {
+			panel.addDropdown(i, values, property.charAt(0).toUpperCase() + property.slice(1), (v, e, name) => {
 				
-				this.properties[name] = v;
+				this.properties[name] = v.toLowerCase();
 				if(callback)
 					callback();
 				
 			}, {filter: true});
 			
+		}
+		else if(i=="motion") {
+			continue;
 		}
 		else {
 			switch(property.constructor)
@@ -3187,7 +3219,7 @@ CircularMotionClip.prototype.showInfo = function(panel, callback)
 						this.properties[name] = v;
 						if(callback)
 							callback();
-					}, {disabled: i=="motion"});
+					});
 					break;
 
 				case Number:
@@ -3225,11 +3257,21 @@ CircularMotionClip.prototype.showInfo = function(panel, callback)
 			}
 		}
 	}
+	panel.addCheckbox("Apply zig-zag", this.zigzag, (v, e, name) =>
+	{
+		this.zigzag = v;
+		this.properties.zigzag = v ? "l" : null; // string 26 directions
+		this.properties.zigzagSize = v ? 0.05 : null; // amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
+		this.properties.zigzagSpeed = v ? 3 : null;
+
+		if(callback)
+			callback(true);
+	});
 }
 
 //WristMotionClip
 WristMotionClip.type = "gesture";
-WristMotionClip.modes = ["LEFT", "RIGHT", "BOTH"];
+WristMotionClip.modes = ["Left", "Right", "Both"];
 WristMotionClip.sides = ["nod", "nodding", "swing", "swinging", "twist", "twisting", "stirCW", "stircw", "stirCCW", "stirccw", "all"];
 
 WristMotionClip.id = ANIM.WRISTMOTION ? ANIM.WRISTMOTION: ANIM.clipTypes.length;
@@ -3273,7 +3315,8 @@ ANIM.registerClipType( WristMotionClip );
 WristMotionClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
-	this.duration = o.duration || 1;
+		if(o.duration) this.duration = o.duration || 1;
+	if(o.end) this.duration = (o.end - o.start) || 1;
 	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
 	if(o.relax) this.relax = this.fadeout = o.relax;
 	if(o.properties)
@@ -3287,7 +3330,7 @@ WristMotionClip.prototype.toJSON = function()
 	var json = {
 		id: this.id,
 		start: this.start,
-		duration: this.duration,
+		end: this.start + this.duration,
 		attackPeak: this.attackPeak,
 		relax: this.relax,
 		type: "gesture"
@@ -3296,7 +3339,7 @@ WristMotionClip.prototype.toJSON = function()
 	{
 		if(i == "shift")
 		{
-			if(this.properties[i])
+			if(this.properties[i] != undefined)
 				json.type = "gesture";
 			continue;
 		}
@@ -3314,7 +3357,7 @@ WristMotionClip.prototype.fromJSON = function( json )
 
 WristMotionClip.prototype.drawClip = function( ctx, w,h, selected )
 {
-	ctx.font = "11px Calibri";
+	ctx.font = this.font;
 	ctx.globalCompositeOperation =  "source-over";
 	let textInfo = ctx.measureText( this.id );
 	ctx.fillStyle = this.color;
@@ -3332,9 +3375,9 @@ WristMotionClip.prototype.showInfo = function(panel, callback)
 			for(let id in WristMotionClip.hands) {
 				values.push({ value: WristMotionClip.hands[id] })
 			}
-			panel.addDropdown(i, values, property, (v, e, name) => {
+			panel.addDropdown(i, values, property.charAt(0).toUpperCase() + property.slice(1), (v, e, name) => {
 				
-				this.properties[name] = v;
+				this.properties[name] = v.toLowerCase();
 				if(callback)
 					callback();
 				
@@ -3415,7 +3458,7 @@ FingerplayMotionClip.type = "gesture";
 FingerplayMotionClip.sides = ["Right", "Left", "Ulnar", "Radial", "Front", "Back", "Palmar"];
 FingerplayMotionClip.handlocations = ["Tip", "Pad", "Mid", "Base", "Thumbball", "Hand", "Wrist"];
 FingerplayMotionClip.armlocations = ["Forearm", "Elbow", "Upperarm"];
-FingerplayMotionClip.hands = ["LEFT", "RIGHT", "BOTH"];
+FingerplayMotionClip.hands = ["Left", "Right", "Both"];
 
 
 FingerplayMotionClip.id = ANIM.FINGERPLAYMOTION ? ANIM.FINGERPLAYMOTION: ANIM.clipTypes.length;
@@ -3432,7 +3475,6 @@ function FingerplayMotionClip(o)
 
 	this.properties = {
 		hand: "right",
-		
 		motion: "fingerplay",
 
 		// optionals
@@ -3456,7 +3498,8 @@ ANIM.registerClipType( FingerplayMotionClip );
 FingerplayMotionClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
-	this.duration = o.duration || 1;
+		if(o.duration) this.duration = o.duration || 1;
+	if(o.end) this.duration = (o.end - o.start) || 1;
 	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
 	if(o.relax) this.relax = this.fadeout = o.relax;
 	if(o.properties)
@@ -3470,7 +3513,7 @@ FingerplayMotionClip.prototype.toJSON = function()
 	var json = {
 		id: this.id,
 		start: this.start,
-		duration: this.duration,
+		end: this.start + this.duration,
 		attackPeak: this.attackPeak,
 		relax: this.relax,
 		type: "gesture"
@@ -3479,7 +3522,7 @@ FingerplayMotionClip.prototype.toJSON = function()
 	{
 		if(i == "shift")
 		{
-			if(this.properties[i])
+			if(this.properties[i] != undefined)
 				json.type = "gesture";
 			continue;
 		}
@@ -3497,7 +3540,7 @@ FingerplayMotionClip.prototype.fromJSON = function( json )
 
 FingerplayMotionClip.prototype.drawClip = function( ctx, w,h, selected )
 {
-	ctx.font = "11px Calibri";
+	ctx.font = this.font;
 	ctx.globalCompositeOperation =  "source-over";
 	let textInfo = ctx.measureText( this.id );
 	ctx.fillStyle = this.color;
@@ -3515,9 +3558,9 @@ FingerplayMotionClip.prototype.showInfo = function(panel, callback)
 			for(let id in FingerplayMotionClip.hands) {
 				values.push({ value: FingerplayMotionClip.hands[id] })
 			}
-			panel.addDropdown(i, values, property, (v, e, name) => {
+			panel.addDropdown(i, values, property.charAt(0).toUpperCase() + property.slice(1), (v, e, name) => {
 				
-				this.properties[name] = v;
+				this.properties[name] = v.toLowerCase();
 				if(callback)
 					callback();
 				

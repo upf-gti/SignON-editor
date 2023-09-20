@@ -73,7 +73,7 @@ class App {
                 this.editor = new Editor(this, type);
                 this.onLoadAnimation( settings.data );
                 break;
-            case 'video': 
+            case 'video': case "mp4": case "wav": 
                 // this.captureMode = appMode.VIDEO;
                 this.editor = new Editor(this, type);
                 this.onLoadVideo( settings.data );
