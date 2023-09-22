@@ -2379,13 +2379,17 @@
          * @description Stop inlining widgets
          */
 
-        endLine() {
+        endLine(justifyContent) {
 
             this.#inline_widgets_left = 0;
 
             if(!this._inlineContainer)  {
                 this._inlineContainer = document.createElement('div');
                 this._inlineContainer.className = "lexinlinewidgets";
+                if(justifyContent)
+                {
+                    this._inlineContainer.style.justifyContent = justifyContent;
+                }
             }
             
             // Push all elements single element or Array[element, container]
@@ -4504,6 +4508,9 @@
             let input = document.createElement('input');
             input.style.width = "calc( 100% - " + LX.DEFAULT_NAME_WIDTH + " - 10%)";
             input.type = 'file';
+            if(options.placeholder)
+                input.placeholder = options.placeholder;
+
             input.addEventListener('change', function(e) {
                 const files = e.target.files;
                 if(!files.length) return;

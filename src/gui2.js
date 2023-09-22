@@ -60,7 +60,7 @@ class Gui {
         menubar.add("Project/Export Face Animation/Export BML", {callback: () => this.editor.export() });
         menubar.add("Project/Export all", {icon: "fa fa-download"});
         menubar.add("Project/Export all/Export GLB", {callback: () => this.editor.export('GLB') });
-        menubar.add("Project/Open preview", {icon: "fa fa-street-view",  callback: () => this.editor.showPreview() });
+        menubar.add("Project/Preview realizer", {icon: "fa fa-street-view",  callback: () => this.editor.showPreview() });
 
         // menubar.add("Editor/Manual Features", { id: "mf-mode", type: "checkbox", checkbox: this.editor.mode == this.editor.eModes.MF, callback: (v) => {
         //     this.changeEditorMode(this.editor.eModes.MF);
@@ -396,6 +396,8 @@ class KeyframesGui extends Gui {
         this.showVideo = false;
         this.skeletonScroll = 0;
 
+        this.captureMode = editor.mode;
+
         this.faceAreas = {
             "rgb(255,0,255)": "Brow Left",
             "rgb(0,0,255)": "Brow Right",
@@ -409,7 +411,6 @@ class KeyframesGui extends Gui {
         };
 
         this.boneProperties = {};
-
        
         //Create capture video window
         this.createCaptureArea(this.mainArea);
@@ -417,12 +418,94 @@ class KeyframesGui extends Gui {
 
     /** -------------------- CAPTURE GUI (app) --------------------  */
     createCaptureArea(area) {
+
         // Create capture info area
         let mainCapture = document.getElementById("capture");
         let captureArea = document.getElementById("capture-area");
+
+        // Create video area
+        let videoArea = document.getElementById("video-area");
+        videoArea.classList.add("video-area");
+        videoArea.style.paddingTop = "0px";
+  
+        // Create input selector widget (webcam or video)
+        let selectContainer = new LX.Panel({id:"select-mode", height: "80px", weight: "50%"});
+        selectContainer.sameLine();
+        let selected = this.editor.eModes.capture == this.captureMode ? "webcam" : "video";
+
+        selectContainer.addComboButtons("Input:", [
+            {
+                value: 'webcam',
+                callback: (value, event) => {
+                    this.editor.mode = this.editor.eModes.capture;
+                    let inputEl = input.domEl.getElementsByTagName("input")[0];
+                    inputEl.value = "";
+                    input.domEl.classList.add("hidden");
+                    this.editor.__app.onBeginCapture();
+                }
+            }, {
+                value: 'video',
+                callback: (value, event) => {
+                    let inputEl = input.domEl.getElementsByTagName("input")[0];
+                    input.domEl.classList.remove("hidden");
+                    inputEl.value = "";
+                    inputEl.click();
+                    this.editor.mode = this.editor.eModes.video;
+                }
+            }
+        ], {selected: selected, width: "180px"});
+
+        let input = selectContainer.addFile( "File:", (value, event) => {
+            if(!value.type.includes("video")) {
+                LX.message("Format not accepted");
+                return;
+
+            }
+            this.editor.__app.onLoadVideo( value );
+
+        }, { id: "video-input", placeholder: "No file selected", local: false, type: "buffer", read: false, width: "200px"} );
+        
+        if(this.editor.eModes.capture == this.captureMode)
+            input.domEl.classList.add("hidden");
+
+        else if(this.editor.videoName) {
+            input.domEl.getElementsByTagName("input")[0].value = this.editor.video;        
+        }
+        selectContainer.endLine("center");
+        videoArea.prepend(selectContainer.root);
+
+        // Create expand area button
+        let i = document.createElement("i");
+        i.id = "expand-capture-gui";
+        i.style = "position: relative;top: 35px;left: -19px; width: 0px;";
+        i.className = "fas fa-solid fa-circle-info drop-icon";//"fas fa-solid fa-circle-chevron-left drop-icon";
+        i.addEventListener("click", () => this.changeCaptureGUIVisivility());
+
+        // Create expanded AU info area
+        let inspector = new LX.Panel({id:"capture-inspector"});
+        inspector.root.hidden = true;
+        inspector.root.style.padding = "5px";
+        inspector.addBlank();
+        inspector.addTitle("User positioning");
+        inspector.addTextArea(null, 'Position yourself centered on the image with the hands and troso visible. If the conditions are not met, reposition yourself or the camera.', null, { disabled: true, className: "auto" }) 
+        
+        inspector.addProgress('Distance to the camera', 0, {min:0, max:1, id: 'progressbar-torso'});
+        inspector.addProgress('Left Hand visibility', 0, {min:0, max:1, id: 'progressbar-lefthand'});
+        inspector.addProgress('Right Hand visibility', 0, {min:0, max:1, id: 'progressbar-righthand'});
+        
+        inspector.branch("Blendshapes weights");
+        inspector = this.createBlendShapesInspector(this.editor.mapNames, {inspector: inspector});
+        inspector.root.style.maxHeight = "calc(100% - 57px)";
+        inspector.root.style.overflowY = "scroll";
+        inspector.root.style.flexWrap = "wrap";
+        this.bsInspector = inspector;
+        captureArea.appendChild(i);
+        captureArea.appendChild(this.bsInspector.root)
+
+        // Create bottom buttons
         const buttonContainer = document.createElement('div');
-        //buttonContainer.style.margin = "0 auto";
         buttonContainer.style.display = "flex";
+        
         const buttons = [
             {
                 id: "capture_btn",
@@ -458,103 +541,14 @@ class KeyframesGui extends Gui {
             buttonContainer.appendChild(button);
         }
         captureArea.appendChild(buttonContainer);
-
-        let videoArea = document.getElementById("video-area");
-        videoArea.classList.add("video-area");
-        videoArea.style.paddingTop = "0px";
-        let i = document.createElement("i");
-        i.id = "expand-capture-gui";
-        i.style = "position: relative;top: 35px;left: -19px; width: 0px;";
-        i.className = "fas fa-solid fa-circle-info drop-icon";//"fas fa-solid fa-circle-chevron-left drop-icon";
-
-        i.addEventListener("click", () => this.changeCaptureGUIVisivility());
-
-        let inspector = new LX.Panel({id:"capture-inspector"});//new LiteGUI.Inspector("capture-inspector");
-        inspector.root.hidden = true;
-        inspector.root.style.padding = "5px";
-        inspector.addBlank();
-        inspector.addTitle("User positioning");
-        inspector.addTextArea(null, 'Position yourself centered on the image with the hands and troso visible. If the conditions are not met, reposition yourself or the camera.', null, { disabled: true, className: "auto" }) 
-        
-        inspector.addProgress('Distance to the camera', 0, {min:0, max:1, id: 'progressbar-torso'});
-        inspector.addProgress('Left Hand visibility', 0, {min:0, max:1, id: 'progressbar-lefthand'});
-        inspector.addProgress('Right Hand visibility', 0, {min:0, max:1, id: 'progressbar-righthand'});
-        
         videoArea.appendChild(buttonContainer);
 
-        inspector.branch("Blendshapes weights");
-        inspector = this.createBlendShapesInspector(this.editor.mapNames, {inspector: inspector});
-        inspector.root.style.maxHeight = "calc(100% - 57px)";
-        inspector.root.style.overflowY = "scroll";
-        inspector.root.style.flexWrap = "wrap";
-        this.bsInspector = inspector;
-        captureArea.appendChild(i);
-        captureArea.appendChild(this.bsInspector.root)
-
-        const selectContainer = document.createElement("div");
-        selectContainer.id = "select-mode";
-        selectContainer.className = "lexwidget";
-
-        const label = document.createElement("label");
-        label.innerText = "Input";
-        label.setAttribute("for", "input");
-
-        const selector = document.createElement("select");
-        selector.setAttribute("name", "input");
-        selector.className = "lexdropdown lexwidget";
-        // selector.style.background = "none";
-        // selector.style.margin = "1rem";
-        selector.style="background: var(--background);margin: 1rem;border-radius: 5px;"
-
-        const option1 = document.createElement("option");
-        option1.innerText = "Webcam";
-        option1.setAttribute("value", "webcam");
-        if(this.editor.mode == this.editor.eModes.capture)
-            option1.selected = true;
-        const option2 = document.createElement("option");
-        option2.innerText = "Video";
-        option2.setAttribute("value", "video");
-        if(this.editor.mode == this.editor.eModes.keyframes)
-            option2.selected = true;
-
-        let input = document.createElement("input");
-        input.id = "video-input";
-        input.setAttribute("type", "file");
-        input.addEventListener("change", (e) => {
-            e.stopPropagation();
-            const files = e.target.files;
-            this.editor.__app.onLoadVideo( files[0] );
-        })
-        option2.appendChild(input);
-        selector.appendChild(option1);
-        selector.appendChild(option2);
-        selectContainer.appendChild(label);
-        selectContainer.appendChild(selector);
-        videoArea.prepend(selectContainer);
- 
-        selector.onchange = (e) => {
-            const value = e.target.value;
-            if(value == "video") {
-                input.value = "";
-                input.click();
-                this.editor.mode = this.editor.eModes.keyframes;
-            }
-            else if( value == "webcam") {
-                this.editor.__app.onBeginCapture();
-                this.editor.mode = this.editor.eModes.capture;
-            }
-            console.log(value)
-        }
     }
 
     createBlendShapesInspector(bsNames, options = {}) {
         
         let inspector = options.inspector || new LX.Panel({id:"blendshapes-inspector"});
         
-        // if(document.getElementById('blendshapes-inspector')) {
-        //     document.getElementById('blendshapes-inspector').innerHTML = "";
-        //     document.getElementById('blendshapes-inspector').remove();    
-        // }
         if(options.clear)
             inspector.clear();
             
@@ -628,20 +622,25 @@ class KeyframesGui extends Gui {
         videoRec.style.width = "100%";
         videoRec.style.height = "100%";
         
-
+        // Mirror the video
         videoRec.style.cssText+= "transform: rotateY(0deg);\
         -webkit-transform:rotateY(0deg); /* Safari and Chrome */\
         -moz-transform:rotateY(0deg); /* Firefox */"
     
-        // Solve the aspect ratio problem of the video
         let videoCanvas = document.getElementById("outputVideo");
-        let aspectRatio = videoDiv.width / videoDiv.height;
-        videoRec.width  = videoDiv.width  = videoCanvas.width  = videoDiv.clientWidth;
-        videoRec.height = videoDiv.height = videoCanvas.height = videoCanvas.width / aspectRatio;
-
-        $(videoDiv).draggable({containment: "#canvasarea"}).resizable({ aspectRatio: true, containment: "#capture"});
+        videoCanvas.classList.remove("border-animation");
+        
+        // Resize and solve the aspect ratio problem of the video
+        let aspectRatio = videoCanvas.clientWidth / videoCanvas.clientHeight;
+        videoRec.width  = videoDiv.width = videoDiv.width || videoDiv.clientWidth;
+        videoRec.height = videoDiv.height = videoDiv.width / aspectRatio;
+        videoDiv.style.width = videoDiv.width  + "px";
+        videoDiv.style.height = videoDiv.height + "px";
+        videoCanvas.height = 500;
+        $(videoDiv).draggable({containment: "#canvasarea"}).resizable({ aspectRatio: true, containment: "#outputVideo"});
 
         this.hideCaptureArea();
+        
         //Update menu bar
         this.updateMenubar();
 
@@ -910,35 +909,6 @@ class KeyframesGui extends Gui {
 
     updateActionUnitsPanel(area) {
         this.facePanel.root.querySelector("[data-name='"+area+"']").click();
-        //this.editor.setSelectedActionUnit(area);
-        // let names = {};
-        // for(let i in this.editor.mapNames) {
-        //     let toCompare = area.toLowerCase().split(" ");
-        //     let found = true;
-        //     for(let j = 0; j < toCompare.length; j++) {
-
-        //         if(!i.toLowerCase().includes(toCompare[j])) {
-        //             found = false;
-        //             break;
-        //         }
-        //     }
-        //     if(found)
-        //         names[i] = this.editor.mapNames[i]
-        // }
-
-        // for(let i in blendshapesResults)
-        // {
-            
-        //     let value = blendshapesResults[i];
-        //     value = value.toFixed(2);
-        //     let widget = this.bsInspector.get(i);
-        //     if(!widget)
-        //         continue;
-        //     widget.onSetValue(value);
-        
-        // }
-        // this.auPanel = this.createBlendShapesInspector(names, this.auPanel, true)
-        // this.auPanel.refresh(names)
     }
 
     createSkeletonPanel(root, itemSelected = this.itemSelected, options) {
@@ -1809,7 +1779,7 @@ class ScriptGui extends Gui {
                 let data = {
                     id: values[i], 
                     type: "clip",
-                    src: "data/imgs/thumbnails/" + values[i].toLowerCase() + ".png",
+                    src: "./data/imgs/thumbnails/" + values[i].toLowerCase().replaceAll(" ", "_") + ".png"
                 }
                 asset_data[0].children.push(data);
             }
@@ -1820,7 +1790,7 @@ class ScriptGui extends Gui {
                 let data = {
                     id: values[i], 
                     type: "clip",
-                    src: "data/imgs/thumbnails/" + values[i].toLowerCase() + ".png",
+                    src: "./data/imgs/thumbnails/" + values[i].toLowerCase().replaceAll(" ", "_") + ".png"
                 }
                 asset_data[1].children.push(data);
             }
@@ -1831,7 +1801,7 @@ class ScriptGui extends Gui {
                 let data = {
                     id: values[i], 
                     type: "clip",
-                    src: "data/imgs/thumbnails/" + values[i].toLowerCase() + ".png",
+                    src: "./data/imgs/thumbnails/" + values[i].toLowerCase().replaceAll(" ", "_") + ".png"
                 }
                 asset_data[2].children.push(data);
             }
@@ -1842,7 +1812,7 @@ class ScriptGui extends Gui {
                 let data = {
                     id: values[i], 
                     type: "clip",
-                    src: "data/imgs/thumbnails/" + values[i].toLowerCase() + ".png",
+                    src: "./data/imgs/thumbnails/" + values[i].toLowerCase().replaceAll(" ", "_") + ".png"
                 }
                 asset_data[3].children.push(data);
             }

@@ -51,7 +51,7 @@ const MediaPipe = {
             });
         }
         else {
-            this.holistic.reset();
+            // this.holistic.reset();
         }
         this.holistic.onResults(((results) => {
 
@@ -104,7 +104,7 @@ const MediaPipe = {
                                 {color: '#1a2025', lineWidth: 4}); //#00CC00
                 drawLandmarks(canvasCtx, results.rightHandLandmarks,
                                 {color: '#1a2025',fillColor: 'rgba(196, 113, 35, 1)', lineWidth: 2});
-                                        
+                canvasCtx.globalCompositeOperation = 'source-in';
             }
             canvasCtx.restore();
             if(this.onresults)
@@ -132,38 +132,7 @@ const MediaPipe = {
         }
 
         this.loaded = false;
-        if(live) {
-            this.startWebcam(videoElement, this, () => videoElement.play(), this.onerror);
-            // if(!this.webcamera) {
 
-            //     this.webcamera = new Camera(videoElement, {
-            //         onFrame: async () => {
-            //             await this.holistic.send({image: videoElement});
-
-            //             if(!this.loaded) {
-            //                 this.loaded = true;
-            //                 if(this.onload) this.onload();
-            //             }
-
-            //             const faceResults = this.faceLandmarker.detectForVideo(videoElement, Date.now() );
-            //             if(faceResults)
-            //                 this.onFaceResults(faceResults);
-            //         },
-            //         width: 1280,
-            //         height: 720
-            //     });
-            // }
-            // else{
-            //     this.loaded = false;
-            // }
-    
-            // this.webcamera.start();
-        } else {
-            // if(this.webcamera) {
-            //     this.webcamera.stop();
-            //     this.loaded = false;
-            // }
-        }
         videoElement.play();
         videoElement.controls = true;
         videoElement.loop = true;
@@ -201,7 +170,6 @@ const MediaPipe = {
         this.onresults({blendshapesResults: faceBlendshapes}, window.globals.app.isRecording())
     },
 
-    // camera.stop() does not exist, therefore solved using jQuery, we can replace the methods with appropriate JavaScript methods
     stop() {
         
         // get reference of the video element the Camera is constructed on
@@ -218,6 +186,8 @@ const MediaPipe = {
     onStartRecording() {
         this.landmarks = [];
         this.blendshapes = [];
+        if(this.mediaRecorder)
+            this.mediaRecorder.start();
     },
 
     onStopRecording() {
@@ -225,6 +195,8 @@ const MediaPipe = {
         // Correct first dt of landmarks
         this.landmarks[0].dt = 0;
         this.blendshapes[0].dt = 0;
+        if(this.mediaRecorder)
+            this.mediaRecorder.stop();
     },
 
     fillLandmarks(data, dt) {
@@ -283,77 +255,7 @@ const MediaPipe = {
         }
 
         return blends;
-    },
-
-    startWebcam(video, scope, callback, on_error) {
-                
-        // prepare the device to capture the video
-        if (navigator.mediaDevices) {
-            console.log("UserMedia supported");
-                    
-
-            navigator.mediaDevices.enumerateDevices()
-            .then(function(devices) {
-                let deviceId = null;
-                for (const deviceInfo of devices) {
-                    if(deviceInfo.kind === 'videoinput') {
-                        deviceId = deviceInfo.deviceId;
-                        break;
-                    }
-                };
-                let constraints = { "video": true, "audio": false, width: 1280, height: 720 };
-                navigator.mediaDevices.getUserMedia(constraints)
-                .then( (stream) => {
-
-                    let videoElement = document.getElementById("inputVideo");
-                    
-                    if(!videoElement.srcObject)
-                        videoElement.srcObject = stream;
-                    // videoElement.width = "1280px";
-                    // videoElement.height = "720px";
-                    scope.mediaRecorder = new MediaRecorder(videoElement.srcObject);
-
-                    scope.mediaRecorder.onstop = function (e) {
-
-                        video.addEventListener("play", function() {});
-                        video.addEventListener("pause", function() {});
-                        video.setAttribute('controls', 'name');
-                        video.controls = false;
-                        video.loop = true;
-                        
-                        let blob = new Blob(scope.chunks, { "type": "video/mp4; codecs=avc1" });
-                        let videoURL = URL.createObjectURL(blob);
-                        video.src = videoURL;
-                        console.log("Recording correctly saved");
-                    }
-
-                    scope.mediaRecorder.ondataavailable = function (e) {
-                        scope.chunks.push(e.data);
-                    }
-                    if(callback)
-                        callback();
-                })
-                .catch(function (err) {
-                    console.error("The following error occurred: " + err);
-                    if(err == "NotReadableError: Could not start video source")
-                        alert("Camera error: Make sure your webcam is not used in another application.")
-                    if(on_error)
-                        on_error(err);
-                });
-                
-            })
-            .catch(function(err) {
-                on_error();
-                console.log(err.name + ": " + err.message);
-            });
-            
-        }
-        else {
-            if(on_error)
-                on_error();
-        }
     }
-
 }
 
 export { MediaPipe };

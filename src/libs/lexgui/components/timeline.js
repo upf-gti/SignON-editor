@@ -80,9 +80,6 @@
             this.skipLock = options.skipLock ?? false;
 
             this.root = new LX.Area({className : 'lextimeline'});
-            // this.root = document.createElement('div');
-            // this.root.className = 'lextimeline';
-
             
             this.header_offset = 38;
             
@@ -142,7 +139,7 @@
             header.sameLine();
             header.addTitle(this.name, {width: "132px"});
             header.addDropdown("Animation", ["Scene", "Anim1", "Anim2"], "Scene", (value, event) => {});        
-            header.addNumber("Duration", this.duration, (value, event) => this.setDuration(value), {step: 0.01, min: 0});        
+            header.addNumber("Duration", this.duration.toFixed(3), (value, event) => this.setDuration(value), {step: 0.01, min: 0});        
             header.addNumber("Current Time", this.currentTime, (value, event) => {
                 this.currentTime = value;
                 if(this.onSetTime)

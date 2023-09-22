@@ -420,12 +420,14 @@ ANIM.Track = Track;
 //-----------------------------Face Behaviour-----------------------------//
 //FaceLexemeClip to show captions
 FaceLexemeClip.lexemes = [
-	"LIP_CORNER_DEPRESSOR", "LIP_CORNER_DEPRESSOR_LEFT","LIP_CORNER_DEPRESSOR_RIGHT",	"LIP_CORNER_PULLER","LIP_CORNER_PULLER_LEFT","LIP_CORNER_PULLER_RIGHT", 
-	"LIP_PUCKERER", "LIP_STRECHER","LIP_FUNNELER","LIP_TIGHTENER","LIP_PRESSOR", "PRESS_LIPS",
-	"MOUTH_OPEN","LOWER_LIP_DEPRESSOR", "CHIN_RAISER", "TONGUE_SHOW", 
-	"BROW_LOWERER","BROW_LOWERER_LEFT","BROW_LOWERER_RIGHT", "INNER_BROW_RAISER","OUTER_BROW_RAISER", "BROW_RAISER_LEFT", "BROW_RAISER_RIGHT", "BROW_RAISER", 
-	"UPPER_LID_RAISER", "CHEEK_RAISER", "LID_TIGHTENER", "EYES_CLOSED","BLINK","WINK_LEFT", "WINK_RIGHT",
-	"NOSE_WRINKLER","UPPER_LIP_RAISER","DIMPLER", "DIMPLER_LEFT", "DIMPLER_RIGHT","JAW_DROP","MOUTH_STRETCH"];
+	"Lip Corner Depressor", "Lip Corner Depressor Left","Lip Corner Depressor Right",	"Lip Corner Puller","Lip Corner Puller Left","Lip Corner Puller Right", 
+	"Lip Strecher","Lip Funneler","Lip Tightener", "Lip Puckerer", "Lip Puckerer Left", "Lip Puckerer Right", "Lip Pressor", "Lips Part", "Lip Suck", "Lip Suck Upper", "Lip Suck Lower",
+	"Lower Lip Depressor", "Upper Lip Raiser", "Upper Lip Raiser Left", "Upper Lip Raiser Right", "Chin Raiser", "Dimpler", "Dimpler Left", "Dimpler Right",
+
+	"Nose Wrinkler", "Mouth Stretch", "Mouth Open", "Jaw Drop", "Jaw Sideways Left", "Jaw Sideways Right", "Jaw Thrust", "Tongue Show", "Cheek Blow", "Cheek Suck",
+	"Brow Lowerer", "Brow Lowerer Left", "Brow Lowerer Right", "Brow Raiser", "Brow Raiser Left", "Brow Raiser Right", "Inner Brow Raiser", "Outer Brow Raiser",
+	"Upper Lid Raiser", "Upper Lid Raiser Left", "Upper Lid Raiser Right", "Cheek Raiser", "Lid Tightener", "Eyes Closed", "Blink", "Wink Left", "Wink Right"
+]
 
 FaceLexemeClip.type = "faceLexeme";
 FaceLexemeClip.id = ANIM.FACELEXEME ? ANIM.FACELEXEME: ANIM.clipTypes.length;
@@ -447,7 +449,7 @@ function FaceLexemeClip(o)
 	
 	this._width = 0;
 	this.color = "black";
-	this.font = "40px Arial";
+	this.font = "11px Calibri";
 	this.clipColor = "cyan";
 	
 	if(o)
@@ -463,15 +465,20 @@ ANIM.registerClipType( FaceLexemeClip );
 FaceLexemeClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
-		if(o.duration) this.duration = o.duration || 1;
+	if(o.duration) this.duration = o.duration || 1;
 	if(o.end) this.duration = (o.end - o.start) || 1;
 	this.attackPeak = this.fadein = o.attackPeak || 0.25;
 	this.relax = this.fadeout = o.relax || 0.75;
-	this.properties.lexeme = o.lexeme || this.properties.lexeme;
-	if(o.properties)
-	{
-		Object.assign(this.properties, o.properties);
-		this.id = this.properties.lexeme;
+	for(let property in this.properties) {
+		
+		if(property == "lexeme") {
+			
+			this.id = o.lexeme;
+			o.lexeme = o.lexeme.toUpperCase().replaceAll(" ", "_")
+		}
+		if(o[property] != undefined)
+			this.properties[property] = o[property];
+	
 	}
 }
 
@@ -508,18 +515,13 @@ FaceLexemeClip.prototype.toJSON = function()
 FaceLexemeClip.prototype.fromJSON = function( json )
 {
 	this.id = json.id;
-	this.start = json.start;
-	this.attackPeak = this.fadein = json.attackPeak;
-	this.relax = this.fadeout = json.relax;
-	this.duration = json.duration;
-	this.properties.lexeme = json.lexeme;
-	this.properties.amount = json.amount;
+	this.configure(json);
 }
 
 
 FaceLexemeClip.prototype.drawClip = function( ctx, w,h, selected, timeline )
 {
-	ctx.font = "11px Calibri";
+	ctx.font = this.font;
 	let textInfo = ctx.measureText( this.id );
 	if(timeline && timeline.timeToX)
 	{
@@ -546,16 +548,30 @@ FaceLexemeClip.prototype.showInfo = function(panel, callback)
 {
 	for(var i in this.properties)
 	{
-		var property = this.properties[i];
+		let property = this.properties[i];
+		if(property == undefined)
+			continue;
+
 		if(i=="lexeme"){
 			let values = [];
 			for(let id in FaceLexemeClip.lexemes) {
-				values.push({ value: FaceLexemeClip.lexemes[id], src: "./data/imgs/thumbnails/" + FaceLexemeClip.lexemes[id].toLowerCase() + ".png" })
+				values.push({ value: FaceLexemeClip.lexemes[id], src: "./data/imgs/thumbnails/" + FaceLexemeClip.lexemes[id].toLowerCase().replaceAll(" ", "_") + ".png" })
 			}
-			panel.addDropdown(i, values, property, (v, e, name) => {
+
+			let p = property.split("_");
+			for(let i in p) {
+				p[i] = p[i].toLowerCase();
+				p[i] = p[i].replace( p[i][0], p[i][0].toUpperCase())
+			}
+			p = p.join(" ");
+
+			panel.addDropdown(i, values, p, (v, e, name) => {
+				this.id = v;
+				v = v.replaceAll(" ", "_").toUpperCase();
+
 				if(v.includes("LIP") || v.includes("MOUTH") || v.includes("DIMPLER"))
 					this.clipColor = 'cyan';
-				else if(v.includes("BROW"))
+				else if(v.includes("BROW") || "LID")
 					this.clipColor = 'orange';
 				else if(v.includes("CHIN") || v.includes("JAW"))
 					this.clipColor = 'purple';
@@ -565,7 +581,6 @@ FaceLexemeClip.prototype.showInfo = function(panel, callback)
 					this.clipColor = 'green';
 
 				this.properties[name] = v;
-				this.id = v;
 				if(callback)
 					callback();
 				
@@ -1458,7 +1473,8 @@ HeadClip.prototype.toJSON = function()
 		strokeStart: this.strokeStart,
 		stroke : this.stroke ,
 		strokeEnd: this.strokeEnd,
-		relax: this.relax
+		relax: this.relax,
+		type: this.type
 	}
 	for(var i in this.properties)
 	{

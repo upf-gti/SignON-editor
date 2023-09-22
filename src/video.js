@@ -332,6 +332,8 @@ const VideoUtils = {
         // Reset some stuff
         document.body.onkeydown = null;
         
+        this.ctx.clearRect(0, 0, this.width, this.height);
+
         this.video.startTime = this.startTime;
         this.video.onended = function() {
             this.currentTime = this.startTime;

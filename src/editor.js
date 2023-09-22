@@ -40,7 +40,7 @@ class Editor {
         this.gizmo = null;
         this.renderer = null;
         this.state = false; // defines how the animation starts (moving/static)
-        this.eModes = {keyframes: "keyframes editor", capture: "keyframes editor", script: "BML editor", MOUTHING: "Mouthing Editor"};
+        this.eModes = {keyframes: 0, capture: 1, video: 2, script: 3};
         this.mode = this.eModes[mode];
         this.NMFController = null;
 
@@ -74,10 +74,7 @@ class Editor {
 	    this.onDrawSettings = null;
 
         this.activeTimeline = null;
-        if(this.mode == this.eModes.keyframes)
-            this.gui = new KeyframesGui(this);
-        else
-            this.gui = new ScriptGui(this);
+        
 
         this.optimizeThreshold = 0.01;
         this.defaultTranslationSnapValue = 1;
@@ -86,6 +83,13 @@ class Editor {
 
         // Keep "private"
         this.__app = app;
+
+        this.video = app.video;
+
+        if(this.mode == this.eModes.video || this.mode == this.eModes.capture )
+            this.gui = new KeyframesGui(this);
+        else
+            this.gui = new ScriptGui(this);
 
         this.init();
     }
@@ -1294,42 +1298,79 @@ class Editor {
                 break;
 
             default:
-                let json =  {
-                    behaviours: [],
-                    indices: [],
-                    name : this.animationClip.name || "bml animation",
-                    duration: this.animationClip.duration,
-                }
-
-                if(!this.gui.clipsTimeline.animationClip) {
-
-                    alert("You can't export an animation with empty tracks.")
-                    return;
-                }
-               
-                for(let i = 0; i < this.gui.clipsTimeline.animationClip.tracks.length; i++ ) {
-                    for(let j = 0; j < this.gui.clipsTimeline.animationClip.tracks[i].clips.length; j++) {
-                        let data = this.gui.clipsTimeline.animationClip.tracks[i].clips[j];
-                        let type = ANIM[data.constructor.name];
-                        if(data.toJSON) data = data.toJSON()
-                        if(data)
-                        {
-                            json.behaviours.push( data );
-                            json.indices.push(type.id);
-                        }
-                    }
-                }
+                let json = this.exportBML();
                 BVHExporter.download(JSON.stringify(json), json.name, "application/json");
                 console.log(type + " ANIMATION EXPORTATION IS NOT YET SUPPORTED");
                 break;
         }
     }
 
+    exportBML() {
+
+        let json =  {
+            behaviours: [],
+            indices: [],
+            name : this.animationClip.name || "bml animation",
+            duration: this.animationClip.duration,
+        }
+
+        if(!this.gui.clipsTimeline.animationClip) {
+
+            alert("You can't export an animation with empty tracks.")
+            return;
+        }
+       
+        for(let i = 0; i < this.gui.clipsTimeline.animationClip.tracks.length; i++ ) {
+            for(let j = 0; j < this.gui.clipsTimeline.animationClip.tracks[i].clips.length; j++) {
+                let data = this.gui.clipsTimeline.animationClip.tracks[i].clips[j];
+                let type = ANIM[data.constructor.name];
+                if(data.toJSON) data = data.toJSON()
+                if(data)
+                {
+                    json.behaviours.push( data );
+                    json.indices.push(type.id);
+                }
+            }
+        }
+
+        return json;
+    }
+
     showPreview() {
         
-        BVHExporter.copyToLocalStorage(this.mixer._actions[0], this.skeletonHelper, this.bodyAnimation);
-        const url = "https://webglstudio.org/users/arodriguez/demos/animationLoader/?load=three_webgl_bvhpreview";
-        window.open(url, '_blank').focus();
+        let url = "";
+        if(this.mode == this.eModes.capture || this.mode == this.eModes.video) {
+
+            BVHExporter.copyToLocalStorage(this.mixer._actions[0], this.skeletonHelper, this.bodyAnimation);
+            url = "https://webglstudio.org/users/arodriguez/demos/animationLoader/?load=three_webgl_bvhpreview";
+        }
+        else{
+            url = "https://webglstudio.org/users/jpozo/SignONRealizer/dev/";
+            let json = this.exportBML();
+
+            const sendData = () => {
+                if(this.appR && this.appR.ECAcontroller)
+                    this.realizer.postMessage(json.behaviours);
+                else {
+                    setTimeout(sendData, 1000)
+                }
+            }
+           
+            if(this.realizer)
+                sendData();
+            else 
+                this.realizer = window.open(url, "Preview");
+
+            this.realizer.onload = (e, d) => {
+                this.appR = e.currentTarget.global.app;
+                sendData();
+            }
+
+            this.realizer.addEventListener("beforeunload", () => {
+                this.realizer = null
+            });
+        }
+
     }
 };
 

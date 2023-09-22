@@ -4,12 +4,11 @@ import { VideoUtils } from "./video.js";
 import { FileSystem } from "./libs/filesystem.js";
 import { UTILS } from "./utils.js";
 
-const appMode = {LIVE:0, VIDEO:1};
 
 class App {
-
+    
     constructor() {
-
+        
         // Helpers
         this.recording = false;
         this.startTime = 0;
@@ -17,7 +16,6 @@ class App {
 
         this.mediaRecorder = null
         this.chunks = [];
-        this.captureMode = null;
        
         // Create the fileSystem and log the user
         this.FS = new FileSystem("signon", "signon", () => console.log("Auto login of guest user"));
@@ -59,28 +57,24 @@ class App {
         //     }, {modal:true})
         // }
         
-        const mode = settings.mode ?? 'capture';
-        let type = "keyframes";
+        const mode = settings.mode ?? 'script';
 
         switch(mode) {
             case 'capture': 
-                // this.captureMode = appMode.LIVE;
-                type = "capture";
-                this.editor = new Editor(this, type);
+                this.editor = new Editor(this, mode);
                 this.onBeginCapture();
                 break;
             case 'bvh': 
-                this.editor = new Editor(this, type);
+                this.editor = new Editor(this, "script");
                 this.onLoadAnimation( settings.data );
                 break;
             case 'video': case "mp4": case "wav": 
-                // this.captureMode = appMode.VIDEO;
-                this.editor = new Editor(this, type);
+                this.video = settings.data;
+                this.editor = new Editor(this, "video");
                 this.onLoadVideo( settings.data );
                 break;
             default:
-                type = "script";
-                this.editor = new Editor(this, type);
+                this.editor = new Editor(this, mode);
                 this.onBMLProject( settings.data );
                 break;
         }
@@ -97,44 +91,125 @@ class App {
 
     //Start mediapipe recording 
     onBeginCapture() {
+        this.mediaRecorder = null;
+        const on_error = (err) => {
+            LX.prompt("Can not access to the camera. Do you want to load a video instead?", "Camera problem", (v)=> {
+                
+                this.editor.mode = this.editor.eModes.keyframes;
+                let input = document.getElementById("video-input");
+                input.value = "";
+                input.click();
+            }, {input: false, on_cancel: () => window.location.reload()})
+        } 
         
-        this.captureMode = appMode.LIVE;
-
         // Run mediapipe to extract landmarks
-        if(!MediaPipe.loaded)
+        // if(!MediaPipe.loaded)
+        let that = this;
+                
+        // prepare the device to capture the video
+        if (navigator.mediaDevices) {
+            console.log("UserMedia supported");
+                    
+
+            navigator.mediaDevices.enumerateDevices()
+            .then(function(devices) {
+                let deviceId = null;
+                for (const deviceInfo of devices) {
+                    if(deviceInfo.kind === 'videoinput') {
+                        deviceId = deviceInfo.deviceId;
+                        break;
+                    }
+                };
+                let constraints = { "video": true, "audio": false, width: 1280, height: 720 };
+                navigator.mediaDevices.getUserMedia(constraints)
+                .then( (stream) => {
+
+                    let videoElement = document.getElementById("inputVideo");
+                    
+                    if(!videoElement.srcObject)
+                        videoElement.srcObject = stream;
+                    // videoElement.width = "1280px";
+                    // videoElement.height = "720px";
+                    that.mediaRecorder = new MediaRecorder(videoElement.srcObject);
+                    that.chunks = [];
+                    let videoCanvas = document.getElementById("outputVideo");
+
+                    videoElement.addEventListener( "loadedmetadata", function (e) {
+                        console.log(this.videoWidth)
+                        console.log(this.videoHeight);
+                        
+                        let aspect = this.videoWidth/this.videoHeight;
+
+                        let height = 802;
+                        let width = height*aspect;
+
+                        videoCanvas.width  = width;
+                        videoCanvas.height = height;
+                    }, false );
+
+                    that.mediaRecorder.onstop = function (e) {
+
+                        video.addEventListener("play", function() {});
+                        video.addEventListener("pause", function() {});
+                        video.setAttribute('controls', 'name');
+                        video.controls = false;
+                        video.loop = true;
+                        
+                        let blob = new Blob(that.chunks, { "type": "video/mp4; codecs=avc1" });
+                        let videoURL = URL.createObjectURL(blob);
+                        video.src = videoURL;
+                        console.log("Recording correctly saved");
+                    }
+
+                    that.mediaRecorder.ondataavailable = function (e) {
+                        that.chunks.push(e.data);
+                    }
+                    videoElement.play()
+                })
+                .catch(function (err) {
+                    console.error("The following error occurred: " + err);
+                    if(err == "NotReadableError: Could not start video source")
+                        alert("Camera error: Make sure your webcam is not used in another application.")
+                    if(on_error)
+                        on_error(err);
+                });
+                
+            })
+            .catch(function(err) {
+                on_error();
+                console.log(err.name + ": " + err.message);
+            });
             
+        }
+        else {
+            if(on_error)
+                on_error();
+        }
+    
             MediaPipe.start( true, () => {
                 this.setEvents(true);
                 $('#loading').fadeOut();
-                let videoElement = document.getElementById("inputVideo");
-                this.mediaRecorder = new MediaRecorder(videoElement.srcObject);
+                // let videoElement = document.getElementById("inputVideo");
+                // this.mediaRecorder = new MediaRecorder(videoElement.srcObject);
 
-                this.mediaRecorder.onstop =  (e) => {
+                // this.mediaRecorder.onstop =  (e) => {
 
-                    video.addEventListener("play", function() {});
-                    video.addEventListener("pause", function() {});
-                    video.setAttribute('controls', 'name');
-                    video.controls = false;
-                    video.loop = true;
+                //     video.addEventListener("play", function() {});
+                //     video.addEventListener("pause", function() {});
+                //     video.setAttribute('controls', 'name');
+                //     video.controls = false;
+                //     video.loop = true;
                     
-                    let blob = new Blob(this.chunks, { "type": "video/mp4; codecs=avc1" });
-                    let videoURL = URL.createObjectURL(blob);
-                    video.src = videoURL;
-                    console.log("Recording correctly saved");
-                }
+                //     let blob = new Blob(this.chunks, { "type": "video/mp4; codecs=avc1" });
+                //     let videoURL = URL.createObjectURL(blob);
+                //     video.src = videoURL;
+                //     console.log("Recording correctly saved");
+                // }
 
-                this.mediaRecorder.ondataavailable =  (e) => {
-                    this.chunks.push(e.data);
-                }
-            }, this.editor.gui.updateCaptureGUI.bind(this.editor.gui), (err) => {
-                LX.prompt("Can not access to the camera. Do you want to load a video instead?", "Camera problem", (v)=> {
-                    
-                    this.editor.mode = this.editor.eModes.keyframes;
-                    let input = document.getElementById("video-input");
-                    input.value = "";
-                    input.click();
-                }, {input: false, on_cancel: () => window.location.reload()})
-            } );
+                // this.mediaRecorder.ondataavailable =  (e) => {
+                //     this.chunks.push(e.data);
+                // }
+            }, this.editor.gui.updateCaptureGUI.bind(this.editor.gui));
 
             // Show video
             let video = document.getElementById("recording");
@@ -193,8 +268,8 @@ class App {
     }
 
     onLoadVideo( videoFile ) {
-
-        this.captureMode = appMode.VIDEO;
+        this.mediaRecorder = null;
+        this.editor.gui.captureMode = this.mode;
         this.setEvents();
 
         let url = "";
@@ -208,28 +283,47 @@ class App {
         videoElement.src = url;
         let video = document.getElementById("recording");
         video.src = url; 
-        let videoCanvas = document.getElementById("outputVideo");
-        let stream = videoCanvas.captureStream()
-        this.mediaRecorder = new MediaRecorder(stream);
+        
+        
+        videoElement.addEventListener( "loadedmetadata", function (e) {
+            let videoCanvas = document.getElementById("outputVideo");
+            let stream = videoCanvas.captureStream();
 
-        this.mediaRecorder.onstop = function (e) {
+            console.log(this.videoWidth)
+            console.log(this.videoHeight);
+            
+            let aspect = this.videoWidth/this.videoHeight;
 
-            video.addEventListener("play", function() {});
-            video.addEventListener("pause", function() {});
-            video.setAttribute('controls', 'name');
-            video.controls = false;
-            video.loop = true;
-            //that.chunks[0] = that.chunks[0].slice(1,that.chunks[0].size, "video/mp4; codecs=avc1");
-            //that.chunks.shift();
-            let blob = new Blob(that.chunks, { "type": "video/mp4; codecs=avc1" });
-            let videoURL = URL.createObjectURL(blob);
-            video.src = videoURL;
-            console.log("Recording correctly saved");
-        }
+            let height = 802;
+            let width = height*aspect;
 
-        this.mediaRecorder.ondataavailable = function (e) {
-            that.chunks.push(e.data);
-        }
+            videoCanvas.width  = width;
+            videoCanvas.height = height;
+
+            this.mediaRecorder = new MediaRecorder(stream);
+        
+
+            this.mediaRecorder.onstop = function (e) {
+
+                video.addEventListener("play", function() {});
+                video.addEventListener("pause", function() {});
+                video.setAttribute('controls', 'name');
+                video.controls = false;
+                video.loop = true;
+                //that.chunks[0] = that.chunks[0].slice(1,that.chunks[0].size, "video/mp4; codecs=avc1");
+                //that.chunks.shift();
+                let blob = new Blob(that.chunks, { "type": "video/mp4; codecs=avc1" });
+                let videoURL = URL.createObjectURL(blob);
+                video.src = videoURL;
+                console.log("Recording correctly saved");
+            }
+
+            this.mediaRecorder.ondataavailable = function (e) {
+                that.chunks.push(e.data);
+            }
+        }, false );
+
+        
 
         MediaPipe.start( false, () => {
             $('#loading').fadeOut();
@@ -239,6 +333,7 @@ class App {
     onRecordLandmarks(startTime, endTime) {
 
         let videoRec = document.getElementById("recording");
+
         const updateFrame = (now, metadata) => {
             
             // Do something with the frame.
@@ -305,10 +400,10 @@ class App {
         let videoElement = document.getElementById("inputVideo");
         let h = videoElement.videoHeight || videoCanvas.height;
         let w = videoElement.videoWidth || videoCanvas.width;
-        let aspectRatio = w / h;
-        h = captureDiv.clientHeight * 0.8;
-        videoCanvas.height = captureDiv.height = h;
-        videoCanvas.width = captureDiv.width = h * aspectRatio;
+        // let aspectRatio = w / h;
+        // h = captureDiv.clientHeight * 0.8;
+        // videoCanvas.height = captureDiv.height = h;
+        // videoCanvas.width = captureDiv.width = h * aspectRatio;
 
         // configurate buttons
         let elem = document.getElementById("endOfCapture");
@@ -327,14 +422,15 @@ class App {
                 }
 
                 capture.innerHTML = " <i class='fa fa-stop' style= 'margin:5px; font-size:initial;'></i>"//"Stop" + " <i class='bi bi-stop-fill'></i>"
-               
+                document.getElementById("select-mode").innerHTML = "";
                 capture.classList.add("stop");
-                videoCanvas.classList.add("border-animation");
+                videoCanvas.classList.add("active");
                 // Start the capture
                 this.recording = true;
                 setTimeout(()=> {
                     MediaPipe.onStartRecording();
-                    this.mediaRecorder.start();
+                    if(this.mediaRecorder)
+                        this.mediaRecorder.start();
                     this.startTime = Date.now();
                     console.log("Start recording");
                 }, 100);
@@ -352,14 +448,11 @@ class App {
                 this.recording = false;
                 
                 console.log("Stop recording");
-              
-                this.mediaRecorder.stop();
+                if(this.mediaRecorder)
+                    this.mediaRecorder.stop();
                 
-                videoCanvas.classList.remove("border-animation");  
+                videoCanvas.classList.remove("active");  
 
-                let selector = document.getElementById("select-mode");
-                selector.style.minHeight = selector.clientHeight + "px";
-                
                 if(MediaPipe.landmarks.length) {
                     
                     MediaPipe.onStopRecording();
@@ -406,6 +499,7 @@ class App {
         
         // TRIM VIDEO - be sure that only the sign is recorded
         let canvas = document.getElementById("outputVideo");
+
         let video = document.getElementById("recording");
         video.classList.remove("hidden");
         video.style.width = canvas.width + "px";
