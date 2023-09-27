@@ -1376,7 +1376,7 @@ GazeClip.prototype.showInfo = function(panel, callback)
 					break;
 				
 				case Boolean:
-					if(property == "headOnly" && this.properties.influence == "EYES")
+					if(i == "headOnly" && this.properties.influence == "EYES")
 						continue;
 					panel.addCheckbox(i, property, (v, e, name) =>
 					{
