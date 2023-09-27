@@ -210,10 +210,14 @@ class Editor {
                     e.preventDefault();
                     // e.stopImmediatePropagation();
                     // this.activeTimeline.deleteKeyFrame(e, null);
-                    if(this.activeTimeline.deleteKeyFrame)
+                    if(this.activeTimeline.deleteKeyFrame) {
+                        e.multipleSelection = this.activeTimeline.lastKeyFramesSelected.length > 1;
                         this.activeTimeline.deleteKeyFrame(e);
-                    if(this.activeTimeline.deleteClip)
+                    }
+                    if(this.activeTimeline.deleteClip) {
+                        e.multipleSelection = this.activeTimeline.lastClipsSelected.length > 1;
                         this.activeTimeline.deleteClip(e, null, this.NMFController.updateTracks.bind(this.NMFController));
+                    }
                     
                     break;
                 case "Escape":
@@ -890,7 +894,7 @@ class Editor {
     }
 
     optimizeTrack(trackIdx, threshold = this.optimizeThreshold) {
-        this.optimizeThreshold = threshold;
+        this.optimizeThreshold = this.activeTimeline.optimizeThreshold;
         const track = this.animationClip.tracks[trackIdx];
         track.optimize( this.optimizeThreshold );
         this.updateAnimationAction(this.animationClip, trackIdx);
@@ -1113,7 +1117,7 @@ class Editor {
             return;
 
         this.mixer.setTime(t);
-        if(this.mode == this.eModes.keyframes) {
+        if(this.mode == this.eModes.keyframes || this.mode == this.eModes.capture) {
 
             this.gizmo.updateBones(0.0);
             this.updateBoneProperties();
@@ -1139,13 +1143,14 @@ class Editor {
             case "Face":
                 this.activeTimeline = this.gui.curvesTimeline;
                 if(!this.selectedAU) return;
+                this.gizmo.stop();
                 this.activeTimeline.setAnimationClip( this.auAnimation );
                 this.activeTimeline.show();
                 this.setSelectedActionUnit(this.selectedAU);
                 
                 break;
             case "Body":
-            
+                this.gizmo.start();
                 this.activeTimeline = this.gui.keyFramesTimeline;
                 this.activeTimeline.setAnimationClip( this.bodyAnimation );
                 this.activeTimeline.show();            
@@ -1356,10 +1361,10 @@ class Editor {
                 }
             }
            
-            if(this.realizer)
-                sendData();
-            else 
+            if(!this.realizer || this.realizer.closed)
                 this.realizer = window.open(url, "Preview");
+            else 
+                sendData();
 
             this.realizer.onload = (e, d) => {
                 this.appR = e.currentTarget.global.app;

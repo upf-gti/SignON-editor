@@ -586,11 +586,19 @@ dark mode:
 }
 
 .border-animation{
+	border: solid var(--background);
+	border-width: 0.1em;
+	border-radius: 5px;
+	animation: none;
+}
+
+.border-animation.active{
 	border: solid var(--global-color-highlight);
 	border-width: 0.1em;
 	border-radius: 5px;
 	animation: capture-animation 3s infinite ease-in-out;
 }
+
 @keyframes capture-animation {
 	from {border: solid var(--global-color-highlight);}
 	50% {border: solid var(--global-color-primary);}

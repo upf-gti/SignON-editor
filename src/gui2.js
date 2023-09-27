@@ -85,7 +85,7 @@ class Gui {
 
         menubar.add("Timeline/");
         menubar.add("Timeline/Empty tracks", { callback: () => this.editor.cleanTracks() });
-        menubar.add("Timeline/Optimize tracks", { callback: () => this.editor.optimizeTracks() });
+        menubar.add("Timeline/Optimize all tracks", { callback: () => this.editor.optimizeTracks() });
         if(this.showVideo)
             menubar.add("View/Show video", { type: "checkbox", checked: this.showVideo, callback: () => {
                 const tl = document.getElementById("capture");
@@ -636,7 +636,8 @@ class KeyframesGui extends Gui {
         videoRec.height = videoDiv.height = videoDiv.width / aspectRatio;
         videoDiv.style.width = videoDiv.width  + "px";
         videoDiv.style.height = videoDiv.height + "px";
-        videoCanvas.height = 500;
+        videoCanvas.height = 300;
+        videoCanvas.width = 300 * aspectRatio;
         $(videoDiv).draggable({containment: "#canvasarea"}).resizable({ aspectRatio: true, containment: "#outputVideo"});
 
         this.hideCaptureArea();
@@ -718,7 +719,8 @@ class KeyframesGui extends Gui {
         tabs.add( "Body", bodyArea, true, null, {onSelect: (e,v) => {this.editor.setAnimation(v)}}  );
         if(this.editor.auAnimation) {
 
-            tabs.add( "Face", faceArea, false, null, {onSelect: (e,v) => {this.editor.setAnimation(v); 
+            tabs.add( "Face", faceArea, false, null, {onSelect: (e,v) => {
+                this.editor.setAnimation(v); 
                 this.updateActionUnitsPanel(this.editor.getSelectedActionUnit());
                 this.imageMap.resize();
             } });
@@ -1034,21 +1036,7 @@ class KeyframesGui extends Gui {
         widgets.onRefresh = (o) => {
 
             o = o || {};
-            const numBones = this.editor.skeletonHelper.bones.length;
             widgets.clear();
-            widgets.branch("Animation Clip", {icon: "fa-solid fa-child-reaching"});
-            widgets.addText("Name", this.editor.bodyAnimation.name || "Unnamed", v => this.editor.bodyAnimationClip.name = v );
-            widgets.addText("Num bones", numBones, null, {disabled: true});
-            widgets.addText("Frame rate", this.keyFramesTimeline.framerate, null, {disabled: true});
-            widgets.addText("Duration", this.duration.toFixed(2), null, {disabled: true});
-            widgets.addNumber("Speed", this.editor.mixer.timeScale, v => {
-                this.editor.mixer.timeScale = this.editor.video.playbackRate = v;
-            }, {min: 0.25, max: 1.5, step: 0.05, precision: 2});
-            widgets.addSeparator();
-            widgets.addNumber("Optimize Threshold", this.editor.optimizeThreshold, v => {
-                this.editor.optimizeThreshold = v;
-            }, {min: 0, max: 0.25, step: 0.001, precision: 4});
-            // widgets.widgets_per_row = 1;
 
             const boneSelected = !(o.firstBone && numBones) ? //change to get values of animation?
                 this.editor.skeletonHelper.getBoneByName(o.itemSelected) : 
@@ -1263,7 +1251,8 @@ class KeyframesGui extends Gui {
         this.keyFramesTimeline.onGetSelectedItem = () => { return this.editor.getSelectedBone(); };
         this.keyFramesTimeline.onGetOptimizeThreshold = () => { return this.editor.optimizeThreshold; }
         this.keyFramesTimeline.onChangeTrackVisibility = (e, t, n) => {this.editor.updateAnimationAction(this.keyFramesTimeline.animationClip, null, true)}
-        this.keyFramesTimeline.optimizeTrack = (idx, t) => { this.editor.optimizeTrack(idx, t)}
+        this.keyFramesTimeline.optimizeTrack = (idx) => {this.editor.optimizeTrack(idx);}
+        this.keyFramesTimeline.onOptimizeTracks = (idx = null) => { this.editor.updateActionUnitsPanel(this.keyFramesTimeline.animationClip, idx)}
         this.editor.activeTimeline = this.keyFramesTimeline;
         this.createSidePanel();
             
@@ -1288,7 +1277,7 @@ class ScriptGui extends Gui {
     /** Create timelines */
     createTimelines( area ) {
 
-        this.clipsTimeline = new LX.ClipsTimeline("Non manual features", {});
+        this.clipsTimeline = new LX.ClipsTimeline("Behavioural actions timeline", {});
         this.clipsTimeline.setFramerate(30);
         // this.clipsTimeline.setScale(400);
         // this.clipsTimeline.hide();
@@ -1477,7 +1466,9 @@ class ScriptGui extends Gui {
         this.clipPanel = new LX.Panel({id:"bml-clip"});
         bottom.attach(this.clipPanel);
 
-        this.updateAnimationPanel( );
+        this.animationPanel.addButton(null, "Add clip", () => this.createLexemesDialog() )
+        this.animationPanel.addButton(null, "Add preset", () => this.createPresetsDialog() )
+        // this.updateAnimationPanel( );
         this.updateClipPanel( );
         
     }
@@ -1577,14 +1568,14 @@ class ScriptGui extends Gui {
                                     this.clipInPanel.properties[n] = v;
                                     updateTracks(true);
                                     // this.updateClipPanel(clip);
-                                }, {min:0, max:1, step:0.01});
+                                }, {min:0, max:1, step:0.01, precision: 2});
                             }
-                        else{
-                            widgets.addNumber(i, property, (v, e, n) =>
+                            else{
+                                widgets.addNumber(i, property, (v, e, n) =>
                                 {
                                     this.clipInPanel.properties[n] = v;
                                     updateTracks();
-                                });
+                                }, {precision: 2});
                             }
                             break;
                         case Boolean:
@@ -1607,7 +1598,7 @@ class ScriptGui extends Gui {
 
             widgets.branch("Time", {icon: "fa-solid fa-clock"});
             
-            widgets.addNumber("Start", clip.start, (v) =>
+            widgets.addNumber("Start", clip.start.toFixed(2), (v) =>
             {     
                 let diff = v - clip.start;  
                 if(clip.attackPeak != undefined)      
@@ -1622,7 +1613,7 @@ class ScriptGui extends Gui {
                 
             }, {min:0, step:0.01, precision:2});
 
-            widgets.addNumber("Duration", clip.duration, (v) =>
+            widgets.addNumber("Duration", clip.duration.toFixed(2), (v) =>
             {
                 this.clipInPanel.duration = v;
                 if(clip.attackPeak != undefined)  
@@ -1642,14 +1633,14 @@ class ScriptGui extends Gui {
             {
                 syncvalues.push([clip.fadein - clip.start, clip.properties.amount || 1]);
                 if(clip.attackPeak != undefined)
-                    widgets.addNumber("Attack Peak", clip.fadein - clip.start, (v) =>
+                    widgets.addNumber("Attack Peak", (clip.fadein - clip.start).toFixed(2), (v) =>
                     {              
                         clip.attackPeak = clip.fadein = v + clip.start;
                         updateTracks();
                     }, {min:0, max: clip.fadeout - clip.start, step:0.01, precision:2});
                 
                 if(clip.ready != undefined)
-                    widgets.addNumber("Ready", clip.fadein - clip.start, (v) =>
+                    widgets.addNumber("Ready", (clip.fadein - clip.start).toFixed(2), (v) =>
                     {              
                         clip.ready = clip.fadein = v + clip.start;
                         updateTracks();
@@ -1657,7 +1648,7 @@ class ScriptGui extends Gui {
             }
 
             if(clip.strokeStart != undefined) {
-                widgets.addNumber("Stroke start", clip.strokeStart - clip.start, (v) =>
+                widgets.addNumber("Stroke start", (clip.strokeStart - clip.start).toFixed(2), (v) =>
                 {              
                     clip.strokeStart = v + clip.start;
                     updateTracks();
@@ -1665,7 +1656,7 @@ class ScriptGui extends Gui {
             }
 
             if(clip.stroke != undefined) {
-                widgets.addNumber("Stroke ", clip.stroke - clip.start, (v) =>
+                widgets.addNumber("Stroke ", (clip.stroke - clip.start).toFixed(2), (v) =>
                 {              
                     clip.stroke = v + clip.start;
                     updateTracks(true);
@@ -1675,7 +1666,7 @@ class ScriptGui extends Gui {
             }
 
             if(clip.strokeEnd != undefined) {
-                widgets.addNumber("Stroke end", clip.strokeEnd - clip.start, (v) =>
+                widgets.addNumber("Stroke end", (clip.strokeEnd - clip.start).toFixed(2), (v) =>
                 {              
                     clip.strokeEnd = v + clip.start;
                     updateTracks(true);
@@ -1690,7 +1681,7 @@ class ScriptGui extends Gui {
                 syncvalues.push([clip.fadeout - clip.start, clip.properties.amount || 1]);
                 
                 if(clip.relax != undefined)
-                    widgets.addNumber("Relax", clip.fadeout - clip.start, (v) =>
+                    widgets.addNumber("Relax", (clip.fadeout - clip.start).toFixed(2), (v) =>
                     {              
                         clip.relax = clip.fadeout = v + clip.start;
                         if(clip.attackPeak != undefined)
@@ -1729,7 +1720,7 @@ class ScriptGui extends Gui {
 
     showGuide() {
         
-        LX.message("Right click on the Non-Manual Features timeline to create a new clip. You can create a clip from a selected lexeme or from a preset configuration.", "How to start?");
+        LX.message("Right click on timeline to create a new clip. You can create a clip from a selected lexeme or from a preset configuration.", "How to start?");
 
     }
 
@@ -1747,7 +1738,7 @@ class ScriptGui extends Gui {
     createLexemesDialog() {
         // Create a new dialog
         let that = this;
-        let dialog = new LX.Dialog('Non Manual Features lexemes', (p) => {
+        let dialog = new LX.Dialog('BML clips', (p) => {
 
             let asset_browser = new LX.AssetView({  
                 preview_actions: [{

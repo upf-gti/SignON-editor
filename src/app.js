@@ -65,7 +65,7 @@ class App {
                 this.onBeginCapture();
                 break;
             case 'bvh': 
-                this.editor = new Editor(this, "script");
+                this.editor = new Editor(this, "video");
                 this.onLoadAnimation( settings.data );
                 break;
             case 'video': case "mp4": case "wav": 
@@ -269,7 +269,7 @@ class App {
 
     onLoadVideo( videoFile ) {
         this.mediaRecorder = null;
-        this.editor.gui.captureMode = this.mode;
+        this.editor.mode = this.editor.eModes.keyframes;
         this.setEvents();
 
         let url = "";

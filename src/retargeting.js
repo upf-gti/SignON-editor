@@ -491,6 +491,10 @@ class AnimationRetargeting {
 
         this.animName = animClip.name;
 
+        for(let i = 0; i < animClip.tracks.length; i++) {
+            animClip.tracks[i].name = animClip.tracks[i].name.replaceAll(/[`~!@#$%^&*()|+\-=?;:'"<>\{\}\\\/]/gi, '').replaceAll("mixamorig", "mixamorig_");
+        }
+
         let srcpose = model;
         // find bind skeleton
         if ( !model.bones || !model.boneInverses ) {
@@ -507,7 +511,7 @@ class AnimationRetargeting {
         for (let i = 0; i < srcpose.bones.length; i++) {
             if(!srcpose.bones[i])
                 continue;
-            srcpose.bones[i].name = srcpose.bones[i].name.replaceAll(/[`~!@#$%^&*()_|+\-=?;:'"<>\{\}\[\]\\\/]/gi, '');
+            srcpose.bones[i].name = srcpose.bones[i].name.replaceAll(/[`~!@#$%^&*()|+\-=?;:'"<>\{\}\[\]\\\/]/gi, '').replaceAll("mixamorig", "mixamorig_");
             if (srcpose.bones[i].name.includes("ENDSITE")) {
                 srcpose.bones[i].removeFromParent();
                 srcpose.bones.splice(i,1);

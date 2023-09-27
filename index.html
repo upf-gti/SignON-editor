@@ -88,7 +88,7 @@
 				<div id="video-area" class="flex-vertical">
 					<video id="inputVideo" class="hidden" muted audio="false"></video>
 					<div style="display: flex;">
-						<canvas id="outputVideo" width="1280px" height="720px" style="z-index: 1;" tabindex="1"></canvas>
+						<canvas id="outputVideo" class="border-animation" width="1280px" height="720px" style="z-index: 1;" tabindex="1"></canvas>
 						<video id="recording" class="hidden" muted audio="false"></video>
 					</div>
 				</div>
@@ -189,7 +189,7 @@
 	
 			//$("#loading").fadeOut();
 			$("#keyframe-project").click(() => {
-				createApp({projectType: "keyframes"});
+				createApp({mode: "capture"});
 			});
 			$("#bml-project").click(() => {
 				createApp({mode: "bml"});
