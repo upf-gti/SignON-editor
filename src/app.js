@@ -64,7 +64,7 @@ class App {
                 this.editor = new Editor(this, mode);
                 this.onBeginCapture();
                 break;
-            case 'bvh': 
+            case 'bvh': case 'bvhe':
                 this.editor = new Editor(this, "video");
                 this.onLoadAnimation( settings.data );
                 break;
@@ -74,7 +74,7 @@ class App {
                 this.onLoadVideo( settings.data );
                 break;
             default:
-                this.editor = new Editor(this, mode);
+                this.editor = new Editor(this, 'script');
                 this.onBMLProject( settings.data );
                 break;
         }

@@ -53,13 +53,13 @@ class Gui {
         menubar.add("Project/Upload animation", {icon: "fa fa-upload", callback: () => this.editor.getApp().storeAnimation() });
  
         menubar.add("Project/");
-        menubar.add("Project/Export Body Animation", {icon: "fa fa-file-export"});
-        menubar.add("Project/Export Body Animation/Export BVH", { callback: () => this.editor.export('BVH') });
-        menubar.add("Project/Export Face Animation", {icon: "fa fa-file-export"});
-        menubar.add("Project/Export Face Animation/Export extended BVH", {callback: () => this.editor.export("BVH extended") });
-        menubar.add("Project/Export Face Animation/Export BML", {callback: () => this.editor.export() });
-        menubar.add("Project/Export all", {icon: "fa fa-download"});
-        menubar.add("Project/Export all/Export GLB", {callback: () => this.editor.export('GLB') });
+  
+        menubar.add("Project/Export animation", {icon: "fa fa-file-export"});
+        menubar.add("Project/Export animation/Export extended BVH", {callback: () => this.editor.export("BVH extended") });
+        if(this.editor.mode == this.editor.eModes.script)
+            menubar.add("Project/Export animation/Export BML", {callback: () => this.editor.export() });
+        menubar.add("Project/Export scene", {icon: "fa fa-download"});
+        menubar.add("Project/Export scene/Export GLB", {callback: () => this.editor.export('GLB') });
         menubar.add("Project/Preview realizer", {icon: "fa fa-street-view",  callback: () => this.editor.showPreview() });
 
         // menubar.add("Editor/Manual Features", { id: "mf-mode", type: "checkbox", checkbox: this.editor.mode == this.editor.eModes.MF, callback: (v) => {
@@ -69,19 +69,35 @@ class Gui {
         //     this.changeEditorMode(this.editor.eModes.NMF);
         // }});
 
-        menubar.add("Timeline/Shortcuts", { disabled: true });
+        menubar.add("Timeline/Shortcuts", { icon: "fa fa-keyboard", disabled: true });
         menubar.add("Timeline/Shortcuts/Play-Pause", { short: "SPACE" });
         menubar.add("Timeline/Shortcuts/Zoom", { short: "Wheel" });
-        menubar.add("Timeline/Shortcuts/Change time", { short: "Left Click+Drag" });
-        menubar.add("Timeline/Shortcuts/Move keys", { short: "Hold CTRL" });
-        menubar.add("Timeline/Shortcuts/Add keys", { short: "Right Click" });
-        menubar.add("Timeline/Shortcuts/Delete keys");
-        menubar.add("Timeline/Shortcuts/Delete keys/Single", { short: "DEL" });
-        menubar.add("Timeline/Shortcuts/Delete keys/Multiple", { short: "Hold LSHIFT" });
-        menubar.add("Timeline/Shortcuts/Key Selection");
-        menubar.add("Timeline/Shortcuts/Key Selection/Single", { short: "Left Click" });
-        menubar.add("Timeline/Shortcuts/Key Selection/Multiple", { short: "Hold LSHIFT" });
-        menubar.add("Timeline/Shortcuts/Key Selection/Box", { short: "Hold LSHIFT+Drag" });
+        menubar.add("Timeline/Shortcuts/Move timeline", { short: "Left Click+Drag" });
+        
+        if(this.editor.mode == this.editor.eModes.script) {
+            menubar.add("Timeline/Shortcuts/Move clips", { short: "Hold CTRL" });
+            menubar.add("Timeline/Shortcuts/Add clips", { short: "Right Click" });
+            menubar.add("Timeline/Shortcuts/Copy clips", { short: "Right Click" });
+            menubar.add("Timeline/Shortcuts/Delete clips");
+            menubar.add("Timeline/Shortcuts/Delete clips/Single", { short: "DEL" });
+            menubar.add("Timeline/Shortcuts/Delete clip/Multiple", { short: "Hold LSHIFT+DEL" });
+            menubar.add("Timeline/Shortcuts/Clip Selection");
+            menubar.add("Timeline/Shortcuts/Clip Selection/Single", { short: "Left Click" });
+            menubar.add("Timeline/Shortcuts/Clip Selection/Multiple", { short: "Hold LSHIFT" });
+        }
+        else {
+
+            menubar.add("Timeline/Shortcuts/Move keys", { short: "Hold CTRL" });
+            menubar.add("Timeline/Shortcuts/Change value keys (face)", { short: "Hold ALT" });
+            menubar.add("Timeline/Shortcuts/Add keys", { short: "Right Click" });
+            menubar.add("Timeline/Shortcuts/Delete keys");
+            menubar.add("Timeline/Shortcuts/Delete keys/Single", { short: "DEL" });
+            menubar.add("Timeline/Shortcuts/Delete keys/Multiple", { short: "Hold LSHIFT" });
+            menubar.add("Timeline/Shortcuts/Key Selection");
+            menubar.add("Timeline/Shortcuts/Key Selection/Single", { short: "Left Click" });
+            menubar.add("Timeline/Shortcuts/Key Selection/Multiple", { short: "Hold LSHIFT" });
+            menubar.add("Timeline/Shortcuts/Key Selection/Box", { short: "Hold LSHIFT+Drag" });
+        }
 
         menubar.add("Timeline/");
         menubar.add("Timeline/Empty tracks", { callback: () => this.editor.cleanTracks() });
@@ -188,9 +204,11 @@ class Gui {
                     if(!editor.showGUI) {
                         editor.gizmo.stop();
                         this.hideTimeline();
+                        this.mainArea._moveSplit(-this.sidePanel.size[0]);
 
                     } else {
                         this.showTimeline();
+                        this.mainArea._moveSplit(400);
                     }
                     
                     
@@ -295,7 +313,7 @@ class Gui {
     hideTimeline() {
         this.timelineVisible = false;
         this.timelineArea.hide();
-        this.editor.activeTimeline.hide();
+        //this.editor.activeTimeline.hide();
     }
 
     showKeyFrameOptions(e, track) {
@@ -1466,8 +1484,10 @@ class ScriptGui extends Gui {
         this.clipPanel = new LX.Panel({id:"bml-clip"});
         bottom.attach(this.clipPanel);
 
+        this.animationPanel.addTitle("Animation");
         this.animationPanel.addButton(null, "Add clip", () => this.createLexemesDialog() )
         this.animationPanel.addButton(null, "Add preset", () => this.createPresetsDialog() )
+        this.animationPanel.addSeparator();
         // this.updateAnimationPanel( );
         this.updateClipPanel( );
         
@@ -1539,7 +1559,9 @@ class ScriptGui extends Gui {
             }
 
             widgets.widgets_per_row = 1;
-            widgets.addTitle( clip.constructor.name );
+            // this.clipPanel.branch(clip.constructor.name.match(/[A-Z][a-z]+|[0-9]+/g).join(" "));
+
+            widgets.addTitle( clip.constructor.name.match(/[A-Z][a-z]+|[0-9]+/g).join(" ") );
             widgets.addText("Id", clip.id, (v) => this.clipInPanel.id = v)
             
             widgets.branch("Content");
@@ -1595,7 +1617,7 @@ class ScriptGui extends Gui {
                     }
                 }
             }
-
+            widgets.merge()
             widgets.branch("Time", {icon: "fa-solid fa-clock"});
             
             widgets.addNumber("Start", clip.start.toFixed(2), (v) =>
@@ -1713,6 +1735,7 @@ class ScriptGui extends Gui {
             
             
             widgets.addButton(null, "Delete", (v, e) => this.clipsTimeline.deleteClip(e, this.clipsTimeline.lastClipsSelected[0], () => {clip = null;  this.clipsTimeline.optimizeTracks(); updateTracks()}));
+            widgets.merge();
         }
         widgets.onRefresh(clip);
         
@@ -1917,9 +1940,11 @@ class ScriptGui extends Gui {
                     if(!editor.showGUI) {
 
                         this.hideTimeline();
+                        this.mainArea._moveSplit(-this.sidePanel.size[0]);
 
                     } else {
                         this.showTimeline();
+                        this.mainArea._moveSplit(400);
                     }
                     
                     

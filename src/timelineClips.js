@@ -473,10 +473,10 @@ FaceLexemeClip.prototype.configure = function(o)
 		
 		if(property == "lexeme") {
 			
-			this.id = o.lexeme;
-			o.lexeme = o.lexeme.toUpperCase().replaceAll(" ", "_")
+			this.id = o.lexeme || o.properties.lexeme;
+			this.properties.lexeme = this.id.toUpperCase().replaceAll(" ", "_")
 		}
-		if(o[property] != undefined)
+		else if(o[property] != undefined)
 			this.properties[property] = o[property];
 	
 	}
@@ -1229,7 +1229,7 @@ function GazeClip(o)
 		influence : "EYES", //[EYES, HEAD, "NECK"](optional)
 		offsetAngle : 0.0, //(optional)
 		offsetDirection : "", //[RIGHT, LEFT, UP, DOWN, UPRIGHT, UPLEFT, DOWNLEFT, DOWNRIGHT](optional)
-		headOnly: true,
+		headOnly: false,
 		shift : false
 	}
 
@@ -1376,6 +1376,8 @@ GazeClip.prototype.showInfo = function(panel, callback)
 					break;
 				
 				case Boolean:
+					if(property == "headOnly" && this.properties.influence == "EYES")
+						continue;
 					panel.addCheckbox(i, property, (v, e, name) =>
 					{
 						this.properties[name] = v;

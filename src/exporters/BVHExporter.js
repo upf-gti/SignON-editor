@@ -40,15 +40,16 @@ const BVHExporter = {
 
         var tabs = this.getTabs(level);
         var bvh = tabs;
-
+        if(bone.type != 'Bone')
+            return "";
         var exportPos = false;
         if (!bone.parent || bone.parent.type != 'Bone') {
             bvh += "ROOT " + bone.name + "\n";
             exportPos = true;
-        } else 
-        if (isEndSite) {
+        } else if (isEndSite) {
             bvh += "End Site" + "\n";
-        } else {
+        } 
+        else {
             bvh += "JOINT " + bone.name + "\n";
         }
 
@@ -159,7 +160,7 @@ const BVHExporter = {
         switch(mode) {
             
             case LOCAL_STORAGE:
-                window.localStorage.setItem('three_webgl_bvhpreview', bvh);
+                window.localStorage.setItem('bvhskeletonpreview', bvh);
                 break;
             case LOG:
                 console.log(bvh);
@@ -237,7 +238,18 @@ const BVHExporter = {
         }
 
         bvh += getBoneFrameData(skeletonHelper.skeleton.bones[0]);
-        this.download(bvh, 'test.sga', 'text/plain');
+        switch(mode) {
+            
+            case LOCAL_STORAGE:
+                window.localStorage.setItem('bvhskeletonpreview', bvh);
+                break;
+            case LOG:
+                console.log(bvh);
+                break;
+            default:
+                this.download(bvh, 'sign.bvh', 'text/plain');
+                break;
+        }
         this.skeletonHelper = null;
     },
 
@@ -298,7 +310,7 @@ const BVHExporter = {
         switch(mode) {
             
             case LOCAL_STORAGE:
-                window.localStorage.setItem('three_webgl_bvhpreview', bvh);
+                window.localStorage.setItem('bvhblendshapespreview', bvh);
                 break;
             case LOG:
                 console.log(bvh);

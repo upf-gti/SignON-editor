@@ -978,7 +978,9 @@
                     // ctx.strokeRect( safex, y, safex2-safex, trackHeight );
                     ctx.globalAlpha = trackAlpha;
                     if(this.selectedClip == clip || track.selected[j])
-                        selectedClipArea = [x, y + offset, x2-x, trackHeight]
+                        selectedClipArea = [x, y + offset, x2-x, trackHeight];
+
+                    ctx.font = "12px Rubik";
                     //render clip selection area
                     if(selectedClipArea)
                     {
@@ -989,14 +991,16 @@
                         ctx.strokeStyle = "#888";
                         ctx.lineWidth = 0.5;
                         ctx.globalAlpha = this.opacity;
+                        ctx.font = "bold 13px Rubik";
                     }
 
                     let text = clip.id.replaceAll("_", " ").replaceAll("-", " ");
                     let textInfo = ctx.measureText( text );
                     ctx.fillStyle = clip.color;
-                    ctx.font = "12px Rubik"
+                    
                     if( textInfo.width < (w - 24) )
                         ctx.fillText( text, x + (w - textInfo.width)*0.5,  y + offset + 12 );
+                    ctx.font = "12px Rubik";
                 }
             }
 

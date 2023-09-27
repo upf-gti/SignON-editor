@@ -528,7 +528,7 @@ class Editor {
         const urlParams = new URLSearchParams(queryString);
         
         const innerOnLoad = result => {
-            if(urlParams.get('skin') && urlParams.get('skin') == 'true') {
+            if(urlParams.get('skin') && urlParams.get('skin') == 'true' || extension == 'bvhe') {
                 
                 this.loadAnimationWithSkin(result);
 
@@ -1299,7 +1299,19 @@ class Editor {
             );
                 break;
             case 'BVH extended':
-                BVHExporter.exportMorphTargets(this.mixer._actions[1], this.morphTargets, this.animationClip);
+                let LOCAL_STORAGE = 1;
+                if(this.mode == this.eModes.script) {
+                    BVHExporter.export(this.mixer._actions[0], this.skeletonHelper, this.animationClip, LOCAL_STORAGE );
+                    BVHExporter.exportMorphTargets(this.mixer._actions[0], this.morphTargets, this.animationClip, LOCAL_STORAGE);
+                }
+                else {
+                    BVHExporter.export(this.mixer._actions[0], this.skeletonHelper, this.bodyAnimation, LOCAL_STORAGE);
+                    BVHExporter.exportMorphTargets(this.mixer._actions[1], this.morphTargets, this.animationClip, LOCAL_STORAGE);
+                }
+                
+                let bvh = window.localStorage.getItem("bvhskeletonpreview");
+                bvh += window.localStorage.getItem("bvhblendshapespreview");
+                BVHExporter.download(bvh, this.animationClip.name + ".bvhe")
                 break;
 
             default:
@@ -1347,7 +1359,7 @@ class Editor {
         if(this.mode == this.eModes.capture || this.mode == this.eModes.video) {
 
             BVHExporter.copyToLocalStorage(this.mixer._actions[0], this.skeletonHelper, this.bodyAnimation);
-            url = "https://webglstudio.org/users/arodriguez/demos/animationLoader/?load=three_webgl_bvhpreview";
+            url = "https://webglstudio.org/users/arodriguez/demos/animationLoader/?load=bvhskeletonpreview";
         }
         else{
             url = "https://webglstudio.org/users/jpozo/SignONRealizer/dev/";
@@ -1355,7 +1367,7 @@ class Editor {
 
             const sendData = () => {
                 if(this.appR && this.appR.ECAcontroller)
-                    this.realizer.postMessage(json.behaviours);
+                    this.realizer.postMessage({type: "bml", data: json.behaviours});
                 else {
                     setTimeout(sendData, 1000)
                 }
