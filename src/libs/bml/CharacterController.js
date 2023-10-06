@@ -1,4 +1,4 @@
-import { BehaviourPlanner, BehaviourManager, Blink, FacialExpr, FacialEmotion, GazeManager, Gaze, HeadBML, Lipsync, Text2LipInterface, T2LTABLES, LocationBodyArm, HandShapeRealizer, ExtfidirPalmor, CircularMotion, DirectedMotion, FingerPlay, WristMotion, HandConstellation, ShoulderRaise, ShoulderHunch, BodyMovement, findIndexOfBone, getTwistQuaternion } from './BML.js';
+import { BehaviourPlanner, BehaviourManager, Blink, FacialExpr, FacialEmotion, GazeManager, Gaze, HeadBML, Lipsync, Text2LipInterface, T2LTABLES, LocationBodyArm, HandShapeRealizer, ExtfidirPalmor, CircularMotion, DirectedMotion, FingerPlay, WristMotion, HandConstellation, ShoulderRaise, ShoulderHunch, BodyMovement, findIndexOfBone, getTwistQuaternion, nlerpQuats } from './BML.js';
 import * as THREE  from 'three';
 import { GeometricArmIK } from './IKSolver.js';
 //@ECA controller
@@ -107,9 +107,8 @@ CharacterController.prototype.processMsg = function (data, fromWS) {
 
     // Add new block to stack
     //this.BehaviourManager.newBlock(msg, thiscene.time);
-    if(typeof(data) == "string")
-        data = JSON.parse(data);
-    if (data.type == "behaviours") data = data.data;
+    if(typeof(data) == "string"){ data = JSON.parse(data); }
+    if (data.type == "behaviours"){ data = data.data; }
 
     // Add new blocks to stack
     let msg = {};
@@ -319,8 +318,8 @@ function FacialController(config = null) {
     this._gazePositions = {
         "RIGHT": new THREE.Vector3(-30, 2, 100), "LEFT": new THREE.Vector3(30, 2, 100),
         "UP": new THREE.Vector3(0, 20, 100), "DOWN": new THREE.Vector3(0, -20, 100),
-        "UPRIGHT": new THREE.Vector3(-30, 20, 100), "UPLEFT": new THREE.Vector3(30, 20, 100),
-        "DOWNRIGHT": new THREE.Vector3(-30, -20, 100), "DOWNLEFT": new THREE.Vector3(30, -20, 100),
+        "UP_RIGHT": new THREE.Vector3(-30, 20, 100), "UP_LEFT": new THREE.Vector3(30, 20, 100),
+        "DOWN_RIGHT": new THREE.Vector3(-30, -20, 100), "DOWN_LEFT": new THREE.Vector3(30, -20, 100),
         "FRONT": new THREE.Vector3(0, 2, 100), "CAMERA": new THREE.Vector3(0, 2, 100)
     };
 
@@ -786,8 +785,8 @@ FacialController.prototype.newBlink = function ( bml ){
 // <gaze or gazeShift start ready* relax* end influence target influence offsetAngle offsetDirection>
 // influence [EYES, HEAD, NECK, SHOULDER, WAIST, WHOLE, ...]
 // offsetAngle relative to target
-// offsetDirection (of offsetAngle) [RIGHT, LEFT, UP, DOWN, UPRIGHT, UPLEFT, DOWNLEFT, DOWNRIGHT]
-// target [CAMERA, RIGHT, LEFT, UP, DOWN, UPRIGHT, UPLEFT, DOWNLEFT, DOWNRIGHT]
+// offsetDirection (of offsetAngle) [RIGHT, LEFT, UP, DOWN, UP_RIGHT, UP_LEFT, DOWN_LEFT, DOWN_RIGHT]
+// target [CAMERA, RIGHT, LEFT, UP, DOWN, UP_RIGHT, UP_LEFT, DOWN_LEFT, DOWN_RIGHT]
 
 // "HEAD" position is added on Start
 
@@ -819,7 +818,7 @@ FacialController.prototype.headDirectionShift = function (headData, cmdId) {
 // --------------------- HEAD ---------------------
 // BML
 // <head start ready strokeStart stroke strokeEnd relax end lexeme repetition amount>
-// lexeme [NOD, SHAKE, TILT, TILTLEFT, TILTRIGHT, FORWARD, BACKWARD]
+// lexeme [NOD, SHAKE, TILT, TILT_LEFT, TILT_RIGHT, FORWARD, BACKWARD]
 // repetition cancels stroke attr
 // amount how intense is the head nod? 0 to 1
 // New head behavior
@@ -862,6 +861,7 @@ class BodyController{
         this.nonDominant = this.left;
 
         this._tempQ_0 = new THREE.Quaternion();
+        this._tempQ_1 = new THREE.Quaternion();
         this._tempV3_0 = new THREE.Vector3();
 
     }
@@ -972,17 +972,19 @@ class BodyController{
     
     reset(){
 
+        this.bodyMovement.reset();
         this.handConstellation.reset();
         this._resetArm( this.right );
         this._resetArm( this.left );
 
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationBodyArm: "neutral", hand: "right", distance: 0.065, displace: "r", displaceDistance: 0.025, shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationBodyArm: "neutral", hand: "left",  distance: 0.04, displace: "l", displaceDistance: 0.025, shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, handshape: "flat", thumbshape: "touch", hand: "both", shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "l", hand: "right", shift: true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "r", hand: "left", shift: true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "dl", hand: "right", mode: "local", shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "dr", hand: "left", mode: "local", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationBodyArm: "NEUTRAL", hand: "RIGHT", distance: 0.15, displace: "r", displaceDistance: 0.045, shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationBodyArm: "NEUTRAL", hand: "LEFT",  distance: 0.1, displace: "l", displaceDistance: 0.025, shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, handshape: "FLAT", mainBend: "ROUND", thumbshape: "TOUCH", hand: "RIGHT", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, handshape: "FLAT", mainBend: "ROUND", tco:0.5, thumbshape: "TOUCH", hand: "LEFT", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "l", hand: "RIGHT", shift: true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "r", hand: "LEFT", shift: true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "dl", hand: "RIGHT", mode: "local", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "dr", hand: "LEFT", mode: "local", shift:true } );
 
     }
 
@@ -1081,35 +1083,50 @@ class BodyController{
         
     }
 
+    // TODO: do not take into account bind twist (for now there is no effect as bind poses do not add any twisting into forearm or wrist)
     _fixWristForearmQuaternions( arm, fixWristOnly = false ){
-        let q = this._tempQ_0;
+        let q0 = this._tempQ_0;
+        let q1 = this._tempQ_1;
         let bones = this.skeleton.bones;
+        let fa = arm.extfidirPalmor.twistAxisForearm;       // forearm axis
+        let fq = arm.extfidirPalmor.forearmBone.quaternion; // forearm quat
+        let wa = arm.extfidirPalmor.twistAxisWrist;         // wrist axis
+        let wq = arm.extfidirPalmor.wristBone.quaternion;   // wrist quat
 
+        // remove twist from forearm
+        // arm.extfidirPalmor.forearmBone.quaternion.multiply( arm.ikSolver.bindQuats.elbow.clone().invert() ); // except bind twist
+        getTwistQuaternion( fq, fa, q0 );
+        fq.multiply( q0.normalize().invert() );
+        // arm.extfidirPalmor.forearmBone.quaternion.multiply( arm.ikSolver.bindQuats.elbow );
+        
         // copy back the original wrist quaternion, when no arm rotations were applied
-        arm.extfidirPalmor.wristBone.quaternion.copy( arm._tempWristQuat );  
+        wq.copy( arm._tempWristQuat );  
 
         // wrist did not know about arm quaternions. Compensate them
-        q.copy( bones[ arm.loc.idx ].quaternion );
-        q.multiply( bones[ arm.loc.idx + 1 ].quaternion );
-        q.multiply( bones[ arm.loc.idx + 2 ].quaternion );
-        q.invert();
-        arm.extfidirPalmor.wristBone.quaternion.premultiply( q );  
+        q0.copy( bones[ arm.loc.idx ].quaternion );
+        q0.multiply( bones[ arm.loc.idx + 1 ].quaternion );
+        q0.multiply( bones[ arm.loc.idx + 2 ].quaternion );
+        q0.invert();
+        wq.premultiply( q0 );  
         
         if ( fixWristOnly ){ return } // whether to correct forearm twisting also
+
+        // ( heavily optimised ) computes twist quaternion in wrist using twistAxisWrist. Then computes a twist quaternion using twistAxisForearm and the same angle 
+        let dot =  wq.x * wa.x + wq.y * wa.y + wq.z * wa.z;
+        q0.set( fa.x * dot, fa.y * dot, fa.z * dot, wq.w ).normalize();
         
-        // Doing the previous wrist fix introduces some extra twist correction. Forearm twist should adjust to palmor + twist correction. The following operations combine both
-        // get wrist twist quaternion
-        getTwistQuaternion( arm.extfidirPalmor.wristBone.quaternion, arm.extfidirPalmor.twistAxisWrist, q );
+        // ( unoptimised version ) previous two lines same as these:
+        // getTwistQuaternion( wq, wa, q0 ); // compute twist in wrist
+        // let angle = Math.acos( q0.w ) * 2; // quaternion.w = cos( angle / 2 )
+        // this._tempV3_0.copy( fa ).multiplyScalar( ( (dot < 0.0)  ) ? -1 : 1 );
+        // q0.setFromAxisAngle( this._tempV3_0, angle  );
+        // q0.normalize(); // already manages (0,0,0,0) quaternions by setting identity
 
-        // from wrist twist quaternion, compute twist angle and apply it to the forearm. Correct this extra quaternion for the wrist also
-        let angle = Math.acos( q.w ) * 2;
-        // angle = Math.max( 0, Math.min( Math.PI * 0.6, angle ) );
-        angle = ( Math.sin( angle - Math.PI * 0.5 ) * 0.35 + 0.35 ) * angle; // limit angle to avoid overtwisting of elbow
-        angle *= ( arm.extfidirPalmor.twistAxisForearm.x * q.x + arm.extfidirPalmor.twistAxisForearm.y * q.y + arm.extfidirPalmor.twistAxisForearm.z * q.z ) < 0 ? -1 : 1; // is the axis of rotation inverted ?
-        q.setFromAxisAngle( arm.extfidirPalmor.twistAxisForearm, angle);
-        arm.extfidirPalmor.forearmBone.quaternion.multiply( q ); // forearm
-        arm.extfidirPalmor.wristBone.quaternion.premultiply( q.invert() ); // wrist did not know about this twist, undo it
-
+        // do not completely add the forearm twist to avoid the elbow looking weird
+        q1.set( 0,0,0,1 );
+        nlerpQuats( q0, q1, q0, 0.67 );
+        fq.multiply( q0 ); // forearm
+        wq.premultiply( q0.invert() ); // wrist did not know about this twist, undo it
     }
 
     _newGestureArm( bml, arm, symmetry = 0x00 ){
@@ -1149,7 +1166,7 @@ class BodyController{
     * lrSym: (optional) bool - perform a symmetric movement. Symmetry will be applied to non-dominant hand only
     * udSym: (optional) bool - perform a symmetric movement. Symmetry will be applied to non-dominant hand only
     * ioSym: (optional) bool - perform a symmetric movement. Symmetry will be applied to non-dominant hand only
-    * hand: (optional) "right", "left", "both". Default right
+    * hand: (optional) "RIGHT", "LEFT", "BOTH". Default right
     * shift: (optional) bool - make this the default position. Motions not affected
     */
     newGesture( bml ){
@@ -1166,7 +1183,7 @@ class BodyController{
 
         if ( bml.config ){
             let c = bml.config;
-            if ( c.dominant ){ this.setDominantHand( c.dominant == "right" ); }
+            if ( c.dominant ){ this.setDominantHand( c.dominant == "RIGHT" ); }
             //...
         }
 
@@ -1179,20 +1196,20 @@ class BodyController{
         }
 
         switch ( bml.hand ){
-            case "right" :             
+            case "RIGHT" :             
                 this._newGestureArm( bml, this.right, ( this.dominant == this.right ) ? 0x00 : symmetryFlags ); 
                 break;
-            case "left" : 
+            case "LEFT" : 
                 this._newGestureArm( bml, this.left, ( this.dominant == this.left ) ? 0x00 : symmetryFlags ); 
                 break;
-            case "both" : 
+            case "BOTH" : 
                 this._newGestureArm( bml, this.dominant, 0x00 ); 
                 this._newGestureArm( bml, this.nonDominant, symmetryFlags ); 
                 break;
-            case "nonDom" : 
+            case "NON_DOMINANT" : 
                 this._newGestureArm( bml, this.nonDominant, symmetryFlags ); 
                 break;
-            case "dom": 
+            case "DOMINANT": 
             default:
                 this._newGestureArm( bml, this.dominant, 0x00 ); 
                 break;
@@ -1202,5 +1219,6 @@ class BodyController{
 
 
 }
+
 
 export { CharacterController, FacialController, BodyController} 

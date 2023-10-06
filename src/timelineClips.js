@@ -46,7 +46,7 @@ ANIM.SPEECH = 0;
 
 // ANIM.CUSTOM = 11;
 
-// ANIM.clipTypes = [FaceLexemeClip, FaceFACSClip, FaceEmotionClip, GazeClip, HeadClip, ShoulderRaiseClip, ShoulderHunchClip, BodyMovementClip] ;
+// ANIM.clipTypes = [FaceLexemeClip, FaceFACSClip, FaceEmotionClip, GazeClip, HeadClip, ShoulderClip, ShoulderHunchClip, BodyMovementClip] ;
 
 ANIM.registerClipType = function(ctor)
 {
@@ -507,7 +507,7 @@ FaceLexemeClip.prototype.toJSON = function()
 	}
 	for(var i in this.properties)
 	{
-		json[i] = this.properties[i];
+		json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
 	}
 	return json;
 }
@@ -546,104 +546,42 @@ FaceLexemeClip.prototype.drawClip = function( ctx, w,h, selected, timeline )
 
 FaceLexemeClip.prototype.showInfo = function(panel, callback)
 {
-	for(var i in this.properties)
-	{
-		let property = this.properties[i];
-		if(property == undefined)
-			continue;
 
-		if(i=="lexeme"){
-			let values = [];
-			for(let id in FaceLexemeClip.lexemes) {
-				values.push({ value: FaceLexemeClip.lexemes[id], src: "./data/imgs/thumbnails/" + FaceLexemeClip.lexemes[id].toLowerCase().replaceAll(" ", "_") + ".png" })
-			}
-
-			let p = property.split("_");
-			for(let i in p) {
-				p[i] = p[i].toLowerCase();
-				p[i] = p[i].replace( p[i][0], p[i][0].toUpperCase())
-			}
-			p = p.join(" ");
-
-			panel.addDropdown(i, values, p, (v, e, name) => {
-				this.id = v;
-				v = v.replaceAll(" ", "_").toUpperCase();
-
-				if(v.includes("LIP") || v.includes("MOUTH") || v.includes("DIMPLER"))
-					this.clipColor = 'cyan';
-				else if(v.includes("BROW") || "LID")
-					this.clipColor = 'orange';
-				else if(v.includes("CHIN") || v.includes("JAW"))
-					this.clipColor = 'purple';
-				else if(v.includes("NOSE"))
-					this.clipColor = 'yellow';
-				else
-					this.clipColor = 'green';
-
-				this.properties[name] = v;
-				if(callback)
-					callback();
-				
-			}, {filter: true});
-		}
-		else
-		{
-			switch(property.constructor)
-			{
-
-				case String:
-					panel.addText(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-
-				case Number:
-					let options = { precision: 2 };
-					if(i=="amount")
-					{
-						options.min = 0; 
-						options.max = 1; 
-						options.step = 0.01;
-					}
-					
-					panel.addNumber(i, property.toFixed(2), (v, e, name) =>
-					{
-						if(name == "start"){
-							var dt = v - this.properties[name];
-							this.properties.attackPeak += dt;
-							this.properties.relax += dt;
-						}
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					}, options );
-					
-					break;
-				
-				case Boolean:
-					panel.addCheckbox(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-				
-				case Array:
-					panel.addArray(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-			}
-		}
+	// Lexeme property
+	let values = [];
+	for(let id in FaceLexemeClip.lexemes) {
+		values.push({ value: FaceLexemeClip.lexemes[id], src: "./data/imgs/thumbnails/" + FaceLexemeClip.lexemes[id].toLowerCase().replaceAll(" ", "_") + ".png" })
 	}
+
+	// let p = this.properties.lexeme.split("_");
+	// for(let i in p) {
+	// 	p[i] = p[i].toLowerCase();
+	// 	p[i] = p[i].replace( p[i][0], p[i][0].toUpperCase())
+	// }
+	// p = p.join(" ");
+
+	panel.addDropdown("Lexeme", this.properties.lexeme, p, (v, e, name) => {
+		this.id = v;
+
+		this.properties.lexeme = v;
+		if(callback)
+			callback();
+		
+	}, {filter: true});
+
+
+	// Amount property
+	let options = { precision: 2,  min: 0, max: 1, step: 0.01 };
+
+	panel.addNumber("Amount", this.properties.amount.toFixed(2), (v, e, name) =>
+	{
+		this.properties.amount = v;
+		if(callback)
+			callback();
+	}, options );
+
 }
+
 //FaceFACSClip
 FaceFACSClip.type = "faceFACS";
 FaceFACSClip.sides = ["LEFT", "RIGHT", "BOTH"];
@@ -715,6 +653,7 @@ FaceFACSClip.prototype.drawClip = function( ctx, w,h, selected )
 	if( textInfo.width < (w - 24) )
 		ctx.fillText( this.id, 24,h * 0.7 );
 }
+
 FaceFACSClip.prototype.showInfo = function(panel)
 {
 	for(var i in this.properties)
@@ -1205,19 +1144,20 @@ FacePresetClip.prototype.showInfo = function(panel, callback)
 		}
 	}
 }
+
 /*----------------------------------Gaze Behaviour-----------------------------------*/
 //GazeClip
 GazeClip.type = "gaze";
-GazeClip.influences = ["EYES", "HEAD", "NECK"];
-GazeClip.directions = ["", "UPRIGHT", "UPLEFT", "DOWNRIGHT", "DOWNLEFT", "RIGHT", "LEFT", "UP", "DOWN"];
-GazeClip.targets = ["UPRIGHT", "UPLEFT", "DOWNRIGHT", "DOWNLEFT", "RIGHT", "LEFT", "UP", "DOWN", "FRONT"];
+GazeClip.influences = ["Eyes", "Head", "Neck"];
+GazeClip.directions = ["", "Up right", "Up left", "Down right", "Down left", "Right", "Left", "Up", "Down"];
+GazeClip.targets = ["Up right", "Up left", "Down right", "Down left", "Right", "Left", "Up", "Down", "Front"];
 
 GazeClip.id = ANIM.GAZE ? ANIM.GAZE: ANIM.clipTypes.length;
 GazeClip.clipColor = "#5e4fa2";
 
 function GazeClip(o)
 {
-	this.id= "Eyes Gaze";
+	this.id = "Eyes Gaze";
 	this.start = 0
 	this.duration = 1;
 	this.ready = this.fadein = 0.25; //if it's not permanent
@@ -1225,8 +1165,8 @@ function GazeClip(o)
 	this._width = 0;
 
 	this.properties = {
-		target : "LEFT",		
-		influence : "EYES", //[EYES, HEAD, "NECK"](optional)
+		target : "Left",		
+		influence : "Eyes", //[EYES, HEAD, "NECK"](optional)
 		offsetAngle : 0.0, //(optional)
 		offsetDirection : "", //[RIGHT, LEFT, UP, DOWN, UPRIGHT, UPLEFT, DOWNLEFT, DOWNRIGHT](optional)
 		headOnly: false,
@@ -1241,19 +1181,37 @@ function GazeClip(o)
 
 }
 
-
 ANIM.registerClipType( GazeClip );
 
 GazeClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
-		if(o.duration) this.duration = o.duration || 1;
+	if(o.duration) this.duration = o.duration || 1;
 	if(o.end) this.duration = (o.end - o.start) || 1;
 	if(o.ready) this.ready = this.fadein = o.ready;
 	if(o.relax) this.relax = this.fadeout = o.relax;
 	if(o.properties)
 	{
 		Object.assign(this.properties, o.properties);
+	}
+	for(let p in this.properties) {
+		if(o[p] != undefined) {
+			if(typeof(o[p]) == 'string')
+				o[p] = capitalize(o[p]);
+			this.properties[p] = o[p];
+		}
+	}
+
+	switch(this.properties.influence) {
+		case "Eyes":
+			this.id = "Eyes Gaze";
+			break;
+		case "Head":
+			this.id = "Head Gaze";
+			break;
+		case "Neck":
+			this.id = "Neck Gaze";
+			break;
 	}
 }
 
@@ -1269,7 +1227,7 @@ GazeClip.prototype.toJSON = function()
 	}
 	for(var i in this.properties)
 	{
-		json[i] = this.properties[i];
+		json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
 	}
 	return json;
 }
@@ -1292,110 +1250,79 @@ GazeClip.prototype.drawClip = function( ctx, w,h, selected )
 
 GazeClip.prototype.showInfo = function(panel, callback)
 {
-	for(var i in this.properties)
+
+	// Influence property
+	let values = [];
+	for(let id in GazeClip.influences) {
+		values.push(GazeClip.influences[id])
+	}
+
+	panel.addDropdown("Influence", values, this.properties.influence, (v, e, name) => {
+		
+		this.properties.influence = v
+		if(this.id == "Eyes Gaze" || this.id == "Head Gaze" || this.id == "Neck Gaze") {
+			this.id = v + " Gaze";
+		}
+		if(callback)
+			callback(true);
+		
+	}, {filter: true});
+
+	// Target property
+	values = [];
+	for(let id in GazeClip.targets) {
+		values.push(capitalize(GazeClip.targets[id]))
+	}
+
+	panel.addDropdown("Target", values, this.properties.target, (v, e, name) => {
+		
+		this.properties.target = v;
+		if(callback)
+			callback();
+		
+	}, {filter: true});
+
+	panel.addCheckbox("Set as base gaze", this.properties.shift, (v, e, name) =>
 	{
-		var property = this.properties[i];
-		let values = [];
-		if(i=="influence"){
-			for(let id in GazeClip.influences) {
-				values.push({ value: GazeClip.influences[id]})
-			}
-			panel.addDropdown(i, values, property, (v, e, name) => {
-				
-				this.properties[name] = v;
-				if(this.id == "Eyes Gaze" || this.id == "Head Gaze" || this.id == "Neck Gaze") {
-					this.id = capitalize(v) + " Gaze";
-				}
-				if(callback)
-					callback(true);
-				
-			}, {filter: true});
-	
-		}
-		else if(i=="offsetDirection"){
-			for(let id in GazeClip.directions) {
-				values.push({ value: GazeClip.directions[id] })
-			}
-			panel.addDropdown(i, values, property, (v, e, name) => {
-				
-				this.properties[name] = v;
-				if(callback)
-					callback();
-				
-			}, {filter: true});
-			
-		}
-		else if(i=="target"){
-			for(let id in GazeClip.targets) {
-				values.push({ value: GazeClip.targets[id] })
-			}
-			panel.addDropdown(i, values, property, (v, e, name) => {
-				
-				this.properties[name] = v;
-				if(callback)
-					callback();
-				
-			}, {filter: true});
-			
-		}
-		else
+		this.properties.shift = v;
+		if(callback)
+			callback();
+	});
+
+	panel.addText("Optional properties");
+
+	// Offset Driection property
+	values = [];
+	for(let id in GazeClip.directions) {
+		values.push(GazeClip.directions[id])
+	}
+
+	panel.addDropdown("Offset direction", values, this.properties.offsetDirection, (v, e, name) => {
+		
+		this.properties.offsetDirection = v;
+		if(callback)
+			callback();
+		
+	}, {filter: true});
+
+	// Offset Angle property
+	let options = {precision: 2};
+	panel.addNumber("Offset angle", this.properties.offsetAngle, (v, e, name) =>
+	{
+		this.properties.offsetAngle = v;
+		if(callback)
+			callback();
+	}, options);
+
+	// Head only property
+	if(this.properties.influence != "Eyes") {
+
+		panel.addCheckbox("Only head gaze", this.properties.headOnly, (v, e, name) =>
 		{
-			switch(property.constructor)
-			{
-
-				case String:
-					panel.addText(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-
-				case Number:
-					let options = { precision: 2 };
-					if(i=="amount")
-					{
-						options.min = 0; 
-						options.max = 1; 
-						options.step = 0.01;
-					}
-					
-					panel.addNumber(i, property, (v, e, name) =>
-					{
-						if(name == "start"){
-							var dt = v - this.properties[name];
-							this.properties.attackPeak += dt;
-							this.properties.relax += dt;
-						}
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					}, options);
-					
-					break;
-				
-				case Boolean:
-					if(i == "headOnly" && this.properties.influence == "EYES")
-						continue;
-					panel.addCheckbox(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-				
-				case Array:
-					panel.addArray(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-			}
-		}
+			this.properties.headOnly = v;
+			if(callback)
+				callback();
+		});
 	}
 }
 
@@ -1403,7 +1330,7 @@ GazeClip.prototype.showInfo = function(panel, callback)
 /*----------------------------------Head Behaviour-----------------------------------*/
 //HeadClip
 HeadClip.type = "head";
-HeadClip.lexemes = {"Nod": "NOD", "Shake": "SHAKE", "Tilt": "TILT", "Tilt left": "TILTLEFT", "Tilt right": "TILTRIGHT", "Tilt forward": "TILTFORWARD", "Tilt backward": "TILTBACKWARD", "Forward": "FORWARD", "Backward": "BACKWARD"};
+HeadClip.lexemes = ["Nod", "Shake", "Tilt", "Tilt left", "Tilt right", "Tilt forward", "Tilt backward", "Forward", "Backward"];
 HeadClip.id = ANIM.HEAD ? ANIM.HEAD: ANIM.clipTypes.length;
 HeadClip.clipColor = "#66c2a5";
 
@@ -1422,7 +1349,7 @@ function HeadClip(o)
 	this._width = 0;
 
 	this.properties = {
-		lexeme : "NOD", //[NOD,SHAKE, TILD...]
+		lexeme : "Nod", //[NOD,SHAKE, TILD...]
 		repetition : 1, //[1,*] (optional)
 		amount : 1, //[0,1]
 	}
@@ -1453,6 +1380,13 @@ HeadClip.prototype.configure = function(o)
 	{
 		Object.assign(this.properties, o.properties);
 	}
+	for(let p in this.properties) {
+		if(o[p] != undefined) {
+			if(typeof(o[p]) == 'string')
+				o[p] = capitalize(o[p].replaceAll("_", " "));
+			this.properties[p] = o[p];
+		}
+	}
 }
 
 HeadClip.prototype.toJSON = function()
@@ -1470,7 +1404,7 @@ HeadClip.prototype.toJSON = function()
 	}
 	for(var i in this.properties)
 	{
-		json[i] = this.properties[i];
+		json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
 	}
 	return json;
 }
@@ -1492,103 +1426,60 @@ HeadClip.prototype.drawClip = function( ctx, w,h, selected )
 
 HeadClip.prototype.showInfo = function(panel, callback)
 {
-	for(var i in this.properties)
+
+	// Lexeme property
+	panel.addDropdown('Lexeme', HeadClip.lexemes, this.properties.lexeme, (v, e, name) => {
+		
+		this.properties.lexeme = v;
+		if(callback)
+			callback();
+		
+	}, {filter: true});
+	
+	// Amount property
+	let options = { precision: 2,  min: 0, step: 1 };
+
+	panel.addNumber("Repetitions", this.properties.repetition, (v, e, name) =>
 	{
-		var property = this.properties[i];
-		if(i=="lexeme"){
-			let values = [];
-			for(let id in HeadClip.lexemes) {
-				values.push({ value: HeadClip.lexemes[id]})
-			}
-			panel.addDropdown(i, values, Object.keys(HeadClip.lexemes).find(key => HeadClip.lexemes[key] === property), (v, e, name) => {
-				
-				this.properties[name] = HeadClip.lexemes[v];
-				if(callback)
-					callback();
-				
-			}, {filter: true});
-		}
-		else
-		{
-			switch(property.constructor)
-			{
+		this.properties.repetition = v;
+		if(callback)
+			callback();
+	}, options );
 
-				case String:
-					panel.addText(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
+	// Amount property
+	options = { precision: 2,  min: 0, max: 1, step: 0.01 };
 
-				case Number:
-					let options = { precision: 2};
-					if(i=="amount")
-					{						
-						options.min = 0; 
-						options.max = 1; 
-						options.step = 0.01;
-					}
-
-					panel.addNumber(i, property, (v, e, name) =>
-					{
-						if(name == "start"){
-							var dt = v - this.properties[name];
-							this.properties.attackPeak += dt;
-							this.properties.relax += dt;
-						}
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					}, options );
-					
-					break;
-				
-				case Boolean:
-					panel.addCheckbox(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-				
-				case Array:
-					panel.addArray(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-			}
-		}
-	}
-
+	panel.addNumber("Amount", this.properties.amount.toFixed(2), (v, e, name) =>
+	{
+		this.properties.amount = v;
+		if(callback)
+			callback();
+	}, options );
 }
 
 /** --------- Gesture Behaviour -------------------- */
 
-//ShoulderRaiseClip
-ShoulderRaiseClip.type = "gesture";
-ShoulderRaiseClip.hands = ["Left", "Right", "Both"];
+//ShoulderClip
+ShoulderClip.type = "gesture";
+ShoulderClip.hands = ["Left", "Right", "Both"];
+ShoulderClip.movements = ["Raise", "Hunch"];
+ShoulderClip.id = ANIM.SHOULDER ? ANIM.SHOULDER: ANIM.clipTypes.length;
+ShoulderClip.clipColor = "#abdda4";
 
-ShoulderRaiseClip.id = ANIM.SHOULDERRAISE ? ANIM.SHOULDERRAISE: ANIM.clipTypes.length;
-ShoulderRaiseClip.clipColor = "#abdda4";
-
-function ShoulderRaiseClip(o)
+function ShoulderClip(o)
 {
-	this.id= "Shoulder Raise";
+	this.id = "Shoulder";
 	this.start = 0
 	this.duration = 1;
 	this.attackPeak = this.fadein = 0.25; //if it's not permanent
 	this.relax = this.fadeout = 0.75; //if it's not permanent
 	this._width = 0;
 
+	this.movementType = "Raise";
 	this.properties = {
-		hand: "right",	
+		hand: "Right",	
 		shoulderRaise : 0.8,	
+		amount: 0.8,
 		shift : false
 	}
 
@@ -1597,168 +1488,12 @@ function ShoulderRaiseClip(o)
 
 	this.color = "#1a1f23";
 	this.font = "11px Calibri";
-	this.clipColor = ShoulderRaiseClip.clipColor;
+	this.clipColor = ShoulderClip.clipColor;
 }
 
-ANIM.registerClipType( ShoulderRaiseClip );
+ANIM.registerClipType( ShoulderClip );
 
-ShoulderRaiseClip.prototype.configure = function(o)
-{
-	this.start = o.start || 0;
-		if(o.duration) this.duration = o.duration || 1;
-	if(o.end) this.duration = (o.end - o.start) || 1;
-	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
-	if(o.relax) this.relax = this.fadeout = o.relax;
-	if(o.properties)
-	{
-		Object.assign(this.properties, o.properties);
-	}
-}
-
-ShoulderRaiseClip.prototype.toJSON = function()
-{
-	var json = {
-		id: this.id,
-		start: this.start,
-		end: this.start + this.duration,
-		attackPeak: this.attackPeak,
-		relax: this.relax,
-		type: "gesture"
-	}
-	for(var i in this.properties)
-	{
-
-		json[i] = this.properties[i];
-	}
-	return json;
-}
-
-ShoulderRaiseClip.prototype.fromJSON = function( json )
-{
-	this.id = json.id;
-	this.configure(json);
-}
-
-ShoulderRaiseClip.prototype.drawClip = function( ctx, w,h, selected )
-{
-	ctx.font = this.font;
-	ctx.globalCompositeOperation =  "source-over";
-	let textInfo = ctx.measureText( this.id );
-	ctx.fillStyle = this.color;
-	if( textInfo.width < (w - 24) )
-		ctx.fillText( this.id, 24,h * 0.7 );
-}
-
-ShoulderRaiseClip.prototype.showInfo = function(panel, callback)
-{
-	for(var i in this.properties)
-	{
-		var property = this.properties[i];
-		let values = [];
-		if(i=="hand"){
-			for(let id in ShoulderRaiseClip.hands) {
-				values.push({ value: ShoulderRaiseClip.hands[id] })
-			}
-			panel.addDropdown(i, values, capitalize(property), (v, e, name) => {
-				
-				this.properties[name] = v.toLowerCase();
-				if(callback)
-					callback();
-				
-			}, {filter: true});
-			
-		}
-		else
-		{
-			switch(property.constructor)
-			{
-
-				case String:
-					panel.addText(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-
-				case Number:
-					let options = { precision: 2};
-					if(i=="shoulderRaise")
-					{
-						options.min = 0; 
-						options.max = 1; 
-						options.step = 0.01;
-					}
-					panel.addNumber(i, property, (v, e, name) =>
-					{
-						if(name == "start"){
-							var dt = v - this.properties[name];
-							this.properties.attackPeak += dt;
-							this.properties.relax += dt;
-						}
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					}, options);
-					
-					break;
-				
-				case Boolean:
-					panel.addCheckbox(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-				
-				case Array:
-					panel.addArray(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-			}
-		}
-	}
-}
-
-//ShoulderHunchClip
-ShoulderHunchClip.type = "gesture";
-ShoulderHunchClip.hands = ["Left", "Right", "Both"];
-ShoulderHunchClip.id = ANIM.SHOULDERHUNCH ? ANIM.SHOULDERHUNCH: ANIM.clipTypes.length;
-ShoulderHunchClip.clipColor = "#abdda4";
-
-function ShoulderHunchClip(o)
-{
-	this.id= "Shoulder Hunch";
-	this.start = 0
-	this.duration = 1;
-	this.attackPeak = this.fadein = 0.25; //if it's not permanent
-	this.relax = this.fadeout = 0.75; //if it's not permanent
-
-	this._width = 0;
-
-	this.properties = {
-		hand: "right",	
-		shoulderHunch : 0.8,	
-		shift : false
-	}
-
-	if(o)
-		this.configure(o);
-
-	this.color = "#1a1f23";
-	this.font = "11px Calibri";
-	this.clipColor = ShoulderHunchClip.clipColor;
-}
-
-ANIM.registerClipType( ShoulderHunchClip );
-
-ShoulderHunchClip.prototype.configure = function(o)
+ShoulderClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
 	if(o.duration) this.duration = o.duration || 1;
@@ -1767,11 +1502,23 @@ ShoulderHunchClip.prototype.configure = function(o)
 	if(o.relax) this.relax = this.fadeout = o.relax;
 	if(o.properties)
 	{
-		Object.assign(this.properties, o.properties);
+		Object.assign(this.properties, o.properties);		
 	}
+	for(let p in this.properties) {
+		if(o[p] != undefined) {
+			if(typeof(o[p]) == 'string')
+				o[p] = capitalize(o[p].replaceAll("_", " "));
+			this.properties[p] = o[p];
+		}
+	}
+	this.properties.amount = o.shoulderRaise || o.shoulderHunch || this.properties.amount;
+	if(o.shoulderRaise != undefined)
+		this.movementType = "Raise";
+	else if(o.shoulderHunch != undefined)
+		this.movementType = "Hunch";
 }
 
-ShoulderHunchClip.prototype.toJSON = function()
+ShoulderClip.prototype.toJSON = function()
 {
 	var json = {
 		id: this.id,
@@ -1781,20 +1528,23 @@ ShoulderHunchClip.prototype.toJSON = function()
 		relax: this.relax,
 		type: "gesture"
 	}
+
+	json["shoulder" + this.movementType] = this.properties.amount;
+
 	for(var i in this.properties)
 	{
-		json[i] = this.properties[i];
+		json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
 	}
 	return json;
 }
 
-ShoulderHunchClip.prototype.fromJSON = function( json )
+ShoulderClip.prototype.fromJSON = function( json )
 {
 	this.id = json.id;
 	this.configure(json);
 }
 
-ShoulderHunchClip.prototype.drawClip = function( ctx, w,h, selected )
+ShoulderClip.prototype.drawClip = function( ctx, w,h, selected )
 {
 	ctx.font = this.font;
 	ctx.globalCompositeOperation =  "source-over";
@@ -1804,86 +1554,49 @@ ShoulderHunchClip.prototype.drawClip = function( ctx, w,h, selected )
 		ctx.fillText( this.id, 24,h * 0.7 );
 }
 
-ShoulderHunchClip.prototype.showInfo = function(panel, callback)
+ShoulderClip.prototype.showInfo = function(panel, callback)
 {
-	for(var i in this.properties)
+	panel.addText(null, "Moves the shoulder forward or up", null, {disabled: true});
+	// Movement type
+	panel.addDropdown("Movement", ShoulderClip.movements, this.movementType, (v, e, name) => {
+		
+		this.movementType = v;
+		if(callback)
+			callback();
+		
+	}, {filter: true});
+
+	// Hand property
+	panel.addDropdown("Side",  ShoulderClip.hands, this.properties.hand, (v, e, name) => {
+		
+		this.properties.hand = v.toLowerCase();
+		if(callback)
+			callback();
+		
+	}, {filter: true});
+
+	// ShoulderRaise/ShoulderHunch amount property
+	let options = { precision: 2, min : 0, max : 1, step:  0.01};
+	
+	panel.addNumber("Amount", this.properties.amount, (v, e, name) =>
 	{
-		var property = this.properties[i];
-		let values = [];
-		if(i=="hand"){
-			for(let id in ShoulderHunchClip.hands) {
-				values.push({ value: ShoulderHunchClip.hands[id] })
-			}
-			panel.addDropdown(i, values, capitalize(property), (v, e, name) => {
-				
-				this.properties[name] = v.toLowerCase();
-				if(callback)
-					callback();
-				
-			}, {filter: true});
-			
-		}
-		else
-		{
-			switch(property.constructor)
-			{
+		this.properties.amount = v;
+		if(callback)
+			callback();
+	}, options);
 
-				case String:
-					panel.addText(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
+	panel.addCheckbox("Set as base shoulder position", this.properties.shift, (v, e, name) =>
+	{
+		this.properties.shift = v;
+		if(callback)
+			callback();
+	});
 
-				case Number:
-					let options = {precision: 2};
-					if(i=="shoulderHunch")
-					{
-						options.min = 0; 
-						options.max = 1; 
-						options.step = 0.01;
-					}
-					
-					panel.addNumber(i, property, (v, e, name) =>
-					{
-						if(name == "start"){
-							var dt = v - this.properties[name];
-							this.properties.attackPeak += dt;
-							this.properties.relax += dt;
-						}
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					}, options);
-					break;
-				
-				case Boolean:
-					panel.addCheckbox(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-				
-				case Array:
-					panel.addArray(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-			}
-		}
-	}
 }
 
 //BodyMovementClip
 BodyMovementClip.type = "gesture";
-BodyMovementClip.movements = {"Tilt forward": "TF", "Tilt backward": "TB", "Tilt left": "TL", "Tilt right": "TR", "Rotate left": "RL", "Rotate right": "RR"};
+BodyMovementClip.movements = ["Tilt forward", "Tilt backward", "Tilt left", "Tilt right", "Rotate left", "Rotate right"];
 BodyMovementClip.hands = ["Left", "Right", "Both"];
 BodyMovementClip.id = ANIM.BODYMOVEMENT ? ANIM.BODYMOVEMENT: 8;
 BodyMovementClip.clipColor = "#fee08b";
@@ -1898,9 +1611,9 @@ function BodyMovementClip(o)
 	this._width = 0;
 
 	this.properties = {
-		hand: "right",
-		bodyMovement : "TF",	
-		amount: 1,	
+		hand: "Right",
+		bodyMovement : "Tilt forward",	
+		amount: 0.5,	
 		shift : false
 	}
 
@@ -1925,6 +1638,13 @@ BodyMovementClip.prototype.configure = function(o)
 	{
 		Object.assign(this.properties, o.properties);
 	}
+	for(let p in this.properties) {
+		if(o[p] != undefined) {
+			if(typeof(o[p]) == 'string')
+				o[p] = capitalize(o[p].replaceAll("_", " "));
+			this.properties[p] = o[p];
+		}
+	}
 }
 
 BodyMovementClip.prototype.toJSON = function()
@@ -1939,9 +1659,7 @@ BodyMovementClip.prototype.toJSON = function()
 	}
 	for(var i in this.properties)
 	{
-		
-
-		json[i] = this.properties[i];
+		json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
 	}
 	return json;
 }
@@ -1964,101 +1682,42 @@ BodyMovementClip.prototype.drawClip = function( ctx, w,h, selected )
 
 BodyMovementClip.prototype.showInfo = function(panel, callback)
 {
-	for(var i in this.properties)
+	panel.addText(null, "Moves the body (trunk)", null, {disabled: true});
+	// Movement
+	panel.addDropdown("Movement", BodyMovementClip.movements, this.properties.bodyMovement, (v, e, name) => {
+		
+		this.properties.bodyMovement = v;
+		if(callback)
+			callback();
+		
+	}, {filter: true});
+
+	// Amount property
+	let options = { precision: 2, min : 0, max : 1, step:  0.01};
+	
+	panel.addNumber("Amount", this.properties.amount, (v, e, name) =>
 	{
-		var property = this.properties[i];
-		let values = [];
-		if(i=="hand"){
-			for(let id in BodyMovementClip.hands) {
-				values.push({ value: BodyMovementClip.hands[id] })
-			}
-			panel.addDropdown(i, values, capitalize(property), (v, e, name) => {
-				
-				this.properties[name] = v.toLowerCase();
-				if(callback)
-					callback();
-				
-			}, {filter: true});
-			
-		}
-		else if(i=="bodyMovement"){
-			for(let id in BodyMovementClip.movements) {
-				values.push({ value: id })
-			}
-			panel.addDropdown(i, values, Object.keys(BodyMovementClip.movements).find(key => BodyMovementClip.movements[key] === property), (v, e, name) => {
-				
-				this.properties[name] = BodyMovementClip.movements[v];
-				if(callback)
-					callback();
-				
-			}, {filter: true});
-			
-		}
-		else
-		{
-			switch(property.constructor)
-			{
-
-				case String:
-					panel.addText(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-
-				case Number:
-					let options = {precision: 2};
-					if(i=="amount")
-					{
-						options.min = 0; 
-						options.max = 1; 
-						options.step = 0.01;
-						
-					}
-					
-					panel.addNumber(i, property, (v, e, name) =>
-					{
-						if(name == "start"){
-							var dt = v - this.properties[name];
-							this.properties.attackPeak += dt;
-							this.properties.relax += dt;
-						}
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					}, options);
-					
-					break;
-				
-				case Boolean:
-					panel.addCheckbox(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-				
-				case Array:
-					panel.addArray(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-			}
-		}
-	}
+		this.properties.amount = v;
+		if(callback)
+			callback();
+	}, options);
 }
 
 //BodyLocationClip
 BodyLocationClip.type = "gesture";
-BodyLocationClip.locations = ["head", "headtop", "forehead", "nose", "belownose", "chin", "underchin", "mouth", "earlobe", "earlobeR", "earlobeL", "ear ", "earR", "earL", "cheek ", "cheekR", "cheekL", "eye ", "eyeR", "eyeL", "eyebrow ", "eyebrowL", "eyebrowR", "mouth", "chest", "shoulderLine", "shoulder", "shoulderR", "shoulderL", "stomach", "belowstomach", "neutral"];
+BodyLocationClip.locations = ["Head", "Head top", "Forehead", "Nose", "Below nose", "Chin", "Under chin", "Mouth", "Earlobe", "Earlobe Right", "Earlobe Left", "Ear ", "Ear Right", "Ear Left", "Cheek ", "Cheek Right", "Cheek Left", 
+								"Eye ", "Eye Right", "Eye Left", "Eyebrow ", "Eyebrow Left", "Eyebrow Right", "Mouth", "Chest", "Shoulder Line", "Shoulder", "Shoulder Right", "Shoulder Left", "Stomach", "Below stomach", "Neutral"];
 BodyLocationClip.sides = { "Right": "rr", "Slightly right": "r", "Left": "ll", "Slightly left": "l"};
 BodyLocationClip.hands = ["Left", "Right", "Both"];
+BodyLocationClip.directions = ["Up", "Down", "Left", "Right", "In", "Out",
+								"Up Left", "Up Right", "Up In", "Up Out",
+								"Left In", "Left Out", "Right In", "Right Out",								
+								"Down Left", "Down Right", "Down In", "Down Out",
+								"Up Out Left", "Up Out Right", "Down Out Left", "Down Out Right",
+								"Down Out Left", "Down Out Right", "Down In Left", "Down In Right"];
+BodyLocationClip.fingers = ["","Thumb", "Index", "Middle", "Ring", "Pinky"];
+BodyLocationClip.hand_locations = ["","Tip", "Pad", "Mid", "Base", "Thumb ball", "Hand", "Wrist"];
+BodyLocationClip.hand_sides = ["", "Right", "Left", "Ulnar", "Radial", "Front", "Back", "Palmar"];
 
 BodyLocationClip.id = ANIM.BODYLOCATION ? ANIM.BODYLOCATION: ANIM.clipTypes.length;
 BodyLocationClip.clipColor = "#fdae61";
@@ -2073,25 +1732,23 @@ function BodyLocationClip(o)
 	this._width = 0;
 
 	this.properties = {
-		hand: "right",
-		locationBodyArm : "chest",	
-		secondLocationBodyArm: "chest",
+		hand: "Right",
+		locationBodyArm : "Chest",	
 		// optionals
-		secondLocationBodyArm: "chest", // string
-		side: "rr", // string, chooses a point to the right, slightly right, slightly left or left of the chosen point
-		secondSide: "l", // string
+		secondLocationBodyArm: "", // string
+		side: "", // string, chooses a point to the right, slightly right, slightly left or left of the chosen point
+		secondSide: "", // string
 	
 		distance: 0, // [0,1] how far from the body to locate the hand. 0 = close, 1 = arm extended
-		displace: "u", // string, 26 directions. Location will be offseted into that direction
+		displace: "", // string, 26 directions. Location will be offseted into that direction
 		displaceDistance: 0.05, // number how far to move to the indicated side. Metres 
 	 
-		elbowRaise: 10, // in degrees. Positive values raise the elbow.
+		elbowRaise: 0, // in degrees. Positive values raise the elbow.
 	
 		//Following attributes describe which part of the hand will try to reach the locationBodyArm location 
-		srcContact: "1PadPalmar", //source contact location in a single variable. Strings must be concatenate as srcFinger + srcLocation + srcSide (whenever each variable is needed). Afterwards, there is no need to use srcFinger, srcLocation or srcSide
-		srcFinger: "1", // 1,2,3,4,5, see handconstellation for more information
-		srcLocation: "Pad", // see handconstellation hand locations
-		srcSide: "Palmar", // see handconstellation sides
+		srcFinger: "", // 1,2,3,4,5, see handconstellation for more information
+		srcLocation: "", // see handconstellation hand locations
+		srcSide: "", // see handconstellation sides
 		keepUpdatingContact: false, // once peak is reached, the location will be updated only if this is true. 
 					// i.e.: set to false; contact tip of index; reach destination. Afterwards, changing index finger state will not modify the location
 					// i.e.: set to true; contact tip of index; reach destination. Afterwards, changing index finger state (handshape) will make the location change depending on where the tip of the index is  
@@ -2120,11 +1777,54 @@ BodyLocationClip.prototype.configure = function(o)
 	{
 		Object.assign(this.properties, o.properties);
 	}
+	for(let p in this.properties) {
+		if(o[p] != undefined) {
+			if(typeof(o[p]) == 'string')
+				o[p] = capitalize(o[p].replaceAll("_", " "));
+			this.properties[p] = o[p];
+		}
+	}
+	if(o.side || o.secondSide) {
+		for(let s in BodyLocationClip.sides) {
+			if(o.side == BodyLocationClip.sides[s])
+				this.properties.side = s;
+			if(o.secondSide == BodyLocationClip.sides[s])
+				this.properties.secondSide = s;
+		}
+	}
+	if(o.displace) {
+		this.properties.displace = "";
+		for(let i = 0; i < o.displace.length; i++) {
+			let char = o.displace[i];
+			switch(char) {
+				case "u":
+					this.properties.displace += "Up";
+					break;
+				case "d":
+					this.properties.displace +=	"Down";
+					break;
+				case "l":
+					this.properties.displace += "Left";
+					break;
+				case "r":
+					this.properties.displace += "Right";
+					break;
+				case "i":
+					this.properties.displace += "In";
+					break;
+				case "o": 
+					this.properties.displace += "Out";
+				break;
+
+			}
+		}
+	}
+	if(o.srcFinger) this.properties.srcFinger = BodyLocationClip.fingers[o.srcFinger];
 }
 
 BodyLocationClip.prototype.toJSON = function()
 {
-	var json = {
+	let json = {
 		id: this.id,
 		start: this.start,
 		end: this.start + this.duration,
@@ -2132,11 +1832,26 @@ BodyLocationClip.prototype.toJSON = function()
 		relax: this.relax,
 		type: "gesture"
 	}
-	for(var i in this.properties)
+	for(let i in this.properties)
 	{
-		
+		if( i == "side" || i == "secondSide") 
+			json[i] = BodyLocationClip.sides[this.properties[i]];
+		else if ( i == "displace" && this.properties[i] != "") {
+			let d = this.properties[i].split(" ");
+			json[i] = "";
+			for(let j = 0; j < d.length; j++) {
+				json[i] += d[j][0].toLowerCase();
+			}
+		}
+		else if(i == "srcFinger") {
+			json[i] = BodyLocationClip.fingers.indexOf(this.properties[i])
+			json[i] = json[i] < 0 ? null : json[i];
+		}
+		else 
+			json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
 
-		json[i] = this.properties[i];
+		if(json[i] == "")
+			json[i] = null;
 	}
 	return json;
 }
@@ -2159,127 +1874,143 @@ BodyLocationClip.prototype.drawClip = function( ctx, w,h, selected )
 
 BodyLocationClip.prototype.showInfo = function(panel, callback)
 {
-	for(var i in this.properties)
+	panel.addText(null, "Moves the arm (wrist) to a location of the body.", null, {disabled: true});
+	// Location body arm property
+	panel.addDropdown("Arm location", BodyLocationClip.locations, this.properties.locationBodyArm, (v, e, name) => {
+		
+		this.properties.locationBodyArm = v;
+		if(callback)
+			callback();
+		
+	}, {filter: true});
+
+	// Hand property
+	panel.addDropdown("Arm", BodyLocationClip.hands, this.properties.hand, (v, e, name) => {
+				
+		this.properties.hand = v;
+		if(callback)
+			callback();
+		
+	}, {filter: true});
+
+
+	panel.addCheckbox("Set as base gaze", this.properties.shift, (v, e, name) =>
 	{
-		var property = this.properties[i];
-		let values = [];
-		if(i=="hand"){
-			for(let id in BodyLocationClip.hands) {
-				values.push({ value: BodyLocationClip.hands[id] })
-			}
-			panel.addDropdown(i, values, capitalize(property), (v, e, name) => {
+		this.properties.shift = v;
+		if(callback)
+			callback();
+	});
+	
+	panel.addSeparator();
+	panel.addText(null, "Optionals", null, {disabled: true});
+
+	// Location side
+	panel.addDropdown("Side", ["", ...Object.keys(BodyLocationClip.sides)], this.properties.side, (v, e, name) => {
+		
+		this.properties.side = v;
+		if(callback)
+			callback();
+		
+	}, {filter: true});
+
+	// Second location body arm property
+	panel.addDropdown("Second location", ["", ...BodyLocationClip.locations], this.properties.secondLocationBodyArm, (v, e, name) => {
+		
+		this.properties.secondLocationBodyArm = v;
+		if(callback)
+			callback(true);
+		
+	}, {filter: true});
+
+	if(this.properties.secondLocationBodyArm) {
+		// Second loaction side
+		panel.addDropdown("Second side", ["", ...Object.keys(BodyLocationClip.sides)], this.properties.secondSide, (v, e, name) => {
 				
-				this.properties[name] = v.toLowerCase();
-				if(callback)
-					callback();
-				
-			}, {filter: true});
+			this.properties.secondSide = v;
+			if(callback)
+				callback();
 			
-		}
-		else if(i=="locationBodyArm" || i=="secondLocationBodyArm"){
-			for(let id in BodyLocationClip.locations) {
-				values.push({ value: BodyLocationClip.locations[id] })
-			}
-			panel.addDropdown(i, values, property, (v, e, name) => {
-				
-				this.properties[name] = v;
-				if(callback)
-					callback();
-				
-			}, {filter: true});
-			
-		} 
-		else if(i=="side" || i=="secondSide"){
-				values = [];
-				for(let id in BodyLocationClip.sides) {
-					values.push({ value: id })
-				}
-				panel.addDropdown(i, values, Object.keys(BodyLocationClip.sides).find(key => BodyLocationClip.sides[key] === property), (v, e, name) => {
-					
-					this.properties[name] = BodyLocationClip.sides[v];
-					if(callback)
-						callback();
-					
-				}, {filter: true});
-
-		} 
-		else if(i=="srcFinger"){
-
-			panel.addDropdown(i, ["1", "2", "3", "4", "5"], property, (v, e, name) => {
-				
-				this.properties[name] = v;
-				if(callback)
-					callback();
-				
-			}, {filter: true});
-		} 
-		else {
-			switch(property.constructor)
-			{
-
-				case String:
-					panel.addText(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-
-				case Number:
-					let options = {precision: 2};
-					if(i=="amount")
-					{
-						options.min = 0; 
-						options.max = 1; 
-						options.step = 0.01;
-					}
-					else if(i=="elbowRaise")
-					{
-						options.min = -360; 
-						options.max = 360; 
-						options.step = 0.1;
-					}
-				
-					panel.addNumber(i, property, (v, e, name) =>
-					{
-						if(name == "start"){
-							var dt = v - this.properties[name];
-							this.properties.attackPeak += dt;
-							this.properties.relax += dt;
-						}
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					}, options);
-					
-					break;
-				
-				case Boolean:
-					panel.addCheckbox(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-				
-				case Array:
-					panel.addArray(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-			}
-		}
+		}, {filter: true});
 	}
+	
+	// Distance property 
+	let options = {precision: 2};
+	panel.addNumber("Distance from body", this.properties.distance, (v, e, name) =>
+	{
+		this.properties.distance = v;
+		if(callback)
+			callback();
+	}, {precision: 2, min: 0, max: 1, step: 0.01});
+
+	// Displacement property
+	panel.addDropdown("Displace", BodyLocationClip.directions, this.properties.displace, (v, e, name) => {
+	
+		this.properties.displace = v;
+		if(callback)
+			callback(true);
+		
+	}, {filter: true});
+
+	if(this.properties.displace) {
+
+		// Displace distance
+		panel.addNumber("Displace distance", this.properties.displaceDistance, (v, e, name) =>
+		{
+			this.properties.displaceDistance = v;
+			if(callback)
+				callback();
+		}, {precision: 2, min: 0, step: 0.01});
+				
+	}
+
+	panel.addSeparator();s
+	// Hnad constellation properties
+	panel.addTitle("Part of the hand that will try to reach the body location")
+
+	// Part of the hand
+	panel.addDropdown("Locaton", BodyLocationClip.fingers, this.properties.srcLocation, (v, e, name) => {
+				
+		this.properties.srcLocation = v;
+		if(callback)
+			callback(true);
+		
+	}, {filter: true});
+
+	if(this.properties.srcLocation && this.properties.srcLocation != "Tip") {
+		panel.addDropdown("Side", BodyLocationClip.hand_sides, this.properties.srcSide, (v, e, name) => {
+				
+			this.properties.srcSide = v;
+			if(callback)
+				callback();
+			
+		}, {filter: true});
+	
+	}
+	if(this.properties.srcLocation == "Tip" || this.properties.srcLocation == "Pad" || this.properties.srcLocation == "Mid" || this.properties.srcLocation == "Base") {
+
+		panel.addDropdown("Finger", BodyLocationClip.fingers, this.properties.srcFinger, (v, e, name) => {
+				
+			this.properties.srcFinger = v;
+			if(callback)
+				callback();
+			
+		}, {filter: true});
+	}
+
+	// Elbow raise property
+	panel.addNumber("Raise elbow", this.properties.elbowRaise, (v, e, name) =>
+	{
+		this.properties.elbowRaise = v;
+		if(callback)
+			callback();
+	}, {precision: 2, min: -360, max: 360, step: 0.1});	
+
 }
 
 //PalmOrientationClip
 PalmOrientationClip.type = "gesture";
 PalmOrientationClip.hands = ["Left", "Right", "Both"];
+PalmOrientationClip.directions = ["Up", "Down", "Left", "Right", "Up Left", "Up Right", "Down Left", "Down Right"];
 
 PalmOrientationClip.id = ANIM.PALMORIENTATION ? ANIM.PALMORIENTATION: ANIM.clipTypes.length;
 PalmOrientationClip.clipColor = "#f46d43";
@@ -2294,11 +2025,11 @@ function PalmOrientationClip(o)
 	this._width = 0;
 
 	this.properties = {
-		hand: "right",
-		palmor: "u", //string 8 directions. Relative to arm (not to world coordinates )
+		hand: "Right",
+		palmor: "Up", //string 8 directions. Relative to arm (not to world coordinates )
     
 		// optionals
-		secondPalmor: "l", // string 8 directions. Will compute midpoint between palmor and secondPalmor.
+		secondPalmor: "", // string 8 directions. Will compute midpoint between palmor and secondPalmor.
 		shift: false 
 	}
 
@@ -2323,6 +2054,54 @@ PalmOrientationClip.prototype.configure = function(o)
 	{
 		Object.assign(this.properties, o.properties);
 	}
+	for(let p in this.properties) {
+		if(o[p] != undefined) {
+			if(typeof(o[p]) == 'string')
+				o[p] = capitalize(o[p].replaceAll("_", " "));
+			this.properties[p] = o[p];
+		}
+	}
+	if(o.palmor) {
+		this.properties.palmor = "";
+		for(let i = 0; i < o.palmor.length; i++) {
+			let char = o.palmor[i];
+			switch(char) {
+				case "u":
+					this.properties.palmor += "Up";
+					break;
+				case "d":
+					this.properties.palmor +=	"Down";
+					break;
+				case "l":
+					this.properties.palmor += "Left";
+					break;
+				case "r":
+					this.properties.palmor += "Right";
+					break;
+			}
+		}
+	}
+
+	if(o.secondPalmor) {
+		this.properties.secondPalmor = "";
+		for(let i = 0; i < o.secondPalmor.length; i++) {
+			let char = o.secondPalmor[i];
+			switch(char) {
+				case "u":
+					this.properties.secondPalmor += "Up";
+					break;
+				case "d":
+					this.properties.secondPalmor +=	"Down";
+					break;
+				case "l":
+					this.properties.secondPalmor += "Left";
+					break;
+				case "r":
+					this.properties.secondPalmor += "Right";
+					break;
+			}
+		}
+	}
 }
 
 PalmOrientationClip.prototype.toJSON = function()
@@ -2337,9 +2116,18 @@ PalmOrientationClip.prototype.toJSON = function()
 	}
 	for(var i in this.properties)
 	{
-		
+		if ( (i == "palmor" || i == "secondPalmor") && this.properties[i] != "") {
+			let d = this.properties[i].split(" ");
+			json[i] = "";
+			for(let j = 0; j < d.length; j++) {
+				json[i] += d[j][0].toLowerCase();
+			}
+		}
+		else 
+			json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
 
-		json[i] = this.properties[i];
+		if(json[i] == "")
+			json[i] = null;
 	}
 	return json;
 }
@@ -2362,84 +2150,57 @@ PalmOrientationClip.prototype.drawClip = function( ctx, w,h, selected )
 
 PalmOrientationClip.prototype.showInfo = function(panel, callback)
 {
-	for(var i in this.properties)
+
+	panel.addText(null,"Roll of the wrist joint", null, {disabled: true});
+	// Direction property
+	panel.addDropdown("Direction", Object.keys(PalmOrientationClip.directions), this.properties.palmor, (v, e, name) => {
+		
+		this.properties.palmor = v;
+		if(callback)
+			callback();
+		
+	}, {filter: true});
+
+	// Hand property
+	panel.addDropdown("Hand", PalmOrientationClip.hands, this.properties.hand, (v, e, name) => {
+				
+		this.properties.hand = v;
+		if(callback)
+			callback();
+		
+	}, {filter: true});
+
+
+	panel.addCheckbox("Set as base gaze", this.properties.shift, (v, e, name) =>
 	{
-		var property = this.properties[i];
-		let values = [];
-		if(i=="hand"){
-			for(let id in PalmOrientationClip.hands) {
-				values.push({ value: PalmOrientationClip.hands[id] })
-			}
-			panel.addDropdown(i, values, capitalize(property), (v, e, name) => {
-				
-				this.properties[name] = v.toLowerCase();
-				if(callback)
-					callback();
-				
-			}, {filter: true});
-			
-		}
-		else {
-			switch(property.constructor)
-			{
+		this.properties.shift = v;
+		if(callback)
+			callback();
+	});
+	
+	panel.addSeparator();
 
-				case String:
-					panel.addText(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
+	panel.addText(null, "Optionals", null, {disabled: true});
 
-				case Number:
-					let options = {precision: 2};
-					if(i=="elbowRaise")
-					{
-						options = {min:-360, max:360, step: 0.1};
-						
-					}
-
-					panel.addNumber(i, property, (v, e, name) =>
-					{
-						if(name == "start"){
-							var dt = v - this.properties[name];
-							this.properties.attackPeak += dt;
-							this.properties.relax += dt;
-						}
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					}, options);
-					
-					break;
-				
-				case Boolean:
-					panel.addCheckbox(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-				
-				case Array:
-					panel.addArray(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-			}
-		}
-	}
+	// Second direction side
+	panel.addDropdown("Second direction", ["", ...Object.keys(PalmOrientationClip.directions)], this.properties.secondPalmor, (v, e, name) => {
+		
+		this.properties.secondPalmor = v;
+		if(callback)
+			callback();
+		
+	}, {filter: true});
 }
-
 
 //ExtfidirClip
 ExtfidirClip.type = "gesture";
 ExtfidirClip.hands = ["Left", "Right", "Both"];
+ExtfidirClip.directions = ["Up", "Down", "Left", "Right", "In", "Out",
+							"Up Left", "Up Right", "Up In", "Up Out",
+							"Left In", "Left Out", "Right In", "Right Out",								
+							"Down Left", "Down Right", "Down In", "Down Out",
+							"Up Out Left", "Up Out Right", "Down Out Left", "Down Out Right",
+							"Down Out Left", "Down Out Right", "Down In Left", "Down In Right"];
 
 ExtfidirClip.id = ANIM.PALMORIENTATION ? ANIM.PALMORIENTATION: ANIM.clipTypes.length;
 ExtfidirClip.clipColor = "#d53e4f";
@@ -2454,11 +2215,11 @@ function ExtfidirClip(o)
 	this._width = 0;
 
 	this.properties = {
-		hand: "right",
-		extfidir: "l", // string  26 directions
+		hand: "Right",
+		extfidir: "Left", // string  26 directions
     
 		// optionals
-		secondExtfidir: "l", // string 26 directions. Will compute midpoint between extifidir and secondExtfidir  
+		secondExtfidir: "", // string 26 directions. Will compute midpoint between extifidir and secondExtfidir  
 		shift: false, // optional
 	}
 
@@ -2475,13 +2236,73 @@ ANIM.registerClipType( ExtfidirClip );
 ExtfidirClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
-		if(o.duration) this.duration = o.duration || 1;
+	if(o.duration) this.duration = o.duration || 1;
 	if(o.end) this.duration = (o.end - o.start) || 1;
 	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
 	if(o.relax) this.relax = this.fadeout = o.relax;
 	if(o.properties)
 	{
 		Object.assign(this.properties, o.properties);
+	}
+	for(let p in this.properties) {
+		if(o[p] != undefined) {
+			if(typeof(o[p]) == 'string')
+				o[p] = capitalize(o[p].replaceAll("_", " "));
+			this.properties[p] = o[p];
+		}
+	}
+	if(o.extfidir) {
+		this.properties.extfidir = "";
+		for(let i = 0; i < o.extfidir.length; i++) {
+			let char = o.extfidir[i];
+			switch(char) {
+				case "u":
+					this.properties.extfidir += "Up";
+					break;
+				case "d":
+					this.properties.extfidir +=	"Down";
+					break;
+				case "l":
+					this.properties.extfidir += "Left";
+					break;
+				case "r":
+					this.properties.extfidir += "Right";
+					break;
+				case "i":
+					this.properties.extfidir += "In";
+					break;
+				case "o":
+					this.properties.extfidir += "Out";
+					break;
+			}
+		}
+	}
+
+	if(o.secondExtfidir) {
+		this.properties.secondExtfidir = "";
+		for(let i = 0; i < o.secondExtfidir.length; i++) {
+			let char = o.secondExtfidir[i];
+			switch(char) {
+				case "u":
+					this.properties.secondExtfidir += "Up";
+					break;
+				case "d":
+					this.properties.secondExtfidir +=	"Down";
+					break;
+				case "l":
+					this.properties.secondExtfidir += "Left";
+					break;
+				case "r":
+					this.properties.secondExtfidir += "Right";
+					break;
+				case "i":
+					this.properties.secondExtfidir += "In";
+					break;
+				case "o":
+					this.properties.secondExtfidir += "Out";
+					break;
+			}
+		}
 	}
 }
 
@@ -2497,9 +2318,21 @@ ExtfidirClip.prototype.toJSON = function()
 	}
 	for(var i in this.properties)
 	{
-		
+		for(var i in this.properties)
+		{
+			if ( (i == "extfidir" || i == "secondExtfidir") && this.properties[i] != "") {
+				let d = this.properties[i].split(" ");
+				json[i] = "";
+				for(let j = 0; j < d.length; j++) {
+					json[i] += d[j][0].toLowerCase();
+				}
+			}
+			else 
+				json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
 
-		json[i] = this.properties[i];
+			if(json[i] == "")
+				json[i] = null;
+		}
 	}
 	return json;
 }
@@ -2522,80 +2355,55 @@ ExtfidirClip.prototype.drawClip = function( ctx, w,h, selected )
 
 ExtfidirClip.prototype.showInfo = function(panel, callback)
 {
-	for(var i in this.properties)
+	panel.addText(null,"Roll of the wrist joint", null, {disabled: true});
+	// Direction property
+	panel.addDropdown("Direction", Object.keys(ExtfidirClip.directions), this.properties.extfidir, (v, e, name) => {
+		
+		this.properties.extfidir = v;
+		if(callback)
+			callback();
+		
+	}, {filter: true});
+
+	// Hand property
+	panel.addDropdown("Hand", ExtfidirClip.hands, this.properties.hand, (v, e, name) => {
+				
+		this.properties.hand = v;
+		if(callback)
+			callback();
+		
+	}, {filter: true});
+
+
+	panel.addCheckbox("Set as base gaze", this.properties.shift, (v, e, name) =>
 	{
-		var property = this.properties[i];
-		let values = [];
-		if(i=="hand"){
-			for(let id in ExtfidirClip.hands) {
-				values.push({ value: ExtfidirClip.hands[id] })
-			}
-			panel.addDropdown(i, values, capitalize(property), (v, e, name) => {
-				
-				this.properties[name] = v.toLowerCase();
-				if(callback)
-					callback();
-				
-			}, {filter: true});
-			
-		}
-		else {
-			switch(property.constructor)
-			{
+		this.properties.shift = v;
+		if(callback)
+			callback();
+	});
+	
+	panel.addSeparator();
 
-				case String:
-					panel.addText(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
+	panel.addText(null, "Optionals", null, {disabled: true});
 
-				case Number:
-					panel.addNumber(i, property, (v, e, name) =>
-					{
-						if(name == "start"){
-							var dt = v - this.properties[name];
-							this.properties.attackPeak += dt;
-							this.properties.relax += dt;
-						}
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					}, {precision: 2});
-					break;
-				
-				case Boolean:
-					panel.addCheckbox(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-				
-				case Array:
-					panel.addArray(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-			}
-		}
-	}
+	// Second direction side
+	panel.addDropdown("Second direction", ["", ...Object.keys(ExtfidirClip.directions)], this.properties.secondExtfidir, (v, e, name) => {
+		
+		this.properties.secondExtfidir = v;
+		if(callback)
+			callback();
+		
+	}, {filter: true});
 }
 
 
 //HandshapeClip
 HandshapeClip.type = "gesture";
-HandshapeClip.handshapes = ["fist", "finger2", "finger23", "finger23spread", "finger2345", "flat", "pinch12", "pinch12open", "pinchall", "ceeall", "cee12", "cee12open"];
-HandshapeClip.thumbshapes = ["default", "out", "opposed", "across", "touch"];
-HandshapeClip.bendstates = ["straight", "halfbent", "bent", "round", "hooked", "dblbent", "dblhooked"];
+HandshapeClip.handshapes = ["Fist", "Finger 2", "Finger 23", "Finger 23 spread", "Finger 2345", "Flat", "Pinch 12", "Pinch 12 open", "Pinchall", "Cee all", "Cee 12", "Cee 12 open"];
+HandshapeClip.thumbshapes = ["Default", "Out", "Opposed", "Across", "Touch"];
+HandshapeClip.bendstates = ["Straight", "Half bent", "Bent", "Round", "Hooked", "Double bent", "Double hooked"];
 HandshapeClip.hands = ["Left", "Right", "Both"];
-
+HandshapeClip.fingers = ["","Thumb", "Index", "Middle", "Ring", "Pinky"];
 
 HandshapeClip.id = ANIM.HANDSHAPE ? ANIM.HANDSHAPE: ANIM.clipTypes.length;
 HandshapeClip.clipColor = "#9e0142";
@@ -2610,21 +2418,19 @@ function HandshapeClip(o)
 	this._width = 0;
 
 	this.properties = {
-		hand: "right",
-		handshape: "flat", //string from the handshape table
+		hand: "Right",
+		handshape: "Flat", //string from the handshape table
 		
 		// optionals
-		secondHandshape: "flat", //string from the handshape table
-		thumbshape: "touch", //string from thumbshape table. if not present, the predefined thumbshape for the handshape will be used
-		secondThumbshape: "touch", // string from thumbshape table. Applied to secondHandshape
-		tco: 0.3, // number [0,1]. Thumb Combination Opening from the Hamnosys specification 
-		secondtco: 0.3, // number [0,1]. Thumb Combination Opening from the Hamnosys specification. Applied to secondHandshape
+		secondHandshape: "", //string from the handshape table
+		thumbshape: "", //string from thumbshape table. if not present, the predefined thumbshape for the handshape will be used
+		secondThumbshape: "", // string from thumbshape table. Applied to secondHandshape
+		tco: 0, // number [0,1]. Thumb Combination Opening from the Hamnosys specification 
+		secondtco: 0, // number [0,1]. Thumb Combination Opening from the Hamnosys specification. Applied to secondHandshape
 		
-		mainBend: "hooked", // bend applied to selected fingers from the default handshapes. Basic handshapes and ThumbCombination handshapes behave differently. Value from the bend table
-		secondMainBend: "hooked", // mainbend applied to secondHandshape
-		bend1: "099", // overrides any other bend applied for this handshape for this finger. bend1=thumb, bend2=index, and so on. The value is one from the bend table
+		mainBend: "", // bend applied to selected fingers from the default handshapes. Basic handshapes and ThumbCombination handshapes behave differently. Value from the bend table
+		secondMainBend: "", // mainbend applied to secondHandshape
 		mainSplay: 0.5, // number [-1,1]. Separates laterally fingers 2,4,5. Splay diminishes the more the finger is bent
-		splay1: 0.5, // number [-1,1]. Sepparates laterally the specified finger. Splay diminishes the finger is bent. splay1=thumb, splay2=index, and so on
 		shift: false,
 	}
 
@@ -2641,7 +2447,7 @@ ANIM.registerClipType( HandshapeClip );
 HandshapeClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
-		if(o.duration) this.duration = o.duration || 1;
+	if(o.duration) this.duration = o.duration || 1;
 	if(o.end) this.duration = (o.end - o.start) || 1;
 	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
 	if(o.relax) this.relax = this.fadeout = o.relax;
@@ -2649,6 +2455,15 @@ HandshapeClip.prototype.configure = function(o)
 	{
 		Object.assign(this.properties, o.properties);
 	}
+	for(let p in this.properties) {
+		if(o[p] != undefined) {
+			if(typeof(o[p]) == 'string')
+				o[p] = capitalize(o[p].replaceAll("_", " "));
+			this.properties[p] = o[p];
+		}
+	}
+	// if(o.srcFinger) this.properties.srcFinger = BodyLocationClip.fingers[o.srcFinger];
+
 }
 
 HandshapeClip.prototype.toJSON = function()
@@ -2663,9 +2478,13 @@ HandshapeClip.prototype.toJSON = function()
 	}
 	for(var i in this.properties)
 	{
-		
+		for(var i in this.properties)
+		{
+			json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
 
-		json[i] = this.properties[i];
+			if(json[i] == "")
+				json[i] = null;
+		}
 	}
 	return json;
 }
@@ -2688,123 +2507,96 @@ HandshapeClip.prototype.drawClip = function( ctx, w,h, selected )
 
 HandshapeClip.prototype.showInfo = function(panel, callback)
 {
-	for(var i in this.properties)
+	panel.addText(null,"Sets the posture of the fingers of a hand. Fingers are numbered from thumb to pinky", null, {disabled: true});
+	
+	// Handshape property
+	panel.addDropdown("Hand shape", HandshapeClip.handshapes, this.properties.handshape, (v, e, name) => {
+		
+		this.properties.handshape = v;
+		if(callback)
+			callback();
+		
+	}, {filter: true});
+
+	// Hand property
+	panel.addDropdown("Hand", HandshapeClip.hands, this.properties.hand, (v, e, name) => {
+				
+		this.properties.hand = v;
+		if(callback)
+			callback();
+		
+	}, {filter: true});
+
+
+	panel.addCheckbox("Set as base gaze", this.properties.shift, (v, e, name) =>
 	{
-		var property = this.properties[i];
-		let values = [];
-		if(i=="hand"){
-			for(let id in HandshapeClip.hands) {
-				values.push({ value: HandshapeClip.hands[id] })
-			}
-			panel.addDropdown(i, values, capitalize(property), (v, e, name) => {
-				
-				this.properties[name] = v.toLowerCase();
-				if(callback)
-					callback();
-				
-			}, {filter: true});
+		this.properties.shift = v;
+		if(callback)
+			callback();
+	});
+	
+	panel.addSeparator();
+
+	panel.addText(null, "Optionals", null, {disabled: true});
+
+	// Second handshape property
+	panel.addDropdown("Second hand shape", [null, ...HandshapeClip.handshapes], this.properties.secondHandshape, (v, e, name) => {
 			
-		}
-		else if(i=="handshape" || i=="secondHandshape"){
-			values = [];
-			for(let id in HandshapeClip.handshapes) {
-				values.push({ value: HandshapeClip.handshapes[id] })
-			}
-			panel.addDropdown(i, values, property, (v, e, name) => {
-				
-				this.properties[name] = v;
-				if(callback)
-					callback();
-				
-			}, {filter: true});
-			
-		} 
-		else if(i=="thumbshape" || i=="secondThumbshape"){
-				values = [];
-				for(let id in HandshapeClip.thumbshapes) {
-					values.push({ value: HandshapeClip.thumbshapes[id] })
-				}
-				panel.addDropdown(i, values, property, (v, e, name) => {
-					
-					this.properties[name] = v;
-					if(callback)
-						callback();
-					
-				}, {filter: true});
+		this.properties.secondHandshape = v;
+		if(callback)
+			callback();
+		
+	}, {filter: true});
 
-		} 
-		else if(i=="mainBend" || i=="secondMainBend"){
+	// Thumbshape property
+	panel.addDropdown("Thumb shape", [null, ...HandshapeClip.thumbshapes], this.properties.thumbshape, (v, e, name) => {
+		
+		this.properties.thumbshape = v;
+		if(callback)
+			callback();
+		
+	}, {filter: true});
 
-			values = [];
-			for(let id in HandshapeClip.bendstates) {
-				values.push({ value: HandshapeClip.bendstates[id] })
-			}
-			panel.addDropdown(i, values, property, (v, e, name) => {
-				
-				this.properties[name] = v;
-				if(callback)
-					callback();
-				
-			}, {filter: true});
+	// Second thumbshape property
+	panel.addDropdown("Second thumb shape", [null, ...HandshapeClip.thumbshapes], this.properties.secondThumbshape, (v, e, name) => {
+	
+		this.properties.secondThumbshape = v;
+		if(callback)
+			callback();
+		
+	}, {filter: true});
 
-	} 
-		else {
-			switch(property.constructor)
-			{
+	// Bend property
+	panel.addDropdown("Main bend", [null, ...HandshapeClip.bendstates], this.properties.mainBend, (v, e, name) => {
 
-				case String:
-					panel.addText(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
+		this.properties.mainBend = v;
+		if(callback)
+			callback();
+		
+	}, {filter: true});
 
-				case Number:
-					panel.addNumber(i, property, (v, e, name) =>
-					{
-						if(name == "start"){
-							var dt = v - this.properties[name];
-							this.properties.attackPeak += dt;
-							this.properties.relax += dt;
-						}
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					}, {precision: 2});
-					
-					break;
-				
-				case Boolean:
-					panel.addCheckbox(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-				
-				case Array:
-					panel.addArray(i, property, (v, e, name) =>
-					{
-						this.properties[name] = v;
-						if(callback)
-							callback();
-					});
-					break;
-			}
-		}
-	}
+	// Second bend property
+	panel.addDropdown("Main bend", [null, ...HandshapeClip.bendstates], this.properties.mainBend, (v, e, name) => {
+
+		this.properties.mainBend = v;
+		if(callback)
+			callback();
+		
+	}, {filter: true});
+
+	//TO DO -- pt tco, secondtco and splay properties & combinations!!!!!!!!!!!!
+
 }
 
 
 //HandConstellationClip
 HandConstellationClip.type = "gesture";
 HandConstellationClip.sides = ["Right", "Left", "Ulnar", "Radial", "Front", "Back", "Palmar"];
-HandConstellationClip.handlocations = ["Tip", "Pad", "Mid", "Base", "Thumbball", "Hand", "Wrist"];
+HandConstellationClip.handlocations = ["Tip", "Pad", "Mid", "Base", "Thumb ball", "Hand", "Wrist"];
 HandConstellationClip.armlocations = ["Forearm", "Elbow", "Upperarm"];
 HandConstellationClip.hands = ["Left", "Right", "Both"];
+HandConstellationClip.sides = { "Right": "rr", "Slightly right": "r", "Left": "ll", "Slightly left": "l"};
+HandConstellationClip.fingers = ["","Thumb", "Index", "Middle", "Ring", "Pinky"];
 
 
 HandConstellationClip.id = ANIM.HANDSHAPE ? ANIM.HANDSHAPE: ANIM.clipTypes.length;
@@ -2820,21 +2612,21 @@ function HandConstellationClip(o)
 	this._width = 0;
 
 	this.properties = {
-		hand: "right",
+		hand: "Right",
 		handConstellation: true,
 		//Location of the hand in the specified hand (or dominant hand)
-		srcFinger: "2", // 1,2,3,4,5. If the location does not use a finger, do not include this
+		srcFinger: "Thumb", // 1,2,3,4,5. If the location does not use a finger, do not include this
 		srcLocation: "Pad", // string from hand locations (although no forearm, elbow, upperarm are valid inputs here)
 		srcSide: "Back", // Ulnar, Radial, Palmar, Back
 		
 		//Location of the hand in the unspecified hand (or non dominant hand)
-		dstFinger: "2", // 1,2,3,4,5. If the location does not use a finger, do not include this
+		dstFinger: "Thumb", // 1,2,3,4,5. If the location does not use a finger, do not include this
 		dstLocation: "Base", // string from hand locations or arm locations
 		dstSide: "Palmar", // Ulnar, Radial, Palmar, Back 
 
 		// optionals
 		distance: 0, //[-ifinity,+ifninity] where 0 is touching and 1 is the arm size. Distance between endpoints. 
-		distanceDirection: "l", // string, any combination of the main directions. If not provided, defaults to horizontal outwards direction
+		distanceDirection: "", // string, any combination of the main directions. If not provided, defaults to horizontal outwards direction ?!!!!!!!!!!!!!!!!! 26 DIRECTIONS?????
 		
 		keepUpdatingContact: false, // once peak is reached, the location will be updated only if this is true. 
 						// i.e.: set to false; contact tip of index; reach destination. Afterwards, changing index finger state will not modify the location
@@ -2854,7 +2646,7 @@ ANIM.registerClipType( HandConstellationClip );
 HandConstellationClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
-		if(o.duration) this.duration = o.duration || 1;
+	if(o.duration) this.duration = o.duration || 1;
 	if(o.end) this.duration = (o.end - o.start) || 1;
 	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
 	if(o.relax) this.relax = this.fadeout = o.relax;
@@ -2862,6 +2654,50 @@ HandConstellationClip.prototype.configure = function(o)
 	{
 		Object.assign(this.properties, o.properties);
 	}
+	for(let p in this.properties) {
+		if(o[p] != undefined) {
+			if(typeof(o[p]) == 'string')
+				o[p] = capitalize(o[p].replaceAll("_", " "));
+			this.properties[p] = o[p];
+		}
+	}
+	if(o.srcSide || o.dstSide) {
+		for(let s in HandConstellationClip.sides) {
+			if(o.srcSide == HandConstellationClip.sides[s])
+				this.properties.srcSide = s;
+			if(o.dstSide == HandConstellationClip.sides[s])
+				this.properties.dstSide = s;
+		}
+	}
+	if(o.distanceDirection) {
+		this.properties.distanceDirection = "";
+		for(let i = 0; i < o.distanceDirection.length; i++) {
+			let char = o.distanceDirection[i];
+			switch(char) {
+				case "u":
+					this.properties.distanceDirection += "Up";
+					break;
+				case "d":
+					this.properties.distanceDirection +=	"Down";
+					break;
+				case "l":
+					this.properties.distanceDirection += "Left";
+					break;
+				case "r":
+					this.properties.distanceDirection += "Right";
+					break;
+				case "i":
+					this.properties.distanceDirection += "In";
+					break;
+				case "o": 
+					this.properties.distanceDirection += "Out";
+				break;
+
+			}
+		}
+	}
+	if(o.srcFinger) this.properties.srcFinger = HandConstellationClip.fingers[o.srcFinger];
+	if(o.dstFinger) this.properties.dstFinger = HandConstellationClip.fingers[o.dstFinger];
 }
 
 HandConstellationClip.prototype.toJSON = function()
@@ -2874,11 +2710,26 @@ HandConstellationClip.prototype.toJSON = function()
 		relax: this.relax,
 		type: "gesture"
 	}
-	for(var i in this.properties)
+	for(let i in this.properties)
 	{
-		
+		if( i == "distanceDirection" ) 
+			json[i] = HandConstellationClip.sides[this.properties[i]];
+		else if ( i == "displace" && this.properties[i] != "") {
+			let d = this.properties[i].split(" ");
+			json[i] = "";
+			for(let j = 0; j < d.length; j++) {
+				json[i] += d[j][0].toLowerCase();
+			}
+		}
+		else if(i == "srcFinger") {
+			json[i] = BodyLocationClip.fingers.indexOf(this.properties[i])
+			json[i] = json[i] < 0 ? null : json[i];
+		}
+		else 
+			json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
 
-		json[i] = this.properties[i];
+		if(json[i] == "")
+			json[i] = null;
 	}
 	return json;
 }
@@ -3053,13 +2904,13 @@ function CircularMotionClip(o)
 		direction: "o", // string 26 directions. Axis of rotation
 		
 		// optionals
-		secondDirection: null, // string 8 directions. Will compute midpoint between direction and secondDirection.
+		secondDirection: "", // string 8 directions. Will compute midpoint between direction and secondDirection.
 		distance: 0.05, // number, radius in metres of the circle. Default 0.05 m (5 cm)
 		startAngle: 0, // where in the circle to start. 0º indicates up. Indicated in degrees. Default to 0º. [-infinity, +infinity]
 		endAngle: 360, // where in the circle to finish. 0º indicates up. Indicated in degrees. Default to 360º. [-infinity, +infinity]
-		zigzag: null, // string 26 directions
-		zigzagSize: null, // amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
-		zigzagSpeed: null, // oscillations per second. Default 2
+		zigzag: "", // string 26 directions
+		zigzagSize: "", // amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
+		zigzagSpeed: "", // oscillations per second. Default 2
 	}
 	this.zigzag = false;
 

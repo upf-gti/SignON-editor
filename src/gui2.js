@@ -114,6 +114,11 @@ class Gui {
                 this.timelineArea.hide();
         }});
 
+        if(this.editor.mode == this.editor.eModes.script) {
+            menubar.add("Help/");
+            menubar.add("Help/BML Instructions", {callback: () => window.open("https://github.com/upf-gti/SignON-realizer/blob/SiGMLExperiments/docs/InstructionsBML.md", "_blank")});
+        }
+
         menubar.addButtons( [
             {
                 title: "Play",
@@ -1295,7 +1300,7 @@ class ScriptGui extends Gui {
     /** Create timelines */
     createTimelines( area ) {
 
-        this.clipsTimeline = new LX.ClipsTimeline("Behavioural actions timeline", {});
+        this.clipsTimeline = new LX.ClipsTimeline("Behaviour actions", {});
         this.clipsTimeline.setFramerate(30);
         // this.clipsTimeline.setScale(400);
         // this.clipsTimeline.hide();
@@ -1769,13 +1774,13 @@ class ScriptGui extends Gui {
                     callback: (asset, action) => {
                         switch(asset.folder.id) {
                             case "Face":
-                                that.clipsTimeline.addClip( new ANIM.FaceLexemeClip({lexeme: asset.id})); 
+                                that.clipsTimeline.addClip( new ANIM.FaceLexemeClip({lexeme: asset.id.toUpperCase()})); 
                                 break;
                             case "Gaze":
-                                that.clipsTimeline.addClip( new ANIM.GazeClip({properties: {influence: asset.id}})); 
+                                that.clipsTimeline.addClip( new ANIM.GazeClip({properties: {influence: asset.id.toUpperCase()}})); 
                                 break;
                             case "Head movement":
-                                that.clipsTimeline.addClip( new ANIM.HeadClip({properties: {lexeme: asset.id}})); 
+                                that.clipsTimeline.addClip( new ANIM.HeadClip({properties: {lexeme: asset.id.toUpperCase()}})); 
                                 break;
                             default:
                                 that.clipsTimeline.addClip( new ANIM[asset.id.replaceAll(" ", "") + "Clip"]())
@@ -1810,7 +1815,7 @@ class ScriptGui extends Gui {
             }
 
             // HEAD CLIP
-            values = Object.keys(ANIM.HeadClip.lexemes);
+            values = ANIM.HeadClip.lexemes;
             for(let i = 0; i < values.length; i++){
                 let data = {
                     id: values[i], 
@@ -1857,13 +1862,20 @@ class ScriptGui extends Gui {
                                 that.clipsTimeline.addClip( new ANIM.FaceLexemeClip({lexeme: asset.id})); 
                                 break;
                             case "Gaze":
-                                that.clipsTimeline.addClip( new ANIM.GazeClip({properties: {influence: asset.id}})); 
+                                that.clipsTimeline.addClip( new ANIM.GazeClip({influence: asset.id})); 
                                 break;
                             case "Head movement":
-                                that.clipsTimeline.addClip( new ANIM.HeadClip({properties: {lexeme: asset.id}})); 
+                                that.clipsTimeline.addClip( new ANIM.HeadClip({lexeme: asset.id})); 
                                 break;
                             default:
-                                that.clipsTimeline.addClip( new ANIM[asset.id.replaceAll(" ", "") + "Clip"]())
+                                let clipType = asset.id;
+                                let data = {};
+                                if(clipType.includes("Shoulder")) {
+                                    let type = clipType.split(" ")[1];
+                                    clipType = "Shoulder";
+                                    data["shoulder" + type] = 0.8
+                                }
+                                that.clipsTimeline.addClip( new ANIM[clipType.replaceAll(" ", "") + "Clip"](data));
                                 break;
                         }
                         

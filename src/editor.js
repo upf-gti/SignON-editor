@@ -735,6 +735,10 @@ class Editor {
 
         if(!this.gizmo)
         throw("No gizmo attached to scene");
+    
+        if(this.activeTimeline.name == "Action Units") {
+            this.setAnimation("Body");
+        }
 
         this.gizmo.setBone(name);
         if(this.mode == this.eModes.NMF)
@@ -835,6 +839,10 @@ class Editor {
     }
 
     setSelectedActionUnit(au) {
+        
+        if(this.activeTimeline.name != "Action Units")
+            this.setAnimation("Face");
+
         this.selectedAU = au;
         this.activeTimeline.setSelectedItems([au]);
         this.setTime(this.activeTimeline.currentTime);
@@ -1150,7 +1158,6 @@ class Editor {
                 
                 break;
             case "Body":
-                this.gizmo.start();
                 this.activeTimeline = this.gui.keyFramesTimeline;
                 this.activeTimeline.setAnimationClip( this.bodyAnimation );
                 this.activeTimeline.show();            

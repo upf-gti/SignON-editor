@@ -901,7 +901,7 @@ BehaviourPlanner.prototype.createBlock = function(){
         if (Math.random() < 0.85)
         {
           var start = Math.random();
-          var offsetDirections = ["CAMERA","DOWNRIGHT", "DOWNLEFT", "LEFT", "RIGHT"]; // Upper and sides
+          var offsetDirections = ["CAMERA","DOWN_RIGHT", "DOWN_LEFT", "LEFT", "RIGHT"]; // Upper and sides
           var randOffset = offsetDirections[Math.floor(Math.random() * offsetDirections.length)];
           // block.headDirectionShift = {
           //   start: start,
@@ -952,7 +952,7 @@ BehaviourPlanner.prototype.createBlock = function(){
     case BehaviourPlanner.PROCESSING:
       this.nextBlockIn = 2 + Math.random() * 2;
       // gaze
-      var offsetDirections = ["UPRIGHT", "UPLEFT", "LEFT", "RIGHT"]; // Upper and sides
+      var offsetDirections = ["UP_RIGHT", "UP_LEFT", "LEFT", "RIGHT"]; // Upper and sides
       var randOffset = offsetDirections[Math.floor(Math.random() * offsetDirections.length)];
       if(Math.random() < 0.8)
       {
@@ -1019,7 +1019,7 @@ BehaviourPlanner.prototype.createBlock = function(){
       
       this.nextBlockIn = 2 + Math.random() * 3;
       // gaze
-      var offsetDirections = ["CAMERA","DOWN", "DOWNRIGHT", "DOWNLEFT", "LEFT", "RIGHT"]; // Upper and sides
+      var offsetDirections = ["CAMERA","DOWN", "DOWN_RIGHT", "DOWN_LEFT", "LEFT", "RIGHT"]; // Upper and sides
       var randOffset = offsetDirections[Math.floor(Math.random() * offsetDirections.length)];
       // block.gazeShift = {
       //   start: 0,
@@ -1078,7 +1078,7 @@ BehaviourPlanner.prototype.updateBlinksAndSaccades = function(dt){
   this.saccCountdown += dt;
   if (this.saccCountdown > this.saccIdle){
     // Random direction
-    var opts = ["RIGHT", "LEFT", "DOWN","DOWNRIGHT", "DOWNLEFT", "UP", "UPLEFT", "UPRIGHT"]; // If you are looking at the eyes usually don't look at the hair
+    var opts = ["RIGHT", "LEFT", "DOWN","DOWN_RIGHT", "DOWN_LEFT", "UP", "UP_LEFT", "UP_RIGHT"]; // If you are looking at the eyes usually don't look at the hair
     var randDir = opts[Math.floor(Math.random()*opts.length)];
     
     // Fixed point to saccade around?
@@ -1129,7 +1129,7 @@ BehaviourPlanner.prototype.attentionToUser = function(block, overwrite){
 	// }
   
 	// headDirectionShift
-	var offsetDirections = ["CAMERA","DOWN", "DOWNLEFT", "DOWNRIGHT"]; // Submissive? Listening?
+	var offsetDirections = ["CAMERA","DOWN", "DOWN_LEFT", "DOWN_RIGHT"]; // Submissive? Listening?
   var randOffset = offsetDirections[Math.floor(Math.random() * offsetDirections.length)];
 	var startDir = -Math.random()*0.3;
 	// var headDir = {
@@ -1903,26 +1903,26 @@ FacialEmotion.prototype.updateVABSW = function (dt) {
 // <gaze or gazeShift start ready* relax* end influence target offsetAngle offsetDirection>
 // influence [EYES, HEAD, NECK, SHOULDER, WAIST, WHOLE, ...]
 // offsetAngle relative to target
-// offsetDirection (of offsetAngle) [RIGHT, LEFT, UP, DOWN, UPRIGHT, UPLEFT, DOWNLEFT, DOWNRIGHT]
-// target [CAMERA, RIGHT, LEFT, UP, DOWN, UPRIGHT, UPLEFT, DOWNLEFT, DOWNRIGHT]
+// offsetDirection (of offsetAngle) [RIGHT, LEFT, UP, DOWN, UP_RIGHT, UP_LEFT, DOWN_LEFT, DOWN_RIGHT]
+// target [CAMERA, RIGHT, LEFT, UP, DOWN, UP_RIGHT, UP_LEFT, DOWN_LEFT, DOWN_RIGHT]
 // Scene inputs: gazePositions (head and camera), lookAt objects
 
 // Gaze manager (replace BML)
 GazeManager.gazePositions = {   
     "RIGHT": new THREE.Vector3(-30, 2, 100), "LEFT": new THREE.Vector3(30, 2, 100),
     "UP": new THREE.Vector3(0, 20, 100), "DOWN": new THREE.Vector3(0, -20, 100),
-    "UPRIGHT": new THREE.Vector3(-30, 20, 100), "UPLEFT": new THREE.Vector3(30, 20, 100),
-    "DOWNRIGHT": new THREE.Vector3(-30, -20, 100), "DOWNLEFT": new THREE.Vector3(30, -20, 100),
+    "UP_RIGHT": new THREE.Vector3(-30, 20, 100), "UP_LEFT": new THREE.Vector3(30, 20, 100),
+    "DOWN_RIGHT": new THREE.Vector3(-30, -20, 100), "DOWN_LEFT": new THREE.Vector3(30, -20, 100),
     "FRONT": new THREE.Vector3(0, 2, 100), "CAMERA": new THREE.Vector3(0, 2, 100)
 };
 
 Gaze.prototype.gazeBS = {
     "RIGHT": { squint: 0, eyelids: 0 }, "LEFT": { squint: 0, eyelids: 0 },
     "UP": { squint: 0.3, eyelids: 0 }, "DOWN": { squint: 0, eyelids: 0.2 },
-    "UPRIGHT": { squint: 0.3, eyelids: 0 }, "UPLEFT": { squint: 0.3, eyelids: 0 },
-    "DOWNRIGHT": { squint: 0, eyelids: 0.2 }, "DOWNLEFT": { squint: 0, eyelids: 0.2 },
+    "UP_RIGHT": { squint: 0.3, eyelids: 0 }, "UP_LEFT": { squint: 0.3, eyelids: 0 },
+    "DOWN_RIGHT": { squint: 0, eyelids: 0.2 }, "DOWN_LEFT": { squint: 0, eyelids: 0.2 },
     "FRONT": { squint: 0, eyelids: 0 }, "CAMERA": { squint: 0, eyelids: 0 }, 
-    "EYESTARGET": { squint: 0, eyelids: 0 }, "HEADTARGET": { squint: 0, eyelids: 0 }, "NECKTARGET": { squint: 0, eyelids: 0 }
+    "EYES_TARGET": { squint: 0, eyelids: 0 }, "HEAD_TARGET": { squint: 0, eyelids: 0 }, "NECK_TARGET": { squint: 0, eyelids: 0 }
 };
 
 // Constructor (lookAt objects and gazePositions)
@@ -2154,7 +2154,7 @@ Gaze.prototype.initGazeValues = function () {
     this.squintFinW = this.gazeBS[this.target].squint;
     // Rotate vector and reposition
     switch (this.offsetDirection) {
-        case "UPRIGHT":
+        case "UP_RIGHT":
             q.setFromAxisAngle(v, -25 * DEG2RAD);
             v.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.offsetAngle * DEG2RAD);
             v.applyQuaternion(q);
@@ -2164,7 +2164,7 @@ Gaze.prototype.initGazeValues = function () {
             }
             break;
 
-        case "UPLEFT":
+        case "UP_LEFT":
             q.setFromAxisAngle(v, -75 * DEG2RAD);
             v.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.offsetAngle * DEG2RAD);
             v.applyQuaternion(q);
@@ -2174,7 +2174,7 @@ Gaze.prototype.initGazeValues = function () {
             }
             break;
 
-        case "DOWNRIGHT":
+        case "DOWN_RIGHT":
             q.setFromAxisAngle(v, -25 * DEG2RAD);
             v.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.offsetAngle * DEG2RAD);
             v.applyQuaternion(q);
@@ -2183,7 +2183,7 @@ Gaze.prototype.initGazeValues = function () {
             }
             break;
 
-        case "DOWNLEFT":
+        case "DOWN_LEFT":
             q.setFromAxisAngle(v, 75 * DEG2RAD);
             v.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.offsetAngle * DEG2RAD);
             v.applyQuaternion(q);
@@ -2245,7 +2245,7 @@ Gaze.prototype.initGazeValues = function () {
 // --------------------- HEAD ---------------------
 // BML
 // <head start ready strokeStart stroke strokeEnd relax end lexeme repetition amount>
-// lexeme [NOD, SHAKE, TILT, TILTLEFT, TILTRIGHT, TILTFORWARD, TILTBACKWARD, FORWARD, BACKWARD]
+// lexeme [NOD, SHAKE, TILT, TILT_LEFT, TILT_RIGHT, TILT_FORWARD, TILT_BACKWARD, FORWARD, BACKWARD]
 // repetition cancels stroke attr
 // amount how intense is the head nod? 0 to 1
 
@@ -2287,7 +2287,7 @@ HeadBML.prototype.initHeadData = function (headData) {
     this.amount = headData.amount || 0.2;
 
     // Maximum rotation amplitude
-    if (this.lexeme == "NOD" || this.lexeme == "TILTLEFT" || this.lexeme == "TILTRIGHT" || this.lexeme == "TILTFORWARD" || this.lexeme == "TILTBACKWARD" || this.lexeme == "FORWARD" || this.lexeme == "BACKWARD")
+    if (this.lexeme == "NOD" || this.lexeme == "TILT_LEFT" || this.lexeme == "TILT_RIGHT" || this.lexeme == "TILT_FORWARD" || this.lexeme == "TILT_BACKWARD" || this.lexeme == "FORWARD" || this.lexeme == "BACKWARD")
         this.maxDeg = this.limVert * 2;
     else
         this.maxDeg = this.limHor * 2;
@@ -2371,7 +2371,7 @@ HeadBML.prototype.initHeadValues = function () {
             this.readyDeg = this.strokeDeg * 0.5;
             break;
 
-        case "TILTLEFT":
+        case "TILT_LEFT":
             this.strokeAxis.set(0, 0, 1);
             this.strokeDeg = this.amount * this.maxDeg;
             this.readyDeg = this.strokeDeg * 0.8;
@@ -2382,7 +2382,7 @@ HeadBML.prototype.initHeadValues = function () {
             }
             break;
 
-        case "TILTRIGHT":
+        case "TILT_RIGHT":
             this.strokeAxis.set(0, 0, -1);
             this.strokeDeg = this.amount * this.maxDeg;
             this.readyDeg = this.strokeDeg * 0.8;
@@ -2393,7 +2393,7 @@ HeadBML.prototype.initHeadValues = function () {
             }
             break;
         
-        case "TILTFORWARD":
+        case "TILT_FORWARD":
             this.strokeAxis.set(-1, 0, 0);
             this.strokeDeg = this.amount * this.maxDeg;
             this.readyDeg = this.strokeDeg * 0.8;
@@ -2404,7 +2404,7 @@ HeadBML.prototype.initHeadValues = function () {
             }
             break;
 
-        case "TILTBACKWARD":
+        case "TILT_BACKWARD":
             this.strokeAxis.set(1, 0, 0);
             this.strokeDeg = this.amount * this.maxDeg;
             this.readyDeg = this.strokeDeg * 0.8;
@@ -2544,9 +2544,9 @@ var stringToUpperCase = function (item, textItem, def) {
 
 // --------------------- LIPSYNC MODULE --------------------
 
-// Switch to https if using this script
-if (window.location.protocol != "https:")
-    window.location.href = "https:" + window.location.href.substring(window.location.protocol.length);
+// // Switch to https if using this script
+// if (window.location.protocol != "https:")
+//     window.location.href = "https:" + window.location.href.substring(window.location.protocol.length);
 
 // // Audio context
 // if (!Lipsync.AContext)
@@ -3640,27 +3640,27 @@ AnimationManager.prototype.update = function (dt) {
 let handshapes = {
 
     // basic handshapes    
-    fist:           { selected: [0,0,0,0,0], shape: [ [0,0.5,0,0],[0,1,1,1],[0,1,1,1],[0,1,1,1],[0,1,1,1] ] },
-    finger2:        { selected: [0,1,0,0,0], shape: [ [0.5,0.75,0.6,0.5],[0,0,0,0],[0,1,1,1],[0,1,1,1],[0,1,1,1] ] },
-    finger23:       { selected: [0,1,1,0,0], shape: [ [0.6,0.8,0.8,0.5],[0,0,0,0],[0,0,0,0],[0,1,1,1],[0,1,1,1] ] },
-    finger23spread: { selected: [0,1,1,0,0], shape: [ [0.6,0.8,0.8,0.5],[0.8,0,0,0],[-0.2,0,0,0],[0,1,1,1],[0,1,1,1] ] },
-    finger2345:     { selected: [0,1,1,1,1], shape: [ [0,0.5,0,0],[0.8,0,0,0],[0,0,0,0],[0.8,0,0,0],[0.8,0,0,0] ] },
-    flat:           { selected: [0,1,1,1,1], shape: [ [0,0.5,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0] ] },
+    FIST:           { selected: [0,0,0,0,0], shape: [ [0,0.5,0,0],[0,1,1,1],[0,1,1,1],[0,1,1,1],[0,1,1,1] ] },
+    FINGER_2:        { selected: [0,1,0,0,0], shape: [ [0.5,0.75,0.6,0.5],[0,0,0,0],[0,1,1,1],[0,1,1,1],[0,1,1,1] ] },
+    FINGER_23:       { selected: [0,1,1,0,0], shape: [ [0.6,0.8,0.8,0.5],[0,0,0,0],[0,0,0,0],[0,1,1,1],[0,1,1,1] ] },
+    FINGER_23_SPREAD: { selected: [0,1,1,0,0], shape: [ [0.6,0.8,0.8,0.5],[0.8,0,0,0],[-0.2,0,0,0],[0,1,1,1],[0,1,1,1] ] },
+    FINGER_2345:     { selected: [0,1,1,1,1], shape: [ [0,0.5,0,0],[0.8,0,0,0],[0,0,0,0],[0.8,0,0,0],[0.8,0,0,0] ] },
+    FLAT:           { selected: [0,1,1,1,1], shape: [ [0,0.5,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0] ] },
     // thumb combinations - could be reduced to only pinch. Cee are basically pinch but with selected fingers open
-    pinch12:        { selected: [2,2,0,0,0], shape: [ [1, 0.56, 0.5, 0.22],[0,0.3,0.8,0.25],[0,1,1,1],[0,1,1,1],[0,1,1,1] ] },
-    pinch12open:    { selected: [2,2,0,0,0], shape: [ [1, 0.56, 0.5, 0.22],[0,0.3,0.8,0.25],[0,0.4,0.2,0.2],[0,0.2,0.2,0.2],[0,0,0.2,0.2] ] },
-    pinchall:       { selected: [2,2,2,2,2], shape: [ [1, 0.95, 0.1, 0.4],[0,0.67,0.44,0.56],[0,0.56,0.44,0.56],[0,0.67,0.33,0.33],[0,0.89,0.22,0.22] ] },
-    cee12:          { selected: [3,3,0,0,0], shape: [ [1, 0.7, 0.1, 0.2],[0,0.41,0.51,0.21],[0,1,1,1],[0,1,1,1],[0,1,1,1] ] },
-    cee12open:      { selected: [3,3,0,0,0], shape: [ [1, 0.7, 0.1, 0.2],[0,0.4,0.5,0.2],[0,0.4,0.2,0.2],[0,0.2,0.2,0.2],[0,0,0.2,0.2] ] },
-    ceeall:         { selected: [3,3,3,3,3], shape: [ [1, 0.7, 0.1, 0.2],[0,0.4,0.2,0.2],[0,0.4,0.2,0.2],[0,0.4,0.2,0.2],[0,0.4,0.2,0.2] ] }
+    PINCH_12:        { selected: [2,2,0,0,0], shape: [ [1, 0.56, 0.5, 0.22],[0,0.3,0.8,0.25],[0,1,1,1],[0,1,1,1],[0,1,1,1] ] },
+    PINCH_12_OPEN:    { selected: [2,2,0,0,0], shape: [ [1, 0.56, 0.5, 0.22],[0,0.3,0.8,0.25],[0,0.4,0.2,0.2],[0,0.2,0.2,0.2],[0,0,0.2,0.2] ] },
+    PINCH_ALL:       { selected: [2,2,2,2,2], shape: [ [1, 0.95, 0.1, 0.4],[0,0.67,0.44,0.56],[0,0.56,0.44,0.56],[0,0.67,0.33,0.33],[0,0.89,0.22,0.22] ] },
+    CEE_12:          { selected: [3,3,0,0,0], shape: [ [1, 0.7, 0.1, 0.2],[0,0.41,0.51,0.21],[0,1,1,1],[0,1,1,1],[0,1,1,1] ] },
+    CEE_12_OPEN:      { selected: [3,3,0,0,0], shape: [ [1, 0.7, 0.1, 0.2],[0,0.4,0.5,0.2],[0,0.4,0.2,0.2],[0,0.2,0.2,0.2],[0,0,0.2,0.2] ] },
+    CEE_ALL:         { selected: [3,3,3,3,3], shape: [ [1, 0.7, 0.1, 0.2],[0,0.4,0.2,0.2],[0,0.4,0.2,0.2],[0,0.4,0.2,0.2],[0,0.4,0.2,0.2] ] }
 };
 
 let thumbshapes = {
-    out:     [0,0,0,0], 
-    default: [0,0.5,0,0],
-    touch:   [0,0.5,0,0],
-    opposed: [1,1,0,0],
-    across:  [0.5,0.77,0.55,0.77]
+    OUT:     [0,0,0,0], 
+    DEFAULT: [0,0.5,0,0],
+    TOUCH:   [0,0.5,0,0],
+    OPPOSED: [1,1,0,0],
+    ACROSS:  [0.5,0.77,0.55,0.77]
 }
 
 
@@ -3669,13 +3669,13 @@ let thumbshapes = {
     2 - bending on a thumb combination. t= thumb, f=rest of fingers 
 */
 let handBendings = {
-    straight: { 1: [0,0,0], 2:{ t:[0.45,0,0], f:[0,0,0] } }, 
-    halfbent: { 1: [0.5,0,0], 2:{ t:[8/9,0,0], f:[0.5,0,0] } }, 
-    bent:     { 1: [1,0,0], 2:{ t:[8/9,0,0], f:[1,0,0] } }, 
-    round:    { 1: [0.5,0.5,0.5], 2:{ t:[6/9,3/9,4/9], f:[5/9,6/9,9/9] } }, 
-    hooked:   { 1: [0,1,1], 2:{ t:[8/9,1/9,8/9], f:[9/9,6/9,6/9] } }, 
-    dblbent:  { 1: [1,1,0], 2:{ t:[8/9,1/9,8/9], f:[9/9,6/9,6/9] } }, 
-    dblhooked:{ 1: [1,1,1], 2:{ t:[8/9,1/9,8/9], f:[9/9,6/9,6/9] } },     
+    STRAIGHT: { 1: [0,0,0], 2:{ t:[0.45,0,0], f:[0,0,0] } }, 
+    HALF_BENT: { 1: [0.5,0,0], 2:{ t:[8/9,0,0], f:[0.5,0,0] } }, 
+    BENT:     { 1: [1,0,0], 2:{ t:[8/9,0,0], f:[1,0,0] } }, 
+    ROUND:    { 1: [0.5,0.5,0.5], 2:{ t:[6/9,3/9,4/9], f:[5/9,6/9,9/9] } }, 
+    HOOKED:   { 1: [0,1,1], 2:{ t:[8/9,1/9,8/9], f:[9/9,6/9,6/9] } }, 
+    DOUBLE_BENT:  { 1: [1,1,0], 2:{ t:[8/9,1/9,8/9], f:[9/9,6/9,6/9] } }, 
+    DOUBLE_HOOKED:{ 1: [1,1,1], 2:{ t:[8/9,1/9,8/9], f:[9/9,6/9,6/9] } },     
 }
 
 
@@ -3852,10 +3852,10 @@ class HandShapeRealizer {
 
     _stringToMainBend( mainbend, handArray, selectedFingers ){        
         // thumb combinations + mainbend. Do not need to change splay
-        // bent  "bend1":"800" fingers:"900"
-        // round "bend1":"434" fingers:"569"
-        // hooked "bend1":"818","bend2":"966" 
-        // dblhooked and dblbent do not exist in hamnosys. Assume hooked
+        // BENT  "bend1":"800" fingers:"900"
+        // ROUND "bend1":"434" fingers:"569"
+        // HOOKED "bend1":"818","bend2":"966" 
+        // DOUBLE_HOOKED and DOUBLE_BENT do not exist in hamnosys. Assume HOOKED
         
         let b = this.handBendings[ mainbend ];
         if ( !b ){ return; }
@@ -3959,28 +3959,28 @@ class HandShapeRealizer {
             else {
 
                 switch (bml.handshape) {
-                    case "fist":
+                    case "FIST":
                         for (let i = 1; i < selectedFingers.length; i++) {
                             if (!selectedFingers[i]) outHand[i] = [0,0,0,0]; // non-selected fingers into flat
                             selectedFingers[i] = 1 - selectedFingers[i];
                         }
                         break;
                         
-                    case "flat": case "ceeall": case "pinchall":
+                    case "FLAT": case "CEE_ALL": case "PINCH_ALL":
                         for (let i = 1; i < selectedFingers.length; i++) {
                             if (!selectedFingers[i]) outHand[i] = [0,1,1,1]; // non-selected fingers into fist
                         }
                         break;
                         
-                    case "pinch12": case "pinch12open": case "cee12": case "cee12open":
+                    case "PINCH_12": case "PINCH_12_OPEN": case "CEE_12": case "CEE_12_OPEN":
                         for (let i = 0; i < specFing.length; i++) {
-                            outHand[specFing[i]] = [...handshapes[(bml.handshape.includes("cee") ? "ceeall" : "pinchall")].shape[specFing[i]]];
+                            outHand[specFing[i]] = [...handshapes[(bml.handshape.includes("CEE_") ? "CEE_ALL" : "PINCH_ALL")].shape[specFing[i]]];
                         }
                         break;
                         
                     default:
                         // get default fingers (handshapes: fingerX)
-                        let defFing = bml.handshape.match(/\d+/g); // ['finger23spread'] -> ['23']
+                        let defFing = bml.handshape.match(/\d+/g); // ['FINGER_23_SPREAD'] -> ['23']
                         if (defFing) {
                             defFing = defFing[0].split(''); // ['23'] -> ['2','3']
                             defFing = defFing.map(function(str) {
@@ -4002,14 +4002,14 @@ class HandShapeRealizer {
                     }
                     
                     // change default to open or fist
-                    var isOpen = bml.handshape.includes("open", 5);
+                    var isOpen = bml.handshape.includes("_OPEN", 5);
                     for (let i = 1; i < selectedFingers.length; i++) {
                         if (!selectedFingers[i]) { outHand[i] = (isOpen ? [0,0.2,0.2,0.2] : [0,1,1,1]); }
                     }
                     
                     // relocate thumb
-                    if ( bml.handshape.includes("pinch") ) { outHand[0] = [...handshapes["pinchall"].shape[0]]; }
-                    else if ( bml.handshape.includes("cee") ) { outHand[0] = [...handshapes["ceeall"].shape[0]]; }
+                    if ( bml.handshape.includes("PINCH_") ) { outHand[0] = [...handshapes["PINCH_ALL"].shape[0]]; }
+                    else if ( bml.handshape.includes("CEE_") ) { outHand[0] = [...handshapes["CEE_ALL"].shape[0]]; }
                 }    
         }
 
@@ -4225,7 +4225,7 @@ class ExtfidirPalmor {
         }
         else if ( this.time < this.attackPeak ){      
             this._computeSwingFromCurrentPose( this.extfidir.trgDir, this.curQuat );
-            this._tempQ_0.setFromAxisAngle( this.twistAxisWrist, this.palmor.trgAngle * ( this.extfidir.trgDir.z < 0 ? -1 : 1 ) );
+            this._tempQ_0.setFromAxisAngle( this.twistAxisWrist, this.palmor.trgAngle );
             this.curQuat.multiply( this._tempQ_0 );
             let t = ( this.time - this.start ) / ( this.attackPeak - this.start );
             nlerpQuats( this.curQuat, this.srcQuat, this.curQuat, t );
@@ -4235,17 +4235,17 @@ class ExtfidirPalmor {
         }
         else if ( this.time < this.relax ){ 
             this._computeSwingFromCurrentPose( this.extfidir.trgDir, this.curQuat );
-            this._tempQ_0.setFromAxisAngle( this.twistAxisWrist, this.palmor.trgAngle * ( this.extfidir.trgDir.z < 0 ? -1 : 1 ) );
+            this._tempQ_0.setFromAxisAngle( this.twistAxisWrist, this.palmor.trgAngle );
             this.curQuat.multiply( this._tempQ_0 );
             this.wristBone.quaternion.copy( this.curQuat );
         }
         else { 
             this._computeSwingFromCurrentPose( this.extfidir.trgDir, this.srcQuat );
-            this._tempQ_0.setFromAxisAngle( this.twistAxisWrist, this.palmor.trgAngle * ( this.extfidir.trgDir.z < 0 ? -1 : 1 ) );
+            this._tempQ_0.setFromAxisAngle( this.twistAxisWrist, this.palmor.trgAngle );
             this.srcQuat.multiply( this._tempQ_0 );
 
             this._computeSwingFromCurrentPose( this.extfidir.defDir, this.curQuat );
-            this._tempQ_0.setFromAxisAngle( this.twistAxisWrist, this.palmor.defAngle * ( this.extfidir.defDir.z < 0 ? -1 : 1 ) );
+            this._tempQ_0.setFromAxisAngle( this.twistAxisWrist, this.palmor.defAngle );
             this.curQuat.multiply( this._tempQ_0 );
 
             let t = ( this.time - this.relax ) / ( this.end - this.relax );
@@ -4330,6 +4330,7 @@ class ExtfidirPalmor {
             if ( this.time > this.relax ){ this.extfidir.trgDir.copy( this.extfidir.defDir ); }
             // this.extfidir.trgDir.copy( this.extfidir.defDir );
         }
+        symmetry = (symmetry & 0xfe) | ( ( symmetry & 0x01 ) ^ ( this.extfidir.trgDir.z < 0 ? 0x01 : 0x00 ) );
         if ( !this.newGestureBMLPalmor( bml, symmetry ) ){
             if ( this.time > this.relax ){ this.palmor.trgAngle = this.palmor.defAngle; }
             // this.palmor.trgAngle = this.palmor.defAngle;
@@ -4493,17 +4494,17 @@ class LocationBodyArm {
         //     if ( location[location.length-1] == "L" ){ location = location.slice(0, location.length-1) + "R"; } 
         //     else if( location[location.length-1] == "R" ){ location = location.slice(0, location.length-1) + "L"; } 
         // }
-        if ( location == "ear" || location == "earlobe" || location == "cheek" || location == "eye" || location == "eyebrow" || location == "shoulder" ){
-            location += this.isLeftHand ? "L" : "R";
+        if ( location == "EAR" || location == "EARLOBE" || location == "CHEEK" || location == "EYE" || location == "EYEBROW" || location == "SHOULDER" ){
+            location += this.isLeftHand ? "_LEFT" : "_RIGHT";
         }
        
         let side = isSecond ? bml.secondSide : bml.side;
         if ( stringToDirection( side, this._tempV3_0, symmetry, true ) ){ // accumulate result and do not normalize
             // 0.5 and 1.5 to avoid rounding problems
-            if ( this._tempV3_0.x < -1.5 ){ location += "SideRR"; }
-            else if ( this._tempV3_0.x < -0.5 ){ location += "SideR"; }
-            else if ( this._tempV3_0.x > 1.5 ){ location += "SideLL"; }
-            else if ( this._tempV3_0.x > 0.5 ){ location += "SideL"; }
+            if ( this._tempV3_0.x < -1.5 ){ location += "_SideRR"; }
+            else if ( this._tempV3_0.x < -0.5 ){ location += "_SideR"; }
+            else if ( this._tempV3_0.x > 1.5 ){ location += "_SideLL"; }
+            else if ( this._tempV3_0.x > 0.5 ){ location += "_SideL"; }
         }
 
         
@@ -4550,7 +4551,7 @@ class LocationBodyArm {
      * srcContact: (optional) source contact location in a single variable. Strings must be concatenate as srcFinger + srcLocation + srcSide (whenever each variable is needed)
      * srcFinger: (optional) 1,2,3,4,5
      * srcLocation: (optional) string from handLocations (although no forearm, elbow, upperarm are valid inputs here)
-     * srcSide: (optional) Ulnar, Radial, Palmar, Back. (ulnar == thumb side, radial == pinky side. Since hands are mirrored, this system is better than left/right)
+     * srcSide: (optional) ULNAR, RADIAL, PALMAR, BACK. (ulnar == thumb side, radial == pinky side. Since hands are mirrored, this system is better than left/right)
      * keepUpdatingContact: (optional) once peak is reached, the location will be updated only if this is true. Default false
      *                  i.e: set to false; contact tip of index; reach destination. Afterwards, changing index finger state will not modify the location
      *                       set to true; contact tip of index; reach destination. Afterwards, changing index finger state (handshape) will make the location change depending on where the tip of the index is  
@@ -4606,7 +4607,7 @@ class LocationBodyArm {
         let srcLocation = bml.srcLocation;
         // check all-in-one variable first. Only hand locations allowed as contact
         let srcContact = this.handLocations[ bml.srcContact ]; 
-        if ( srcContact && !bml.srcContact.includes( "Arm" ) && !bml.srcContact.includes( "Elbow" ) ){
+        if ( srcContact && !bml.srcContact.includes( "Arm" ) && !bml.srcContact.includes( "ELBOW" ) ){
             this.contactFinger = srcContact;
         }
         else if ( srcFinger || srcSide || srcLocation ){ 
@@ -4614,22 +4615,24 @@ class LocationBodyArm {
             if ( isNaN( srcFinger ) || srcFinger < 1 || srcFinger > 5 ){ srcFinger = ""; }
             if ( typeof( srcLocation ) != "string" || srcLocation.length < 1){ srcLocation = ""; }
             else{ 
-                srcLocation = srcLocation.toLowerCase(); 
-                srcLocation = srcLocation[0].toUpperCase() + srcLocation.slice( 1 ); 
+                srcLocation = "_" + srcLocation.toUpperCase(); 
+                // srcLocation = srcLocation.toLowerCase(); 
+                // srcLocation = srcLocation[0].toUpperCase() + srcLocation.slice( 1 ); 
             }
             if ( typeof( srcSide ) != "string" || srcSide.length < 1 ){ srcSide = ""; }
             else{ 
-                srcSide = srcSide.toLowerCase();
-                srcSide = srcSide[0].toUpperCase() + srcSide.slice( 1 ); 
+                srcSide = "_" + srcSide.toUpperCase();
+                // srcSide = srcSide.toLowerCase();
+                // srcSide = srcSide[0].toUpperCase() + srcSide.slice( 1 ); 
                 if ( !isNaN( srcFinger ) ){ // jasigning...
-                    if ( srcSide == "Right" ){ srcSide = this.isLeftHand ? "Radial" : "Ulnar"; }
-                    else if ( srcSide == "Left" ){ srcSide = this.isLeftHand ? "Ulnar" : "Radial"; }
+                    if ( srcSide == "_RIGHT" ){ srcSide = "_" + (this.isLeftHand ? "RADIAL" : "ULNAR"); }
+                    else if ( srcSide == "_LEFT" ){ srcSide = "_" + (this.isLeftHand ? "ULNAR" : "RADIAL"); }
                 }
             }
             let srcName = srcFinger + srcLocation + srcSide; 
          
             // only hand locations allowed as contact
-            if ( !srcName.includes( "Arm" ) && !srcName.includes( "Elbow" ) ){
+            if ( !srcName.includes( "ARM" ) && !srcName.includes( "ELBOW" ) ){
                 this.contactFinger = this.handLocations[ srcName ];
             }
         }
@@ -4838,22 +4841,24 @@ class HandConstellation {
         if ( isNaN( finger ) || finger < 1 || finger > 5 ){ finger = ""; }
         if ( typeof( location ) != "string" || location.length < 1){ location = ""; }
         else{ 
-            location = location.toLowerCase();
-            location = location[0].toUpperCase() + location.slice( 1 ); 
+            location = "_" + location.toUpperCase();
+            // location = location.toLowerCase();
+            // location = location[0].toUpperCase() + location.slice( 1 ); 
         }
         if ( typeof( side ) != "string" || side.length < 1 ){ side = ""; }
         else{ 
-            side = side.toLowerCase();
-            side = side[0].toUpperCase() + side.slice( 1 ); 
-            if ( !location.includes("Elbow") && !location.includes("Upperarm") ){ // jasigning...
-                if ( side == "Right" ){ side = hand == "R" ? "Ulnar" : "Radial"; }
-                else if ( side == "Left" ){ side = hand == "R" ? "Radial" : "Ulnar"; }
+            side = "_" + side.toUpperCase();
+            // side = side.toLowerCase();
+            // side = side[0].toUpperCase() + side.slice( 1 ); 
+            if ( !location.includes("ELBOW") && !location.includes("UPPER_ARM") ){ // jasigning...
+                if ( side == "RIGHT" ){ side = "_" + (hand == "R" ? "ULNAR" : "RADIAL"); }
+                else if ( side == "LEFT" ){ side = "_" + (hand == "R" ? "RADIAL" : "ULNAR"); }
             }
         }
         let name = finger + location + side; 
 
         result = handLocations[ name ];
-        if ( !result ){ result = handLocations[ "2Tip" ]; }
+        if ( !result ){ result = handLocations[ "2_TIP" ]; }
         return result;
     }
     /**
@@ -4862,16 +4867,16 @@ class HandConstellation {
      * distance: [-ifinity,+ifninity] where 0 is touching and 1 is the arm size. Distance between endpoints. Right now only horizontal distance is applied
      * 
      * Location of the hand in the specified hand (or dominant hand)
-     * srcContact: (optional) source contact location in a single variable. Strings must be concatenate as srcFinger + srcLocation + srcSide (whenever each variable is needed)
+     * srcContact: (optional) source contact location in a single variable. Strings must be concatenate as srcFinger + "_" +srcLocation + "_" +srcSide (whenever each variable is needed)
      * srcFinger: (optional) 1,2,3,4,5
      * srcLocation: (optional) string from handLocations (although no forearm, elbow, upperarm are valid inputs here)
-     * srcSide: (optional) Ulnar, Radial, Palmar, Back. (ulnar == thumb side, radial == pinky side. Since hands are mirrored, this system is better than left/right)
+     * srcSide: (optional) ULNAR, RADIAL, PALMAR, BACK. (ulnar == thumb side, radial == pinky side. Since hands are mirrored, this system is better than left/right)
      * 
      * Location of the hand in the unspecified hand (or non dominant hand)
      * dstContact: (optional) source contact location in a single variable. Strings must be concatenate as dstFinger + dstLocation + dstSide (whenever each variable is needed)
      * dstFinger: (optional) 1,2,3,4,5
      * dstLocation: (optional) string from handLocations (although no forearm, elbow, upperarm are valid inputs here)
-     * dstSide: (optional) Ulnar, Radial, Palmar, Back 
+     * dstSide: (optional) ULNAR, RADIAL, PALMAR, BACK 
      * 
      * keepUpdatingContact: (optional) once peak is reached, the location will be updated only if this is true. 
      *                  i.e: set to false; contact tip of index; reach destination. Afterwards, changing index finger state will not modify the location
@@ -4886,14 +4891,14 @@ class HandConstellation {
         let dstLocations = null;
         let srcHand = "R";
 
-        if ( bml.hand == "both" ){ // src default to domhand
+        if ( bml.hand == "BOTH" ){ // src default to domhand
             this.isBothHands = true;
             srcHand = domHand == "L" ? "L" : "R";
         }else{
             this.isBothHands = false;
-            if ( bml.hand == "right" ){ srcHand = "R"; }
-            else if ( bml.hand == "left" ){ srcHand = "L"; }
-            else if ( bml.hand == "nonDom" ){ srcHand = domHand == "L" ? "R" : "L"; }
+            if ( bml.hand == "RIGHT" ){ srcHand = "R"; }
+            else if ( bml.hand == "LEFT" ){ srcHand = "L"; }
+            else if ( bml.hand == "NON_DOMINANT" ){ srcHand = domHand == "L" ? "R" : "L"; }
             else{ srcHand = domHand == "L" ? "L" : "R"; }
         }
 
@@ -5495,10 +5500,10 @@ class WristMotion {
      * bml info
      * start, attackPeak, relax, end
      * mode = either a: 
-     *          - string from [ "nod", "nodding", "swing", "swinging", "twist", "twisting", "stirCW", "stircw", "stirCCW", "stirccw", "all" ]
-     *          - or a value from [ 0 = None, 1 = twist, 2 = nod, swing = 4 ]. 
-     *            Several values can co-occur by using the OR (|) operator. I.E. ( 2 | 4 ) = stirCW
-     *            Several values can co-occur by summing the values. I.E. ( 2 + 4 ) = stirCW
+     *          - string from [ "NOD", "NODDING", "SWING", "SWINGING", "TWIST", "TWISTING", "STIR_CW", "STIR_CCW", "ALL" ]
+     *          - or a value from [ 0 = None, 1 = TWIST, 2 = NOD, SWING = 4 ]. 
+     *            Several values can co-occur by using the OR (|) operator. I.E. ( 2 | 4 ) = STIR_CW
+     *            Several values can co-occur by summing the values. I.E. ( 2 + 4 ) = STIR_CW
      * speed = (optional) oscillations per second. A negative values accepted. Default 3. 
      * intensity = (optional) [0,1]. Default 0.3
      */
@@ -5509,12 +5514,12 @@ class WristMotion {
         this.intensity = Math.min( 1, Math.max( 0, this.intensity ) );
         
         if ( typeof( bml.mode ) == "string" ){
-            switch( bml.mode ){
+            switch( bml.mode.toLowerCase() ){
                 case "nod": case "nodding": this.mode = 0x02; break;
                 case "swing": case "swinging": this.mode = 0x04; break;
                 case "twist": case "twisting": this.mode = 0x01; break;
-                case "stirCW": case "stircw": this.mode = 0x06; break; // 0x02 | 0x04
-                case "stirCCW": case "stirccw":this.mode = 0x06; this.speed *= -1; break;
+                case "stir_CW": case "stir_cw": this.mode = 0x06; break; // 0x02 | 0x04
+                case "stir_CCW": case "stir_ccw":this.mode = 0x06; this.speed *= -1; break;
                 case "all": this.mode = 0x07; break;
                 default:
                     console.warn( "Gesture: No wrist motion called \"", bml.mode, "\" found" );
@@ -5671,9 +5676,38 @@ class BodyMovement {
         this.transition = false;
 
         this._tempQ_0 = new THREE.Quaternion();
-        this._tempV3_0 = new THREE.Vector3();
-        this._tempV3_1 = new THREE.Vector3();
-        this._tempV3_2 = new THREE.Vector3();
+        
+
+
+
+        this.jointsData = { };
+        this.jointsData.shouldersUnion = this.computeJointData( this.config.boneMap.ShouldersUnion, this.config.boneMap.Neck );
+        this.jointsData.stomach = this.computeJointData( this.config.boneMap.Stomach, this.config.boneMap.ShouldersUnion );
+        this.jointsData.belowStomach = this.computeJointData( this.config.boneMap.BelowStomach, this.config.boneMap.Stomach );
+    }
+
+    computeJointData( boneIdx, upAxisReferenceBoneIdx ){
+        // compute bind quat
+        let m1 = this.skeleton.boneInverses[ boneIdx ].clone().invert(); // LocalToMeshCoords:    parentParentBone * parentBone * bone * point
+        // inv(parentBone) * inv(parentParentBone)    *    parentParentBone * parentBone * bone   --> 
+        m1.premultiply( this.skeleton.boneInverses[ findIndexOfBone( this.skeleton, this.skeleton.bones[ boneIdx ].parent.name ) ] ); 
+        let bindQuat = (new THREE.Quaternion()).setFromRotationMatrix( m1 ).normalize();;
+
+        // compute local axes of rotation based on bones boneIdx and upAxisReferenceBoneIdx.
+        let m2 = this.skeleton.boneInverses[ upAxisReferenceBoneIdx ].clone().invert(); // LocalToMeshCoords
+        let xAxis = new THREE.Vector3();
+        let yAxis = new THREE.Vector3();
+        let zAxis = new THREE.Vector3();
+        zAxis.setFromMatrixPosition( m1 ); // position of boneIdx in mesh coordinates
+        yAxis.setFromMatrixPosition( m2 ); // position of upAxisReferenceBoneIdx in mesh coordinates
+        yAxis.subVectors( yAxis, zAxis ); // Y axis direction in mesh coordinates
+        let m3 = (new THREE.Matrix3).setFromMatrix4( this.skeleton.boneInverses[ boneIdx ] ); // mesh to local, directions only
+        yAxis.applyMatrix3( m3 ).normalize(); // Y axis, convert to local boneIdx coordinates
+        zAxis.copy( this.config.axes[2] ).applyMatrix3( m3 ).normalize(); // Z convert mesh config front axis from mesh coords to local coords
+        xAxis.crossVectors( yAxis, zAxis ).normalize(); // x
+        zAxis.crossVectors( xAxis, yAxis ).normalize(); // Z ensure orthogonality
+
+        return { idx: boneIdx, bindQuat: bindQuat, beforeBindAxes: [ xAxis, yAxis, zAxis ] }; // tiltFB, rotateRL, tiltRL || x,y,z
     }
 
     reset (){
@@ -5681,6 +5715,9 @@ class BodyMovement {
         this.tiltFB = [];
         this.tiltLR = [];
         this.rotateLR = [];
+        for( let part in this.jointsData ){
+            this.skeleton.bones[ this.jointsData[ part ].idx ].quaternion.copy( this.jointsData[ part ].bindQuat );
+        }
     }
 
     update( dt ){
@@ -5716,45 +5753,20 @@ class BodyMovement {
         }
 
         this.transition = transition;
-        let boneMap = this.config.boneMap;
         let q = this._tempQ_0;
 
 
-        // upper back
-        let rotateLRAxis = this._tempV3_0.copy( this.skeleton.bones[ boneMap.Neck ].position).normalize(); // Y        
-        let tiltFBAxis = this._tempV3_1.set(1,0,0); // x
-        let tiltLRAxis = this._tempV3_2.set(0,0,1); // z
-        tiltFBAxis.crossVectors( rotateLRAxis, tiltLRAxis ).normalize(); // compute x 
-        tiltLRAxis.crossVectors( tiltFBAxis, rotateLRAxis ).normalize(); // compute z
-        this.skeleton.bones[ boneMap.ShouldersUnion ].quaternion.setFromAxisAngle( rotateLRAxis, rotateLRAngle *0.3333 ); // y
-        q.setFromAxisAngle( tiltFBAxis, tiltFBAngle *0.3333);
-        this.skeleton.bones[ boneMap.ShouldersUnion ].quaternion.premultiply( q );
-        q.setFromAxisAngle( tiltLRAxis, tiltLRAngle *0.3333);
-        this.skeleton.bones[ boneMap.ShouldersUnion ].quaternion.premultiply( q );
-
-        // mid back
-        rotateLRAxis = rotateLRAxis.copy( this.skeleton.bones[ boneMap.ShouldersUnion ].position ).normalize(); // Y        
-        tiltFBAxis = tiltFBAxis.set(1,0,0); // x
-        tiltLRAxis = tiltLRAxis.set(0,0,1); // z
-        tiltFBAxis.crossVectors( rotateLRAxis, tiltLRAxis ).normalize(); // compute x 
-        tiltLRAxis.crossVectors( tiltFBAxis, rotateLRAxis ).normalize(); // compute z
-        this.skeleton.bones[ boneMap.Stomach ].quaternion.setFromAxisAngle( rotateLRAxis, rotateLRAngle *0.3333 ); // y
-        q.setFromAxisAngle( tiltFBAxis, tiltFBAngle *0.3333);
-        this.skeleton.bones[ boneMap.Stomach ].quaternion.premultiply( q );
-        q.setFromAxisAngle( tiltLRAxis, tiltLRAngle *0.3333);
-        this.skeleton.bones[ boneMap.Stomach ].quaternion.premultiply( q );
-
-        // lower back
-        rotateLRAxis = rotateLRAxis.copy( this.skeleton.bones[ boneMap.Stomach ].position ).normalize(); // Y        
-        tiltFBAxis = tiltFBAxis.set(1,0,0); // x
-        tiltLRAxis = tiltLRAxis.set(0,0,1); // z
-        tiltFBAxis.crossVectors( rotateLRAxis, tiltLRAxis ).normalize(); // compute x 
-        tiltLRAxis.crossVectors( tiltFBAxis, rotateLRAxis ).normalize(); // compute z
-        this.skeleton.bones[ boneMap.BelowStomach ].quaternion.setFromAxisAngle( rotateLRAxis, rotateLRAngle *0.3333 ); // y
-        q.setFromAxisAngle( tiltFBAxis, tiltFBAngle *0.3333 );
-        this.skeleton.bones[ boneMap.BelowStomach ].quaternion.premultiply( q );
-        q.setFromAxisAngle( tiltLRAxis, tiltLRAngle *0.3333 );
-        this.skeleton.bones[ boneMap.BelowStomach ].quaternion.premultiply( q );
+        for( let part in this.jointsData ){
+            let data = this.jointsData[ part ];
+            let bone = this.skeleton.bones[ data.idx ];
+            bone.quaternion.setFromAxisAngle( data.beforeBindAxes[1], rotateLRAngle *0.3333 ); // y
+            q.setFromAxisAngle( data.beforeBindAxes[0], tiltFBAngle *0.3333); // x
+            bone.quaternion.premultiply( q );
+            q.setFromAxisAngle( data.beforeBindAxes[2], tiltLRAngle *0.3333); // z
+            bone.quaternion.premultiply( q );
+            bone.quaternion.premultiply( data.bindQuat ); // probably should MULTIPLY bind quat (previously adjusting axes)
+            bone.quaternion.normalize();
+        }
     }
 
     newGestureBML( bml ){
@@ -5763,14 +5775,14 @@ class BodyMovement {
         amount = amount * 15 * Math.PI / 180;
         let dstBuffer = null;
         switch( bml.bodyMovement ){
-            case "TL": amount *= -1;
-            case "TR": dstBuffer = this.tiltLR;
+            case "TILT_LEFT": amount *= -1;
+            case "TILT_RIGHT": dstBuffer = this.tiltLR;
                 break;
-            case "TB": amount *= -1;
-            case "TF": dstBuffer = this.tiltFB;
+            case "TILT_BACKWARD": amount *= -1;
+            case "TILT_FORWARD": dstBuffer = this.tiltFB;
                 break;
-            case "RR": amount *= -1;
-            case "RL": dstBuffer = this.rotateLR;
+            case "ROTATE_RIGHT": amount *= -1;
+            case "ROTATE_LEFT": dstBuffer = this.rotateLR;
                 break;
         }
 
