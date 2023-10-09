@@ -1093,7 +1093,7 @@ class Editor {
 
             this.mixer.update(dt);
             this.currentTime = this.activeTimeline.currentTime = this.mixer.time;
-
+            LX.emit( "@on_current_time_" + this.activeTimeline.constructor.name, this.currentTime );
             if(this.mode == this.eModes.keyframes) {
 
                 this.updateBoneProperties();

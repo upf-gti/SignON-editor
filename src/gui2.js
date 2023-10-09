@@ -1566,7 +1566,16 @@ class ScriptGui extends Gui {
             widgets.widgets_per_row = 1;
             // this.clipPanel.branch(clip.constructor.name.match(/[A-Z][a-z]+|[0-9]+/g).join(" "));
 
-            widgets.addTitle( clip.constructor.name.match(/[A-Z][a-z]+|[0-9]+/g).join(" ") );
+            let icon = "fa-solid fa-child-reaching";
+
+            if(clip.constructor.name.includes("Face")) 
+                icon = "fa-solid fa-face-smile"
+            else if(clip.constructor.name.includes("Head"))
+                icon = "fa-solid fa-user-large";
+            else if(clip.constructor.name.includes("Gaze"))
+                icon = "fa-solid fa-eye";
+
+            widgets.addTitle(clip.constructor.name.match(/[A-Z][a-z]+|[0-9]+/g).join(" "), {icon} );
             widgets.addText("Id", clip.id, (v) => this.clipInPanel.id = v)
             
             widgets.branch("Content");
@@ -1790,7 +1799,7 @@ class ScriptGui extends Gui {
                     }}]
             });
             p.attach( asset_browser );
-            let asset_data = [{id: "Face", type: "folder", children: []}, {id: "Gaze", type: "folder", children: []}, {id: "Head movement", type: "folder", children: []}, {id: "Body movement", type: "folder", children: []}];
+            let asset_data = [{id: "Face", type: "folder", src: "./data/imgs/folder.png", children: []}, {id: "Gaze", type: "folder", src: "./data/imgs/folder.png", children: []}, {id: "Head movement", type: "folder", src: "./data/imgs/folder.png", children: []}, {id: "Body movement", type: "folder", src: "./data/imgs/folder.png", children: []}];
                 
             // FACE CLIP
             let values = ANIM.FaceLexemeClip.lexemes;
@@ -1809,7 +1818,7 @@ class ScriptGui extends Gui {
                 let data = {
                     id: values[i], 
                     type: "clip",
-                    src: "./data/imgs/thumbnails/" + values[i].toLowerCase().replaceAll(" ", "_") + ".png"
+                    // src: "./data/imgs/thumbnails/" + values[i].toLowerCase().replaceAll(" ", "_") + ".png"
                 }
                 asset_data[1].children.push(data);
             }
@@ -1820,7 +1829,7 @@ class ScriptGui extends Gui {
                 let data = {
                     id: values[i], 
                     type: "clip",
-                    src: "./data/imgs/thumbnails/" + values[i].toLowerCase().replaceAll(" ", "_") + ".png"
+                    // src: "./data/imgs/thumbnails/" + values[i].toLowerCase().replaceAll(" ", "_") + ".png"
                 }
                 asset_data[2].children.push(data);
             }
@@ -1831,7 +1840,7 @@ class ScriptGui extends Gui {
                 let data = {
                     id: values[i], 
                     type: "clip",
-                    src: "./data/imgs/thumbnails/" + values[i].toLowerCase().replaceAll(" ", "_") + ".png"
+                    // src: "./data/imgs/thumbnails/" + values[i].toLowerCase().replaceAll(" ", "_") + ".png"
                 }
                 asset_data[3].children.push(data);
             }
