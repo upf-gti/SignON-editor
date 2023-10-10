@@ -21,7 +21,7 @@ class Gui {
         this.createMenubar(this.mainArea);
         
         // split main area
-        this.mainArea.split({sizes:["75%","25%"]});
+        this.mainArea.split({sizes:["80%","20%"]});
         
         //left -> canvas, right -> side panel
         var [left, right] = this.mainArea.sections;
@@ -1333,7 +1333,7 @@ class ScriptGui extends Gui {
         // Create timelines container area
         this.timelineArea = new LX.Area({ height: 400, overlay:"bottom", resize: true});
         this.timelineArea.attach(this.clipsTimeline.root);
-        
+
         //Resize timelines on resize timeline container area
         this.timelineArea.onresize = (bounding) => {this.clipsTimeline.resize( [ bounding.width, bounding.height ] );}
         area.attach(this.timelineArea);
@@ -1490,6 +1490,7 @@ class ScriptGui extends Gui {
         bottom.attach(this.clipPanel);
 
         this.animationPanel.addTitle("Animation");
+        this.animationPanel.addComboButtons("Dominant hand", [{value: "Left", callback: (v) => this.editor.dominantHand = v}, {value:"Right", callback: (v) => this.editor.dominantHand = v}], {selected: this.editor.dominantHand})
         this.animationPanel.addButton(null, "Add clip", () => this.createLexemesDialog() )
         this.animationPanel.addButton(null, "Add preset", () => this.createPresetsDialog() )
         this.animationPanel.addSeparator();
@@ -1792,7 +1793,7 @@ class ScriptGui extends Gui {
                                 that.clipsTimeline.addClip( new ANIM.HeadClip({properties: {lexeme: asset.id.toUpperCase()}})); 
                                 break;
                             default:
-                                that.clipsTimeline.addClip( new ANIM[asset.id.replaceAll(" ", "") + "Clip"]())
+                                that.clipsTimeline.addClip( new ANIM[asset.id.replaceAll(" ", "") + "Clip"]({properties: {hand: this.dominantHand}}))
                                 break;
                         }
                         dialog.close();
@@ -1878,7 +1879,7 @@ class ScriptGui extends Gui {
                                 break;
                             default:
                                 let clipType = asset.id;
-                                let data = {};
+                                let data = {properties: {hand: this.editor.dominantHand}};
                                 if(clipType.includes("Shoulder")) {
                                     let type = clipType.split(" ")[1];
                                     clipType = "Shoulder";

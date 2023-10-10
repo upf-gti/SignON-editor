@@ -455,7 +455,7 @@ function FaceLexemeClip(o)
 	if(o)
 		this.configure(o);
 	
-	this.id = capitalize(this.properties.lexeme.replaceAll("_", " "));
+	this.id = this.properties.lexeme = capitalize(this.properties.lexeme.replaceAll("_", " "));
 	this.updateColor(this.properties.lexeme);
   //this.icon_id = 37;
 }
@@ -473,8 +473,7 @@ FaceLexemeClip.prototype.configure = function(o)
 		
 		if(property == "lexeme") {
 			
-			this.id = o.lexeme || o.properties.lexeme;
-			this.properties.lexeme = capitalize(this.properties.lexeme.replaceAll(" ", "_"));
+			this.properties.lexeme = this.id = o.lexeme || o.properties.lexeme;
 		}
 		else if(o[property] != undefined)
 			this.properties[property] = o[property];

@@ -56,6 +56,7 @@ class Editor {
 
         this.bodyAnimation = null;
         this.faceAnimation = null;
+        this.dominantHand = "Right";
         
         this.morphTargets = null;
         this.blendshapesManager = null;
@@ -1374,7 +1375,7 @@ class Editor {
 
             const sendData = () => {
                 if(this.appR && this.appR.ECAcontroller)
-                    this.realizer.postMessage({type: "bml", data: json.behaviours});
+                    this.realizer.postMessage(json.behaviours);
                 else {
                     setTimeout(sendData, 1000)
                 }
