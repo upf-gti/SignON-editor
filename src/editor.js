@@ -1375,7 +1375,7 @@ class Editor {
 
             const sendData = () => {
                 if(this.appR && this.appR.ECAcontroller)
-                    this.realizer.postMessage(json.behaviours);
+                    this.realizer.postMessage(JSON.stringify([{type: "bml", data: json.behaviours}]));
                 else {
                     setTimeout(sendData, 1000)
                 }
