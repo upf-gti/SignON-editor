@@ -1220,7 +1220,7 @@ GazeClip.prototype.toJSON = function()
 	for(var i in this.properties)
 	{
 		json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
-		if(hson[i] == "")
+		if(json[i] == "")
 			json[i] = null;
 	}
 	return json;

@@ -528,6 +528,7 @@ class KeyframesGui extends Gui {
         // Create bottom buttons
         const buttonContainer = document.createElement('div');
         buttonContainer.style.display = "flex";
+        buttonContainer.style.padding = "10px";
         
         const buttons = [
             {
