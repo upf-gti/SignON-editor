@@ -1437,6 +1437,129 @@ HeadClip.prototype.showInfo = function(panel, callback)
 
 /** --------- Gesture Behaviour -------------------- */
 
+//ElbowRaiseClip
+ElbowRaiseClip.type = "gesture";
+ElbowRaiseClip.hands = ["Left", "Right", "Both"];
+ElbowRaiseClip.movements = ["Raise", "Hunch"];
+ElbowRaiseClip.id = ANIM.ELBOW ? ANIM.ELBOW: ANIM.clipTypes.length;
+ElbowRaiseClip.clipColor = "#abdda4";
+
+function ElbowRaiseClip(o)
+{
+	this.id = "Elbow Raise";
+	this.start = 0
+	this.duration = 1;
+	this.attackPeak = this.fadein = 0.25; //if it's not permanent
+	this.relax = this.fadeout = 0.75; //if it's not permanent
+	this._width = 0;
+
+	this.properties = {
+		hand: "Right",	
+		elbowRaise : 0.8,	
+		amount: 0.8,
+		shift : false
+	}
+
+	if(o)
+		this.configure(o);
+
+	this.color = "#1a1f23";
+	this.font = "11px Calibri";
+	this.clipColor = ElbowRaiseClip.clipColor;
+}
+
+ANIM.registerClipType( ElbowRaiseClip );
+
+ElbowRaiseClip.prototype.configure = function(o)
+{
+	this.start = o.start || 0;
+	if(o.duration) this.duration = o.duration || 1;
+	if(o.end) this.duration = (o.end - o.start) || 1;
+	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
+	if(o.relax) this.relax = this.fadeout = o.relax;
+	if(o.properties)
+	{
+		Object.assign(this.properties, o.properties);		
+	}
+	for(let p in this.properties) {
+		if(o[p] != undefined) {
+			if(typeof(o[p]) == 'string')
+				o[p] = capitalize(o[p].replaceAll("_", " "));
+			this.properties[p] = o[p];
+		}
+	}
+	this.properties.amount = o.elbowRaise || this.properties.amount;
+}
+
+ElbowRaiseClip.prototype.toJSON = function()
+{
+	var json = {
+		id: this.id,
+		start: this.start,
+		end: this.start + this.duration,
+		attackPeak: this.attackPeak,
+		relax: this.relax,
+		type: "gesture"
+	}
+	
+	for(var i in this.properties)
+	{
+		if(i == "amount")
+			json[i] = this.properties.amount;
+		else
+			json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
+	}
+	return json;
+}
+
+ElbowRaiseClip.prototype.fromJSON = function( json )
+{
+	this.id = json.id;
+	this.configure(json);
+}
+
+ElbowRaiseClip.prototype.drawClip = function( ctx, w,h, selected )
+{
+	ctx.font = this.font;
+	ctx.globalCompositeOperation =  "source-over";
+	let textInfo = ctx.measureText( this.id );
+	ctx.fillStyle = this.color;
+	if( textInfo.width < (w - 24) )
+		ctx.fillText( this.id, 24,h * 0.7 );
+}
+
+ElbowRaiseClip.prototype.showInfo = function(panel, callback)
+{
+	panel.addText(null, "Raises the elbow (added to the elbow raise automatically computed while moving the arm)", null, {disabled: true});
+
+	// Hand property
+	panel.addDropdown("Side",  ShoulderClip.hands, this.properties.hand, (v, e, name) => {
+		
+		this.properties.hand = v.toLowerCase();
+		if(callback)
+			callback();
+		
+	}, {filter: true, title: "Arm to apply the movement"});
+
+	// EblowRaise amount property
+	let options = { precision: 2, min : -1, max : 1, step:  0.01, title: "Amplitude of the movement"};
+	
+	panel.addNumber("Amount", this.properties.amount, (v, e, name) =>
+	{
+		this.properties.amount = v;
+		if(callback)
+			callback();
+	}, options);
+
+	panel.addCheckbox("Set as base elbow position", this.properties.shift, (v, e, name) =>
+	{
+		this.properties.shift = v;
+		if(callback)
+			callback();
+	});
+
+}
+
 //ShoulderClip
 ShoulderClip.type = "gesture";
 ShoulderClip.hands = ["Left", "Right", "Both"];
@@ -1554,8 +1677,7 @@ ShoulderClip.prototype.showInfo = function(panel, callback)
 	}, {filter: true, title: "Arm to apply the movement"});
 
 	// ShoulderRaise/ShoulderHunch amount property
-	let options = { precision: 2, min : 0, max : 1, step:  0.01, title: "Intensity of them movement"};
-	
+	let options = { precision: 2, min : -1, max : 1, step:  0.01, title: "Amplitude of the movement"};	
 	panel.addNumber("Amount", this.properties.amount, (v, e, name) =>
 	{
 		this.properties.amount = v;
@@ -2883,11 +3005,11 @@ function DirectedMotionClip(o)
 	this.attackPeak = this.fadein = 0.25; //if it's not permanent
 	this.relax = this.fadeout = 0.75; //if it's not permanent
 	this._width = 0;
-	this.motion = "directed";
 	
 	this.properties = {
 		hand: "Right",
 		direction: "Out", // string 26 directions. Axis of rotation		
+		motion: "Directed",
 		// optionals
 		secondDirection: "", // string 8 directions. Will compute midpoint between direction and secondDirection.
 		distance: 0.05, // number, metres of the displacement. Default 0.2 m (20 cm)
@@ -3057,7 +3179,6 @@ DirectedMotionClip.prototype.toJSON = function()
 		attackPeak: this.attackPeak,
 		relax: this.relax,
 		type: "gesture",
-		motion: this.motion
 	}
 	for(let i in this.properties)
 	{
@@ -3216,11 +3337,11 @@ function CircularMotionClip(o)
 	this.start = 0
 	this.duration = 1;
 	this._width = 0;
-	this.motion =  "circular";
-
+	
 	this.properties = {
 		hand: "Right",
 		direction: "Out", // string 26 directions. Axis of rotation
+		motion:  "Circular",
 		
 		// optionals
 		secondDirection: "", // string 8 directions. Will compute midpoint between direction and secondDirection.
@@ -3343,7 +3464,6 @@ CircularMotionClip.prototype.toJSON = function()
 		start: this.start,
 		end: this.start + this.duration,
 		type: "gesture",
-		motion: this.motion
 	}
 	for(let i in this.properties)
 	{
@@ -3490,11 +3610,11 @@ function WristMotionClip(o)
 	this.attackPeak = this.fadein = 0.25; //if it's not permanent
 	this.relax = this.fadeout = 0.75; //if it's not permanent
 	this._width = 0;
-	this.motion = "wrist";
-
+	
 	this.properties = {
 		hand: "Right",
 		mode: "Nod",
+		motion: "Wrist",
 		 /* either a: 
 			- string from [ "NOD", "NODDING", "SWING", "SWINGING", "TWIST", "TWISTING", "STIR_CW", "STIR_CCW", "ALL" ]
 			- or a value from [ 0 = None, 1 = TWIST, 2 = NOD, SWING = 4 ]. 
@@ -3632,10 +3752,10 @@ function FingerplayMotionClip(o)
 	this.attackPeak = this.fadein = 0.25; //if it's not permanent
 	this.relax = this.fadeout = 0.75; //if it's not permanent
 	this._width = 0;
-	this.motion = "fingerplay";
-
+	
 	this.properties = {
 		hand: "Right",
+		motion: "Fingerplay",
 		// optionals
 		speed: 3, // oscillations per second. Default 3
 		intensity: 0.5, //[0,1]. Default 0.3
@@ -3697,7 +3817,6 @@ FingerplayMotionClip.prototype.toJSON = function()
 		attackPeak: this.attackPeak,
 		relax: this.relax,
 		type: "gesture",
-		motion: this.motion
 	}
 
 	for(let i in this.properties)

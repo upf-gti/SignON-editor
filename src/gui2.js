@@ -21,7 +21,7 @@ class Gui {
         this.createMenubar(this.mainArea);
         
         // split main area
-        this.mainArea.split({sizes:["80%","20%"]});
+        this.mainArea.split({sizes:["80%","20%"], minimizable: true});
         
         //left -> canvas, right -> side panel
         var [left, right] = this.mainArea.sections;
@@ -1836,7 +1836,7 @@ class ScriptGui extends Gui {
             }
 
             // GESTURE CLIP
-            values = ["Shoulder Raise", "Shoulder Hunch", "Body Movement", "Body Location", "Palm Orientation", "Extfidir", "Handshape", "Hand Constellation", "Circular Motion", "Wrist Motion", "Fingerplay Motion"]
+            values = ["Elbow Raise", "Shoulder Raise", "Shoulder Hunch", "Body Movement", "Body Location", "Palm Orientation", "Extfidir", "Handshape", "Hand Constellation", "Circular Motion", "Wrist Motion", "Fingerplay Motion"]
             for(let i = 0; i < values.length; i++){
                 let data = {
                     id: values[i], 
@@ -1958,17 +1958,14 @@ class ScriptGui extends Gui {
                     editor.showGUI = !editor.showGUI;
 
                     editor.scene.getObjectByName('Grid').visible = editor.showGUI;
-                    
+                    let clickEvent = new MouseEvent( "mousedown" ); // Create the event.
+                    let el = this.mainArea.root.getElementsByClassName("lexmin")[0];
+                    el.dispatchEvent( clickEvent ); 
                     if(!editor.showGUI) {
-
-                        this.hideTimeline();
-                        this.mainArea._moveSplit(-this.sidePanel.size[0]);
-
+                        setTimeout(() => this.hideTimeline(), 400)
                     } else {
-                        this.showTimeline();
-                        this.mainArea._moveSplit(400);
+                        this.showTimeline()
                     }
-                    
                     
                     const video = document.getElementById("capture");
                     video.style.display = editor.showGUI ? "flex" : "none";
