@@ -771,8 +771,8 @@
                     else if(this.min.classList.contains("fa-angle-left")) {
                         this.min.classList.remove("fa-angle-left");
                         this.min.classList.add("fa-angle-right");
-                        this._moveSplit(this.offset);
                         area2.show();
+                        this._moveSplit(this.offset);
                         area2.root.classList.remove("fadeout-horizontal");
                         area2.root.classList.add("fadein-horizontal");
                     }

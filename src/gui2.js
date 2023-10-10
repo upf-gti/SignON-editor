@@ -1960,11 +1960,15 @@ class ScriptGui extends Gui {
                     editor.scene.getObjectByName('Grid').visible = editor.showGUI;
                     let clickEvent = new MouseEvent( "mousedown" ); // Create the event.
                     let el = this.mainArea.root.getElementsByClassName("lexmin")[0];
-                    el.dispatchEvent( clickEvent ); 
+                    
                     if(!editor.showGUI) {
                         setTimeout(() => this.hideTimeline(), 400)
+                        if(!el.classList.contains("fa-angle-left"))
+                            el.dispatchEvent( clickEvent ); 
                     } else {
-                        this.showTimeline()
+                        this.showTimeline();
+                        if(el.classList.contains("fa-angle-left"))
+                            el.dispatchEvent( clickEvent ); 
                     }
                     
                     const video = document.getElementById("capture");

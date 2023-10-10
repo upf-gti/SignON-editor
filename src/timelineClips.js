@@ -1842,9 +1842,7 @@ function BodyLocationClip(o)
 		distance: 0, // [0,1] how far from the body to locate the hand. 0 = close, 1 = arm extended
 		displace: "", // string, 26 directions. Location will be offseted into that direction
 		displaceDistance: 0.05, // number how far to move to the indicated side. Metres 
-	 
-		elbowRaise: 0, // in degrees. Positive values raise the elbow.
-	
+	 	
 		//Following attributes describe which part of the hand will try to reach the locationBodyArm location 
 		srcFinger: "", // 1,2,3,4,5, see handconstellation for more information
 		srcLocation: "", // see handconstellation hand locations
@@ -2095,15 +2093,6 @@ BodyLocationClip.prototype.showInfo = function(panel, callback)
 			
 		}, {filter: true});
 	}
-
-	// Elbow raise property
-	panel.addNumber("Raise elbow", this.properties.elbowRaise, (v, e, name) =>
-	{
-		this.properties.elbowRaise = v;
-		if(callback)
-			callback();
-	}, {precision: 2, min: -360, max: 360, step: 0.1});	
-
 }
 
 //PalmOrientationClip
