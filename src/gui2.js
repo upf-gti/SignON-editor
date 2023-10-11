@@ -100,7 +100,7 @@ class Gui {
         }
 
         menubar.add("Timeline/");
-        menubar.add("Timeline/Empty tracks", { callback: () => this.editor.cleanTracks() });
+        menubar.add("Timeline/Empty tracks", { callback: () => this.editor.emptyTracks() });
         menubar.add("Timeline/Optimize all tracks", { callback: () => this.editor.optimizeTracks() });
         if(this.showVideo)
             menubar.add("View/Show video", { type: "checkbox", checked: this.showVideo, callback: () => {
@@ -527,9 +527,10 @@ class KeyframesGui extends Gui {
 
         // Create bottom buttons
         const buttonContainer = document.createElement('div');
+        buttonContainer.id = "capture-buttons";
         buttonContainer.style.display = "flex";
         buttonContainer.style.padding = "10px";
-        
+        buttonContainer.style.minHeight =  "84px";
         const buttons = [
             {
                 id: "capture_btn",
@@ -623,19 +624,21 @@ class KeyframesGui extends Gui {
     
     initEditionGUI() {
         // Hide capture buttons
-        let capture = document.getElementById("capture_btn");
-        capture.disabled = true;
-        capture.style.display = "none";
+        let buttonContainer = document.getElementById("capture-buttons");
+        buttonContainer.style.display = "none";
+        // let capture = document.getElementById("capture_btn");
+        // capture.disabled = true;
+        // capture.style.display = "none";
 
-        let redo = document.getElementById("redo_btn");
-        if(redo){
-            redo.disabled = true;
-            redo.style.display = "none";
-        } 
+        // let redo = document.getElementById("redo_btn");
+        // if(redo){
+        //     redo.disabled = true;
+        //     redo.style.display = "none";
+        // } 
             
-        let trimBtn = document.getElementById("trim_btn");
-        trimBtn.disabled = true;
-        trimBtn.style.display = "none";
+        // let trimBtn = document.getElementById("trim_btn");
+        // trimBtn.disabled = true;
+        // trimBtn.style.display = "none";
 
     
         // Reposition video the canvas elements
@@ -1411,8 +1414,8 @@ class ScriptGui extends Gui {
             else{
                 actions.push(
                     {
-                        title: "Add lexeme",
-                        callback: this.createLexemesDialog.bind(this)
+                        title: "Add clip",
+                        callback: this.createClipsDialog.bind(this)
                     },
                     {
                         title: "Add preset",
@@ -1492,7 +1495,7 @@ class ScriptGui extends Gui {
 
         this.animationPanel.addTitle("Animation");
         this.animationPanel.addComboButtons("Dominant hand", [{value: "Left", callback: (v) => this.editor.dominantHand = v}, {value:"Right", callback: (v) => this.editor.dominantHand = v}], {selected: this.editor.dominantHand})
-        this.animationPanel.addButton(null, "Add clip", () => this.createLexemesDialog() )
+        this.animationPanel.addButton(null, "Add clip", () => this.createClipsDialog() )
         this.animationPanel.addButton(null, "Add preset", () => this.createPresetsDialog() )
         this.animationPanel.addSeparator();
         // this.updateAnimationPanel( );
@@ -1663,93 +1666,95 @@ class ScriptGui extends Gui {
                 // this.updateClipPanel(clip);
             }, {min:0.01, step:0.01, precision:2});
 
-            widgets.branch("Sync points", {icon: "fa-solid fa-chart-line"});
+            if(clip.fadein!= undefined && clip.fadeout!= undefined)  {
 
-            const syncvalues = [];
-            
-            if(clip.fadein != undefined)
-            {
-                syncvalues.push([clip.fadein - clip.start, clip.properties.amount || 1]);
-                if(clip.attackPeak != undefined)
-                    widgets.addNumber("Attack Peak", (clip.fadein - clip.start).toFixed(2), (v) =>
-                    {              
-                        clip.attackPeak = clip.fadein = v + clip.start;
-                        updateTracks();
-                    }, {min:0, max: clip.fadeout - clip.start, step:0.01, precision:2});
+                widgets.branch("Sync points", {icon: "fa-solid fa-chart-line"});
+
+                const syncvalues = [];
                 
-                if(clip.ready != undefined)
-                    widgets.addNumber("Ready", (clip.fadein - clip.start).toFixed(2), (v) =>
+                if(clip.fadein != undefined)
+                {
+                    syncvalues.push([clip.fadein - clip.start, clip.properties.amount || 1]);
+                    if(clip.attackPeak != undefined)
+                        widgets.addNumber("Attack Peak", (clip.fadein - clip.start).toFixed(2), (v) =>
+                        {              
+                            clip.attackPeak = clip.fadein = v + clip.start;
+                            updateTracks();
+                        }, {min:0, max: clip.fadeout - clip.start, step:0.01, precision:2});
+                    
+                    if(clip.ready != undefined)
+                        widgets.addNumber("Ready", (clip.fadein - clip.start).toFixed(2), (v) =>
+                        {              
+                            clip.ready = clip.fadein = v + clip.start;
+                            updateTracks();
+                        }, {min:0, max: clip.fadeout - clip.start, step:0.01, precision:2});
+                }
+
+                if(clip.strokeStart != undefined) {
+                    widgets.addNumber("Stroke start", (clip.strokeStart - clip.start).toFixed(2), (v) =>
                     {              
-                        clip.ready = clip.fadein = v + clip.start;
+                        clip.strokeStart = v + clip.start;
                         updateTracks();
-                    }, {min:0, max: clip.fadeout - clip.start, step:0.01, precision:2});
-            }
+                    }, {min: clip.ready - clip.start, max: clip.stroke - clip.start, step:0.01, precision:2});
+                }
 
-            if(clip.strokeStart != undefined) {
-                widgets.addNumber("Stroke start", (clip.strokeStart - clip.start).toFixed(2), (v) =>
-                {              
-                    clip.strokeStart = v + clip.start;
-                    updateTracks();
-                }, {min: clip.ready - clip.start, max: clip.stroke - clip.start, step:0.01, precision:2});
-            }
-
-            if(clip.stroke != undefined) {
-                widgets.addNumber("Stroke ", (clip.stroke - clip.start).toFixed(2), (v) =>
-                {              
-                    clip.stroke = v + clip.start;
-                    updateTracks(true);
-                    // this.updateClipPanel(clip);
-
-                }, {min: clip.strokeStart - clip.start, max: clip.strokeEnd - clip.start, step:0.01, precision:2});
-            }
-
-            if(clip.strokeEnd != undefined) {
-                widgets.addNumber("Stroke end", (clip.strokeEnd - clip.start).toFixed(2), (v) =>
-                {              
-                    clip.strokeEnd = v + clip.start;
-                    updateTracks(true);
-                    // this.updateClipPanel(clip);
-
-                }, {min: clip.stroke - clip.start, max: clip.relax - clip.start, step:0.01, precision:2});
-            }
-
-
-            if(clip.fadeout != undefined) 
-            {
-                syncvalues.push([clip.fadeout - clip.start, clip.properties.amount || 1]);
-                
-                if(clip.relax != undefined)
-                    widgets.addNumber("Relax", (clip.fadeout - clip.start).toFixed(2), (v) =>
+                if(clip.stroke != undefined) {
+                    widgets.addNumber("Stroke ", (clip.stroke - clip.start).toFixed(2), (v) =>
                     {              
-                        clip.relax = clip.fadeout = v + clip.start;
-                        if(clip.attackPeak != undefined)
-                            clip.attackPeak = Math.min(clip.fadeout, clip.fadein);
+                        clip.stroke = v + clip.start;
+                        updateTracks(true);
+                        // this.updateClipPanel(clip);
 
-                        if(clip.ready != undefined)
-                            clip.ready = Math.min(clip.fadeout, clip.fadein);
-                        updateTracks();
-                    }, {min: clip.fadein - clip.start, max: clip.duration , step:0.01, precision:2});
+                    }, {min: clip.strokeStart - clip.start, max: clip.strokeEnd - clip.start, step:0.01, precision:2});
+                }
+
+                if(clip.strokeEnd != undefined) {
+                    widgets.addNumber("Stroke end", (clip.strokeEnd - clip.start).toFixed(2), (v) =>
+                    {              
+                        clip.strokeEnd = v + clip.start;
+                        updateTracks(true);
+                        // this.updateClipPanel(clip);
+
+                    }, {min: clip.stroke - clip.start, max: clip.relax - clip.start, step:0.01, precision:2});
+                }
+
+
+                if(clip.fadeout != undefined) 
+                {
+                    syncvalues.push([clip.fadeout - clip.start, clip.properties.amount || 1]);
+                    
+                    if(clip.relax != undefined)
+                        widgets.addNumber("Relax", (clip.fadeout - clip.start).toFixed(2), (v) =>
+                        {              
+                            clip.relax = clip.fadeout = v + clip.start;
+                            if(clip.attackPeak != undefined)
+                                clip.attackPeak = Math.min(clip.fadeout, clip.fadein);
+
+                            if(clip.ready != undefined)
+                                clip.ready = Math.min(clip.fadeout, clip.fadein);
+                            updateTracks();
+                        }, {min: clip.fadein - clip.start, max: clip.duration , step:0.01, precision:2});
+                }
+
+                if(syncvalues.length) {
+                    this.curve = widgets.addCurve("Synchronization", syncvalues, (value, event) => {
+                        if(event && event.type != "mouseup") return;
+                        if(clip.fadein!= undefined) {
+                            if(clip.attackPeak != undefined)
+                                clip.attackPeak =  clip.fadein = Number((value[0][0] + clip.start).toFixed(2));
+                            if(clip.ready != undefined)
+                                clip.ready =  clip.fadein = Number((value[0][0] + clip.start).toFixed(2));
+                        }
+                        if(clip.fadeout!= undefined) {
+                            clip.relax = clip.fadeout = Number((value[1][0] + clip.start).toFixed(2));
+                        }
+                        updateTracks(true);
+                        // this.updateClipPanel(clip);
+        
+                    }, {xrange: [0, clip.duration]});
+                }
             }
 
-            if(syncvalues.length) {
-                this.curve = widgets.addCurve("Synchronization", syncvalues, (value, event) => {
-                    if(event && event.type != "mouseup") return;
-                    if(clip.fadein) {
-                        if(clip.attackPeak != undefined)
-                            clip.attackPeak =  clip.fadein = Number((value[0][0] + clip.start).toFixed(2));
-                        if(clip.ready != undefined)
-                            clip.ready =  clip.fadein = Number((value[0][0] + clip.start).toFixed(2));
-                    }
-                    if(clip.fadeout) {
-                        clip.relax = clip.fadeout = Number((value[1][0] + clip.start).toFixed(2));
-                    }
-                    updateTracks(true);
-                    // this.updateClipPanel(clip);
-    
-                }, {xrange: [0, clip.duration]});
-            }
-            
-            
             widgets.addButton(null, "Delete", (v, e) => this.clipsTimeline.deleteClip(e, this.clipsTimeline.lastClipsSelected[0], () => {clip = null;  this.clipsTimeline.optimizeTracks(); updateTracks()}));
             widgets.merge();
         }
@@ -1774,31 +1779,42 @@ class ScriptGui extends Gui {
        }, {} )
    }
 
-    createLexemesDialog() {
+    createClipsDialog() {
         // Create a new dialog
         let that = this;
+        const innserSelect = (asset) => {
+           
+                switch(asset.folder.id) {
+                    case "Face":
+                        that.clipsTimeline.addClip( new ANIM.FaceLexemeClip({lexeme: asset.id.toUpperCase()})); 
+                        break;
+                    case "Gaze":
+                        that.clipsTimeline.addClip( new ANIM.GazeClip({properties: {influence: asset.id.toUpperCase()}})); 
+                        break;
+                    case "Head movement":
+                        that.clipsTimeline.addClip( new ANIM.HeadClip({properties: {lexeme: asset.id.toUpperCase()}})); 
+                        break;
+                    default:
+                        let clipType = asset.id;
+                        let data = {properties: {hand: this.editor.dominantHand}};
+                        if(clipType.includes("Shoulder")) {
+                            let type = clipType.split(" ")[1];
+                            clipType = "Shoulder";
+                            data["shoulder" + type] = 0.8
+                        }
+                        that.clipsTimeline.addClip( new ANIM[clipType.replaceAll(" ", "") + "Clip"](data));
+                        
+                        break;
+                }
+                dialog.close();
+            
+        }
         let dialog = new LX.Dialog('BML clips', (p) => {
 
             let asset_browser = new LX.AssetView({  
                 preview_actions: [{
                     name: 'Add clip', 
-                    callback: (asset, action) => {
-                        switch(asset.folder.id) {
-                            case "Face":
-                                that.clipsTimeline.addClip( new ANIM.FaceLexemeClip({lexeme: asset.id.toUpperCase()})); 
-                                break;
-                            case "Gaze":
-                                that.clipsTimeline.addClip( new ANIM.GazeClip({properties: {influence: asset.id.toUpperCase()}})); 
-                                break;
-                            case "Head movement":
-                                that.clipsTimeline.addClip( new ANIM.HeadClip({properties: {lexeme: asset.id.toUpperCase()}})); 
-                                break;
-                            default:
-                                that.clipsTimeline.addClip( new ANIM[asset.id.replaceAll(" ", "") + "Clip"]({properties: {hand: this.dominantHand}}))
-                                break;
-                        }
-                        dialog.close();
-                    }}]
+                    callback: innserSelect}]
             });
             p.attach( asset_browser );
             let asset_data = [{id: "Face", type: "folder", src: "./data/imgs/folder.png", children: []}, {id: "Gaze", type: "folder", src: "./data/imgs/folder.png", children: []}, {id: "Head movement", type: "folder", src: "./data/imgs/folder.png", children: []}, {id: "Body movement", type: "folder", src: "./data/imgs/folder.png", children: []}];
@@ -1837,7 +1853,7 @@ class ScriptGui extends Gui {
             }
 
             // GESTURE CLIP
-            values = ["Elbow Raise", "Shoulder Raise", "Shoulder Hunch", "Body Movement", "Body Location", "Palm Orientation", "Extfidir", "Handshape", "Hand Constellation", "Circular Motion", "Wrist Motion", "Fingerplay Motion"]
+            values = ["Elbow Raise", "Shoulder Raise", "Shoulder Hunch", "Body Movement", "Arm Location", "Palm Orientation", "Hand Orientation", "Handshape", "Hand Constellation", "Directed Motion", "Circular Motion", "Wrist Motion", "Fingerplay Motion"]
             for(let i = 0; i < values.length; i++){
                 let data = {
                     id: values[i], 
@@ -1866,29 +1882,30 @@ class ScriptGui extends Gui {
                         console.log(e.item.id + " is now called " + e.value); 
                         break;
                     case LX.AssetViewEvent.ASSET_DBCLICK: 
-                        dialog.close();
-                        let asset = e.item;
-                        switch(asset.folder.id) {
-                            case "Face":
-                                that.clipsTimeline.addClip( new ANIM.FaceLexemeClip({lexeme: asset.id})); 
-                                break;
-                            case "Gaze":
-                                that.clipsTimeline.addClip( new ANIM.GazeClip({influence: asset.id})); 
-                                break;
-                            case "Head movement":
-                                that.clipsTimeline.addClip( new ANIM.HeadClip({lexeme: asset.id})); 
-                                break;
-                            default:
-                                let clipType = asset.id;
-                                let data = {properties: {hand: this.editor.dominantHand}};
-                                if(clipType.includes("Shoulder")) {
-                                    let type = clipType.split(" ")[1];
-                                    clipType = "Shoulder";
-                                    data["shoulder" + type] = 0.8
-                                }
-                                that.clipsTimeline.addClip( new ANIM[clipType.replaceAll(" ", "") + "Clip"](data));
-                                break;
-                        }
+                        innserSelect(e.item)
+                        // dialog.close();
+                        // let asset = e.item;
+                        // switch(asset.folder.id) {
+                        //     case "Face":
+                        //         that.clipsTimeline.addClip( new ANIM.FaceLexemeClip({lexeme: asset.id})); 
+                        //         break;
+                        //     case "Gaze":
+                        //         that.clipsTimeline.addClip( new ANIM.GazeClip({influence: asset.id})); 
+                        //         break;
+                        //     case "Head movement":
+                        //         that.clipsTimeline.addClip( new ANIM.HeadClip({lexeme: asset.id})); 
+                        //         break;
+                        //     default:
+                        //         let clipType = asset.id;
+                        //         let data = {properties: {hand: this.editor.dominantHand}};
+                        //         if(clipType.includes("Shoulder")) {
+                        //             let type = clipType.split(" ")[1];
+                        //             clipType = "Shoulder";
+                        //             data["shoulder" + type] = 0.8
+                        //         }
+                        //         that.clipsTimeline.addClip( new ANIM[clipType.replaceAll(" ", "") + "Clip"](data));
+                        //         break;
+                        // }
                         
                         break;
                 }

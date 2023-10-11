@@ -883,23 +883,47 @@ class Editor {
     /** -------------------- BODY ANIMATION EDITION -------------------- */
     cleanTracks(excludeList) {
 
-        if(!this.gui.keyFramesTimeline.animationClip)
-        return;
+        if(!this.activeTimeline.animationClip)
+            return;
 
-        for( let i = 0; i < this.gui.keyFramesTimeline.animationClip.tracks.length; ++i ) {
+        for( let i = 0; i < this.activeTimeline.animationClip.tracks.length; ++i ) {
 
-            const track = this.gui.keyFramesTimeline.animationClip.tracks[i];
-            const [boneName, type] = this.gui.keyFramesTimeline.getTrackName(track.name);
+            const track = this.activeTimeline.animationClip.tracks[i];
+            let type = 'number';
+            if(this.activeTimeline.getTrackName && track.name) {
 
-            if(excludeList && excludeList.indexOf( boneName ) != -1)
-            continue;
+                let [boneName, type] = this.activeTimeline.getTrackName(track.name);
+    
+                if(excludeList && excludeList.indexOf( boneName ) != -1)
+                    continue;
+            }
+            let currentTrack = this.animationClip.tracks[track.idx];
+            track.times = new Float32Array( [currentTrack.times[0]] );
 
-            track.times = new Float32Array( [track.times[0]] );
-            track.values = track.values.slice(0, type === 'quaternion' ? 4 : 3);
+            let n = 1;
+            if(type != 'number')
+                n = type === 'quaternion' ? 4 : 3;
+            track.values = track.values.slice(0, n );
 
-            this.updateAnimationAction(this.gui.keyFramesTimeline.animationClip,i);
-            this.gui.keyFramesTimeline.onPreProcessTrack( track );
+            this.updateAnimationAction(this.activeTimeline.animationClip,i);
+            if(this.activeTimeline.onPreProcessTrack)
+                this.activeTimeline.onPreProcessTrack( track );
         }
+    }
+
+    emptyTracks() {
+        if(!this.activeTimeline.animationClip)
+            return;
+
+        for( let i = 0; i < this.activeTimeline.animationClip.tracks.length; ++i ) {
+
+            const track = this.activeTimeline.animationClip.tracks[i];
+            this.activeTimeline.deleteTrack(track.idx);
+            this.updateAnimationAction(this.animationClip, track.idx, true);
+            if(this.activeTimeline.onPreProcessTrack)
+                this.activeTimeline.onPreProcessTrack( track );
+        }
+        this.updateTracks();
     }
 
     optimizeTrack(trackIdx, threshold = this.optimizeThreshold) {
@@ -932,7 +956,8 @@ class Editor {
     }
 
     updateAnimationAction(animation, idx, replace = false) {
-
+        if(!this.bodyAnimation) 
+            return;
         const mixer = this.mixer;
 
         if(!mixer._actions.length) 
@@ -969,6 +994,7 @@ class Editor {
                     this.mixer.clipAction(this.animationClip).play();
                 }
             }
+            
             if(this.bodyAnimation.name == animation.name)
                 this.bodyAnimation = animation;
             else if(this.faceAnimation.name == animation.name)
@@ -1196,6 +1222,7 @@ class Editor {
     onPlay(element, e) {
     
         this.state = true;
+        this.activeTimeline.active = false;
         this.gui.setBoneInfoState( true );
         if(this.video.sync) {
             try{
@@ -1211,6 +1238,7 @@ class Editor {
     onStop(element, e) {
 
         this.state = false;
+        this.activeTimeline.active = true;
         element.innerHTML = "<i class='bi bi-play-fill'></i>";
         //element.style.removeProperty("border");
         this.gui.setBoneInfoState( true );
@@ -1225,6 +1253,8 @@ class Editor {
 
     onPause(element, e) {
         this.state = !this.state;
+        this.activeTimeline.active = !this.activeTimeline.active;
+
         if(this.state) {
             
             this.gui.setBoneInfoState( true );

@@ -431,7 +431,7 @@ FaceLexemeClip.lexemes = [
 
 FaceLexemeClip.type = "faceLexeme";
 FaceLexemeClip.id = ANIM.FACELEXEME ? ANIM.FACELEXEME: ANIM.clipTypes.length;
-FaceLexemeClip.clipColor = "#3288bd";
+FaceLexemeClip.clipColor = "#dda4bd";
 
 function FaceLexemeClip(o)
 {
@@ -708,7 +708,7 @@ FaceFACSClip.prototype.showInfo = function(panel)
 FaceEmotionClip.type = "faceEmotion";
 FaceEmotionClip.emotions = ["HAPPINESS", "SADNESS", "SURPRISE", "FEAR","ANGER","DISGUST", "CONTEMPT"];
 
-FaceEmotionClip.id = ANIM.FACEEMOTION? ANIM.FACEEMOTION: ANIM.clipTypes.length;
+FaceEmotionClip.id = ANIM.FACEEMOTION ? ANIM.FACEEMOTION: ANIM.clipTypes.length;
 FaceEmotionClip.clipColor = "#00BDFF";
 
 function FaceEmotionClip()
@@ -1145,7 +1145,7 @@ GazeClip.directions = ["", "Up right", "Up left", "Down right", "Down left", "Ri
 GazeClip.targets = ["Up right", "Up left", "Down right", "Down left", "Right", "Left", "Up", "Down", "Front"];
 
 GazeClip.id = ANIM.GAZE ? ANIM.GAZE: ANIM.clipTypes.length;
-GazeClip.clipColor = "#5e4fa2";
+GazeClip.clipColor = "#7162b4";
 
 function GazeClip(o)
 {
@@ -1170,7 +1170,7 @@ function GazeClip(o)
 
 	this.color = "#1a1f23";
 	this.font = "11px Calibri";
-
+	this.clipColor = GazeClip.clipColor;
 }
 
 ANIM.registerClipType( GazeClip );
@@ -1803,28 +1803,28 @@ BodyMovementClip.prototype.showInfo = function(panel, callback)
 	}, options);
 }
 
-//BodyLocationClip
-BodyLocationClip.type = "gesture";
-BodyLocationClip.locations = ["Head", "Head top", "Forehead", "Nose", "Below nose", "Chin", "Under chin", "Mouth", "Earlobe", "Earlobe Right", "Earlobe Left", "Ear ", "Ear Right", "Ear Left", "Cheek ", "Cheek Right", "Cheek Left", 
+//ArmLocationClip
+ArmLocationClip.type = "gesture";
+ArmLocationClip.locations = ["Head", "Head top", "Forehead", "Nose", "Below nose", "Chin", "Under chin", "Mouth", "Earlobe", "Earlobe Right", "Earlobe Left", "Ear ", "Ear Right", "Ear Left", "Cheek ", "Cheek Right", "Cheek Left", 
 								"Eye ", "Eye Right", "Eye Left", "Eyebrow ", "Eyebrow Left", "Eyebrow Right", "Mouth", "Chest", "Shoulder Line", "Shoulder", "Shoulder Right", "Shoulder Left", "Stomach", "Below stomach", "Neutral"];
-BodyLocationClip.sides = { "Right": "rr", "Slightly right": "r", "Left": "ll", "Slightly left": "l"};
-BodyLocationClip.hands = ["Left", "Right", "Both"];
-BodyLocationClip.directions = ["Up", "Down", "Left", "Right", "In", "Out",
+ArmLocationClip.sides = { "Right": "rr", "Slightly right": "r", "Left": "ll", "Slightly left": "l"};
+ArmLocationClip.hands = ["Left", "Right", "Both"];
+ArmLocationClip.directions = ["Up", "Down", "Left", "Right", "In", "Out",
 								"Up Left", "Up Right", "Up In", "Up Out",
 								"Left In", "Left Out", "Right In", "Right Out",								
 								"Down Left", "Down Right", "Down In", "Down Out",
 								"Up Out Left", "Up Out Right", "Down Out Left", "Down Out Right",
 								"Down Out Left", "Down Out Right", "Down In Left", "Down In Right"];
-BodyLocationClip.fingers = ["","Thumb", "Index", "Middle", "Ring", "Pinky"];
-BodyLocationClip.hand_locations = ["","Tip", "Pad", "Mid", "Base", "Thumb ball", "Hand", "Wrist"];
-BodyLocationClip.hand_sides = ["", "Right", "Left", "Ulnar", "Radial", "Front", "Back", "Palmar"];
+ArmLocationClip.fingers = ["","Thumb", "Index", "Middle", "Ring", "Pinky"];
+ArmLocationClip.hand_locations = ["","Tip", "Pad", "Mid", "Base", "Thumb ball", "Hand", "Wrist"];
+ArmLocationClip.hand_sides = ["", "Right", "Left", "Ulnar", "Radial", "Front", "Back", "Palmar"];
 
-BodyLocationClip.id = ANIM.BODYLOCATION ? ANIM.BODYLOCATION: ANIM.clipTypes.length;
-BodyLocationClip.clipColor = "#fdae61";
+ArmLocationClip.id = ANIM.ARMLOCATION ? ANIM.ARMLOCATION: ANIM.clipTypes.length;
+ArmLocationClip.clipColor = "#fdae61";
 
-function BodyLocationClip(o)
+function ArmLocationClip(o)
 {
-	this.id= "Body Location";
+	this.id= "Arm location";
 	this.start = 0
 	this.duration = 1;
 	this.attackPeak = this.fadein = 0.25; //if it's not permanent
@@ -1859,12 +1859,12 @@ function BodyLocationClip(o)
 
 	this.color = "#1a1f23";
 	this.font = "11px Calibri";
-	this.clipColor = BodyLocationClip.clipColor;
+	this.clipColor = ArmLocationClip.clipColor;
 }
 
-ANIM.registerClipType( BodyLocationClip );
+ANIM.registerClipType( ArmLocationClip );
 
-BodyLocationClip.prototype.configure = function(o)
+ArmLocationClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
 	if(o.duration) this.duration = o.duration || 1;
@@ -1883,10 +1883,10 @@ BodyLocationClip.prototype.configure = function(o)
 		}
 	}
 	if(o.side || o.secondSide) {
-		for(let s in BodyLocationClip.sides) {
-			if(o.side == BodyLocationClip.sides[s])
+		for(let s in ArmLocationClip.sides) {
+			if(o.side == ArmLocationClip.sides[s])
 				this.properties.side = s;
-			if(o.secondSide == BodyLocationClip.sides[s])
+			if(o.secondSide == ArmLocationClip.sides[s])
 				this.properties.secondSide = s;
 		}
 	}
@@ -1917,10 +1917,10 @@ BodyLocationClip.prototype.configure = function(o)
 			}
 		}
 	}
-	if(o.srcFinger) this.properties.srcFinger = BodyLocationClip.fingers[o.srcFinger];
+	if(o.srcFinger) this.properties.srcFinger = ArmLocationClip.fingers[o.srcFinger];
 }
 
-BodyLocationClip.prototype.toJSON = function()
+ArmLocationClip.prototype.toJSON = function()
 {
 	let json = {
 		id: this.id,
@@ -1933,7 +1933,7 @@ BodyLocationClip.prototype.toJSON = function()
 	for(let i in this.properties)
 	{
 		if( i == "side" || i == "secondSide") 
-			json[i] = BodyLocationClip.sides[this.properties[i]];
+			json[i] = ArmLocationClip.sides[this.properties[i]];
 		else if ( i == "displace" && this.properties[i] != "") {
 			let d = this.properties[i].split(" ");
 			json[i] = "";
@@ -1942,7 +1942,7 @@ BodyLocationClip.prototype.toJSON = function()
 			}
 		}
 		else if(i == "srcFinger") {
-			json[i] = BodyLocationClip.fingers.indexOf(this.properties[i])
+			json[i] = ArmLocationClip.fingers.indexOf(this.properties[i])
 			json[i] = json[i] < 0 ? null : json[i];
 		}
 		else 
@@ -1954,13 +1954,13 @@ BodyLocationClip.prototype.toJSON = function()
 	return json;
 }
 
-BodyLocationClip.prototype.fromJSON = function( json )
+ArmLocationClip.prototype.fromJSON = function( json )
 {
 	this.id = json.id;
 	this.configure(json);
 }
 
-BodyLocationClip.prototype.drawClip = function( ctx, w,h, selected )
+ArmLocationClip.prototype.drawClip = function( ctx, w,h, selected )
 {
 	ctx.font = this.font;
 	ctx.globalCompositeOperation =  "source-over";
@@ -1970,11 +1970,11 @@ BodyLocationClip.prototype.drawClip = function( ctx, w,h, selected )
 		ctx.fillText( this.id, 24,h * 0.7 );
 }
 
-BodyLocationClip.prototype.showInfo = function(panel, callback)
+ArmLocationClip.prototype.showInfo = function(panel, callback)
 {
 	panel.addText(null, "Moves the arm (wrist) to a location of the body.", null, {disabled: true});
 	// Location body arm property
-	panel.addDropdown("Arm location", BodyLocationClip.locations, this.properties.locationBodyArm, (v, e, name) => {
+	panel.addDropdown("Arm location", ArmLocationClip.locations, this.properties.locationBodyArm, (v, e, name) => {
 		
 		this.properties.locationBodyArm = v;
 		if(callback)
@@ -1983,7 +1983,7 @@ BodyLocationClip.prototype.showInfo = function(panel, callback)
 	}, {filter: true});
 
 	// Hand property
-	panel.addDropdown("Arm", BodyLocationClip.hands, this.properties.hand, (v, e, name) => {
+	panel.addDropdown("Arm", ArmLocationClip.hands, this.properties.hand, (v, e, name) => {
 				
 		this.properties.hand = v;
 		if(callback)
@@ -2003,7 +2003,7 @@ BodyLocationClip.prototype.showInfo = function(panel, callback)
 	panel.addTitle( "Optionals");
 
 	// Location side
-	panel.addDropdown("Side", ["", ...Object.keys(BodyLocationClip.sides)], this.properties.side, (v, e, name) => {
+	panel.addDropdown("Side", ["", ...Object.keys(ArmLocationClip.sides)], this.properties.side, (v, e, name) => {
 		
 		this.properties.side = v;
 		if(callback)
@@ -2012,7 +2012,7 @@ BodyLocationClip.prototype.showInfo = function(panel, callback)
 	}, {filter: true, title: "Side offset ott the chosen point"});
 
 	// Second location body arm property
-	panel.addDropdown("Second location", ["", ...BodyLocationClip.locations], this.properties.secondLocationBodyArm, (v, e, name) => {
+	panel.addDropdown("Second location", ["", ...ArmLocationClip.locations], this.properties.secondLocationBodyArm, (v, e, name) => {
 		
 		this.properties.secondLocationBodyArm = v;
 		if(callback)
@@ -2022,7 +2022,7 @@ BodyLocationClip.prototype.showInfo = function(panel, callback)
 
 	if(this.properties.secondLocationBodyArm) {
 		// Second loaction side
-		panel.addDropdown("Second side", ["", ...Object.keys(BodyLocationClip.sides)], this.properties.secondSide, (v, e, name) => {
+		panel.addDropdown("Second side", ["", ...Object.keys(ArmLocationClip.sides)], this.properties.secondSide, (v, e, name) => {
 				
 			this.properties.secondSide = v;
 			if(callback)
@@ -2040,7 +2040,7 @@ BodyLocationClip.prototype.showInfo = function(panel, callback)
 	}, {precision: 2, min: 0, max: 1, step: 0.01, title: "How far from the body to locate the hand. 0 = close, 1 = arm extended"});
 
 	// Displacement property
-	panel.addDropdown("Displace", BodyLocationClip.directions, this.properties.displace, (v, e, name) => {
+	panel.addDropdown("Displace", ArmLocationClip.directions, this.properties.displace, (v, e, name) => {
 	
 		this.properties.displace = v;
 		if(callback)
@@ -2065,7 +2065,7 @@ BodyLocationClip.prototype.showInfo = function(panel, callback)
 	panel.addText(null, "Part of the hand that will try to reach the body location", null, {disabled: true});
 
 	// Part of the hand
-	panel.addDropdown("Location", BodyLocationClip.fingers, this.properties.srcLocation, (v, e, name) => {
+	panel.addDropdown("Location", ArmLocationClip.fingers, this.properties.srcLocation, (v, e, name) => {
 				
 		this.properties.srcLocation = v;
 		if(callback)
@@ -2074,7 +2074,7 @@ BodyLocationClip.prototype.showInfo = function(panel, callback)
 	}, {filter: true});
 
 	if(this.properties.srcLocation && this.properties.srcLocation != "Tip") {
-		panel.addDropdown("Side", BodyLocationClip.hand_sides, this.properties.srcSide, (v, e, name) => {
+		panel.addDropdown("Side", ArmLocationClip.hand_sides, this.properties.srcSide, (v, e, name) => {
 				
 			this.properties.srcSide = v;
 			if(callback)
@@ -2085,7 +2085,7 @@ BodyLocationClip.prototype.showInfo = function(panel, callback)
 	}
 	if(this.properties.srcLocation == "Tip" || this.properties.srcLocation == "Pad" || this.properties.srcLocation == "Mid" || this.properties.srcLocation == "Base") {
 
-		panel.addDropdown("Finger", BodyLocationClip.fingers, this.properties.srcFinger, (v, e, name) => {
+		panel.addDropdown("Finger", ArmLocationClip.fingers, this.properties.srcFinger, (v, e, name) => {
 				
 			this.properties.srcFinger = v;
 			if(callback)
@@ -2280,22 +2280,22 @@ PalmOrientationClip.prototype.showInfo = function(panel, callback)
 	}, {filter: true, title: "Will compute midpoint between direction and second direction"});
 }
 
-//ExtfidirClip
-ExtfidirClip.type = "gesture";
-ExtfidirClip.hands = ["Left", "Right", "Both"];
-ExtfidirClip.directions = ["Up", "Down", "Left", "Right", "In", "Out",
+//HandOrientationClip
+HandOrientationClip.type = "gesture";
+HandOrientationClip.hands = ["Left", "Right", "Both"];
+HandOrientationClip.directions = ["Up", "Down", "Left", "Right", "In", "Out",
 							"Up Left", "Up Right", "Up In", "Up Out",
 							"Left In", "Left Out", "Right In", "Right Out",								
 							"Down Left", "Down Right", "Down In", "Down Out",
 							"Up Out Left", "Up Out Right", "Down Out Left", "Down Out Right",
 							"Down Out Left", "Down Out Right", "Down In Left", "Down In Right"];
 
-ExtfidirClip.id = ANIM.PALMORIENTATION ? ANIM.PALMORIENTATION: ANIM.clipTypes.length;
-ExtfidirClip.clipColor = "#d53e4f";
+HandOrientationClip.id = ANIM.HANDORIENTATION ? ANIM.HANDORIENTATION: ANIM.clipTypes.length;
+HandOrientationClip.clipColor = "#d53e4f";
 
-function ExtfidirClip(o)
+function HandOrientationClip(o)
 {
-	this.id= "Extfidir";
+	this.id = "Hand orientation";
 	this.start = 0
 	this.duration = 1;
 	this.attackPeak = this.fadein = 0.25; //if it's not permanent
@@ -2316,12 +2316,12 @@ function ExtfidirClip(o)
 
 	this.color = "#1a1f23";
 	this.font = "11px Calibri";
-	this.clipColor = ExtfidirClip.clipColor;
+	this.clipColor = HandOrientationClip.clipColor;
 }
 
-ANIM.registerClipType( ExtfidirClip );
+ANIM.registerClipType( HandOrientationClip );
 
-ExtfidirClip.prototype.configure = function(o)
+HandOrientationClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
 	if(o.duration) this.duration = o.duration || 1;
@@ -2394,7 +2394,7 @@ ExtfidirClip.prototype.configure = function(o)
 	}
 }
 
-ExtfidirClip.prototype.toJSON = function()
+HandOrientationClip.prototype.toJSON = function()
 {
 	var json = {
 		id: this.id,
@@ -2425,13 +2425,13 @@ ExtfidirClip.prototype.toJSON = function()
 	return json;
 }
 
-ExtfidirClip.prototype.fromJSON = function( json )
+HandOrientationClip.prototype.fromJSON = function( json )
 {
 	this.id = json.id;
 	this.configure(json);
 }
 
-ExtfidirClip.prototype.drawClip = function( ctx, w,h, selected )
+HandOrientationClip.prototype.drawClip = function( ctx, w,h, selected )
 {
 	ctx.font = this.font;
 	ctx.globalCompositeOperation =  "source-over";
@@ -2441,11 +2441,11 @@ ExtfidirClip.prototype.drawClip = function( ctx, w,h, selected )
 		ctx.fillText( this.id, 24,h * 0.7 );
 }
 
-ExtfidirClip.prototype.showInfo = function(panel, callback)
+HandOrientationClip.prototype.showInfo = function(panel, callback)
 {
 	panel.addText(null,"Roll of the wrist joint", null, {disabled: true});
 	// Direction property
-	panel.addDropdown("Direction", Object.keys(ExtfidirClip.directions), this.properties.extfidir, (v, e, name) => {
+	panel.addDropdown("Direction", HandOrientationClip.directions, this.properties.extfidir, (v, e, name) => {
 		
 		this.properties.extfidir = v;
 		if(callback)
@@ -2454,7 +2454,7 @@ ExtfidirClip.prototype.showInfo = function(panel, callback)
 	}, {filter: true, title: "Direction relative to arm (not to world coordinates)"});
 
 	// Hand property
-	panel.addDropdown("Hand", ExtfidirClip.hands, this.properties.hand, (v, e, name) => {
+	panel.addDropdown("Hand", HandOrientationClip.hands, this.properties.hand, (v, e, name) => {
 				
 		this.properties.hand = v;
 		if(callback)
@@ -2475,7 +2475,7 @@ ExtfidirClip.prototype.showInfo = function(panel, callback)
 	panel.addTitle( "Optionals");
 
 	// Second direction side
-	panel.addDropdown("Second direction", ["", ...Object.keys(ExtfidirClip.directions)], this.properties.secondExtfidir, (v, e, name) => {
+	panel.addDropdown("Second direction", ["", ...HandOrientationClip.directions], this.properties.secondExtfidir, (v, e, name) => {
 		
 		this.properties.secondExtfidir = v;
 		if(callback)
@@ -2626,7 +2626,7 @@ HandshapeClip.prototype.showInfo = function(panel, callback)
 	panel.addTitle( "Optionals");
 
 	// Thumbshape property
-	panel.addDropdown("Thumb shape", [null, ...HandshapeClip.thumbshapes], this.properties.thumbshape, (v, e, name) => {
+	panel.addDropdown("Thumb shape", ["", ...HandshapeClip.thumbshapes], this.properties.thumbshape, (v, e, name) => {
 	
 		this.properties.thumbshape = v;
 		if(callback)
@@ -2651,7 +2651,7 @@ HandshapeClip.prototype.showInfo = function(panel, callback)
 	}, {precision: 2, min: 0, max: 1, step: 0.01});
 
 	// Bend property
-	panel.addDropdown("Main bend", [null, ...HandshapeClip.bendstates], this.properties.mainBend, (v, e, name) => {
+	panel.addDropdown("Main bend", ["", ...HandshapeClip.bendstates], this.properties.mainBend, (v, e, name) => {
 
 		this.properties.mainBend = v;
 		if(callback)
@@ -2663,7 +2663,7 @@ HandshapeClip.prototype.showInfo = function(panel, callback)
 	panel.addText(null, "Optional second hand shape", null, {disabled: true});
 
 	// Second handshape property
-	panel.addDropdown("Second hand shape", [null, ...HandshapeClip.handshapes], this.properties.secondHandshape, (v, e, name) => {
+	panel.addDropdown("Second hand shape", ["", ...HandshapeClip.handshapes], this.properties.secondHandshape, (v, e, name) => {
 			
 		this.properties.secondHandshape = v;
 		if(callback)
@@ -2673,7 +2673,7 @@ HandshapeClip.prototype.showInfo = function(panel, callback)
 
 
 	// Second thumbshape property
-	panel.addDropdown("Second thumb shape", [null, ...HandshapeClip.thumbshapes], this.properties.secondThumbshape, (v, e, name) => {
+	panel.addDropdown("Second thumb shape", ["", ...HandshapeClip.thumbshapes], this.properties.secondThumbshape, (v, e, name) => {
 	
 		this.properties.secondThumbshape = v;
 		if(callback)
@@ -2691,7 +2691,7 @@ HandshapeClip.prototype.showInfo = function(panel, callback)
 	}, {precision: 2, min: 0, max: 1, step: 0.01});
 
 	// Second bend property
-	panel.addDropdown("Second main bend", [null, ...HandshapeClip.bendstates], this.properties.secondMainBend, (v, e, name) => {
+	panel.addDropdown("Second main bend", ["", ...HandshapeClip.bendstates], this.properties.secondMainBend, (v, e, name) => {
 
 		this.properties.secondMainBend = v;
 		if(callback)
@@ -2716,8 +2716,8 @@ HandConstellationClip.directions = ["Up", "Down", "Left", "Right", "In", "Out",
 									"Up Out Left", "Up Out Right", "Down Out Left", "Down Out Right",
 									"Down Out Left", "Down Out Right", "Down In Left", "Down In Right"];
 
-HandConstellationClip.id = ANIM.HANDSHAPE ? ANIM.HANDSHAPE: ANIM.clipTypes.length;
-HandConstellationClip.clipColor = "lima";
+HandConstellationClip.id = ANIM.HANDCONSTELLATION ? ANIM.HANDCONSTELLATION: ANIM.clipTypes.length;
+HandConstellationClip.clipColor = "#0ac8c8";
 
 function HandConstellationClip(o)
 {
@@ -2961,7 +2961,7 @@ HandConstellationClip.prototype.showInfo = function(panel, callback)
 	}, {precision: 2, min: 0, max: 1, step: 0.01});
 
 	// Displacement property
-	panel.addDropdown("Distance direction", BodyLocationClip.directions, this.properties.distanceDirection, (v, e, name) => {
+	panel.addDropdown("Distance direction", ArmLocationClip.directions, this.properties.distanceDirection, (v, e, name) => {
 	
 		this.properties.distanceDirection = v;
 		if(callback)
@@ -2983,8 +2983,8 @@ DirectedMotionClip.directions = ["Up", "Down", "Left", "Right", "In", "Out",
 								"Down Out Left", "Down Out Right", "Down In Left", "Down In Right"];
 DirectedMotionClip.second_directions = ["Up", "Down", "Left", "Right","Up Left", "Up Right", "Down Left", "Down Right"];
 
-DirectedMotionClip.id = ANIM.CIRCULARMOTION ? ANIM.CIRCULARMOTION: ANIM.clipTypes.length;
-DirectedMotionClip.clipColor = "lima";
+DirectedMotionClip.id = ANIM.DIRECTEDMOTION ? ANIM.DIRECTEDMOTION: ANIM.clipTypes.length;
+DirectedMotionClip.clipColor = "#5e9fdd";
 
 function DirectedMotionClip(o)
 {
@@ -3318,7 +3318,7 @@ CircularMotionClip.directions = ["Up", "Down", "Left", "Right", "In", "Out",
 CircularMotionClip.second_directions = ["Up", "Down", "Left", "Right","Up Left", "Up Right", "Down Left", "Down Right"];
 
 CircularMotionClip.id = ANIM.CIRCULARMOTION ? ANIM.CIRCULARMOTION: ANIM.clipTypes.length;
-CircularMotionClip.clipColor = "lima";
+CircularMotionClip.clipColor = "#5e9fdd";
 
 function CircularMotionClip(o)
 {
@@ -3515,7 +3515,7 @@ CircularMotionClip.prototype.showInfo = function(panel, callback)
 	panel.addTitle( "Optionals");
 	
 	// Displacement property
-	panel.addDropdown("Second direction", ["", CircularMotionClip.second_directions], this.properties.secondDirection, (v, e, name) => {
+	panel.addDropdown("Second direction", ["", ...CircularMotionClip.second_directions], this.properties.secondDirection, (v, e, name) => {
 	
 		this.properties.secondDirection = v;
 		if(callback)
@@ -3558,7 +3558,7 @@ CircularMotionClip.prototype.showInfo = function(panel, callback)
 	});
 
 	if(this.zigzag) {
-		panel.addDropdown("Zig zag direction", ["", CircularMotionClip.directions], this.properties.zigzag, (v, e, name) => {
+		panel.addDropdown("Zig zag direction", ["", ...CircularMotionClip.directions], this.properties.zigzag, (v, e, name) => {
 				
 			this.properties.zigzag = v;
 			if(callback)
@@ -3585,11 +3585,11 @@ CircularMotionClip.prototype.showInfo = function(panel, callback)
 
 //WristMotionClip
 WristMotionClip.type = "gesture";
-WristMotionClip.modes = ["Left", "Right", "Both"];
-WristMotionClip.sides = ["Nod", "Nodding", "Swing", "Swinging", "Twist", "Twisting", "Stir CW", "Stir CCW", "All"];
+WristMotionClip.hands = ["Left", "Right", "Both"];
+WristMotionClip.modes = ["Nod", "Nodding", "Swing", "Swinging", "Twist", "Twisting", "Stir CW", "Stir CCW", "All"];
 
 WristMotionClip.id = ANIM.WRISTMOTION ? ANIM.WRISTMOTION: ANIM.clipTypes.length;
-WristMotionClip.clipColor = "lima";
+WristMotionClip.clipColor = "#5e9fdd";
 
 function WristMotionClip(o)
 {

@@ -490,27 +490,27 @@ class App {
     }
     
     async processVideo(live, results) {
-                
-        // Update header
-        let capture = document.getElementById("capture_btn");
-        capture.style.display = "none";
-        capture.disabled = true;
-        capture.classList.remove("stop");
-        
+                       
         // TRIM VIDEO - be sure that only the sign is recorded
         let canvas = document.getElementById("outputVideo");
 
         let video = document.getElementById("recording");
         video.classList.remove("hidden");
-        video.style.width = canvas.width + "px";
-        video.style.height = canvas.height + "px";
-        video.width = canvas.width;
-        video.height = canvas.height;
+        video.style.width = canvas.offsetWidth + "px";
+        video.style.height = canvas.offsetHeight + "px";
+        video.width = canvas.offsetWidth;
+        video.height = canvas.offsetHeight;
         if(live === undefined || !live){
             video.style.cssText+= "transform: rotateY(0deg);\
                             -webkit-transform:rotateY(0deg); /* Safari and Chrome */\
                             -moz-transform:rotateY(0deg); /* Firefox */"
         }
+        // Hidde bottom buttons
+        let capture = document.getElementById("capture_btn");
+        capture.style.display = "none";
+        capture.disabled = true;
+        capture.classList.remove("stop");
+
         await VideoUtils.bind(video, canvas);
         VideoUtils.onSetTime = this.editor.updateCaptureDataTime.bind(this.editor, results);
 

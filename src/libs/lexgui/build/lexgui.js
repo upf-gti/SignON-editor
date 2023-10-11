@@ -447,7 +447,7 @@
 
         if( target )
         {
-            target[signal_name].call(target, value);
+            if(target[signal_name]) target[signal_name].call(target, value);
             return;
         }
 
@@ -739,7 +739,7 @@
                         setTimeout(() => {
                             area2.hide();
                             this._moveSplit(20);
-                        }, 400);
+                        }, 200);
                     }
                     // Fade in from down
                     else if(this.min.classList.contains("fa-angle-up")) {
@@ -1030,7 +1030,7 @@
             this.root.style.position = "relative";
 
             options.className = "lexoverlaybuttons";
-            options.width = "calc( 100% - 12px )";
+            options.width = "calc( 100% - 24px )";
             options.height = "auto";
 
             const float = options.float;
@@ -1057,7 +1057,7 @@
             let overlayPanel = this.addPanel( options );
             let overlaygroup;
             
-            const add_button = function(b, group) {
+            const add_button = function(b, group, last) {
 
                 const _options = { 
                     width: "auto", 
@@ -1076,13 +1076,6 @@
                     }
 
                     _options.parent = overlaygroup;
-                }
-                // ends the group
-                else if(overlaygroup)
-                {
-                    overlayPanel.root.appendChild( overlaygroup );
-                    overlaygroup = null;
-                    delete overlayPanel.queuedContainer;
                 }
 
                 let callback = b.callback;
@@ -1114,6 +1107,14 @@
                     }
                     callback( value, event );
                 }, _options );
+
+                // ends the group
+                if(overlaygroup && last)
+                {
+                    overlayPanel.root.appendChild( overlaygroup );
+                    overlaygroup = null;
+                    overlayPanel.clearQueue();
+                }
             }
 
             const refresh_panel = function() {
@@ -1124,10 +1125,11 @@
                 {
                     if( b.constructor === Array )
                     {
-                        for( let sub of b )
+                        for( let i = 0; i < b.length; ++i )
                         {
+                            let sub = b[i];
                             sub.group = b;
-                            add_button(sub, true);
+                            add_button(sub, true, i == (b.length - 1));
                         }
                     }else
                     {
@@ -3280,6 +3282,7 @@
 
                 let buttonEl = document.createElement('button');
                 buttonEl.className = "lexbutton combo";
+                buttonEl.title = b.icon ? b.value : "";
                 if(options.buttonClass)
                     buttonEl.classList.add(options.buttonClass);
 
@@ -3489,7 +3492,10 @@
             selectedOption.style.width = "100%";   
 
             selectedOption.refresh = (v) => {
-                selectedOption.querySelector("span").innerHTML = selectedOption.querySelector("span").innerHTML.replaceAll(selectedOption.querySelector("span").innerText, v); 
+                if(selectedOption.querySelector("span").innerText == "")
+                    selectedOption.querySelector("span").innerText = v;
+                else
+                    selectedOption.querySelector("span").innerHTML = selectedOption.querySelector("span").innerHTML.replaceAll(selectedOption.querySelector("span").innerText, v); 
             }
 
             //Add dropdown options container
@@ -3560,7 +3566,7 @@
                     });
 
                     // Add string option
-                    if(typeof iValue == 'string') {
+                    if(typeof iValue == 'string' || !iValue) {
                         option.style.flexDirection = 'unset';
                         option.innerHTML = "<a class='fa-solid fa-check'></a><span>" + iValue + "</span>";
                         option.value = iValue;
@@ -6746,7 +6752,7 @@
 	LX.UTILS = {
         getTime() { return new Date().getTime() },
         compareThreshold( v, p, n, t ) { return Math.abs(v - p) >= t || Math.abs(v - n) >= t },
-        compareThresholdRange( v0, v1, t0, t1 ) { return v0 > t0 && v0 <= t1 || v1 > t0 && v1 <= t1 },
+        compareThresholdRange( v0, v1, t0, t1 ) { return v0 >= t0 && v0 <= t1 || v1 >= t0 && v1 <= t1 || v0 <= t0 && v1 >= t1},
         clamp (num, min, max) { return Math.min(Math.max(num, min), max) }
     };
     

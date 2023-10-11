@@ -170,7 +170,7 @@ class Gui {
                 actions.push(
                     {
                         title: "Add lexeme" + " <i class='bi bi-plus float-right'></i>",
-                        callback: this.createLexemesDialog.bind(this)
+                        callback: this.createClipsDialog.bind(this)
                     },
                     {
                         title: "Add preset" + " <i class='bi bi-plus float-right'></i>",
@@ -1310,7 +1310,7 @@ class Gui {
         element.scrollTop = options.maxScroll ? maxScroll : (options.scroll ? options.scroll : 0);
     }
 
-    createLexemesDialog() {
+    createClipsDialog() {
         // Create a new dialog
         let dialog = new LiteGUI.Dialog('Non Manual Features lexemes', { title:'Lexemes', close: true, minimize: false, width: 500, height: 400, scroll: true, resizable: true, draggable: true });
         var that = this;
