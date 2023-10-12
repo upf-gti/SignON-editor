@@ -1782,7 +1782,7 @@ class ScriptGui extends Gui {
     createClipsDialog() {
         // Create a new dialog
         let that = this;
-        const innserSelect = (asset) => {
+        const innerSelect = (asset) => {
            
                 switch(asset.folder.id) {
                     case "Face":
@@ -1806,16 +1806,19 @@ class ScriptGui extends Gui {
                         
                         break;
                 }
+                asset_browser.clear();
                 dialog.close();
             
         }
+        let asset_browser = new LX.AssetView({  
+            preview_actions: [{
+                name: 'Add clip', 
+                callback: innerSelect}]
+        });
+
         let dialog = new LX.Dialog('BML clips', (p) => {
 
-            let asset_browser = new LX.AssetView({  
-                preview_actions: [{
-                    name: 'Add clip', 
-                    callback: innserSelect}]
-            });
+            
             p.attach( asset_browser );
             let asset_data = [{id: "Face", type: "folder", src: "./data/imgs/folder.png", children: []}, {id: "Gaze", type: "folder", src: "./data/imgs/folder.png", children: []}, {id: "Head movement", type: "folder", src: "./data/imgs/folder.png", children: []}, {id: "Body movement", type: "folder", src: "./data/imgs/folder.png", children: []}];
                 
@@ -1882,7 +1885,7 @@ class ScriptGui extends Gui {
                         console.log(e.item.id + " is now called " + e.value); 
                         break;
                     case LX.AssetViewEvent.ASSET_DBCLICK: 
-                        innserSelect(e.item)
+                        innerSelect(e.item)
                         // dialog.close();
                         // let asset = e.item;
                         // switch(asset.folder.id) {

@@ -3728,7 +3728,7 @@ WristMotionClip.prototype.showInfo = function(panel, callback)
 //FingerplayMotionClip
 FingerplayMotionClip.type = "gesture";
 FingerplayMotionClip.hands = ["Left", "Right", "Both"];
-FingerplayMotionClip.fingers = ["","Thumb", "Index", "Middle", "Ring", "Pinky"];
+FingerplayMotionClip.fingers = ["Thumb", "Index", "Middle", "Ring", "Pinky"];
 
 FingerplayMotionClip.id = ANIM.FINGERPLAYMOTION ? ANIM.FINGERPLAYMOTION: ANIM.clipTypes.length;
 FingerplayMotionClip.clipColor = "#e6f598";
@@ -3748,7 +3748,7 @@ function FingerplayMotionClip(o)
 		// optionals
 		speed: 3, // oscillations per second. Default 3
 		intensity: 0.5, //[0,1]. Default 0.3
-		fingers: "", // string with numbers. Each number present activates a finger. 2=index, 3=middle, 4=ring, 4=pinky. I.E. "234" activates index, middle, ring but not pinky. Default all enabled
+		fingers: "Thumb Index Middle Ring Pinky", // string with numbers. Each number present activates a finger. 2=index, 3=middle, 4=ring, 4=pinky. I.E. "234" activates index, middle, ring but not pinky. Default all enabled
 		exemptedFingers: "", //string with numbers. Blocks a finger from doing the finger play. Default all fingers move
 	}
 
@@ -3817,7 +3817,7 @@ FingerplayMotionClip.prototype.toJSON = function()
 			for(let f = 0; f < fingers.length; f++) {
 
 				let idx = FingerplayMotionClip.fingers.indexOf(fingers[f]);
-				json[i] += idx < 0 ? "" : idx;
+				json[i] += idx < 0 ? "" : idx + 1;
 			}
 		}
 		else 
@@ -3878,37 +3878,22 @@ FingerplayMotionClip.prototype.showInfo = function(panel, callback)
 			callback();
 	}, {precision: 2, min: 0, max: 1, step: 0.1});
 
-	panel.addDropdown("Active finger", ["", ...FingerplayMotionClip.fingers], "", (v, e, name) => {
-				
-		this.properties.fingers += v + " ";
-		if(callback)
-			callback(true);
-		
-	}, {filter: true});
+	panel.addText(null, "Active fingers", null, {disabled:true});
 
-	panel.addText("Fingers actived", this.properties.fingers, (v, e, name) => {
-				
-		this.properties.fingers = v;
-		if(callback)
-			callback();
-		
-	}, {filter: true});
-	
-	panel.addDropdown("Exempt finger", ["", FingerplayMotionClip.fingers], "", (v, e, name) => {
-				
-		this.properties.exemptedFingers += v + " ";
-		if(callback)
-			callback(true);
-		
-	}, {filter: true});
+	for(let i=0; i < FingerplayMotionClip.fingers.length; i++) {
 
-	panel.addText("Fingers exempted", this.properties.exemptedFingers, (v, e, name) => {
-				
-		this.properties.exemptedFingers = v;
-		if(callback)
-			callback(true);
-		
-	}, {filter: true});
+		let active = this.properties.fingers.includes(FingerplayMotionClip.fingers[i]);
+		panel.addCheckbox(FingerplayMotionClip.fingers[i], active, (v,e, name) => {
+			if(v) {
+				this.properties.fingers += name + " ";
+			}
+			else {
+				this.properties.fingers = this.properties.fingers.replace(name + " ", "");
+			}
+			if(callback)
+				callback();
+		} )
+	}
 }
 
 //helpers **************************

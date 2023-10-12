@@ -14,8 +14,8 @@ import { GLTFExporter } from './exporters/GLTFExporoter.js'
 import { BMLController } from "./controller2.js"
 import { BlendshapesManager } from "./blendshapes.js"
 
-const MapNames = await import('../data/mapnames.json', {assert: { type: 'json' }});
-
+// const MapNames = await import('../data/mapnames.json', {assert: { type: 'json' }});
+const MapNames = await (await fetch('./data/mapnames.json')).json();
 // Correct negative blenshapes shader of ThreeJS
 THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
 THREE.ShaderChunk[ 'morphtarget_pars_vertex' ] = "#ifdef USE_MORPHTARGETS\n	uniform float morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		uniform float morphTargetInfluences[ MORPHTARGETS_COUNT ];\n		uniform sampler2DArray morphTargetsTexture;\n		uniform vec2 morphTargetsTextureSize;\n		vec3 getMorph( const in int vertexIndex, const in int morphTargetIndex, const in int offset, const in int stride ) {\n			float texelIndex = float( vertexIndex * stride + offset );\n			float y = floor( texelIndex / morphTargetsTextureSize.x );\n			float x = texelIndex - y * morphTargetsTextureSize.x;\n			vec3 morphUV = vec3( ( x + 0.5 ) / morphTargetsTextureSize.x, y / morphTargetsTextureSize.y, morphTargetIndex );\n			return texture( morphTargetsTexture, morphUV ).xyz;\n		}\n	#else\n		#ifndef USE_MORPHNORMALS\n			uniform float morphTargetInfluences[ 8 ];\n		#else\n			uniform float morphTargetInfluences[ 4 ];\n		#endif\n	#endif\n#endif";
@@ -69,7 +69,7 @@ class Editor {
         this.selectedAU = "Brow Left";
         
         this.character = "EVA";
-        this.mapNames = MapNames.default.map_llnames[this.character];
+        this.mapNames = MapNames.map_llnames[this.character];
 
     	this.onDrawTimeline = null;
 	    this.onDrawSettings = null;
@@ -222,7 +222,7 @@ class Editor {
                     
                     break;
                 case "Escape":
-                    this.gui.hideTimeline()
+                    // this.gui.hideTimeline()
                     // this.gui.updateSkeletonPanel();
                     // this.gui.tree.select()
                     // this.activeTimeline.unSelect();
