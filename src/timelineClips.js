@@ -565,7 +565,7 @@ FaceLexemeClip.prototype.showInfo = function(panel, callback)
 	// Amount property
 	let options = { precision: 2,  min: 0, max: 1, step: 0.01 };
 
-	panel.addNumber("Amount", this.properties.amount.toFixed(2), (v, e, name) =>
+	panel.addNumber("Intensity", this.properties.amount.toFixed(2), (v, e, name) =>
 	{
 		this.properties.amount = v;
 		if(callback)
@@ -1188,10 +1188,10 @@ GazeClip.prototype.configure = function(o)
 	}
 	for(let p in this.properties) {
 		if(o[p] != undefined) {
-			if(typeof(o[p]) == 'string')
-				o[p] = capitalize(o[p]);
 			this.properties[p] = o[p];
 		}
+		if(typeof(this.properties[p]) == 'string')
+			this.properties[p] = capitalize(this.properties[p].replaceAll("_", " "));
 	}
 
 	switch(this.properties.influence) {
@@ -1285,7 +1285,7 @@ GazeClip.prototype.showInfo = function(panel, callback)
 	}, {filter: true, });
 
 	// Offset Angle property
-	panel.addNumber("Offset angle", this.properties.offsetAngle, (v, e, name) =>
+	panel.addNumber("Offset angle (deg)", this.properties.offsetAngle, (v, e, name) =>
 	{
 		this.properties.offsetAngle = v;
 		if(callback)
@@ -1334,6 +1334,9 @@ function HeadClip(o)
 
 	if(o)
 		this.configure(o);
+
+	this.id = "Head " + this.properties.lexeme;
+
 	this.color = "#1a1f23";
 	this.font = "11px Calibri";
 	this.clipColor = HeadClip.clipColor;
@@ -1360,11 +1363,12 @@ HeadClip.prototype.configure = function(o)
 	}
 	for(let p in this.properties) {
 		if(o[p] != undefined) {
-			if(typeof(o[p]) == 'string')
-				o[p] = capitalize(o[p].replaceAll("_", " "));
 			this.properties[p] = o[p];
 		}
+		if(typeof(this.properties[p]) == 'string')
+			this.properties[p] = capitalize(this.properties[p].replaceAll("_", " "));
 	}
+
 }
 
 HeadClip.prototype.toJSON = function()
@@ -1409,6 +1413,9 @@ HeadClip.prototype.showInfo = function(panel, callback)
 	panel.addDropdown('Lexeme', HeadClip.lexemes, this.properties.lexeme, (v, e, name) => {
 		
 		this.properties.lexeme = v;
+		
+		this.id = "Head " + v ;
+		
 		if(callback)
 			callback();
 		
@@ -1427,7 +1434,7 @@ HeadClip.prototype.showInfo = function(panel, callback)
 	// Amount property
 	options = { precision: 2,  min: 0, max: 1, step: 0.01, title: "Intensity of the movement" };
 
-	panel.addNumber("Amount", this.properties.amount.toFixed(2), (v, e, name) =>
+	panel.addNumber("Intensity", this.properties.amount.toFixed(2), (v, e, name) =>
 	{
 		this.properties.amount = v;
 		if(callback)
@@ -1483,11 +1490,12 @@ ElbowRaiseClip.prototype.configure = function(o)
 	}
 	for(let p in this.properties) {
 		if(o[p] != undefined) {
-			if(typeof(o[p]) == 'string')
-				o[p] = capitalize(o[p].replaceAll("_", " "));
 			this.properties[p] = o[p];
 		}
+		if(typeof(this.properties[p]) == 'string')
+			this.properties[p] = capitalize(this.properties[p].replaceAll("_", " "));
 	}
+
 	this.properties.amount = o.elbowRaise || this.properties.amount;
 }
 
@@ -1544,7 +1552,7 @@ ElbowRaiseClip.prototype.showInfo = function(panel, callback)
 	// EblowRaise amount property
 	let options = { precision: 2, min : -1, max : 1, step:  0.01, title: "Amplitude of the movement"};
 	
-	panel.addNumber("Amount", this.properties.amount, (v, e, name) =>
+	panel.addNumber("Intensity", this.properties.amount, (v, e, name) =>
 	{
 		this.properties.amount = v;
 		if(callback)
@@ -1607,11 +1615,12 @@ ShoulderClip.prototype.configure = function(o)
 	}
 	for(let p in this.properties) {
 		if(o[p] != undefined) {
-			if(typeof(o[p]) == 'string')
-				o[p] = capitalize(o[p].replaceAll("_", " "));
 			this.properties[p] = o[p];
 		}
+		if(typeof(this.properties[p]) == 'string')
+			this.properties[p] = capitalize(this.properties[p].replaceAll("_", " "));
 	}
+
 	this.properties.amount = o.shoulderRaise || o.shoulderHunch || this.properties.amount;
 	if(o.shoulderRaise != undefined)
 		this.movementType = "Raise";
@@ -1678,7 +1687,7 @@ ShoulderClip.prototype.showInfo = function(panel, callback)
 
 	// ShoulderRaise/ShoulderHunch amount property
 	let options = { precision: 2, min : -1, max : 1, step:  0.01, title: "Amplitude of the movement"};	
-	panel.addNumber("Amount", this.properties.amount, (v, e, name) =>
+	panel.addNumber("Intensity", this.properties.amount, (v, e, name) =>
 	{
 		this.properties.amount = v;
 		if(callback)
@@ -1740,10 +1749,10 @@ BodyMovementClip.prototype.configure = function(o)
 	}
 	for(let p in this.properties) {
 		if(o[p] != undefined) {
-			if(typeof(o[p]) == 'string')
-				o[p] = capitalize(o[p].replaceAll("_", " "));
 			this.properties[p] = o[p];
 		}
+		if(typeof(this.properties[p]) == 'string')
+			this.properties[p] = capitalize(this.properties[p].replaceAll("_", " "));
 	}
 }
 
@@ -1795,7 +1804,7 @@ BodyMovementClip.prototype.showInfo = function(panel, callback)
 	// Amount property
 	let options = { precision: 2, min : 0, max : 1, step:  0.01, title: "Intensity of the movement"};
 	
-	panel.addNumber("Amount", this.properties.amount, (v, e, name) =>
+	panel.addNumber("Intensity", this.properties.amount, (v, e, name) =>
 	{
 		this.properties.amount = v;
 		if(callback)
@@ -1877,11 +1886,12 @@ ArmLocationClip.prototype.configure = function(o)
 	}
 	for(let p in this.properties) {
 		if(o[p] != undefined) {
-			if(typeof(o[p]) == 'string')
-				o[p] = capitalize(o[p].replaceAll("_", " "));
 			this.properties[p] = o[p];
 		}
+		if(typeof(this.properties[p]) == 'string')
+			this.properties[p] = capitalize(this.properties[p].replaceAll("_", " "));
 	}
+
 	if(o.side || o.secondSide) {
 		for(let s in ArmLocationClip.sides) {
 			if(o.side == ArmLocationClip.sides[s])
@@ -2144,11 +2154,12 @@ PalmOrientationClip.prototype.configure = function(o)
 	}
 	for(let p in this.properties) {
 		if(o[p] != undefined) {
-			if(typeof(o[p]) == 'string')
-				o[p] = capitalize(o[p].replaceAll("_", " "));
 			this.properties[p] = o[p];
 		}
+		if(typeof(this.properties[p]) == 'string')
+			this.properties[p] = capitalize(this.properties[p].replaceAll("_", " "));
 	}
+
 	if(o.palmor) {
 		this.properties.palmor = "";
 		for(let i = 0; i < o.palmor.length; i++) {
@@ -2334,11 +2345,12 @@ HandOrientationClip.prototype.configure = function(o)
 	}
 	for(let p in this.properties) {
 		if(o[p] != undefined) {
-			if(typeof(o[p]) == 'string')
-				o[p] = capitalize(o[p].replaceAll("_", " "));
 			this.properties[p] = o[p];
 		}
+		if(typeof(this.properties[p]) == 'string')
+			this.properties[p] = capitalize(this.properties[p].replaceAll("_", " "));
 	}
+
 	if(o.extfidir) {
 		this.properties.extfidir = "";
 		for(let i = 0; i < o.extfidir.length; i++) {
@@ -2545,11 +2557,12 @@ HandshapeClip.prototype.configure = function(o)
 	}
 	for(let p in this.properties) {
 		if(o[p] != undefined) {
-			if(typeof(o[p]) == 'string')
-				o[p] = capitalize(o[p].replaceAll("_", " "));
 			this.properties[p] = o[p];
 		}
+		if(typeof(this.properties[p]) == 'string')
+			this.properties[p] = capitalize(this.properties[p].replaceAll("_", " "));
 	}
+
 }
 
 HandshapeClip.prototype.toJSON = function()
@@ -2773,11 +2786,12 @@ HandConstellationClip.prototype.configure = function(o)
 	}
 	for(let p in this.properties) {
 		if(o[p] != undefined) {
-			if(typeof(o[p]) == 'string')
-				o[p] = capitalize(o[p].replaceAll("_", " "));
 			this.properties[p] = o[p];
 		}
+		if(typeof(this.properties[p]) == 'string')
+			this.properties[p] = capitalize(this.properties[p].replaceAll("_", " "));
 	}
+
 	if(o.srcSide || o.dstSide) {
 		for(let s in HandConstellationClip.sides) {
 			if(o.srcSide == HandConstellationClip.sides[s])
@@ -3004,7 +3018,7 @@ function DirectedMotionClip(o)
 		distance: 0.05, // number, metres of the displacement. Default 0.2 m (20 cm)
 		curve: "", // string 8 directions. Default to none
 		secondCurve: "", // string 8 directions. Will compute midpoint between curve and secondCurve.
-		curveSteepness: 1, // number meaning the sharpness of the curve
+		curveSize: 1, // number meaning the sharpness of the curve
 		zigzag: "", // string 26 directions
 		zigzagSize: 0.05, // amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
 		zigzagSpeed: 2, // oscillations per second. Default 2
@@ -3034,11 +3048,12 @@ DirectedMotionClip.prototype.configure = function(o)
 	}
 	for(let p in this.properties) {
 		if(o[p] != undefined) {
-			if(typeof(o[p]) == 'string')
-				o[p] = capitalize(o[p].replaceAll("_", " "));
 			this.properties[p] = o[p];
 		}
+		if(typeof(this.properties[p]) == 'string')
+			this.properties[p] = capitalize(this.properties[p].replaceAll("_", " "));
 	}
+
 	if(o.direction) {
 		this.properties.direction = "";
 		for(let i = 0; i < o.direction.length; i++) {
@@ -3239,12 +3254,12 @@ DirectedMotionClip.prototype.showInfo = function(panel, callback)
 	}, {filter: true});
 
 	// Distance property 
-	panel.addNumber("Meters of the displacemenent", this.properties.distance, (v, e, name) =>
+	panel.addNumber("Distance (m)", this.properties.distance, (v, e, name) =>
 	{
 		this.properties.distance = v;
 		if(callback)
 			callback();
-	}, {precision: 2, min: 0, step: 0.01});
+	}, {precision: 2, min: 0, step: 0.01, title: "Meters of the displacement"});
 
 	panel.addDropdown("Curve direction", ["", ...DirectedMotionClip.second_directions], this.properties.curve, (v, e, name) => {
 	
@@ -3262,9 +3277,9 @@ DirectedMotionClip.prototype.showInfo = function(panel, callback)
 		
 	}, {filter: true});
 
-	panel.addNumber("Sharpness of the curve", this.properties.curveSteepness, (v, e, name) =>
+	panel.addNumber("Amplitude of the curve", this.properties.curveSize, (v, e, name) =>
 	{
-		this.properties.curveSteepness = v;
+		this.properties.curveSize = v;
 		if(callback)
 			callback();
 	}, {precision: 2, min: 0, step: 0.01});
@@ -3364,11 +3379,12 @@ CircularMotionClip.prototype.configure = function(o)
 	}
 	for(let p in this.properties) {
 		if(o[p] != undefined) {
-			if(typeof(o[p]) == 'string')
-				o[p] = capitalize(o[p].replaceAll("_", " "));
 			this.properties[p] = o[p];
 		}
+		if(typeof(this.properties[p]) == 'string')
+			this.properties[p] = capitalize(this.properties[p].replaceAll("_", " "));
 	}
+
 	if(o.direction) {
 		this.properties.direction = "";
 		for(let i = 0; i < o.direction.length; i++) {
@@ -3524,21 +3540,21 @@ CircularMotionClip.prototype.showInfo = function(panel, callback)
 	}, {filter: true});
 
 	// Distance property 
-	panel.addNumber("Radius of the circle", this.properties.distance, (v, e, name) =>
+	panel.addNumber("Radius of the circle (m)", this.properties.distance, (v, e, name) =>
 	{
 		this.properties.distance = v;
 		if(callback)
 			callback();
 	}, {precision: 2, min: 0, step: 0.01});
 
-	panel.addNumber("Start angle", this.properties.startAngle, (v, e, name) =>
+	panel.addNumber("Start angle (deg)", this.properties.startAngle, (v, e, name) =>
 	{
 		this.properties.startAngle = v;
 		if(callback)
 			callback();
 	}, {precision: 2, min: -360, max: 360, step: 0.1});
 
-	panel.addNumber("End angle", this.properties.endAngle, (v, e, name) =>
+	panel.addNumber("End angle (deg)", this.properties.endAngle, (v, e, name) =>
 	{
 		this.properties.endAngle = v;
 		if(callback)
@@ -3566,19 +3582,19 @@ CircularMotionClip.prototype.showInfo = function(panel, callback)
 			
 		}, {filter: true});
 
-		panel.addNumber("Zig zag amplitude", this.properties.zigzagSize, (v, e, name) =>
+		panel.addNumber("Zig zag amplitude (m)", this.properties.zigzagSize, (v, e, name) =>
 		{
 			this.properties.zigzagSize = v;
 			if(callback)
 				callback();
 		}, {precision: 2, min: 0, step: 0.01});
 
-		panel.addNumber("Zig zag speed", this.properties.zigzagSpeed, (v, e, name) =>
+		panel.addNumber("Oscillations per second", this.properties.zigzagSpeed, (v, e, name) =>
 		{
 			this.properties.zigzagSpeed = v;
 			if(callback)
 				callback();
-		}, {precision: 2, min: 0, step: 1});
+		}, {precision: 2, min: 0, step: 1, title: "Zig zag speed"});
 	
 	}
 }
@@ -3639,11 +3655,12 @@ WristMotionClip.prototype.configure = function(o)
 	}
 	for(let p in this.properties) {
 		if(o[p] != undefined) {
-			if(typeof(o[p]) == 'string')
-				o[p] = capitalize(o[p].replaceAll("_", " "));
 			this.properties[p] = o[p];
 		}
+		if(typeof(this.properties[p]) == 'string')
+			this.properties[p] = capitalize(this.properties[p].replaceAll("_", " "));
 	}
+
 }
 
 WristMotionClip.prototype.toJSON = function()
@@ -3709,12 +3726,12 @@ WristMotionClip.prototype.showInfo = function(panel, callback)
 	panel.addTitle( "Optionals");
 
 	// Speed property 
-	panel.addNumber("Speed", this.properties.speed, (v, e, name) =>
+	panel.addNumber("Oscillations per second", this.properties.speed, (v, e, name) =>
 	{
 		this.properties.speed = v;
 		if(callback)
 			callback();
-	}, {precision: 2, step: 0.01});
+	}, {precision: 2, step: 0.01, title: "Speed of the movement"});
 
 	// Intensity property
 	panel.addNumber("Intensity", this.properties.intensity, (v, e, name) =>
@@ -3775,10 +3792,10 @@ FingerplayMotionClip.prototype.configure = function(o)
 	}
 	for(let p in this.properties) {
 		if(o[p] != undefined) {
-			if(typeof(o[p]) == 'string')
-				o[p] = capitalize(o[p].replaceAll("_", " "));
 			this.properties[p] = o[p];
 		}
+		if(typeof(this.properties[p]) == 'string')
+			this.properties[p] = capitalize(this.properties[p].replaceAll("_", " "));
 	}
 
 	if(o.fingers) {
@@ -3863,12 +3880,12 @@ FingerplayMotionClip.prototype.showInfo = function(panel, callback)
 	panel.addTitle( "Optionals");
 
 	// Speed property 
-	panel.addNumber("Speed", this.properties.speed, (v, e, name) =>
+	panel.addNumber("Oscillations per second", this.properties.speed, (v, e, name) =>
 	{
 		this.properties.speed = v;
 		if(callback)
 			callback();
-	}, {precision: 2, step: 0.01});
+	}, {precision: 2, step: 0.01, title: "Speed of the movement"});
 
 	// Intensity property
 	panel.addNumber("Intensity", this.properties.intensity, (v, e, name) =>
@@ -3878,7 +3895,7 @@ FingerplayMotionClip.prototype.showInfo = function(panel, callback)
 			callback();
 	}, {precision: 2, min: 0, max: 1, step: 0.1});
 
-	panel.addText(null, "Active fingers", null, {disabled:true});
+	panel.addText(null, "Active fingers", null, {disabled:true, title: "Activate or exempt fingers in the movement"});
 
 	for(let i=0; i < FingerplayMotionClip.fingers.length; i++) {
 

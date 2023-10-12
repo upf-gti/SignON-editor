@@ -1676,14 +1676,14 @@ class ScriptGui extends Gui {
                 {
                     syncvalues.push([clip.fadein - clip.start, clip.properties.amount || 1]);
                     if(clip.attackPeak != undefined)
-                        widgets.addNumber("Attack Peak", (clip.fadein - clip.start).toFixed(2), (v) =>
+                        widgets.addNumber("Attack Peak (s)", (clip.fadein - clip.start).toFixed(2), (v) =>
                         {              
                             clip.attackPeak = clip.fadein = v + clip.start;
                             updateTracks();
                         }, {min:0, max: clip.fadeout - clip.start, step:0.01, precision:2});
                     
                     if(clip.ready != undefined)
-                        widgets.addNumber("Ready", (clip.fadein - clip.start).toFixed(2), (v) =>
+                        widgets.addNumber("Ready (s)", (clip.fadein - clip.start).toFixed(2), (v) =>
                         {              
                             clip.ready = clip.fadein = v + clip.start;
                             updateTracks();
@@ -1691,7 +1691,7 @@ class ScriptGui extends Gui {
                 }
 
                 if(clip.strokeStart != undefined) {
-                    widgets.addNumber("Stroke start", (clip.strokeStart - clip.start).toFixed(2), (v) =>
+                    widgets.addNumber("Stroke start (s)", (clip.strokeStart - clip.start).toFixed(2), (v) =>
                     {              
                         clip.strokeStart = v + clip.start;
                         updateTracks();
@@ -1699,7 +1699,7 @@ class ScriptGui extends Gui {
                 }
 
                 if(clip.stroke != undefined) {
-                    widgets.addNumber("Stroke ", (clip.stroke - clip.start).toFixed(2), (v) =>
+                    widgets.addNumber("Stroke (s)", (clip.stroke - clip.start).toFixed(2), (v) =>
                     {              
                         clip.stroke = v + clip.start;
                         updateTracks(true);
@@ -1709,7 +1709,7 @@ class ScriptGui extends Gui {
                 }
 
                 if(clip.strokeEnd != undefined) {
-                    widgets.addNumber("Stroke end", (clip.strokeEnd - clip.start).toFixed(2), (v) =>
+                    widgets.addNumber("Stroke end (s)", (clip.strokeEnd - clip.start).toFixed(2), (v) =>
                     {              
                         clip.strokeEnd = v + clip.start;
                         updateTracks(true);
@@ -1724,7 +1724,7 @@ class ScriptGui extends Gui {
                     syncvalues.push([clip.fadeout - clip.start, clip.properties.amount || 1]);
                     
                     if(clip.relax != undefined)
-                        widgets.addNumber("Relax", (clip.fadeout - clip.start).toFixed(2), (v) =>
+                        widgets.addNumber("Relax (s)", (clip.fadeout - clip.start).toFixed(2), (v) =>
                         {              
                             clip.relax = clip.fadeout = v + clip.start;
                             if(clip.attackPeak != undefined)
@@ -1789,10 +1789,10 @@ class ScriptGui extends Gui {
                         that.clipsTimeline.addClip( new ANIM.FaceLexemeClip({lexeme: asset.id.toUpperCase()})); 
                         break;
                     case "Gaze":
-                        that.clipsTimeline.addClip( new ANIM.GazeClip({properties: {influence: asset.id.toUpperCase()}})); 
+                        that.clipsTimeline.addClip( new ANIM.GazeClip({influence: asset.id.toUpperCase()})); 
                         break;
                     case "Head movement":
-                        that.clipsTimeline.addClip( new ANIM.HeadClip({properties: {lexeme: asset.id.toUpperCase()}})); 
+                        that.clipsTimeline.addClip( new ANIM.HeadClip( {lexeme: asset.id.toUpperCase()})); 
                         break;
                     default:
                         let clipType = asset.id;

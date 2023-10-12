@@ -1365,7 +1365,7 @@ class Editor {
         let json =  {
             behaviours: [],
             indices: [],
-            name : this.animationClip.name || "bml animation",
+            name : this.gui.clipsTimeline.animationClip.name || "bml animation",
             duration: this.animationClip.duration,
         }
 
