@@ -374,12 +374,12 @@ class App {
             const fr = new FileReader();
 
             
-                fr.readAsText( dataFile );
-                fr.onload = e => { 
-                    let anim = JSON.parse(e.currentTarget.result);
-                    this.editor.clipName = anim.name;
-                    this.editor.loadModel(anim);    
-                };
+            fr.readAsText( dataFile );
+            fr.onload = e => { 
+                let anim = JSON.parse(e.currentTarget.result);
+                this.editor.clipName = anim.name;
+                this.editor.loadModel(anim);    
+            };
     
         }
         else {

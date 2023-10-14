@@ -16,7 +16,14 @@ class Gui {
 
         // Create main area
         this.mainArea = LX.init();
-        
+        this.mainArea.root.ondrop = (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+	
+			const file = e.dataTransfer.files[0];
+			this.editor.loadFile(file);
+      
+        };
         // Create menu bar
         this.createMenubar(this.mainArea);
         
@@ -50,16 +57,36 @@ class Gui {
         // var that = this;
         let menubar = this.menubar;
         
-        menubar.add("Project/Upload animation", {icon: "fa fa-upload", callback: () => this.editor.getApp().storeAnimation() });
- 
+        
         menubar.add("Project/");
+        menubar.add("Project/Upload animation", {icon: "fa fa-upload", callback: () => this.editor.getApp().storeAnimation() });
+        if(this.editor.mode == this.editor.eModes.script)
+            menubar.add("Project/Import animation", {icon: "fa fa-file-import", callback: () => {
+        
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.click();
+        
+                input.onchange = (e) => {
+                    const file = e.currentTarget.files[0];
+                    this.editor.loadFile(file);
+                }
+            }
+        });
   
         menubar.add("Project/Export animation", {icon: "fa fa-file-export"});
-        menubar.add("Project/Export animation/Export extended BVH", {callback: () => this.editor.export("BVH extended") });
-        if(this.editor.mode == this.editor.eModes.script)
-            menubar.add("Project/Export animation/Export BML", {callback: () => this.editor.export() });
+        menubar.add("Project/Export animation/Export extended BVH", {callback: () => {
+            LX.prompt("File name", "Export BVH animation", (v) => this.editor.export("BVH extended", v), {input: this.editor.animationClip ? this.editor.animationClip.name : null } );      
+        }});
+        if(this.editor.mode == this.editor.eModes.script) {
+            menubar.add("Project/Export animation/Export BML", {callback: () => 
+                LX.prompt("File name", "Export BML animation", (v) => this.editor.export("", v), {input: this.editor.animationClip ? this.editor.animationClip.name : null} )     
+            });
+        }
         menubar.add("Project/Export scene", {icon: "fa fa-download"});
-        menubar.add("Project/Export scene/Export GLB", {callback: () => this.editor.export('GLB') });
+        menubar.add("Project/Export scene/Export GLB", {callback: () => 
+            LX.prompt("File name", "Export GLB", (v) => this.editor.export("GLB", v), {input: this.editor.animationClip ? this.editor.animationClip.name : null} )     
+        });
         menubar.add("Project/Preview realizer", {icon: "fa fa-street-view",  callback: () => this.editor.showPreview() });
 
         // menubar.add("Editor/Manual Features", { id: "mf-mode", type: "checkbox", checkbox: this.editor.mode == this.editor.eModes.MF, callback: (v) => {
@@ -437,6 +464,18 @@ class KeyframesGui extends Gui {
        
         //Create capture video window
         this.createCaptureArea(this.mainArea);
+    }
+
+    init() {
+        this.createSidePanel();
+     
+        // automatic optimization of keyframes
+        this.editor.optimizeTracks();
+        this.updateMenubar()
+        this.render();
+        this.showTimeline();
+        // Canvas UI buttons
+        this.createSceneUI(this.canvasArea);
     }
 
     /** -------------------- CAPTURE GUI (app) --------------------  */
@@ -1281,14 +1320,9 @@ class KeyframesGui extends Gui {
         this.keyFramesTimeline.optimizeTrack = (idx) => {this.editor.optimizeTrack(idx);}
         this.keyFramesTimeline.onOptimizeTracks = (idx = null) => { this.editor.updateActionUnitsPanel(this.keyFramesTimeline.animationClip, idx)}
         this.editor.activeTimeline = this.keyFramesTimeline;
-        this.createSidePanel();
-            
-        // Canvas UI buttons
-        this.createSceneUI(this.canvasArea);
-
-        // automatic optimization of keyframes
-        this.editor.optimizeTracks();
-        this.render();
+ 
+        if(callback)
+            callback();
     }
 
 }
@@ -1344,7 +1378,7 @@ class ScriptGui extends Gui {
                 
     }
     
-    loadBMLClip(clip) {
+    loadBMLClip(clip, callback) {
         
         
         if(clip && clip.duration) {
@@ -1456,6 +1490,11 @@ class ScriptGui extends Gui {
 
         }
 
+        if(callback)
+            callback();
+    }
+
+    init() {
         this.createSidePanel();
         this.updateMenubar()
         if(!this.duration)
@@ -1464,7 +1503,6 @@ class ScriptGui extends Gui {
         // Canvas UI buttons
         this.createSceneUI(this.canvasArea);
     }
-
 
     /** -------------------- SIDE PANEL (editor) -------------------- */
     createSidePanel() {

@@ -315,7 +315,7 @@ class Editor {
 
                     }
                     this.gizmo.begin(this.skeletonHelper);
-                    this.gui.loadKeyframeClip(this.bodyAnimation);
+                    this.gui.loadKeyframeClip(this.bodyAnimation, () => this.gui.init());
                     this.animationClip = this.bodyAnimation;
                     this.mixer.clipAction( this.bodyAnimation ).setEffectiveWeight( 1.0 ).play();
                     this.mixer.update(0);
@@ -505,7 +505,7 @@ class Editor {
             
             this.animationClip = clip || {duration:0, tracks:[]};
             this.setAnimation();
-            this.gui.loadBMLClip(this.animationClip);
+            this.gui.loadBMLClip(this.animationClip, () => this.gui.init());
           
             this.NMFController = new BMLController(this, skinnedMeshes, this.morphTargets);
             this.NMFController.onUpdateTracks = () => {
@@ -518,6 +518,31 @@ class Editor {
             $('#loading').fadeOut();
             
         });   
+    }
+
+    loadFile(file) {
+        //load json (bml) file
+        const extension = UTILS.getExtension(file.name);
+        if(extension != "json")
+            return;
+        const fr = new FileReader();
+        fr.readAsText( file );
+        fr.onload = e => { 
+            let anim = JSON.parse(e.currentTarget.result);
+            if(this.animationClip.tracks.length) {
+                LX.prompt("There is already an animation. Do you want to overwrite it?", "", (v) => {
+                    this.emptyTracks();
+                    this.clipName = anim.name;
+                    this.animationClip = anim;
+                    this.gui.loadBMLClip(this.animationClip);
+                }, {on_cancel: () =>  this.gui.loadBMLClip(anim), input:false})
+            }
+            else {
+                this.clipName = anim.name;
+                this.animationClip = anim;
+                this.gui.loadBMLClip(this.animationClip);
+            }
+        }
     }
 
     loadAnimation( animation ) {
@@ -642,7 +667,7 @@ class Editor {
             this.gizmo.begin(this.skeletonHelper);
                     
             this.startEdition();// this.onBeginEdition();
-            this.gui.loadKeyframeClip(this.bodyAnimation);
+            this.gui.loadKeyframeClip(this.bodyAnimation, () => this.gui.init());
             this.animationClip = this.bodyAnimation;
       
             this.setBoneSize(0.05);
@@ -675,7 +700,7 @@ class Editor {
             this.scene.add( this.skeletonHelper );
 
             this.mixer = new THREE.AnimationMixer( this.skeletonHelper );
-            this.gui.loadKeyframeClip(this.bodyAnimation);
+            this.gui.loadKeyframeClip(this.bodyAnimation, () => this.gui.init());
             this.animationClip = this.bodyAnimation;
 
             this.mixer.clipAction( this.bodyAnimation ).setEffectiveWeight( 1.0 ).play();
