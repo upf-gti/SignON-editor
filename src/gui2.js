@@ -98,7 +98,8 @@ class Gui {
 
         menubar.add("Timeline/Shortcuts", { icon: "fa fa-keyboard", disabled: true });
         menubar.add("Timeline/Shortcuts/Play-Pause", { short: "SPACE" });
-        menubar.add("Timeline/Shortcuts/Zoom", { short: "Wheel" });
+        menubar.add("Timeline/Shortcuts/Zoom", { short: "CTRL+ Wheel" });
+        menubar.add("Timeline/Shortcuts/Scroll", { short: "Wheel" });
         menubar.add("Timeline/Shortcuts/Move timeline", { short: "Left Click+Drag" });
         
         if(this.editor.mode == this.editor.eModes.script) {
