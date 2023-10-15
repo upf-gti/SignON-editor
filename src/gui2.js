@@ -1790,7 +1790,7 @@ class ScriptGui extends Gui {
                         updateTracks(true);
                         // this.updateClipPanel(clip);
         
-                    }, {xrange: [0, clip.duration]});
+                    }, {xrange: [0, clip.duration], allow_add_values: false, draggable_y: false});
                 }
             }
 
