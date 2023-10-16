@@ -177,7 +177,7 @@
 	
 			const file = e.dataTransfer.files[0];
 			const extension = UTILS.getExtension(file.name);
-			createApp({mode: extension, data: file});
+			createApp({mode: extension.toLowerCase(), data: file});
 		};
 	
 		const onloadfile = function() {
@@ -189,7 +189,7 @@
 			input.onchange = (e) => {
 				const file = e.currentTarget.files[0];
 				const extension = UTILS.getExtension(file.name);
-				createApp({mode: extension, data: file});
+				createApp({mode: extension.toLowerCase(), data: file});
 			}
 		}
 	

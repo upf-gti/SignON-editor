@@ -3127,7 +3127,7 @@
                     this.processCurrentKeyFrame( e, null, track, localX, true ); 
                 }
                 // Box selection
-                else{
+                else if (this.boxSelectionEnd){
             
                     this.unSelectAllKeyFrames();
                     
@@ -3895,6 +3895,8 @@
             // Update animation action interpolation info
             if(this.onUpdateTrack)
                 this.onUpdateTrack( clipIdx );
+
+            return true;
         }
 
         /** Delete one or more keyframes given the triggered event
@@ -3920,8 +3922,8 @@
 
                     // Delete every selected key
                     for(let [name, idx, keyIndex] of pts) {
-                        this.#delete( this.tracksPerItem[name][idx], keyIndex - deletedIndices );
-                        deletedIndices++;
+                        let deleted = this.#delete( this.tracksPerItem[name][idx], keyIndex - deletedIndices );
+                        deletedIndices += deleted ? 1 : 0;
                     }
                 }
             }

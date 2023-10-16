@@ -880,9 +880,8 @@ class Editor {
         let tracksIdx = [];                    
         for(let i = 0; i < this.activeTimeline.tracksDrawn.length; i++) {
             let info = this.activeTimeline.tracksDrawn[i][0];
-            if(info.type == name){
+            if(info.type == name && info.active){
                 i = info.clipIdx;
-        
                 let idx = this.activeTimeline.getCurrentKeyFrame(this.activeTimeline.animationClip.tracks[i], this.activeTimeline.currentTime, 0.01)
                 this.activeTimeline.animationClip.tracks[i].values[idx] = value;
                 this.auAnimation.tracks[i].values[idx] = value;
@@ -893,6 +892,7 @@ class Editor {
                         
                         if(this.faceAnimation.tracks[t].name == map[j]) {
                             this.faceAnimation.tracks[t].values[idx] = value;
+                            this.faceAnimation.tracks[t].active = info.active;
                             tracksIdx.push(t);
                             break;
                         }

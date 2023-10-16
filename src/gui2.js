@@ -728,7 +728,7 @@ class KeyframesGui extends Gui {
         // this.hideCaptureArea();
         
         //Update menu bar
-        this.updateMenubar();
+        // this.updateMenubar();
 
     }
     
