@@ -932,7 +932,7 @@ class Editor {
 
             this.updateAnimationAction(this.activeTimeline.animationClip,i);
             if(this.activeTimeline.onPreProcessTrack)
-                this.activeTimeline.onPreProcessTrack( track );
+                this.activeTimeline.onPreProcessTrack( track, track.idx );
         }
     }
 
@@ -943,10 +943,19 @@ class Editor {
         for( let i = 0; i < this.activeTimeline.animationClip.tracks.length; ++i ) {
 
             const track = this.activeTimeline.animationClip.tracks[i];
-            this.activeTimeline.deleteTrack(track.idx);
-            this.updateAnimationAction(this.animationClip, track.idx, true);
+            if(this.activeTimeline.selectedItems && this.activeTimeline.selectedItems.indexOf(track.name)< 0 && this.mode != this.eModes.script)
+                continue;
+            let idx = this.mode == this.eModes.script ? track.idx : track.clipIdx;
+            let value = this.mode == this.eModes.script ? null: track.values.slice(0,track.dim);
+
+            this.activeTimeline.deleteTrack(idx);
+            if(value != null) {
+                this.activeTimeline.addKeyFrame(track, value, 0);
+            }
+                
+            this.updateAnimationAction(this.activeTimeline.animationClip, idx, false);
             if(this.activeTimeline.onPreProcessTrack)
-                this.activeTimeline.onPreProcessTrack( track );
+                this.activeTimeline.onPreProcessTrack( track, track.idx );
         }
         this.updateTracks();
     }
@@ -1084,6 +1093,8 @@ class Editor {
     /** BML ANIMATION */ 
     
     updateTracks(tracks) {
+        if(!this.NMFController)
+            return;
         this.NMFController.updateTracks();
 
         if(tracks) {
@@ -1146,7 +1157,7 @@ class Editor {
             this.mixer.update(dt);
             this.currentTime = this.activeTimeline.currentTime = this.mixer.time;
             LX.emit( "@on_current_time_" + this.activeTimeline.constructor.name, this.currentTime );
-            if(this.mode == this.eModes.keyframes) {
+            if(this.mode == this.eModes.capture || this.mode == this.eModes.video) {
 
                 this.updateBoneProperties();
                 this.updateCaptureDataTime({blendshapesResults: this.blendshapesArray}, this.mixer.time);

@@ -35,11 +35,12 @@ class Gui {
         left.id = "canvasarea";
         left.root.style.position = "relative";
         right.id = "sidepanel";
-        this.canvasArea = left;
+        [this.canvasArea, this.timelineArea] = left.split({sizes: ["80%", "20%"], minimizable: true, type: "vertical"});
+        // this.canvasArea = left;
         this.sidePanel = right;
        
         //Create timelines (keyframes and clips)
-        this.createTimelines(this.canvasArea);
+        this.createTimelines();
     }
 
     /** Create menu bar */
@@ -47,7 +48,7 @@ class Gui {
 
         this.menubar = area.addMenubar( m => {
 
-            m.setButtonImage("SignON", "data/imgs/logo_SignON.png", () => {window.open("https://signon-project.eu/")}, {float: "left"});
+            m.setButtonImage("SignON", "data/imgs/animics_logo.png", () => {window.open("https://signon-project.eu/")}, {float: "left"});
             m.setButtonIcon("Github", "fa-brands fa-github", () => {window.open("https://github.com/upf-gti/SignON-editor")}, {float:"right"});
 
         });
@@ -59,7 +60,6 @@ class Gui {
         
         
         menubar.add("Project/");
-        menubar.add("Project/Upload animation", {icon: "fa fa-upload", callback: () => this.editor.getApp().storeAnimation() });
         if(this.editor.mode == this.editor.eModes.script)
             menubar.add("Project/Import animation", {icon: "fa fa-file-import", callback: () => {
         
@@ -87,6 +87,7 @@ class Gui {
         menubar.add("Project/Export scene/Export GLB", {callback: () => 
             LX.prompt("File name", "Export GLB", (v) => this.editor.export("GLB", v), {input: this.editor.animationClip ? this.editor.animationClip.name : null} )     
         });
+        menubar.add("Project/Upload to server", {icon: "fa fa-upload", callback: () => this.editor.getApp().storeAnimation() });
         menubar.add("Project/Preview realizer", {icon: "fa fa-street-view",  callback: () => this.editor.showPreview() });
 
         // menubar.add("Editor/Manual Features", { id: "mf-mode", type: "checkbox", checkbox: this.editor.mode == this.editor.eModes.MF, callback: (v) => {
@@ -135,12 +136,12 @@ class Gui {
                 const tl = document.getElementById("capture");
                 tl.style.display = this.showVideo ? "flex": "none";
             }});
-        menubar.add("View/Show timeline", { type: "checkbox", checked: this.timelineVisible, callback: (v) => {
-            if(v)
-                this.timelineArea.show();
-            else
-                this.timelineArea.hide();
-        }});
+        // menubar.add("View/Show timeline", { type: "checkbox", checked: this.timelineVisible, callback: (v) => {
+        //     if(v)
+        //         this.showTimeline();
+        //     else
+        //         this.hideTimeline();
+        // }});
 
         if(this.editor.mode == this.editor.eModes.script) {
             menubar.add("Help/");
@@ -237,11 +238,11 @@ class Gui {
                     if(!editor.showGUI) {
                         editor.gizmo.stop();
                         this.hideTimeline();
-                        this.mainArea._moveSplit(-this.sidePanel.size[0]);
+                        this.mainArea.minimize();
 
                     } else {
                         this.showTimeline();
-                        this.mainArea._moveSplit(400);
+                        this.mainArea.maximize();
                     }
                     
                     
@@ -334,19 +335,34 @@ class Gui {
     }
 
     showTimeline() {
+        // let clickEvent = new MouseEvent( "mousedown" ); // Create the event.
+        // let el = this.mainArea.root.getElementsByClassName("lexmin")[0];
+        
+        // if(el.classList.contains("fa-angle-left"))
+        //     el.dispatchEvent( clickEvent ); 
+        // if(this.timelineVisible)
+        //     return;
+
         this.timelineVisible = true;
-        this.timelineArea.show();
         this.editor.activeTimeline.show();
-        let menubarItem = this.menubar.getItem("View/Show timeline");
-        if(menubarItem && !menubarItem.cheked) {
-            menubarItem.checked = this.timelineVisible;
-        }
+        this.timelineArea.parentArea.maximize();
+        // let menubarItem = this.menubar.getItem("View/Show timeline");
+        // if(menubarItem && !menubarItem.cheked) {
+        //     menubarItem.checked = this.timelineVisible;
+        // }
     }
 
     hideTimeline() {
+        // if(!this.timelineVisible)
+        //     return;
+        
         this.timelineVisible = false;
-        this.timelineArea.hide();
-        //this.editor.activeTimeline.hide();
+        this.timelineArea.parentArea.minimize();        
+        this.editor.activeTimeline.hide();
+        // let menubarItem = this.menubar.getItem("View/Show timeline");
+        // if(menubarItem && menubarItem.cheked) {
+        //     menubarItem.checked = this.timelineVisible;
+        // }
     }
 
     showKeyFrameOptions(e, track) {
@@ -641,6 +657,8 @@ class KeyframesGui extends Gui {
         this.curvesTimeline.setFramerate(30);
         this.curvesTimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.auAnimation.duration - 0.001) );
         this.curvesTimeline.onUpdateTrack = (idx) => this.editor.updateAnimationAction(this.curvesTimeline.animationClip, idx);
+        this.curvesTimeline.onGetSelectedItem = () => { return this.editor.getSelectedActionUnit(); };
+
         this.curvesTimeline.onMouse = (e, time) => {
             if(e.type == "mousemove") {
 
@@ -648,17 +666,17 @@ class KeyframesGui extends Gui {
         }
         this.curvesTimeline.hide();
 
-        area.onresize = (bounding) => this.timelineArea.setSize(bounding);
+        // area.onresize = (bounding) => this.timelineArea.setSize(bounding);
         // Create timelines container area
-        this.timelineArea = new LX.Area({ height: 400, overlay:"bottom", resize: true});
+        //this.timelineArea = new LX.Area({ height: 400, overlay:"bottom", resize: true});
         this.timelineArea.attach(this.keyFramesTimeline.root);
         this.timelineArea.attach(this.curvesTimeline.root);
 
         //Resize timelines on resize timeline container area
-        this.timelineArea.onresize = (bounding) => {this.keyFramesTimeline.resize( [ bounding.width, bounding.height ] );}
-        this.timelineArea.onresize = (bounding) => {this.curvesTimeline.resize( [ bounding.width, bounding.height ] );}
-        area.attach(this.timelineArea);
-        this.timelineArea.hide();
+        // this.timelineArea.onresize = (bounding) => {this.keyFramesTimeline.resize( [ bounding.width, bounding.height ] );}
+        // this.timelineArea.onresize = (bounding) => {this.curvesTimeline.resize( [ bounding.width, bounding.height ] );}
+        //area.attach(this.timelineArea);
+       // this.timelineArea.hide();
 
     }
     
@@ -707,7 +725,7 @@ class KeyframesGui extends Gui {
         videoCanvas.width = 300 * aspectRatio;
         $(videoDiv).draggable({containment: "#canvasarea"}).resizable({ aspectRatio: true, containment: "#outputVideo"});
 
-        this.hideCaptureArea();
+        // this.hideCaptureArea();
         
         //Update menu bar
         this.updateMenubar();
@@ -772,14 +790,15 @@ class KeyframesGui extends Gui {
         let ci = document.getElementById("capture-inspector");
         ci.classList.add("hidden");
 
-        this.timelineArea.hide();        
+        // this.hideTimeline();
+        // this.timelineArea.hide();        
     }
 
     /** -------------------- SIDE PANEL (editor) -------------------- */
     createSidePanel() {
   
         //create tabs
-        let tabs = this.sidePanel.addTabs();
+        let tabs = this.sidePanel.addTabs({fit: true});
 
         let bodyArea = new LX.Area({className: "sidePanel", id: 'Body', scroll: true});  
         let faceArea = new LX.Area({className: "sidePanel", id: 'Face', scroll: true});  
@@ -939,7 +958,7 @@ class KeyframesGui extends Gui {
 
     createActionUnitsPanel(root) {
         
-        let tabs = root.addTabs();
+        let tabs = root.addTabs({fit:true});
         let areas = {};
         
         for(let i in this.editor.mapNames) {
@@ -1173,7 +1192,7 @@ class KeyframesGui extends Gui {
     }
     /** ------------------------------------------------------------ */
 
-    loadKeyframeClip( clip ) {
+    loadKeyframeClip( clip, callback ) {
 
         this.hideCaptureArea();
         
@@ -1195,7 +1214,7 @@ class KeyframesGui extends Gui {
         // this.timeline = new KeyFramesTimeline( this.editor.bodyAnimation, boneName);
         // this.keyFramesTimeline.show();
         this.keyFramesTimeline.setAnimationClip(this.clip);
-       // this.keyFramesTimeline.setSelectedItems([boneName]);
+        this.keyFramesTimeline.setSelectedItems([boneName]);
         // this.keyFramesTimeline.resize([this.keyFramesTimeline.canvas.parentElement.clientWidth, this.keyFramesTimeline.canvas.parentElement.clientHeight]);
         this.keyFramesTimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.bodyAnimation.duration - 0.001) );
         this.keyFramesTimeline.onSetDuration = (t) => {this.duration = this.keyFramesTimeline.duration = this.clip.duration = this.editor.bodyAnimation.duration = t};
@@ -1321,7 +1340,7 @@ class KeyframesGui extends Gui {
         this.keyFramesTimeline.optimizeTrack = (idx) => {this.editor.optimizeTrack(idx);}
         this.keyFramesTimeline.onOptimizeTracks = (idx = null) => { this.editor.updateActionUnitsPanel(this.keyFramesTimeline.animationClip, idx)}
         this.editor.activeTimeline = this.keyFramesTimeline;
- 
+        // this.hideTimeline();
         if(callback)
             callback();
     }
@@ -1368,14 +1387,14 @@ class ScriptGui extends Gui {
         });
 
         
-        area.onresize = (bounding) => this.timelineArea.setSize(bounding);
+       // area.onresize = (bounding) => this.timelineArea.setSize(bounding);
         // Create timelines container area
-        this.timelineArea = new LX.Area({ height: 400, overlay:"bottom", resize: true});
+        //this.timelineArea = new LX.Area({ height: 400, resize: true});
         this.timelineArea.attach(this.clipsTimeline.root);
 
         //Resize timelines on resize timeline container area
-        this.timelineArea.onresize = (bounding) => {this.clipsTimeline.resize( [ bounding.width, bounding.height ] );}
-        area.attach(this.timelineArea);
+       // this.timelineArea.onresize = (bounding) => {this.clipsTimeline.resize( [ bounding.width, bounding.height ] );}
+       // area.attach(this.timelineArea);
                 
     }
     
@@ -2021,14 +2040,18 @@ class ScriptGui extends Gui {
                     let clickEvent = new MouseEvent( "mousedown" ); // Create the event.
                     let el = this.mainArea.root.getElementsByClassName("lexmin")[0];
                     
-                    if(!editor.showGUI) {
-                        setTimeout(() => this.hideTimeline(), 400)
-                        if(!el.classList.contains("fa-angle-left"))
-                            el.dispatchEvent( clickEvent ); 
-                    } else {
+                    if(editor.showGUI) {
                         this.showTimeline();
-                        if(el.classList.contains("fa-angle-left"))
-                            el.dispatchEvent( clickEvent ); 
+                        this.sidePanel.parentArea.maximize()
+                        // if(el.classList.contains("fa-angle-left"))
+                        //     el.dispatchEvent( clickEvent ); 
+                        
+                    } else {
+                        this.hideTimeline();
+                        this.sidePanel.parentArea.minimize();
+                       // setTimeout(() => this.hideTimeline(), 400)
+                        // if(!el.classList.contains("fa-angle-left"))
+                        //     el.dispatchEvent( clickEvent ); 
                     }
                     
                     const video = document.getElementById("capture");

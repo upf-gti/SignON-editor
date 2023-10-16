@@ -257,6 +257,7 @@ class BlendshapesManager {
 
     getBlendshapesMap = function(name) {
         let map = this.mapNames[name];
+        if(!map) return [];
         let bs = [];
         if(typeof map == 'string') {
             map = [map];

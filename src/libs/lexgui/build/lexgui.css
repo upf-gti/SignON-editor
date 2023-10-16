@@ -173,19 +173,19 @@ body.nocursor * {
 /* Dialogs and alerts */
 
 .lexdialog {
-  background:none;
+  background: none;
   position: absolute;
   min-width: 256px;
   /* overflow: hidden; */
-  box-shadow: 0 2px 10px black;
+  box-shadow: 0 2px 8px #101010;
   border-radius: 8px;
   z-index: 101;
+  background-color: var(--global-color-secondary);
 }
 
 .lexdialogtitle {
   border-top-left-radius: 8px;
   border-top-right-radius: 8px;
-  background: var(--global-color-secondary);
   font-size: 18px;
   font-weight: bold;
   color: #d9d9e3;
@@ -203,7 +203,6 @@ body.nocursor * {
 }
 
 .lexdialogcontent {
-  background-color:  var(--global-color-secondary);
   padding: 15px;
   word-break: break-all;
   color: var(--global-text-primary);
@@ -223,26 +222,36 @@ body.nocursor * {
   font-size: 16px;
   color: #d9d9e3;
   cursor: pointer;
+  margin-right: 0.4em;
   -webkit-user-select: none; /* Safari 3.1+ */
   -moz-user-select: none; /* Firefox 2+ */
   -ms-user-select: none; /* IE 10+ */
   user-select: none; /* Standard syntax */
 }
+
 .lexdialogcloser.notitle {
   position: absolute;
-  top: 10px;
-  right: 10px;
+  top: 0.8em;
+  right: 0.6em;
 }
 
 .lexdialogcloser:hover {
   color: #aaa;
 }
 
+.lexdialogcloser:active {
+  margin-top: 0.1em;
+}
+
+.lexdialogcloser.notitle:active {
+  margin-top: 0.05em;
+}
+
 /* Pocket Dialog */
 
 .lexdialog.pocket {
   margin: 3px;
-  background-color:  var(--global-color-secondary);
+  background-color: var(--global-color-primary);
 }
 
 .lexdialog.pocket.dockable {
@@ -274,8 +283,8 @@ body.nocursor * {
 }
 
 .lexdialog.pocket.closed .lexdialogtitle {
-  border-bottom-left-radius: 4px;
-  border-bottom-right-radius: 4px;
+  border-bottom-left-radius: 8px;
+  border-bottom-right-radius: 8px;
 }
 
 .lexdialog.pocket.closed .lexdialogcontent {
@@ -729,6 +738,7 @@ body.nocursor * {
   border-radius: 0px;
   display: flex;
   padding-top: 0.35em;
+  padding-bottom: 1.7em;
   transition: 0.2s;
 }
 
@@ -756,7 +766,8 @@ body.nocursor * {
 
 .lexcombobuttons .lexbutton.combo a {
   padding: 2px;
-  margin-right: 2px;
+  /* margin-right: 2px; */
+  padding-top: 0.3em;
 }
 
 .lexcombobuttons .lexbutton.combo span {
@@ -1615,6 +1626,10 @@ meter::-webkit-meter-even-less-good-value {
   user-select: none; /* Standard syntax */
 }
 
+.lexmenubar .lexmenubutton a {
+  margin-left: 0px !important;
+}
+
 .lexmenubar .lexmenubutton.disabled a {
   color: var(--global-button-color);
 }
@@ -1716,16 +1731,21 @@ meter::-webkit-meter-even-less-good-value {
 .lexoverlaybuttons {
   position: absolute;
   display: flex;
-  margin: 6px;
+  margin: 12px;
   top: 0;
   justify-content: start;
   pointer-events: none;
 }
 
 .lexoverlaybuttons .lexwidget {
-  padding: 1px;
-  margin-right: 4px;
+  padding: 0px;
+  margin-right: 6px;
   pointer-events: auto;
+  min-width: 32px;
+}
+
+.lexoverlaybuttons .lexwidget button {	
+  min-width: 32px;	
 }
 
 .lexoverlaybuttons.vertical {
@@ -1740,8 +1760,8 @@ meter::-webkit-meter-even-less-good-value {
 
 .lexoverlaybuttons.vertical .lexwidget button {	
   min-width: 32px;	
-  max-width: 32px!important;	
-  max-height: 32px!important;	
+  /* max-width: 32px !important;	 */
+  max-height: 32px !important;	
 }
 
 .lexoverlaybuttons.bottom {
@@ -1771,33 +1791,35 @@ meter::-webkit-meter-even-less-good-value {
 
 .lexoverlaybuttons .lexbutton {
   padding: 14px 10px;
-  font-size: 14px;
+  font-size: 12px;
   border-radius: 8px;
-  color: #11111d;
-  background-color: #d9d9f1a2;
+  justify-content: center;
+  background-color: #313132a5;
+  backdrop-filter: blur(6px);
+  color: #d1d1d3bd;
 }
 
 .lexoverlaybuttons .lexbutton a {
   line-height: 19px;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 .lexoverlaybuttons .lexbutton img {
-  filter: invert(1);
+  filter: brightness(0.7)
 }
 
 .lexoverlaybuttons .lexbutton.selected {
-  background-color: var(--global-selected);
-  color: #f5f5f5;
+  background-color: #898989d6 !important;
+  color: #fff;
   outline: none;
+  border-radius: 8px;
 }
 
-.lexoverlaybuttons .lexbutton.selected img {
+.lexoverlaybuttons .lexbutton.selected img, .lexoverlaybuttons .lexbutton:hover img {
   filter: none;
 }
 
 .lexoverlaybuttons .lexbutton:hover {
-  background-color: #858585;
   color: #f5f5f5;
 }
 
@@ -1808,13 +1830,21 @@ meter::-webkit-meter-even-less-good-value {
 
 .lexoverlaybuttons .lexoverlaygroup {
   display: flex;
-  margin-right: 4px;
+  margin-right: 6px;
+  background-color: #313132a5;
+  backdrop-filter: blur(6px);
+  border-radius: 8px;
+}
+
+.lexoverlaybuttons .lexoverlaygroup .lexbutton {
+  background: none;
+  backdrop-filter: none;
 }
 
 .lexoverlaybuttons.vertical .lexoverlaygroup {
   display: grid;
   margin-right: 0px;
-  margin-bottom: 4px;
+  margin-bottom: 6px;
 }
 
 .lexoverlaybuttons .lexoverlaygroup .lexwidget {
@@ -1827,34 +1857,8 @@ meter::-webkit-meter-even-less-good-value {
   margin-bottom: 0px;
 }
 
-.lexoverlaybuttons .lexoverlaygroup .lexwidget button {
-  border-radius: 0px;
-}
-
 .lexoverlaybuttons.vertical .lexoverlaygroup .lexwidget button {
   width: 100% !important;
-}
-
-.lexoverlaybuttons .lexoverlaygroup .lexwidget:first-child button {
-  border-top-left-radius: 6px;
-  border-bottom-left-radius: 6px;
-}
-
-.lexoverlaybuttons .lexoverlaygroup .lexwidget:last-child button {
-  border-top-right-radius: 6px;
-  border-bottom-right-radius: 6px;
-}
-
-.lexoverlaybuttons.vertical .lexoverlaygroup .lexwidget:first-child button {
-  border-radius: 0px;
-  border-top-left-radius: 6px;
-  border-top-right-radius: 6px;
-}
-
-.lexoverlaybuttons.vertical .lexoverlaygroup .lexwidget:last-child button {
-  border-radius: 0px;
-  border-bottom-left-radius: 6px;
-  border-bottom-right-radius: 6px;
 }
 
 /* Area Tabs */

@@ -11383,7 +11383,7 @@ hr.divider {
   height: 0.2rem;
   max-width: 3.25rem;
   margin: 1.5rem auto;
-  background-color: rgb(58, 161, 156, 0.8);
+  background-color: var(--global-color-highlight);
   opacity: 1;
 }
 
@@ -11456,7 +11456,8 @@ hr.divider-light {
 header.masthead {
   padding-top: 10rem;
   padding-bottom: calc(10rem - 4.5rem);
-  background: linear-gradient(to bottom, rgba(66, 77, 92, 0.8) 0%, rgba(66, 77, 92, 0.8) 100%), url("images/bg-master.jpg");
+  /* background: linear-gradient(to bottom, rgba(66, 77, 92, 0.8) 0%, rgba(66, 77, 92, 0.8) 100%); , url("images/bg-master.jpg"); */
+  background: radial-gradient(#24262d, #242529);
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: scroll;

@@ -372,8 +372,7 @@ class App {
         if(dataFile)
         {
             const fr = new FileReader();
-
-            
+          
             fr.readAsText( dataFile );
             fr.onload = e => { 
                 let anim = JSON.parse(e.currentTarget.result);
