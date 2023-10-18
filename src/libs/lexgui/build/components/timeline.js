@@ -241,7 +241,7 @@
                         // panel.addTitle(track.name + (track.type? '(' + track.type + ')' : ''));
                     }
                     items.children.push(t);
-                    panel.addTree(null, t, {filter: false, rename: false, draggable: false, onevent: (e) => {
+                    let el = panel.addTree(null, t, {filter: false, rename: false, draggable: false, onevent: (e) => {
                         switch(e.type) {
                             case LX.TreeEvent.NODE_SELECTED:
                                 this.selectTrack(e.node);
@@ -254,6 +254,11 @@
                                 break;
                         }
                     }});
+
+                    el.domEl.addEventListener("wheel", (e) => {
+                        let event = new e.constructor(e.type, e);
+                        this.canvas.dispatchEvent(event);
+                     })
                 }
             }
 
@@ -293,28 +298,6 @@
 
             this.animationClip.tracks.push(trackInfo);
             return trackInfo.idx;
-        }
-
-        /**
-         * @method deleteTrack
-         */
-
-        deleteTrack(idx, leaveFirst) {
-
-            if(!this.animationClip) {
-                this.animationClip = {tracks:[]};
-                return;
-            }
-            if(this.animationClip.tracks[idx].locked )
-            {
-                return;
-            }
-            this.animationClip.tracks[idx].values = [];
-            this.animationClip.tracks[idx].times = [];
-            this.animationClip.tracks[idx].selected = [];
-            this.animationClip.tracks[idx].edited = [];
-            this.animationClip.tracks[idx].hovered = [];
-            return idx;
         }
 
         getTracksInRange( minY, maxY, threshold ) {
@@ -1998,8 +1981,8 @@
             }
 
             // Update animation action interpolation info
-            if(this.onUpdateTrack)
-                this.onUpdateTrack( clipIdx );
+            if(this.onDeleteKeyFrame)
+                this.onDeleteKeyFrame( clipIdx, index );
             
             return 1;
         }
@@ -2224,24 +2207,35 @@
         }
 
         /**
-         * @method deleteTrack
+         * @method cleanTrack
          */
 
-        deleteTrack(idx) {
+        cleanTrack(idx, defaultValue) {
 
-            if(!this.animationClip) {
-                this.animationClip = {tracks:[]};
-                return;
-            }
-            if(this.animationClip.tracks[idx].locked )
+            let track =  this.animationClip.tracks[idx];
+
+            if(track.locked )
             {
                 return;
             }
-            this.animationClip.tracks[idx].values = [];
-            this.animationClip.tracks[idx].times = [];
-            this.animationClip.tracks[idx].selected = [];
-            this.animationClip.tracks[idx].edited = [];
-            this.animationClip.tracks[idx].hovered = [];
+
+            const count = track.times.length;
+            for(let i = count - 1; i >= 0; i--)
+            {
+                this.saveState(track.clipIdx);
+                this.#delete(track, i );
+            } 
+            if(defaultValue != undefined) {
+                if(typeof(defaultValue) == 'number')  {
+                    track.values[0] = defaultValue;
+                }
+                else {
+                    for(let i = 0; i < defaultValue.length; i++) {
+                        track.values[i] = defaultValue[i];
+                    }
+                }
+
+            }
             return idx;
         }
     }
@@ -2928,10 +2922,10 @@
         }
 
         /**
-         * @method deleteTrack
+         * @method cleanTrack
          */
 
-        deleteTrack(idx) {
+        cleanTrack(idx) {
 
             if(!this.animationClip) {
                 this.animationClip = {tracks:[]};
@@ -3893,8 +3887,8 @@
             }
 
             // Update animation action interpolation info
-            if(this.onUpdateTrack)
-                this.onUpdateTrack( clipIdx );
+            if(this.onDeleteKeyFrame)
+                this.onDeleteKeyFrame( clipIdx, index );
 
             return true;
         }
@@ -3943,6 +3937,39 @@
             }
 
             this.unSelectAllKeyFrames();
+        }
+
+        /**
+         * @method cleanTrack
+         */
+
+        cleanTrack(idx, defaultValue) {
+
+            let track =  this.animationClip.tracks[idx];
+
+            if(track.locked )
+            {
+                return;
+            }
+
+            const count = track.times.length;
+            for(let i = count - 1; i >= 0; i--)
+            {
+                this.saveState(track.clipIdx);
+                this.#delete(track, i );
+            } 
+            if(defaultValue != undefined) {
+                if(typeof(defaultValue) == 'number')  {
+                    track.values[0] = defaultValue;
+                }
+                else {
+                    for(let i = 0; i < defaultValue.length; i++) {
+                        track.values[i] = defaultValue[i];
+                    }
+                }
+
+            }
+            return idx;
         }
 
         getNumKeyFramesSelected() {

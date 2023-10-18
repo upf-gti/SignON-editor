@@ -95,7 +95,7 @@ class App {
         const on_error = (err) => {
             LX.prompt("Can not access to the camera. Do you want to load a video instead?", "Camera problem", (v)=> {
                 
-                this.editor.mode = this.editor.eModes.keyframes;
+                this.editor.mode = this.editor.eModes.video;
                 let input = document.getElementById("video-input");
                 input.value = "";
                 input.click();
@@ -269,7 +269,7 @@ class App {
 
     onLoadVideo( videoFile ) {
         this.mediaRecorder = null;
-        this.editor.mode = this.editor.eModes.keyframes;
+        this.editor.mode = this.editor.eModes.video;
         this.setEvents();
 
         let url = "";

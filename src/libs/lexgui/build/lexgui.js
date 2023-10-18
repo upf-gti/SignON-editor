@@ -1216,6 +1216,11 @@
             var a2 = this.sections[1];
             var splitinfo = " - "+ LX.DEFAULT_SPLITBAR_SIZE +"px";
 
+            // Remove transitions for this change..
+            const transition = a1.root.style.transition;
+            a1.root.style.transition = "none";
+            flushCss(a1.root);
+
             if(this.type == "horizontal") {
 
                 var size = (a2.root.offsetWidth + dt);
@@ -1233,6 +1238,8 @@
 				a2.root.style.height = ( size - a2.offset ) + "px"; //other split
             }
                 
+            a1.root.style.transition = transition;
+
             this._update();
 
             // Resize events   
@@ -2081,8 +2088,9 @@
 
                 let buttonName = "<a class='fa-solid " + (options.icon ?? "fa-cube")  + "' style='float:left'></a>";
                 buttonName += custom_widget_name + (!instance ? " [empty]" : "");
-                if(instance)
-                    buttonName += "<a class='fa-solid fa-bars-staggered menu' style='float:right; width:5%;'></a>";
+                // Add alwayis icon to keep spacing right
+                buttonName += "<a class='fa-solid " + (instance ? "fa-bars-staggered" : " ") + " menu' style='float:right; width:5%;'></a>";
+                
                 let buttonEl = this.addButton(null, buttonName, (value, event) => {
 
                     if( instance ) {
@@ -2439,7 +2447,7 @@
                     actionEl.className = "itemicon " + a.icon;
                     actionEl.title = a.name;
                     actionEl.addEventListener("click", function(e) {
-                        a.callback(actionEl, node);
+                        a.callback(node);
                         e.stopPropagation();
                     });
                     item.appendChild(actionEl);

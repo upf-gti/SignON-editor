@@ -561,7 +561,7 @@ class KeyframesGui extends Gui {
         i.addEventListener("click", () => this.changeCaptureGUIVisivility());
 
         // Create expanded AU info area
-        let inspector = new LX.Panel({id:"capture-inspector"});
+        let inspector = new LX.Panel({id:"capture-inspector", width: "800px"});
         inspector.root.hidden = true;
         inspector.root.style.padding = "5px";
         inspector.addBlank();
@@ -657,6 +657,7 @@ class KeyframesGui extends Gui {
         this.curvesTimeline.setFramerate(30);
         this.curvesTimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.auAnimation.duration - 0.001) );
         this.curvesTimeline.onUpdateTrack = (idx) => this.editor.updateAnimationAction(this.curvesTimeline.animationClip, idx);
+        this.curvesTimeline.onDeleteKeyFrame = (trackIdx, tidx) => this.editor.removeAnimationData(this.curvesTimeline.animationClip, trackIdx, tidx);
         this.curvesTimeline.onGetSelectedItem = () => { return this.editor.getSelectedActionUnit(); };
 
         this.curvesTimeline.onMouse = (e, time) => {
@@ -1218,6 +1219,8 @@ class KeyframesGui extends Gui {
         // this.keyFramesTimeline.resize([this.keyFramesTimeline.canvas.parentElement.clientWidth, this.keyFramesTimeline.canvas.parentElement.clientHeight]);
         this.keyFramesTimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.bodyAnimation.duration - 0.001) );
         this.keyFramesTimeline.onSetDuration = (t) => {this.duration = this.keyFramesTimeline.duration = this.clip.duration = this.editor.bodyAnimation.duration = t};
+        this.keyFramesTimeline.onDeleteKeyFrame = (trackIdx, tidx) => this.editor.removeAnimationData(this.keyFramesTimeline.animationClip, trackIdx, tidx);
+
         this.keyFramesTimeline.onSelectKeyFrame = (e, info, index) => {
             if(e.button != 2) {
                 //this.editor.gizmo.mustUpdate = true

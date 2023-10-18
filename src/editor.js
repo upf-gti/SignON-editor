@@ -30,57 +30,63 @@ class Editor {
         this.clock = new THREE.Clock();
         this.BVHloader = new BVHLoader();
         this.GLTFloader = new GLTFLoader();
-
         this.GLTFExporter = new GLTFExporter();
+
         this.help = null;
-        
         this.camera = null;
         this.controls = null;
         this.scene = null;
-        this.gizmo = null;
+        this.boneUseDepthBuffer = true;
+       
         this.renderer = null;
         this.state = false; // defines how the animation starts (moving/static)
-        this.eModes = {keyframes: 0, capture: 1, video: 2, script: 3};
-        this.mode = this.eModes[mode];
-        this.NMFController = null;
-
-        this.boneUseDepthBuffer = true;
+        this.mixer = null;
+        
         this.showGUI = true;
         this.showSkin = true; // defines if the model skin has to be rendered
-        this.showSkeleton = true;
         this.animLoop = true;
         
+        this.eModes = {capture: 0, video: 1, script: 2};
+        this.mode = this.eModes[mode];
+        
+        this.bodyAnimation = null; //ThreeJS animation (only bones in keyframing mode) : {values: [], times: []}
+        
+        // --------- KEYFRAMES MODE (capture or video) ---------
+        this.gizmo = null;
+        this.optimizeThreshold = 0.01;
+        this.defaultTranslationSnapValue = 1;
+        this.defaultRotationSnapValue = 30; // Degrees
+        this.defaultScaleSnapValue = 1;
+
+        this.showSkeleton = true;
         this.skeletonHelper = null;
         this.skeleton = null;
-        this.mixer = null;
-
-        this.bodyAnimation = null;
-        this.faceAnimation = null;
-        this.dominantHand = "Right";
         
-        this.morphTargets = null;
-        this.blendshapesManager = null;
-        this.retargeting = new AnimationRetargeting();
-
-        this.nn = new NN("data/ML/model.json");
+        this.faceAnimation = null; //ThreeJS BS animation (used for the mixer): {values: [], times: []}
+        this.auAnimation = null; //ThreeJS mediapipe AU animation (used for the timeline): [ {AU1: w1_0, AU2: w2_0, ...}, {AU1: w1_1, AU2: w2_1, ...}, ... ]
         this.landmarksArray = [];
         this.blendshapesArray = [];
         this.applyRotation = false; // head and eyes rotation
         this.selectedAU = "Brow Left";
-        
-        this.character = "EVA";
+        this.nn = new NN("data/ML/model.json");
+        this.retargeting = new AnimationRetargeting();
         this.mapNames = MapNames.map_llnames[this.character];
+        //------------------------------------------------------
+        
+        // -------------------- SCRIPT MODE --------------------
+        this.NMFController = null;        
+        this.dominantHand = "Right";
+        
+        this.morphTargets = null;
+        this.blendshapesManager = null;
+  
+        this.character = "EVA";
 
     	this.onDrawTimeline = null;
 	    this.onDrawSettings = null;
 
         this.activeTimeline = null;
-        
-
-        this.optimizeThreshold = 0.01;
-        this.defaultTranslationSnapValue = 1;
-        this.defaultRotationSnapValue = 30; // Degrees
-        this.defaultScaleSnapValue = 1;
+        // ------------------------------------------------------
 
         // Keep "private"
         this.__app = app;
@@ -946,12 +952,19 @@ class Editor {
             if(this.activeTimeline.selectedItems && this.activeTimeline.selectedItems.indexOf(track.name)< 0 && this.mode != this.eModes.script)
                 continue;
             let idx = this.mode == this.eModes.script ? track.idx : track.clipIdx;
-            let value = this.mode == this.eModes.script ? null: track.values.slice(0,track.dim);
+            let value = null;
+            if(this.mode != this.eModes.script) {
+                
+                if(track.dim == 1)
+                    value = 0;
+                else
+                    value = [0,0,0,1];
+            } 
 
-            this.activeTimeline.deleteTrack(idx);
-            if(value != null) {
-                this.activeTimeline.addKeyFrame(track, value, 0);
-            }
+            this.activeTimeline.cleanTrack(idx, value);
+            // if(value != null) {
+            //     this.activeTimeline.addKeyFrame(track, value, 0);
+            // }
                 
             this.updateAnimationAction(this.activeTimeline.animationClip, idx, false);
             if(this.activeTimeline.onPreProcessTrack)
@@ -1068,15 +1081,23 @@ class Editor {
                                     this.auAnimation.tracks[a].times = valueDeletedInfo.times;
                                 }
                             }
-                            
-                         }
+                        }
                     }
                     return;
                 }
             }
         }
 
+    }
 
+    removeAnimationData(animation, trackIdx, timeIdx) {
+        
+        if(this.activeTimeline.constructor.name == 'CurvesTimeline'){
+            let track = animation.tracks[trackIdx];
+            this.blendshapesArray[timeIdx][track.type] = 0;
+        }
+        this.updateAnimationAction(animation, trackIdx);
+        
     }
 
     setAnimationLoop(loop) {
@@ -1093,6 +1114,8 @@ class Editor {
     /** BML ANIMATION */ 
     
     updateTracks(tracks) {
+        this.mixer.update(this.activeTimeline.currentTime);
+
         if(!this.NMFController)
             return;
         this.NMFController.updateTracks();
@@ -1188,7 +1211,7 @@ class Editor {
             return;
 
         this.mixer.setTime(t);
-        if(this.mode == this.eModes.keyframes || this.mode == this.eModes.capture) {
+        if(this.mode == this.eModes.video || this.mode == this.eModes.capture) {
 
             this.gizmo.updateBones(0.0);
             this.updateBoneProperties();
