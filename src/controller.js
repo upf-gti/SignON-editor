@@ -174,8 +174,8 @@ class BMLController {
                 tracks.push(new THREE.NumberKeyframeTrack(mesh.name + '.morphTargetInfluences['+ morph +']', times, v));                
             }
         }
-        this.editor.animationClip = new THREE.AnimationClip("nmf", timeline.duration, tracks);
-        console.log(this.editor.animationClip )
+        this.editor.animation = new THREE.AnimationClip("nmf", timeline.duration, tracks);
+        console.log(this.editor.animation )
         if(this.onUpdateTracks)
             this.onUpdateTracks();
         // let [name, trackIndex, keyFrameIndex] = timeline._lastKeyFramesSelected[0];

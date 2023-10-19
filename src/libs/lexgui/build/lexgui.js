@@ -351,7 +351,7 @@
 
         options.modal = true;
 
-        new Dialog(title, p => {
+        return new Dialog(title, p => {
             p.addTextArea(null, text, null, { disabled: true });
         }, options);
     }
@@ -387,6 +387,8 @@
         // Focus text prompt
         if(options.input != false)
             dialog.root.querySelector('input').focus();
+        
+        return dialog;
     }
 
     LX.prompt = prompt;
@@ -698,6 +700,8 @@
 
             var resize = options.resize ?? true;
             var data = "0px";
+            
+            this.offset = 0;
 
             if(resize)
             {
@@ -718,10 +722,19 @@
             }
 
             let minimizable = options.minimizable ?? false;
-            this.offset = 0;
+
             if(minimizable) {
+
+                // Keep state of the animation when ends...
+                area2.root.addEventListener('animationend', e => {
+                    const opacity = getComputedStyle(area2.root).opacity;
+                    area2.root.classList.remove( e.animationName + "-" + type );
+                    area2.root.style.opacity = opacity;
+                    flushCss(area2.root);
+                });
+
                 this.min = document.createElement("div");
-                this.min.className = "lexmin  " + type + " fa-solid";
+                this.min.className = "lexmin " + type + " fa-solid";
                 if(type == "horizontal") 
                     this.min.classList.add("fa-angle-right");
                 else
@@ -729,23 +742,13 @@
 
                 this.min.addEventListener("mousedown", (e) => {
                     // Fade out to down
-                    if(this.min.classList.contains("fa-angle-down")) {
-                        this.minimize();
-                    }
+                    if(this.min.classList.contains("fa-angle-down")) this.minimize();
                     // Fade in from down
-                    else if(this.min.classList.contains("fa-angle-up")) {
-                        
-                        this.maximize();
-                    }
-                    //Fade out to right
-                    else if(this.min.classList.contains("fa-angle-right")) {
-                        this.minimize();
-                    }
-                    //Fade in from right
-                    else if(this.min.classList.contains("fa-angle-left")) {
-                        this.maximize();
-                    }
-                    
+                    else if(this.min.classList.contains("fa-angle-up")) this.maximize();
+                    // Fade out to right
+                    else if(this.min.classList.contains("fa-angle-right")) this.minimize();
+                    // Fade in from right
+                    else if(this.min.classList.contains("fa-angle-left")) this.maximize();
                 });
             }
 
@@ -902,33 +905,24 @@
         * Hide element
         */
         minimize() {
+
             if(!this.min)
                 return;
 
             if(this.min.classList.contains("vertical") && this.min.classList.contains("fa-angle-down")) {
-
                 this.min.classList.remove("fa-angle-down");
                 this.min.classList.add("fa-angle-up");
                 this.offset = this.sections[1].root.offsetHeight;
-                this.sections[1].root.classList.remove("fadein-vertical");
                 this.sections[1].root.classList.add("fadeout-vertical");
-                setTimeout(() => {
-                    this.sections[1].hide();
-                    this._moveSplit(20);
-                }, 200);
-            }
-            else if(this.min.classList.contains("horizontal") && this.min.classList.contains("fa-angle-right")){
+                this._moveSplit(-Infinity, true);
 
+            }
+            else if(this.min.classList.contains("horizontal") && this.min.classList.contains("fa-angle-right")) {
                 this.min.classList.remove("fa-angle-right");
                 this.min.classList.add("fa-angle-left");
                 this.offset = this.sections[1].root.offsetWidth;
-                this.sections[1].root.classList.remove("fadein-horizontal");
                 this.sections[1].root.classList.add("fadeout-horizontal");
-                
-                setTimeout(() => {
-                    this.sections[1].hide();
-                    this._moveSplit(20);
-                }, 200);
+                this._moveSplit(-Infinity, true);
             }
         }
 
@@ -937,21 +931,19 @@
         * Show element if it is hidden
         */
         maximize() {
+
             if(!this.min)
                 return;
+            
             if(this.min.classList.contains("vertical") && this.min.classList.contains("fa-angle-up")) {
                 this.min.classList.remove("fa-angle-up");
                 this.min.classList.add("fa-angle-down");
-                this.sections[1].show();
-                this.sections[1].root.classList.remove("fadeout-vertical");
                 this.sections[1].root.classList.add("fadein-vertical");
                 this._moveSplit(this.offset);
             }
-            else if(this.min.classList.contains("horizontal") && this.min.classList.contains("fa-angle-left")){
+            else if(this.min.classList.contains("horizontal") && this.min.classList.contains("fa-angle-left")) {
                 this.min.classList.remove("fa-angle-left");
                 this.min.classList.add("fa-angle-right");
-                this.sections[1].show();
-                this.sections[1].root.classList.remove("fadeout-horizontal");
                 this.sections[1].root.classList.add("fadein-horizontal");
                 this._moveSplit(this.offset);
             }
@@ -1204,7 +1196,7 @@
             return tabs;
         }
 
-        _moveSplit( dt ) {
+        _moveSplit( dt, force_animation = false ) {
 
             if(!this.type)
                 throw("No split area");
@@ -1214,16 +1206,21 @@
 
             var a1 = this.sections[0];
             var a2 = this.sections[1];
-            var splitinfo = " - "+ LX.DEFAULT_SPLITBAR_SIZE +"px";
+            var splitinfo = " - "+ (LX.DEFAULT_SPLITBAR_SIZE + ( this.min ? this.min.offsetWidth : 0 )) +"px";
 
-            // Remove transitions for this change..
-            const transition = a1.root.style.transition;
-            a1.root.style.transition = "none";
-            flushCss(a1.root);
+            let transition = null;
+            if( !force_animation )
+            {
+                // Remove transitions for this change..
+                transition = a1.root.style.transition;
+                a1.root.style.transition = a2.root.style.transition = "none";
+                flushCss(a1.root);
+                flushCss(a2.root);
+            }
 
             if(this.type == "horizontal") {
 
-                var size = (a2.root.offsetWidth + dt);
+                var size = Math.max(a2.root.offsetWidth + dt,  0);
 				a1.root.style.width = "-moz-calc( 100% - " + size + "px " + splitinfo + " )";
 				a1.root.style.width = "-webkit-calc( 100% - " + size + "px " + splitinfo + " )";
 				a1.root.style.width = "calc( 100% - " + size + "px " + splitinfo + " )";
@@ -1231,14 +1228,18 @@
             }
             else {
 
-                var size = (a2.root.offsetHeight + dt) + a2.offset;
+                var size = Math.max((a2.root.offsetHeight + dt) + a2.offset,  0);
 				a1.root.style.height = "-moz-calc( 100% - " + size + "px " + splitinfo + " )";
 				a1.root.style.height = "-webkit-calc( 100% - " + size + "px " + splitinfo + " )";
 				a1.root.style.height = "calc( 100% - " + size + "px " + splitinfo + " )";
 				a2.root.style.height = ( size - a2.offset ) + "px"; //other split
             }
                 
-            a1.root.style.transition = transition;
+            if( !force_animation )
+            {
+                // Reapply transitions
+                a1.root.style.transition = a2.root.style.transition = transition;
+            }
 
             this._update();
 
@@ -2447,7 +2448,7 @@
                     actionEl.className = "itemicon " + a.icon;
                     actionEl.title = a.name;
                     actionEl.addEventListener("click", function(e) {
-                        a.callback(node);
+                        a.callback(node, actionEl);
                         e.stopPropagation();
                     });
                     item.appendChild(actionEl);
@@ -3056,6 +3057,7 @@
                 Object.assign(link_el.style, options.style ?? {});
                 element.replaceWith(link_el);
             }
+            return element;
         }
 
         /**
@@ -4492,6 +4494,13 @@
                     Panel.#dispatch_event(inputs[i], "change");
                 }
             };
+            widget.setValue = (new_value) => {
+                const inputs = element.querySelectorAll(".vecinput");
+                for( var i = 0; i < inputs.length; ++i ) {
+                    inputs[i].value = new_value[i] ?? 0;
+                }
+            }
+
             let element = widget.domEl;
 
             // Add reset functionality

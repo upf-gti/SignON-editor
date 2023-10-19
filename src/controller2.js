@@ -196,8 +196,8 @@ class BMLController {
         }
        
         //set current animation to the model
-        this.editor.animationClip = new THREE.AnimationClip("nmf", timeline.duration, tracks);
-        console.log(this.editor.animationClip )
+        this.editor.animation = new THREE.AnimationClip("nmf", timeline.duration, tracks);
+        console.log(this.editor.animation )
       
         if(this.onUpdateTracks)
             this.onUpdateTracks();

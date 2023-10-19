@@ -1,5 +1,5 @@
 import { MediaPipe } from "./mediapipe.js";
-import { Editor } from "./editor.js";
+import { KeyframeEditor, ScriptEditor } from "./editor.js";
 import { VideoUtils } from "./video.js";
 import { FileSystem } from "./libs/filesystem.js";
 import { UTILS } from "./utils.js";
@@ -28,56 +28,30 @@ class App {
     init( settings ) {
 
         settings = settings || {};
-        // if(settings.projectType == "keyframes") {
-        //     const dialog = new LX.Dialog( "Select input", p => {
-        //         p.addFile("From disk", (data) => { 
-        //             const extension = UTILS.getExtension(data.name);
-		// 	        let mode = extension.includes('bvh') ? 'bvh' : 'video';
-                    
-        //             switch(mode) {
-        //                 case 'bvh': 
-        //                     this.onLoadAnimation( data );
-        //                     break;
-        //                 case 'video': 
-        //                     this.captureMode = appMode.VIDEO;
-        //                     this.onLoadVideo( data );
-        //                     break;
-        //             }
-        //             dialog.close()
-        //             window.addEventListener("resize", this.onResize.bind(this));
-        //          }, {read: false} );
-
-              
-        //         p.addButton(null, "Capture", () => {
-        //             this.captureMode = appMode.LIVE;
-        //             this.onBeginCapture();
-        //             dialog.close()
-        //             window.addEventListener("resize", this.onResize.bind(this));
-        //         });
-        //     }, {modal:true})
-        // }
-        
+    
         const mode = settings.mode ?? 'script';
 
         switch(mode) {
             case 'capture': 
-                this.editor = new Editor(this, mode);
+                this.editor = new KeyframeEditor(this, mode);
                 this.onBeginCapture();
                 break;
             case 'bvh': case 'bvhe':
-                this.editor = new Editor(this, "video");
+                this.editor = new KeyframeEditor(this, "video");
                 this.onLoadAnimation( settings.data );
                 break;
             case 'video': case "mp4": case "wav": 
                 this.video = settings.data;
-                this.editor = new Editor(this, "video");
+                this.editor = new KeyframeEditor(this, "video");
                 this.onLoadVideo( settings.data );
                 break;
             default:
-                this.editor = new Editor(this, 'script');
+                this.editor = new ScriptEditor(this, 'script');
                 this.onBMLProject( settings.data );
                 break;
+                
         }
+        this.editor.init();
         window.addEventListener("resize", this.onResize.bind(this));
     }
 
@@ -186,75 +160,20 @@ class App {
                 on_error();
         }
     
-            MediaPipe.start( true, () => {
-                this.setEvents(true);
-                $('#loading').fadeOut();
-                // let videoElement = document.getElementById("inputVideo");
-                // this.mediaRecorder = new MediaRecorder(videoElement.srcObject);
+        MediaPipe.start( true, () => {
+            this.setEvents(true);
+            $('#loading').fadeOut();
+            
+        }, this.editor.gui.updateCaptureGUI.bind(this.editor.gui));
 
-                // this.mediaRecorder.onstop =  (e) => {
-
-                //     video.addEventListener("play", function() {});
-                //     video.addEventListener("pause", function() {});
-                //     video.setAttribute('controls', 'name');
-                //     video.controls = false;
-                //     video.loop = true;
-                    
-                //     let blob = new Blob(this.chunks, { "type": "video/mp4; codecs=avc1" });
-                //     let videoURL = URL.createObjectURL(blob);
-                //     video.src = videoURL;
-                //     console.log("Recording correctly saved");
-                // }
-
-                // this.mediaRecorder.ondataavailable =  (e) => {
-                //     this.chunks.push(e.data);
-                // }
-            }, this.editor.gui.updateCaptureGUI.bind(this.editor.gui));
-
-            // Show video
-            let video = document.getElementById("recording");
-            // $("#capture").removeClass("hidden");
-
-            // video.addEventListener('loadedmetadata', async function () {
-            //     while(video.duration === Infinity) {
-            //         await new Promise(r => setTimeout(r, 1000));
-            //         video.currentTime = 10000000*Math.random();
-            //     }
-            //     video.currentTime = video.startTime > 0 ? video.startTime : 0;
-            // });
-
+        // Show video
+        let video = document.getElementById("recording");
             
     }
 
     onBeginEdition() {
 
         this.editor.startEdition();
-        // // Update header
-        // let capture = document.getElementById("capture_btn");
-        // capture.disabled = true;
-        // capture.style.display = "none";
-
-        // let redo = document.getElementById("redo_btn");
-        // if(redo){
-        //     redo.disabled = true;
-        //     redo.style.display = "none";
-        // } 
-            
-        // this.editor.gui.updateMenubar();
-        // let trimBtn = document.getElementById("trim_btn");
-        // trimBtn.disabled = true;
-        // trimBtn.style.display = "none";
-
-        // let stateBtn = document.getElementById("state_btn");
-        // stateBtn.style.display = "block";
-        // let stopBtn = document.getElementById("stop_btn");
-        // stopBtn.style.display = "block";
-
-        // let captureInfo = document.getElementById("capture-info");
-        // captureInfo.classList.add("hidden");
-
-        // let timelineDiv = document.getElementById("timeline");
-        // timelineDiv.classList.remove("hidden");
     }
 
 
@@ -310,8 +229,7 @@ class App {
                 video.setAttribute('controls', 'name');
                 video.controls = false;
                 video.loop = true;
-                //that.chunks[0] = that.chunks[0].slice(1,that.chunks[0].size, "video/mp4; codecs=avc1");
-                //that.chunks.shift();
+                
                 let blob = new Blob(that.chunks, { "type": "video/mp4; codecs=avc1" });
                 let videoURL = URL.createObjectURL(blob);
                 video.src = videoURL;
@@ -340,7 +258,6 @@ class App {
             const canvasElement = document.getElementById("outputVideo");
             const canvasCtx = canvasElement.getContext("2d");
     
-            //let frame = metadata.presentedFrames % MediaPipe.landmarks;
             let landmarks = MediaPipe.landmarks; //[frame];
     
             canvasCtx.save();
@@ -522,55 +439,51 @@ class App {
 
     async storeAnimation() {
 
-        const innerStore = (async function() {
+        const innerStore = async () => {
 
             // CHECK THE INPUT FILE !!!!TODO!!!!
             let file = undefined;
 
-            if (!confirm("Have you finished editing your animation? Remember that uploading the animation to the database implies that it will be used in the synthesis of the 3D avatar used in SignON European project."))
-            return;
+            this.editor.gui.prompt = LX.prompt( "Have you finished editing your animation? Remember that uploading the animation to the database implies that it will be used in the synthesis of the 3D avatar used in SignON European project.", "Upload animation", async () => {
+                // Check if are files loaded
+                if (file) {
+                    // Log the user
+                    await this.FS.login();
 
-            // Check if are files loaded
-            if (!file) {
-                console.log("Not BVH found.");
+                    // folder, data, filename, metadata
+                    await this.FS.uploadData("animations", file, file.name || "noName", "");
+
+                    // Log out the user
+                    this.FS.logout();
+
+                    // For now this is used in timeline_maanager
+                    // refactor!!
+                    window.storeAnimation = this.storeAnimation;
+                }
+                else {
+                    console.log("Not upload. Not BVH found.");
+   
+                }
+
+            this.editor.gui.prompt.close();
+         }, {input: false})
+    }
+
+
+        this.editor.gui.prompt = LX.prompt( "Please, enter the name of the sign performed and the language. (Example: Dog in Irish Sign Language --> dog_ISL)", "Animation name", async (name) => {
+            if(name == "") {
+                alert("You can't upload an animation without name");
+                this.storeAnimation();
                 return;
             }
-
-            // Log the user
-            await this.FS.login();
-
-            // folder, data, filename, metadata
-            await this.FS.uploadData("animations", file, file.name || "noName", "");
-
-            // Log out the user
-            this.FS.logout();
-
-            // For now this is used in timeline_maanager
-            // refactor!!
-            window.storeAnimation = this.storeAnimation;
+            this.editor.clipName = name;
             
-        }).bind(this);
+            await innerStore();
 
-        if( this.editor.clipName === "Unnamed" ) {
-            LiteGUI.prompt( "Please, enter the name of the sign performed and the language. (Example: Dog in Irish Sign Language --> dog_ISL)", async (name) => {
-
-                this.editor.clipName = name;
-                await innerStore();
-
-            }, { title: "Sign Name", width: 350 } );
-        }
+        }, { input:this.editor.clipName, title: "Sign Name", width: 350 } );
     }
 
     onResize() {
-
-        // let canvasArea = document.getElementById("canvasarea");
-
-        // const CANVAS_WIDTH = canvasArea.clientWidth;
-        // const CANVAS_HEIGHT = canvasArea.clientHeight;
-
-        // const timelineCanvas = document.getElementById("timelineCanvas");
-        // timelineCanvas.width = CANVAS_WIDTH;
-
         this.editor.resize();
     }
 }

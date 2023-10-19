@@ -21,6 +21,8 @@ class Gui {
 			e.stopPropagation();
 	
 			const file = e.dataTransfer.files[0];
+            if(!file)
+                return;
 			this.editor.loadFile(file);
       
         };
@@ -49,7 +51,7 @@ class Gui {
         this.menubar = area.addMenubar( m => {
 
             m.setButtonImage("SignON", "data/imgs/animics_logo.png", () => {window.open("https://signon-project.eu/")}, {float: "left"});
-            m.setButtonIcon("Github", "fa-brands fa-github", () => {window.open("https://github.com/upf-gti/SignON-editor")}, {float:"right"});
+            
 
         });
     }
@@ -76,16 +78,16 @@ class Gui {
   
         menubar.add("Project/Export animation", {icon: "fa fa-file-export"});
         menubar.add("Project/Export animation/Export extended BVH", {callback: () => {
-            LX.prompt("File name", "Export BVH animation", (v) => this.editor.export("BVH extended", v), {input: this.editor.animationClip ? this.editor.animationClip.name : null } );      
+            LX.prompt("File name", "Export BVH animation", (v) => this.editor.export("BVH extended", v), {input: this.editor.animation ? this.editor.animation.name : null } );      
         }});
         if(this.editor.mode == this.editor.eModes.script) {
             menubar.add("Project/Export animation/Export BML", {callback: () => 
-                LX.prompt("File name", "Export BML animation", (v) => this.editor.export("", v), {input: this.editor.animationClip ? this.editor.animationClip.name : null} )     
+                LX.prompt("File name", "Export BML animation", (v) => this.editor.export("", v), {input: this.editor.animation ? this.editor.animation.name : null} )     
             });
         }
         menubar.add("Project/Export scene", {icon: "fa fa-download"});
         menubar.add("Project/Export scene/Export GLB", {callback: () => 
-            LX.prompt("File name", "Export GLB", (v) => this.editor.export("GLB", v), {input: this.editor.animationClip ? this.editor.animationClip.name : null} )     
+            LX.prompt("File name", "Export GLB", (v) => this.editor.export("GLB", v), {input: this.editor.animation ? this.editor.animation.name : null} )     
         });
         menubar.add("Project/Upload to server", {icon: "fa fa-upload", callback: () => this.editor.getApp().storeAnimation() });
         menubar.add("Project/Preview realizer", {icon: "fa fa-street-view",  callback: () => this.editor.showPreview() });
@@ -129,10 +131,11 @@ class Gui {
         }
 
         menubar.add("Timeline/");
-        menubar.add("Timeline/Empty tracks", { callback: () => this.editor.emptyTracks() });
         menubar.add("Timeline/Optimize all tracks", { callback: () => this.editor.optimizeTracks() });
+        menubar.add("Timeline/Clean tracks", { callback: () => this.editor.cleanTracks() });
         if(this.showVideo)
-            menubar.add("View/Show video", { type: "checkbox", checked: this.showVideo, callback: () => {
+            menubar.add("View/Show video", { type: "checkbox", checked: this.showVideo, callback: (v) => {
+                this.showVideo = v;
                 const tl = document.getElementById("capture");
                 tl.style.display = this.showVideo ? "flex": "none";
             }});
@@ -155,11 +158,11 @@ class Gui {
                 callback:  (domEl) => { 
                     console.log("play!"); 
                     if(this.editor.state ) {
-                        this.editor.onPause(this.editor, domEl);    
+                        this.editor.pause(this.editor, domEl);    
                     }
                     else {
                         
-                        this.editor.onPlay(this.editor, domEl);
+                        this.editor.play(this.editor, domEl);
                     }
                     domEl.classList.toggle('fa-play'), domEl.classList.toggle('fa-pause');
                 }
@@ -168,14 +171,15 @@ class Gui {
                 title: "Stop",
                 icon: "fa-solid fa-stop",
                 callback:  (domEl) => { 
-                    this.editor.onStop(this.editor, domEl);
+                    this.editor.stop(this.editor, domEl);
+                    // domEl.innerHTML = "<i class='bi bi-play-fill'></i>";
                     console.log("pause!") 
                     if(this.menubar.getButton("Play").children[0].classList.contains("fa-pause")) 
                         this.menubar.getButton("Play").children[0].classList.toggle('fa-pause'), this.menubar.getButton("Play").children[0].classList.toggle('fa-play');
                 }
             }
         ]);
-       
+        menubar.setButtonIcon("Github", "fa-brands fa-github", () => {window.open("https://github.com/upf-gti/SignON-editor")}, {float:"right"});
     }
 
     createSceneUI(area) {
@@ -651,7 +655,6 @@ class KeyframesGui extends Gui {
         this.keyFramesTimeline = new LX.KeyFramesTimeline("Bones");
         this.keyFramesTimeline.setFramerate(30);
         // this.keyFramesTimeline.setScale(400);
-        this.keyFramesTimeline.hide();
 
         this.curvesTimeline = new LX.CurvesTimeline("Action Units");
         this.curvesTimeline.setFramerate(30);
@@ -665,13 +668,15 @@ class KeyframesGui extends Gui {
 
             }
         }
-        this.curvesTimeline.hide();
-
+        
         // area.onresize = (bounding) => this.timelineArea.setSize(bounding);
         // Create timelines container area
         //this.timelineArea = new LX.Area({ height: 400, overlay:"bottom", resize: true});
         this.timelineArea.attach(this.keyFramesTimeline.root);
         this.timelineArea.attach(this.curvesTimeline.root);
+        this.keyFramesTimeline.hide();
+        this.curvesTimeline.hide();
+
 
         //Resize timelines on resize timeline container area
         // this.timelineArea.onresize = (bounding) => {this.keyFramesTimeline.resize( [ bounding.width, bounding.height ] );}
@@ -1162,10 +1167,19 @@ class KeyframesGui extends Gui {
                 }    
 
                 const innerUpdate = (attribute, value) => {
+            
                     boneSelected[attribute].fromArray( value ); 
-                    
+                    if(attribute == 'quaternion') {
+                        boneSelected[attribute].normalize();
+                        widgets.widgets['Quaternion'].setValue(boneSelected[attribute].toArray());
+                        widgets.widgets['Rotation (XYZ)'].setValue(boneSelected['rotation'].toArray());
+                    }
+                    if(attribute == 'rotation') {
+                        widgets.widgets['Quaternion'].setValue(boneSelected['quaternion'].toArray());
+                    }
                     this.editor.gizmo.onGUI(attribute);
                 };
+
 
                 widgets.branch("Bone", { icon: "fa-solid fa-bone" });
                 widgets.addText("Name", boneSelected.name, null, {disabled: true});
@@ -1181,10 +1195,10 @@ class KeyframesGui extends Gui {
                 }
 
                 this.boneProperties['rotation'] = boneSelected.rotation;
-                widgets.addVector3('Rotation (XYZ)', boneSelected.rotation.toArray(), (v) => innerUpdate("rotation", v), {disabled: this.editor.state || disabled || active != 'Rotate', precision: 3, className: 'bone-euler'});
+                widgets.addVector3('Rotation (XYZ)', boneSelected.rotation.toArray(), (v) => {innerUpdate("rotation", v), widgets.onRefresh(options)}, {disabled: this.editor.state || disabled || active != 'Rotate', precision: 3, className: 'bone-euler'});
 
                 this.boneProperties['quaternion'] = boneSelected.quaternion;
-                widgets.addVector4('Quaternion', boneSelected.quaternion.toArray(), (v) => innerUpdate("quaternion", v), {disabled: this.editor.state || disabled || active != 'Rotate', precision: 3, className: 'bone-quaternion'});
+                widgets.addVector4('Quaternion', boneSelected.quaternion.toArray(), (v) => {innerUpdate("quaternion", v)}, {disabled: this.editor.state || disabled || active != 'Rotate', precision: 3, className: 'bone-quaternion'});
             }
 
         };
@@ -1417,12 +1431,12 @@ class ScriptGui extends Gui {
         this.clip = this.clipsTimeline.animationClip || clip ;
         this.duration = clip.duration || 0;
 
-        this.clipsTimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animationClip.duration - 0.001) );
+        this.clipsTimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animation.duration - 0.001) );
         // this.clipsTimeline.onSetDuration = (t) => {this.duration = this.keyFramesTimeline.duration = this.keyFramesTimeline.animationClip.duration = t};
         this.clipsTimeline.onSelectClip = this.updateClipPanel.bind(this);
         this.clipsTimeline.onClipMoved = (selected)=> {
             // this.editor.updateTracks(selected);
-            this.editor.NMFController.updateTracks();
+            this.editor.gizmo.updateTracks();
 
             this.clipsTimeline.onSetTime(this.clipsTimeline.currentTime) 
         };
@@ -1449,7 +1463,7 @@ class ScriptGui extends Gui {
                             for(let i = 0; i < clipstToDelete.length; i++){
                                 this.clipsTimeline.deleteClip(e, clipstToDelete[i], null);
                             }
-                            this.editor.NMFController.updateTracks();
+                            this.editor.gizmo.updateTracks();
                             // this.optimizeTracks();
                         }
                     }
@@ -1572,7 +1586,7 @@ class ScriptGui extends Gui {
             o = o || {};
             widgets.clear();
             widgets.branch("Animation Clip", {icon: "fa-solid fa-child-reaching"});
-            widgets.addText("Name", this.editor.animationClip.name || "Unnamed", v => this.editor.animationClip.name = v );
+            widgets.addText("Name", this.editor.animation.name || "Unnamed", v => this.editor.animation.name = v );
             widgets.addText("Frame rate", this.clipsTimeline.framerate, null, {disabled: true});
             widgets.addText("Duration", this.duration.toFixed(2), null, {disabled: true});
             widgets.addNumber("Speed", this.editor.mixer.timeScale, v => {
@@ -1607,7 +1621,7 @@ class ScriptGui extends Gui {
                 if(clip && clip.start + clip.duration > this.clipsTimeline.duration) {
                     this.clipsTimeline.setDuration(clip.start + clip.duration);
                 }
-                this.editor.NMFController.updateTracks(); 
+                this.editor.gizmo.updateTracks(); 
                                
                 if(this.curve) {
                     let syncvalues = [];
@@ -1825,12 +1839,12 @@ class ScriptGui extends Gui {
 
     showGuide() {
         
-        LX.message("Right click on timeline to create a new clip. You can create a clip from a selected lexeme or from a preset configuration.", "How to start?");
+        this.prompt = LX.message("Right click on timeline to create a new clip. You can create a clip from a selected lexeme or from a preset configuration.", "How to start?");
 
     }
 
     createNewPresetDialog(clips) {
-        LX.prompt( "Preset name", "Create preset", (v) => {
+        this.prompt = LX.prompt( "Preset name", "Create preset", (v) => {
            let presetInfo = {preset: v, clips:[]};
            for(let i = 0; i < clips.length; i++){
                let [trackIdx, clipIdx] = clips[i];
@@ -1838,6 +1852,8 @@ class ScriptGui extends Gui {
            }
            let preset = new ANIM.FacePresetClip(presetInfo);
        }, {} )
+
+       this.prompt = null;
    }
 
     createClipsDialog() {

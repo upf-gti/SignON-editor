@@ -738,6 +738,9 @@ class Gizmo {
     onGUI(mode) {
         if(mode == 'position')
             mode = 'translate';
+        else if (mode == 'rotation' || mode == 'quaternion')
+            mode = 'rotate';
+
         if(this.mode != mode) 
             this.setMode(mode);
         this.updateBones();

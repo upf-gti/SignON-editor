@@ -21,12 +21,12 @@ THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNor
 THREE.ShaderChunk[ 'morphtarget_pars_vertex' ] = "#ifdef USE_MORPHTARGETS\n	uniform float morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		uniform float morphTargetInfluences[ MORPHTARGETS_COUNT ];\n		uniform sampler2DArray morphTargetsTexture;\n		uniform vec2 morphTargetsTextureSize;\n		vec3 getMorph( const in int vertexIndex, const in int morphTargetIndex, const in int offset, const in int stride ) {\n			float texelIndex = float( vertexIndex * stride + offset );\n			float y = floor( texelIndex / morphTargetsTextureSize.x );\n			float x = texelIndex - y * morphTargetsTextureSize.x;\n			vec3 morphUV = vec3( ( x + 0.5 ) / morphTargetsTextureSize.x, y / morphTargetsTextureSize.y, morphTargetIndex );\n			return texture( morphTargetsTexture, morphUV ).xyz;\n		}\n	#else\n		#ifndef USE_MORPHNORMALS\n			uniform float morphTargetInfluences[ 8 ];\n		#else\n			uniform float morphTargetInfluences[ 4 ];\n		#endif\n	#endif\n#endif";
 THREE.ShaderChunk[ 'morphtarget_vertex' ] = "#ifdef USE_MORPHTARGETS\n	transformed *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n			#ifndef USE_MORPHNORMALS\n				transformed += getMorph( gl_VertexID, i, 0, 1 ) * morphTargetInfluences[ i ];\n			#else\n				transformed += getMorph( gl_VertexID, i, 0, 2 ) * morphTargetInfluences[ i ];\n			#endif\n		}\n	#else\n		transformed += morphTarget0 * morphTargetInfluences[ 0 ];\n		transformed += morphTarget1 * morphTargetInfluences[ 1 ];\n		transformed += morphTarget2 * morphTargetInfluences[ 2 ];\n		transformed += morphTarget3 * morphTargetInfluences[ 3 ];\n		#ifndef USE_MORPHNORMALS\n			transformed += morphTarget4 * morphTargetInfluences[ 4 ];\n			transformed += morphTarget5 * morphTargetInfluences[ 5 ];\n			transformed += morphTarget6 * morphTargetInfluences[ 6 ];\n			transformed += morphTarget7 * morphTargetInfluences[ 7 ];\n		#endif\n	#endif\n#endif";
 
-
-
 class Editor {
     
     constructor(app, mode) {
         
+        this.character = "EVA";
+
         this.clock = new THREE.Clock();
         this.BVHloader = new BVHLoader();
         this.GLTFloader = new GLTFLoader();
@@ -37,7 +37,8 @@ class Editor {
         this.controls = null;
         this.scene = null;
         this.boneUseDepthBuffer = true;
-       
+        this.optimizeThreshold = 0.01;
+
         this.renderer = null;
         this.state = false; // defines how the animation starts (moving/static)
         this.mixer = null;
@@ -49,60 +50,63 @@ class Editor {
         this.eModes = {capture: 0, video: 1, script: 2};
         this.mode = this.eModes[mode];
         
-        this.bodyAnimation = null; //ThreeJS animation (only bones in keyframing mode) : {values: [], times: []}
-        
-        // --------- KEYFRAMES MODE (capture or video) ---------
-        this.gizmo = null;
-        this.optimizeThreshold = 0.01;
-        this.defaultTranslationSnapValue = 1;
-        this.defaultRotationSnapValue = 30; // Degrees
-        this.defaultScaleSnapValue = 1;
-
-        this.showSkeleton = true;
-        this.skeletonHelper = null;
-        this.skeleton = null;
-        
-        this.faceAnimation = null; //ThreeJS BS animation (used for the mixer): {values: [], times: []}
-        this.auAnimation = null; //ThreeJS mediapipe AU animation (used for the timeline): [ {AU1: w1_0, AU2: w2_0, ...}, {AU1: w1_1, AU2: w2_1, ...}, ... ]
-        this.landmarksArray = [];
-        this.blendshapesArray = [];
-        this.applyRotation = false; // head and eyes rotation
-        this.selectedAU = "Brow Left";
-        this.nn = new NN("data/ML/model.json");
-        this.retargeting = new AnimationRetargeting();
-        this.mapNames = MapNames.map_llnames[this.character];
-        //------------------------------------------------------
-        
-        // -------------------- SCRIPT MODE --------------------
-        this.NMFController = null;        
-        this.dominantHand = "Right";
-        
+        this.animation = null; //ThreeJS animation (only bones in keyframing mode) : {values: [], times: []}
         this.morphTargets = null;
-        this.blendshapesManager = null;
-  
-        this.character = "EVA";
-
-    	this.onDrawTimeline = null;
-	    this.onDrawSettings = null;
-
-        this.activeTimeline = null;
-        // ------------------------------------------------------
 
         // Keep "private"
         this.__app = app;
 
-        this.video = app.video;
-
-        if(this.mode == this.eModes.video || this.mode == this.eModes.capture )
-            this.gui = new KeyframesGui(this);
-        else
-            this.gui = new ScriptGui(this);
-
-        this.init();
     }
-    
+
+    getApp() {
+        return this.__app;
+    }
+
     //Create canvas scene
     init() {
+
+        this.initScene();
+
+        window.addEventListener( 'keydown', (e) => {
+            switch ( e.key ) {
+                case " ": // Spacebar
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    document.querySelector("[title = Play]").children[0].click()
+                    break;
+                case "Delete":
+                    e.preventDefault();
+                    // e.stopImmediatePropagation();
+                    // this.activeTimeline.deleteKeyFrame(e, null);
+                    if(this.activeTimeline.deleteKeyFrame) {
+                        e.multipleSelection = this.activeTimeline.lastKeyFramesSelected.length > 1;
+                        this.activeTimeline.deleteKeyFrame(e);
+                    }
+                    if(this.activeTimeline.deleteClip) {
+                        e.multipleSelection = this.activeTimeline.lastClipsSelected.length > 1;
+                        this.activeTimeline.deleteClip(e, null, this.gizmo.updateTracks.bind(this.gizmo));
+                    }
+                    
+                    break;
+                case "Escape":
+
+                    if(this.gui.prompt) {
+                        this.gui.prompt.close();
+                        this.gui.prompt = null;
+                    }
+                break;
+                case 'z':
+                    if(e.ctrlKey) {
+                        if(this.activeTimeline.restoreState)
+                            this.activeTimeline.restoreState();
+                    }
+                    break;
+            }
+        } );
+    }
+    
+
+    initScene() {
 
         let canvasArea = this.gui.canvasArea;
         const [CANVAS_WIDTH, CANVAS_HEIGHT] = canvasArea.size;
@@ -201,54 +205,475 @@ class Editor {
         this.renderer = renderer;
         this.controls = controls;
         this.orientationHelper = orientationHelper;
-
-        this.video = document.getElementById("recording");
-        this.video.startTime = 0;
-        this.gizmo = new Gizmo(this);
-
-        window.addEventListener( 'keydown', (e) => {
-            switch ( e.key ) {
-                case " ": // Spacebar
-                    e.preventDefault();
-                    //e.stopImmediatePropagation();
-                    document.querySelector("[title = Play]").children[0].click()
-                    break;
-                case "Delete":
-                    e.preventDefault();
-                    // e.stopImmediatePropagation();
-                    // this.activeTimeline.deleteKeyFrame(e, null);
-                    if(this.activeTimeline.deleteKeyFrame) {
-                        e.multipleSelection = this.activeTimeline.lastKeyFramesSelected.length > 1;
-                        this.activeTimeline.deleteKeyFrame(e);
-                    }
-                    if(this.activeTimeline.deleteClip) {
-                        e.multipleSelection = this.activeTimeline.lastClipsSelected.length > 1;
-                        this.activeTimeline.deleteClip(e, null, this.NMFController.updateTracks.bind(this.NMFController));
-                    }
-                    
-                    break;
-                case "Escape":
-                    // this.gui.hideTimeline()
-                    // this.gui.updateSkeletonPanel();
-                    // this.gui.tree.select()
-                    // this.activeTimeline.unSelect();
-                    break;
-                case 'z':
-                    if(e.ctrlKey) {
-                        if(this.activeTimeline.restoreState)
-                            this.activeTimeline.restoreState();
-                    }
-                    break;
-            }
-        } );
     }
 
-    getApp() {
-        return this.__app;
-    }
 
     startEdition() {
         this.gui.initEditionGUI();
+    }
+
+    /** -------------------- UPDATES, RENDER AND EVENTS -------------------- */
+
+    animate() {
+        
+        requestAnimationFrame(this.animate.bind(this));
+
+        this.render();
+        this.update(this.clock.getDelta());
+
+    }
+
+    render() {
+
+        if(!this.renderer)
+            return;
+
+        this.renderer.render(this.scene, this.camera);
+        if(this.activeTimeline)
+            this.gui.drawTimeline(this.activeTimeline);            
+
+    }
+
+    update(dt) {
+
+        if(this.currentTime > this.activeTimeline.duration) {
+            this.currentTime = this.activeTimeline.currentTime = 0.0;
+            this.onAnimationEnded();
+        }
+        if (this.mixer && this.state) {
+
+            this.mixer.update(dt);
+            this.currentTime = this.activeTimeline.currentTime = this.mixer.time;
+            LX.emit( "@on_current_time_" + this.activeTimeline.constructor.name, this.currentTime );
+            if(this.onUpdateAnimationTime)
+                this.onUpdateAnimationTime();
+        }
+       
+        this.gizmo.update(this.state, dt);
+    }
+
+    // Play all animations
+    play() {
+        this.state = true;
+        this.activeTimeline.active = false;
+        if(this.onPlay)
+            this.onPlay();
+    }
+
+    // Stop all animations 
+    stop() {
+
+        this.state = false;
+        
+        let t = 0.0;
+        this.setTime(0);
+        this.activeTimeline.active = true;
+        this.activeTimeline.currentTime = t;
+        this.activeTimeline.onSetTime(t);
+        
+       if(this.onStop)
+            this.onStop();
+    }
+
+    pause() {
+        this.state = !this.state;
+        this.activeTimeline.active = !this.activeTimeline.active;
+        if(!this.state && this.mixer._actions[0])
+            this.mixer._actions[0].paused = false;
+
+        if(this.onPause)
+            this.onPause();
+    }
+    
+    setTime(t, force) {
+
+        // Don't change time if playing
+        // this.gui.currentTime = t;
+        if(this.state && !force)
+            return;
+
+        this.mixer.setTime(t);
+    }
+
+    cleanTracks() {
+
+    }
+
+    // cleanTracks(excludeList) {
+
+    //     if(!this.activeTimeline.animationClip)
+    //         return;
+
+    //     for( let i = 0; i < this.activeTimeline.animationClip.tracks.length; ++i ) {
+
+    //         const track = this.activeTimeline.animationClip.tracks[i];
+    //         let type = 'number';
+    //         if(this.activeTimeline.getTrackName && track.name) {
+
+    //             let [boneName, type] = this.activeTimeline.getTrackName(track.name);
+    
+    //             if(excludeList && excludeList.indexOf( boneName ) != -1)
+    //                 continue;
+    //         }
+    //         let currentTrack = this.animation.tracks[track.idx];
+    //         track.times = new Float32Array( [currentTrack.times[0]] );
+
+    //         let n = 1;
+    //         if(type != 'number')
+    //             n = type === 'quaternion' ? 4 : 3;
+    //         track.values = track.values.slice(0, n );
+
+    //         this.updateAnimationAction(this.activeTimeline.animationClip,i);
+    //         if(this.activeTimeline.onPreProcessTrack)
+    //             this.activeTimeline.onPreProcessTrack( track, track.idx );
+    //     }
+    // }
+
+    // emptyTracks() {
+    //     if(!this.activeTimeline.animationClip)
+    //         return;
+
+    //     for( let i = 0; i < this.activeTimeline.animationClip.tracks.length; ++i ) {
+
+    //         const track = this.activeTimeline.animationClip.tracks[i];
+    //         if(this.activeTimeline.selectedItems && this.activeTimeline.selectedItems.indexOf(track.name)< 0 && this.mode != this.eModes.script)
+    //             continue;
+    //         let idx = this.mode == this.eModes.script ? track.idx : track.clipIdx;
+    //         let value = null;
+    //         if(this.mode != this.eModes.script) {
+                
+    //             if(track.dim == 1)
+    //                 value = 0;
+    //             else
+    //                 value = [0,0,0,1];
+    //         } 
+
+    //         this.activeTimeline.cleanTrack(idx, value);
+    //         // if(value != null) {
+    //         //     this.activeTimeline.addKeyFrame(track, value, 0);
+    //         // }
+                
+    //         this.updateAnimationAction(this.activeTimeline.animationClip, idx, false);
+    //         if(this.activeTimeline.onPreProcessTrack)
+    //             this.activeTimeline.onPreProcessTrack( track, track.idx );
+    //     }
+    //     this.updateTracks();
+    // }
+
+    optimizeTrack(trackIdx, threshold = this.optimizeThreshold) {
+        this.optimizeThreshold = this.activeTimeline.optimizeThreshold;
+        const track = this.animation.tracks[trackIdx];
+        track.optimize( this.optimizeThreshold );
+        this.updateAnimationAction(this.animation, trackIdx);
+    }
+
+    optimizeTracks(tracks) {
+
+        if(!this.activeTimeline.animationClip)
+            return;
+
+        for( let i = 0; i < this.activeTimeline.animationClip.tracks.length; ++i ) {
+            const track = this.activeTimeline.animationClip.tracks[i];
+            if(track.optimize) {
+
+                track.optimize( this.optimizeThreshold );
+                this.updateAnimationAction(this.animation, i);
+    
+                // this.gui.keyFramesTimeline.onPreProcessTrack( track, i );
+            }
+        }
+        this.activeTimeline.draw();
+        // this.gui.keyFramesTimeline.draw();
+        // if(this.gui.clipsTimeline)
+        //     this.gui.clipsTimeline.optimizeTracks();
+        // this.gui.clipsTimeline.draw();
+    }
+
+    updateAnimationAction(animation, idx, replace = false) {
+        if(!this.bodyAnimation) 
+            return;
+        const mixer = this.mixer;
+
+        if(!mixer._actions.length) 
+            return;
+
+        if(typeof idx == 'number')
+            idx = [idx];
+
+        if(replace) {
+            this.animation.tracks = [];
+            for(let i = 0; i < animation.tracks.length; i++) {
+                const track = animation.tracks[i];
+                if(track.active) {
+                    switch(track.type) {
+                        case "position":
+                            this.animation.tracks.push(new THREE.VectorKeyframeTrack(track.fullname, track.times, track.values));
+                            break;
+                        case "quaternion":
+                            this.animation.tracks.push(new THREE.QuaternionKeyframeTrack(track.fullname, track.times, track.values));
+                            break;
+                        case "scale":
+                            this.animation.tracks.push(new THREE.VectorKeyframeTrack(track.fullname, track.times, track.values));
+                            break;
+                        default:
+                            this.animation.tracks.push(new THREE.NumberKeyframeTrack(track.fullname, track.times, track.values));
+                            break;
+                    } 
+                }
+            }
+            for(let i = 0; i< mixer._actions.length; i++) {
+                if(mixer._actions[i]._clip.name == animation.name) {
+                    this.mixer.uncacheClip(mixer._actions[i]._clip)
+                    this.mixer.uncacheAction(mixer._actions[i])
+                    this.mixer.clipAction(this.animation).play();
+                }
+            }
+            
+            if(this.bodyAnimation.name == animation.name)
+                this.bodyAnimation = animation;
+            else if(this.faceAnimation.name == animation.name)
+                this.faceAnimation = animation;
+        }
+        else {
+            let valueDeletedInfo = null;
+            for(let i = 0; i< mixer._actions.length; i++) {
+                if(mixer._actions[i]._clip.name == animation.name) {
+                    for(let j = 0; j < idx.length; j++) {
+    
+                        const track = animation.tracks[idx[j]];
+                        if(!track.active)
+                            continue;
+
+                        if( mixer._actions[i]._interpolants[idx[j]].parameterPositions.length > track.times.length )
+                            valueDeletedInfo = track;
+
+                        // Update times
+                        mixer._actions[i]._interpolants[idx[j]].parameterPositions = track.times;
+                        // Update values
+                        mixer._actions[i]._interpolants[idx[j]].sampleValues = track.values;
+
+                        
+                    }
+                    if(this.bodyAnimation.name == animation.name)
+                        this.bodyAnimation = animation;
+                    else if(this.faceAnimation.name == animation.name) {
+                        this.faceAnimation = animation;
+                        
+                        //update timeline animation track if a value is deleted
+                        if(this.auAnimation.name == animation.name && valueDeletedInfo) {
+
+                            for(let a = 0; a < this.auAnimation.tracks.length; a++) {
+                                if(this.auAnimation.tracks[a].name == valueDeletedInfo.fullname) {
+                                    this.auAnimation.tracks[a].values = valueDeletedInfo.values;
+                                    this.auAnimation.tracks[a].times = valueDeletedInfo.times;
+                                }
+                            }
+                        }
+                    }
+                    return;
+                }
+            }
+        }
+
+    }
+
+    removeAnimationData(animation, trackIdx, timeIdx) {
+        
+        if(this.activeTimeline.constructor.name == 'CurvesTimeline'){
+            let track = animation.tracks[trackIdx];
+            this.blendshapesArray[timeIdx][track.type] = 0;
+        }
+        this.updateAnimationAction(animation, trackIdx);
+        
+    }
+
+    setAnimationLoop(loop) {
+        
+        for(let i = 0; i < this.mixer._actions.length; i++) {
+
+            if(loop)
+                this.mixer._actions[i].loop = THREE.LoopOnce;
+            else
+                this.mixer._actions[i].loop = THREE.LoopRepeat;
+        }
+    }
+
+
+
+    
+
+    setAnimation(type) {
+        if(this.activeTimeline) {
+            this.activeTimeline.hide()
+        }
+        switch(type) {
+            case "Face":
+                this.activeTimeline = this.gui.curvesTimeline;
+                if(!this.selectedAU) return;
+                this.gizmo.stop();
+                this.activeTimeline.setAnimationClip( this.auAnimation );
+                this.activeTimeline.show();
+                this.setSelectedActionUnit(this.selectedAU);
+                
+                break;
+            case "Body":
+                this.activeTimeline = this.gui.keyFramesTimeline;
+                this.activeTimeline.setAnimationClip( this.bodyAnimation );
+                this.activeTimeline.show();            
+                break;
+
+             default:
+                this.activeTimeline = this.gui.clipsTimeline;
+                this.activeTimeline.show();
+                break;
+        }
+    }
+
+    
+
+    onAnimationEnded() {
+
+        if(this.animLoop) {
+            this.setTime(0.0, true);
+        } else {
+            this.mixer.setTime(0);
+            this.mixer._actions[0].paused = true;
+            let stateBtn = document.querySelector("[title=Play]");
+            stateBtn.children[0].click();
+
+            this.video.pause();
+            this.video.currentTime = this.video.startTime;
+        }
+    }
+
+
+    resize(width = this.gui.canvasArea.root.clientWidth, height = this.gui.canvasArea.root.clientHeight) {
+        
+        const aspect = width / height;
+        this.camera.aspect = aspect;
+        this.camera.updateProjectionMatrix();
+        this.renderer.setPixelRatio(aspect);
+        this.renderer.setSize(width, height);
+
+        this.gui.resize(width, height);
+    }
+
+    export(type = null) {
+        switch(type){
+            case 'BVH':
+                BVHExporter.export(this.mixer._actions[0], this.skeletonHelper, this.bodyAnimation);
+                break;
+            case 'GLB':
+                let options = {
+                    binary: true,
+                    animations: []
+                };
+                for(let i = 0; i < this.mixer._actions.length; i++) {
+                    options.animations.push(this.mixer._actions[i]._clip);
+                }
+                let model = this.mixer._root.getChildByName('Armature');
+                this.GLTFExporter.parse(model, 
+                    ( gltf ) => BVHExporter.download(gltf, 'animation.glb', 'arraybuffer' ), // called when the gltf has been generated
+                    ( error ) => { console.log( 'An error happened:', error ); }, // called when there is an error in the generation
+                options
+            );
+                break;
+            case 'BVH extended':
+                let LOCAL_STORAGE = 1;
+                if(this.mode == this.eModes.script) {
+                    BVHExporter.export(this.mixer._actions[0], this.skeletonHelper, this.animation, LOCAL_STORAGE );
+                    BVHExporter.exportMorphTargets(this.mixer._actions[0], this.morphTargets, this.animation, LOCAL_STORAGE);
+                }
+                else {
+                    BVHExporter.export(this.mixer._actions[0], this.skeletonHelper, this.bodyAnimation, LOCAL_STORAGE);
+                    BVHExporter.exportMorphTargets(this.mixer._actions[1], this.morphTargets, this.animation, LOCAL_STORAGE);
+                }
+                
+                let bvh = window.localStorage.getItem("bvhskeletonpreview");
+                bvh += window.localStorage.getItem("bvhblendshapespreview");
+                BVHExporter.download(bvh, this.animation.name + ".bvhe")
+                break;
+
+            default:
+                let json = this.exportBML();
+                BVHExporter.download(JSON.stringify(json), json.name, "application/json");
+                console.log(type + " ANIMATION EXPORTATION IS NOT YET SUPPORTED");
+                break;
+        }
+    }
+
+
+    showPreview() {
+        
+        let url = "";
+        if(this.mode == this.eModes.capture || this.mode == this.eModes.video) {
+
+            BVHExporter.copyToLocalStorage(this.mixer._actions[0], this.skeletonHelper, this.bodyAnimation);
+            url = "https://webglstudio.org/users/arodriguez/demos/animationLoader/?load=bvhskeletonpreview";
+        }
+        else{
+            url = "https://webglstudio.org/users/jpozo/SignONRealizer/dev/";
+            let json = this.exportBML();
+
+            const sendData = () => {
+                if(this.appR && this.appR.ECAcontroller)
+                    this.realizer.postMessage(JSON.stringify([{type: "bml", data: json.behaviours}]));
+                else {
+                    setTimeout(sendData, 1000)
+                }
+            }
+           
+            if(!this.realizer || this.realizer.closed)
+                this.realizer = window.open(url, "Preview");
+            else 
+                sendData();
+
+            this.realizer.onload = (e, d) => {
+                this.appR = e.currentTarget.global.app;
+                sendData();
+            }
+
+            this.realizer.addEventListener("beforeunload", () => {
+                this.realizer = null
+            });
+        }
+
+    }
+};
+
+class KeyframeEditor extends Editor{
+    
+    constructor(app) {
+                
+        super(app);
+
+        this.defaultTranslationSnapValue = 1;
+        this.defaultRotationSnapValue = 30; // Degrees
+        this.defaultScaleSnapValue = 1;
+
+        this.showSkeleton = true;
+        this.skeletonHelper = null;
+        this.skeleton = null;
+        
+        this.bodyAnimation = null;
+        this.faceAnimation = null; //ThreeJS BS animation (used for the mixer): {values: [], times: []}
+        this.auAnimation = null; //ThreeJS mediapipe AU animation (used for the timeline): [ {AU1: w1_0, AU2: w2_0, ...}, {AU1: w1_1, AU2: w2_1, ...}, ... ]
+        this.landmarksArray = [];
+        this.blendshapesArray = [];
+        this.applyRotation = false; // head and eyes rotation
+        this.selectedAU = "Brow Left";
+        this.nn = new NN("data/ML/model.json");
+        this.retargeting = new AnimationRetargeting();
+        this.video = app.video;
+        
+        this.mapNames = MapNames.map_llnames[this.character];
+        
+        this.gui = new KeyframesGui(this);
+
+        this.video = document.getElementById("recording");
+        this.video.startTime = 0;
+    
+        
     }
 
     /** -------------------- CREATE ANIMATIONS FROM MEDIAPIPE -------------------- */
@@ -320,9 +745,10 @@ class Editor {
                         this.bodyAnimation.tracks[i].name = this.bodyAnimation.tracks[i].name.replaceAll(/[\]\[]/g,"").replaceAll(".bones","");
 
                     }
+                    this.gizmo = new Gizmo(this);
                     this.gizmo.begin(this.skeletonHelper);
                     this.gui.loadKeyframeClip(this.bodyAnimation, () => this.gui.init());
-                    this.animationClip = this.bodyAnimation;
+                    this.animation = this.bodyAnimation;
                     this.mixer.clipAction( this.bodyAnimation ).setEffectiveWeight( 1.0 ).play();
                     this.mixer.update(0);
                     this.setBoneSize(0.05);
@@ -434,121 +860,6 @@ class Editor {
         }
 
         return blendshapes;
-    }
-
-    loadModel(clip) {
-        // Load the target model (Eva) 
-        UTILS.loadGLTF("models/Eva_Y.glb", (gltf) => {
-            let model = gltf.scene;
-            model.name = this.character;
-            model.visible = true;
-            
-            let skinnedMeshes = [];
-             model.traverse( (object) => {
-                    if ( object.isMesh || object.isSkinnedMesh ) {
-                        object.material.side = THREE.FrontSide;
-                        object.frustumCulled = false;
-                        object.castShadow = true;
-                        object.receiveShadow = true;
-
-                        if (object.name == "Eyelashes")
-                            object.castShadow = false;
-
-                        if(object.material.map)
-                            object.material.map.anisotropy = 16; 
-
-                        this.help = object.skeleton;
-                        if(object.morphTargetDictionary) {
-
-                            this.morphTargets = object.morphTargetDictionary;
-                            skinnedMeshes.push(object)
-                        }
-                        
-                    } else if (object.isBone) {
-                        object.scale.set(1.0, 1.0, 1.0);
-                    }
-                } );
-            
-            // correct model
-            // model.position.set(0, 0.75, 0);            
-            model.rotateOnAxis(new THREE.Vector3(1,0,0), -Math.PI/2);
-            this.skeletonHelper = this.retargeting.tgtSkeletonHelper || new THREE.SkeletonHelper(model);
-            this.skeletonHelper.name = "SkeletonHelper";
-
-            //Create animations
-            this.mixer = new THREE.AnimationMixer(model);
-            
-            this.skeletonHelper.skeleton = this.help; //= createSkeleton();
-
-            //Create face animation from mediapipe blendshapes
-            // this.blendshapesManager = new BlendshapesManager(skinnedMeshes, this.morphTargets, this.mapNames);
-            
-            // guizmo stuff
-            this.scene.add( model );
-            // this.scene.add( this.skeletonHelper );
-            //this.scene.add( this.retargeting.srcSkeletonHelper );
-            
-            // this.gui.createScriptTimeline();
-            // this.gui.updateMenubar();// this.onBeginEdition();
-            // Behaviour Planner
-            this.eyesTarget = new THREE.Object3D(); //THREE.Mesh( new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthWrite: false }) );
-            this.eyesTarget.name = "eyesTarget";
-            this.eyesTarget.position.set(0, 2.5, 15); 
-            this.headTarget = new THREE.Object3D(); //THREE.Mesh( new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshPhongMaterial({ color: 0xff0000 , depthWrite: false }) );
-            this.headTarget.name = "headTarget";
-            this.headTarget.position.set(0, 2.5, 15); 
-            this.neckTarget = new THREE.Object3D(); //THREE.Mesh( new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshPhongMaterial({ color: 0x00fff0 , depthWrite: false }) );
-            this.neckTarget.name = "neckTarget";
-            this.neckTarget.position.set(0, 2.5, 15); 
-
-            this.scene.add(this.eyesTarget);
-            this.scene.add(this.headTarget);
-            this.scene.add(this.neckTarget);
-            
-            model.eyesTarget = this.eyesTarget;
-            model.headTarget = this.headTarget;
-            model.neckTarget = this.neckTarget;
-            
-            this.animationClip = clip || {duration:0, tracks:[]};
-            this.setAnimation();
-            this.gui.loadBMLClip(this.animationClip, () => this.gui.init());
-          
-            this.NMFController = new BMLController(this, skinnedMeshes, this.morphTargets);
-            this.NMFController.onUpdateTracks = () => {
-                if(this.mixer._actions.length) this.mixer._actions.pop();
-                this.mixer.clipAction( this.animationClip  ).setEffectiveWeight( 1.0 ).play();
-            }
-            this.gui.clipsTimeline.onUpdateTrack = this.NMFController.updateTracks.bind(this.NMFController);
-            this.NMFController.begin(this.gui.clipsTimeline);
-            this.animate();
-            $('#loading').fadeOut();
-            
-        });   
-    }
-
-    loadFile(file) {
-        //load json (bml) file
-        const extension = UTILS.getExtension(file.name);
-        if(extension != "json")
-            return;
-        const fr = new FileReader();
-        fr.readAsText( file );
-        fr.onload = e => { 
-            let anim = JSON.parse(e.currentTarget.result);
-            if(this.animationClip.tracks.length) {
-                LX.prompt("There is already an animation. Do you want to overwrite it?", "", (v) => {
-                    this.emptyTracks();
-                    this.clipName = anim.name;
-                    this.animationClip = anim;
-                    this.gui.loadBMLClip(this.animationClip);
-                }, {on_cancel: () =>  this.gui.loadBMLClip(anim), input:false})
-            }
-            else {
-                this.clipName = anim.name;
-                this.animationClip = anim;
-                this.gui.loadBMLClip(this.animationClip);
-            }
-        }
     }
 
     loadAnimation( animation ) {
@@ -669,12 +980,12 @@ class Editor {
             this.scene.add( model );
             this.scene.add( this.skeletonHelper );
             //this.scene.add( this.retargeting.srcSkeletonHelper );
-            
+            this.gizmo = new Gizmo(this);
             this.gizmo.begin(this.skeletonHelper);
                     
             this.startEdition();// this.onBeginEdition();
             this.gui.loadKeyframeClip(this.bodyAnimation, () => this.gui.init());
-            this.animationClip = this.bodyAnimation;
+            this.animation = this.bodyAnimation;
       
             this.setBoneSize(0.05);
             this.animate();
@@ -707,7 +1018,7 @@ class Editor {
 
             this.mixer = new THREE.AnimationMixer( this.skeletonHelper );
             this.gui.loadKeyframeClip(this.bodyAnimation, () => this.gui.init());
-            this.animationClip = this.bodyAnimation;
+            this.animation = this.bodyAnimation;
 
             this.mixer.clipAction( this.bodyAnimation ).setEffectiveWeight( 1.0 ).play();
             
@@ -744,6 +1055,80 @@ class Editor {
         this.bodyAnimation.tracks = [...this.bodyAnimation.tracks, ...newTracks] ;
     }
 
+
+    onUpdateAnimationTime() {
+        
+        this.updateBoneProperties();
+        this.updateCaptureDataTime();
+    }
+
+    onPlay() {
+    
+        
+        this.gui.setBoneInfoState( false );
+        if(this.video.sync) {
+            try{
+                this.video.paused ? this.video.play() : 0;    
+            }catch(ex) {
+                console.error("video warning");
+            }
+        }
+
+    }
+
+    // Stop all animations 
+    onStop() {
+
+        this.gizmo.updateBones(t);
+        if(this.video.sync) {
+            this.video.pause();
+            this.video.currentTime = this.video.startTime;
+        }
+    }
+
+    onPause() {
+        if(this.state) {
+            
+            if(this.video.sync) {
+                try{
+                    this.video.paused ? this.video.pause() : 0;    
+                }catch(ex) {
+                   console.error("video warning");
+                }
+            }
+        } else {
+
+            this.state = false;
+            if(this.video.sync) {
+                this.video.pause();
+            }
+           
+        }
+        this.gui.setBoneInfoState( !this.state );
+    }
+
+    setTime(t, force) {
+
+        // Don't change time if playing
+
+        if(this.state && !force)
+            return;
+
+        this.mixer.setTime(t);
+            
+        this.onUpdateAnimationTime();
+        this.gizmo.updateBones();
+        
+        // Update video
+        this.video.currentTime = this.video.startTime + t;
+        if(this.state && force) {
+            try{
+                this.video.play();
+            }catch(ex) {
+                console.error("video warning");
+            }
+        }
+    }
 
     /** -------------------- BONES INTERACTION -------------------- */
     getSelectedBone() {
@@ -881,6 +1266,7 @@ class Editor {
         
     }
 
+    
     updateBlendshapesProperties(name, value) {
         value = Number(value);
         let tracksIdx = [];                    
@@ -911,38 +1297,58 @@ class Editor {
         }
     }
 
-    /** -------------------- BODY ANIMATION EDITION -------------------- */
-    cleanTracks(excludeList) {
+    updateCaptureDataTime(data, t) {
+        let timeAcc = 0;
+        let bs = null, lm = null;
+        let idx = -1;
 
-        if(!this.activeTimeline.animationClip)
-            return;
-
-        for( let i = 0; i < this.activeTimeline.animationClip.tracks.length; ++i ) {
-
-            const track = this.activeTimeline.animationClip.tracks[i];
-            let type = 'number';
-            if(this.activeTimeline.getTrackName && track.name) {
-
-                let [boneName, type] = this.activeTimeline.getTrackName(track.name);
-    
-                if(excludeList && excludeList.indexOf( boneName ) != -1)
-                    continue;
+        if(data) {
+            
+            for(let i = 0; i < data.blendshapesResults.length; i++) {
+                timeAcc += data.blendshapesResults[i].dt*0.001;
+                if(timeAcc <= t) {
+                    idx = i             
+                }
             }
-            let currentTrack = this.animationClip.tracks[track.idx];
-            track.times = new Float32Array( [currentTrack.times[0]] );
-
-            let n = 1;
-            if(type != 'number')
-                n = type === 'quaternion' ? 4 : 3;
-            track.values = track.values.slice(0, n );
-
-            this.updateAnimationAction(this.activeTimeline.animationClip,i);
-            if(this.activeTimeline.onPreProcessTrack)
-                this.activeTimeline.onPreProcessTrack( track, track.idx );
+            if(idx >= 0) {
+                bs = data.blendshapesResults[idx];
+                if(data.landmarksResults)
+                    lm = data.landmarksResults[idx];
+            }
         }
+        else {
+            bs = {};
+            t = t != undefined ? t : this.activeTimeline.currentTime;
+            for(let i = 0; i < this.activeTimeline.animationClip.tracks.length; i++) {
+                
+                const track = this.activeTimeline.animationClip.tracks[i];
+                if(track.name == this.selectedAU) {
+                    let tidx = null;
+                    let tidxend = null;
+                    let dt = track.times[1] - track.times[0];
+                    for(let j = 0; j < track.times.length; j++) {
+                        if(track.times[j] <= t + 0.01) {
+                            tidx = j;
+                        }
+                        else if(track.times[j] > t){
+                            tidxend = j;
+                            break;
+                        }
+                    }
+                    // let tidx = this.activeTimeline.getCurrentKeyFrame(track, this.activeTimeline.currentTime, 0.01);
+                    if(tidx < 0 || tidx == undefined)
+                        continue;
+                    let f = (Math.abs(t - track.times[tidx]) / (track.times[tidxend] - track.times[tidx]) );
+                    let value = (1 - f)*track.values[tidx] + f*track.values[tidxend];
+                    bs[track.type] = value;
+
+                }
+            }
+        }
+        this.gui.updateCaptureGUI({blendshapesResults: bs, landmarksResults: lm}, false)
     }
 
-    emptyTracks() {
+    cleanTracks() {
         if(!this.activeTimeline.animationClip)
             return;
 
@@ -951,472 +1357,225 @@ class Editor {
             const track = this.activeTimeline.animationClip.tracks[i];
             if(this.activeTimeline.selectedItems && this.activeTimeline.selectedItems.indexOf(track.name)< 0 && this.mode != this.eModes.script)
                 continue;
-            let idx = this.mode == this.eModes.script ? track.idx : track.clipIdx;
+            let idx =  track.clipIdx;
             let value = null;
-            if(this.mode != this.eModes.script) {
                 
-                if(track.dim == 1)
-                    value = 0;
-                else
-                    value = [0,0,0,1];
-            } 
+            if(track.dim == 1)
+                value = 0;
+            else
+                value = [0,0,0,1];
 
             this.activeTimeline.cleanTrack(idx, value);
-            // if(value != null) {
-            //     this.activeTimeline.addKeyFrame(track, value, 0);
-            // }
-                
-            this.updateAnimationAction(this.activeTimeline.animationClip, idx, false);
+            this.updateAnimationAction(this.activeTimeline.animationClip, idx, true);
             if(this.activeTimeline.onPreProcessTrack)
                 this.activeTimeline.onPreProcessTrack( track, track.idx );
-        }
-        this.updateTracks();
-    }
+        } 
 
-    optimizeTrack(trackIdx, threshold = this.optimizeThreshold) {
-        this.optimizeThreshold = this.activeTimeline.optimizeThreshold;
-        const track = this.animationClip.tracks[trackIdx];
-        track.optimize( this.optimizeThreshold );
-        this.updateAnimationAction(this.animationClip, trackIdx);
-    }
-
-    optimizeTracks(tracks) {
-
-        if(!this.activeTimeline.animationClip)
-            return;
-
-        for( let i = 0; i < this.activeTimeline.animationClip.tracks.length; ++i ) {
-            const track = this.activeTimeline.animationClip.tracks[i];
-            if(track.optimize) {
-
-                track.optimize( this.optimizeThreshold );
-                this.updateAnimationAction(this.animationClip, i);
-    
-                // this.gui.keyFramesTimeline.onPreProcessTrack( track, i );
-            }
-        }
-        this.activeTimeline.draw();
-        // this.gui.keyFramesTimeline.draw();
-        // if(this.gui.clipsTimeline)
-        //     this.gui.clipsTimeline.optimizeTracks();
-        // this.gui.clipsTimeline.draw();
-    }
-
-    updateAnimationAction(animation, idx, replace = false) {
-        if(!this.bodyAnimation) 
-            return;
-        const mixer = this.mixer;
-
-        if(!mixer._actions.length) 
-            return;
-
-        if(typeof idx == 'number')
-            idx = [idx];
-
-        if(replace) {
-            this.animationClip.tracks = [];
-            for(let i = 0; i < animation.tracks.length; i++) {
-                const track = animation.tracks[i];
-                if(track.active) {
-                    switch(track.type) {
-                        case "position":
-                            this.animationClip.tracks.push(new THREE.VectorKeyframeTrack(track.fullname, track.times, track.values));
-                            break;
-                        case "quaternion":
-                            this.animationClip.tracks.push(new THREE.QuaternionKeyframeTrack(track.fullname, track.times, track.values));
-                            break;
-                        case "scale":
-                            this.animationClip.tracks.push(new THREE.VectorKeyframeTrack(track.fullname, track.times, track.values));
-                            break;
-                        default:
-                            this.animationClip.tracks.push(new THREE.NumberKeyframeTrack(track.fullname, track.times, track.values));
-                            break;
-                    } 
-                }
-            }
-            for(let i = 0; i< mixer._actions.length; i++) {
-                if(mixer._actions[i]._clip.name == animation.name) {
-                    this.mixer.uncacheClip(mixer._actions[i]._clip)
-                    this.mixer.uncacheAction(mixer._actions[i])
-                    this.mixer.clipAction(this.animationClip).play();
-                }
-            }
             
-            if(this.bodyAnimation.name == animation.name)
-                this.bodyAnimation = animation;
-            else if(this.faceAnimation.name == animation.name)
-                this.faceAnimation = animation;
-        }
-        else {
-            let valueDeletedInfo = null;
-            for(let i = 0; i< mixer._actions.length; i++) {
-                if(mixer._actions[i]._clip.name == animation.name) {
-                    for(let j = 0; j < idx.length; j++) {
+    }
+
+
+}
+
+class ScriptEditor extends Editor{
     
-                        const track = animation.tracks[idx[j]];
-                        if(!track.active)
-                            continue;
+    constructor(app) {
+                
+        super(app);
+        // -------------------- SCRIPT MODE --------------------
+        this.gizmo = null;        
+        this.dominantHand = "Right";
+        
+        this.blendshapesManager = null;
+  
+    	this.onDrawTimeline = null;
+	    this.onDrawSettings = null;
 
-                        if( mixer._actions[i]._interpolants[idx[j]].parameterPositions.length > track.times.length )
-                            valueDeletedInfo = track;
+        this.activeTimeline = null;
+        // ------------------------------------------------------
+        
+        this.gui = new ScriptGui(this);
+        
+    }
+    
 
-                        // Update times
-                        mixer._actions[i]._interpolants[idx[j]].parameterPositions = track.times;
-                        // Update values
-                        mixer._actions[i]._interpolants[idx[j]].sampleValues = track.values;
+    loadModel(clip) {
+        // Load the target model (Eva) 
+        UTILS.loadGLTF("models/Eva_Y.glb", (gltf) => {
+            let model = gltf.scene;
+            model.name = this.character;
+            model.visible = true;
+            
+            let skinnedMeshes = [];
+             model.traverse( (object) => {
+                    if ( object.isMesh || object.isSkinnedMesh ) {
+                        object.material.side = THREE.FrontSide;
+                        object.frustumCulled = false;
+                        object.castShadow = true;
+                        object.receiveShadow = true;
 
-                        
-                    }
-                    if(this.bodyAnimation.name == animation.name)
-                        this.bodyAnimation = animation;
-                    else if(this.faceAnimation.name == animation.name) {
-                        this.faceAnimation = animation;
-                        
-                        //update timeline animation track if a value is deleted
-                        if(this.auAnimation.name == animation.name && valueDeletedInfo) {
+                        if (object.name == "Eyelashes")
+                            object.castShadow = false;
 
-                            for(let a = 0; a < this.auAnimation.tracks.length; a++) {
-                                if(this.auAnimation.tracks[a].name == valueDeletedInfo.fullname) {
-                                    this.auAnimation.tracks[a].values = valueDeletedInfo.values;
-                                    this.auAnimation.tracks[a].times = valueDeletedInfo.times;
-                                }
-                            }
+                        if(object.material.map)
+                            object.material.map.anisotropy = 16; 
+
+                        this.help = object.skeleton;
+                        if(object.morphTargetDictionary) {
+
+                            this.morphTargets = object.morphTargetDictionary;
+                            skinnedMeshes.push(object)
                         }
+                        
+                    } else if (object.isBone) {
+                        object.scale.set(1.0, 1.0, 1.0);
                     }
-                    return;
-                }
+                } );
+            
+            // correct model
+            // model.position.set(0, 0.75, 0);            
+            model.rotateOnAxis(new THREE.Vector3(1,0,0), -Math.PI/2);
+            // this.skeletonHelper = this.retargeting.tgtSkeletonHelper || new THREE.SkeletonHelper(model);
+            // this.skeletonHelper.name = "SkeletonHelper";
+
+            //Create animations
+            this.mixer = new THREE.AnimationMixer(model);
+            
+            // this.skeletonHelper.skeleton = this.help; //= createSkeleton();
+
+            //Create face animation from mediapipe blendshapes
+            // this.blendshapesManager = new BlendshapesManager(skinnedMeshes, this.morphTargets, this.mapNames);
+            
+            // guizmo stuff
+            this.scene.add( model );
+            // this.scene.add( this.skeletonHelper );
+            //this.scene.add( this.retargeting.srcSkeletonHelper );
+            
+            // this.gui.createScriptTimeline();
+            // this.gui.updateMenubar();// this.onBeginEdition();
+            // Behaviour Planner
+            this.eyesTarget = new THREE.Object3D(); //THREE.Mesh( new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthWrite: false }) );
+            this.eyesTarget.name = "eyesTarget";
+            this.eyesTarget.position.set(0, 2.5, 15); 
+            this.headTarget = new THREE.Object3D(); //THREE.Mesh( new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshPhongMaterial({ color: 0xff0000 , depthWrite: false }) );
+            this.headTarget.name = "headTarget";
+            this.headTarget.position.set(0, 2.5, 15); 
+            this.neckTarget = new THREE.Object3D(); //THREE.Mesh( new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshPhongMaterial({ color: 0x00fff0 , depthWrite: false }) );
+            this.neckTarget.name = "neckTarget";
+            this.neckTarget.position.set(0, 2.5, 15); 
+
+            this.scene.add(this.eyesTarget);
+            this.scene.add(this.headTarget);
+            this.scene.add(this.neckTarget);
+            
+            model.eyesTarget = this.eyesTarget;
+            model.headTarget = this.headTarget;
+            model.neckTarget = this.neckTarget;
+            
+            this.animation = clip || {duration:0, tracks:[]};
+            this.setAnimation();
+            this.gui.loadBMLClip(this.animation, () => this.gui.init());
+          
+            this.gizmo = new BMLController(this, skinnedMeshes, this.morphTargets);
+            this.gizmo.onUpdateTracks = () => {
+                if(this.mixer._actions.length) this.mixer._actions.pop();
+                this.mixer.clipAction( this.animation  ).setEffectiveWeight( 1.0 ).play();
+            }
+            this.gui.clipsTimeline.onUpdateTrack = this.gizmo.updateTracks.bind(this.gizmo);
+            this.gizmo.begin(this.gui.clipsTimeline);
+            this.animate();
+            $('#loading').fadeOut();
+            
+        });   
+    }
+
+    loadFile(file) {
+        //load json (bml) file
+        const extension = UTILS.getExtension(file.name);
+        if(extension != "json")
+            return;
+        const fr = new FileReader();
+        fr.readAsText( file );
+        fr.onload = e => { 
+            let anim = JSON.parse(e.currentTarget.result);
+            if(this.animation.tracks.length) {
+                this.gui.prompt = new LX.Dialog("Import animation" , (p) => {
+                    p.addText("", "There is already an animation. What do you want to do?", null, {disabled: true});
+                    p.sameLine(3);
+                    p.addButton(null, "Replace", () => { 
+                        this.cleanTracks();
+                        this.clipName = anim.name;
+                        this.animation = anim;
+                        this.gui.loadBMLClip(this.animation);
+                        this.gui.prompt.close();
+                    }, { buttonClass: "accept" });
+                    p.addButton(null, "Concatenate", () => { 
+                        this.gui.loadBMLClip(anim);
+                        this.gui.prompt.close() }, { buttonClass: "accept" });
+                    p.addButton(null, "Cancel", () => { this.gui.prompt.close();} );
+                    
+                    
+                })
+                
+            }
+            else {
+                this.clipName = anim.name;
+                this.animation = anim;
+                this.gui.loadBMLClip(this.animation);
             }
         }
-
     }
 
-    removeAnimationData(animation, trackIdx, timeIdx) {
-        
-        if(this.activeTimeline.constructor.name == 'CurvesTimeline'){
-            let track = animation.tracks[trackIdx];
-            this.blendshapesArray[timeIdx][track.type] = 0;
-        }
-        this.updateAnimationAction(animation, trackIdx);
-        
-    }
-
-    setAnimationLoop(loop) {
-        
-        for(let i = 0; i < this.mixer._actions.length; i++) {
-
-            if(loop)
-                this.mixer._actions[i].loop = THREE.LoopOnce;
-            else
-                this.mixer._actions[i].loop = THREE.LoopRepeat;
-        }
-    }
-
-    /** BML ANIMATION */ 
+      /** BML ANIMATION */ 
     
     updateTracks(tracks) {
         this.mixer.update(this.activeTimeline.currentTime);
 
-        if(!this.NMFController)
+        if(!this.gizmo)
             return;
-        this.NMFController.updateTracks();
+        this.gizmo.updateTracks();
 
         if(tracks) {
             for(let t = 0; t < tracks.length; t++) {
                 let [trackIdx, clipIdx] = tracks[t];
                 let clip = this.gui.clipsTimeline.animationClip.tracks[trackIdx].clips[clipIdx].toJSON();
-                if(this.animationClip.tracks.length == trackIdx)
-                    this.animationClip.tracks.push([clip]);
+                if(this.animation.tracks.length == trackIdx)
+                    this.animation.tracks.push([clip]);
                 else
-                    this.animationClip.tracks[trackIdx][clipIdx] = clip;
+                    this.animation.tracks[trackIdx][clipIdx] = clip;
             }
         }
         // else if(trackIdx != null) {
         //     for(let i = 0; i < this.gui.clipsTimeline.animationClip.tracks[trackIdx].clips.length; i++) {
 
-        //         this.animationClip.tracks[trackIdx][i] = this.gui.clipsTimeline.animationClip.tracks[trackIdx].clips[i];
+        //         this.animation.tracks[trackIdx][i] = this.gui.clipsTimeline.animationClip.tracks[trackIdx].clips[i];
         //     }
         // }
          else {
             for(let idx = 0; idx < this.gui.clipsTimeline.animationClip.tracks.length; idx++) {
                 for(let i = 0; i < this.gui.clipsTimeline.animationClip.tracks[idx].clips.length; i++) {
 
-                    this.animationClip.tracks[idx][i] = this.gui.clipsTimeline.animationClip.tracks[idx].clips[i].toJSON();
+                    this.animation.tracks[idx][i] = this.gui.clipsTimeline.animationClip.tracks[idx].clips[i].toJSON();
                 }
             }
         }
     }
 
-
-    /** -------------------- UPDATES, RENDER AND EVENTS -------------------- */
-
-    animate() {
-        
-        requestAnimationFrame(this.animate.bind(this));
-
-        this.render();
-        this.update(this.clock.getDelta());
-
-    }
-
-    render() {
-
-        if(!this.renderer)
+    cleanTracks() {
+        if(!this.activeTimeline.animationClip)
             return;
 
-        this.renderer.render(this.scene, this.camera);
-        if(this.activeTimeline)
-            this.gui.drawTimeline(this.activeTimeline);            
+        for( let i = 0; i < this.activeTimeline.animationClip.tracks.length; ++i ) {
 
-    }
-
-    update(dt) {
-
-        if(this.currentTime > this.activeTimeline.duration) {
-            this.currentTime = this.activeTimeline.currentTime = 0.0;
-            this.onAnimationEnded();
-        }
-        if (this.mixer && this.state) {
-
-            this.mixer.update(dt);
-            this.currentTime = this.activeTimeline.currentTime = this.mixer.time;
-            LX.emit( "@on_current_time_" + this.activeTimeline.constructor.name, this.currentTime );
-            if(this.mode == this.eModes.capture || this.mode == this.eModes.video) {
-
-                this.updateBoneProperties();
-                this.updateCaptureDataTime({blendshapesResults: this.blendshapesArray}, this.mixer.time);
-            }
-        }
-       
-       
-        this.gizmo.update(this.state, dt);
-        if(this.NMFController)
-            this.NMFController.update(this.state, dt);
-    }
-
-    onChangeMode(mode) {
-        this.mode = mode;
-        if( this.mode == this.eModes.NMF ) {
-            this.gizmo.disable();
-        }
-        else {
-            this.gizmo.enable();
-        }
-    }
-    
-    setTime(t, force) {
-
-        // Don't change time if playing
-        // this.gui.currentTime = t;
-        if(this.state && !force)
-            return;
-
-        this.mixer.setTime(t);
-        if(this.mode == this.eModes.video || this.mode == this.eModes.capture) {
-
-            this.gizmo.updateBones(0.0);
-            this.updateBoneProperties();
-            //results = {faceBlendshapes: {}}
-            this.updateCaptureDataTime({blendshapesResults: this.blendshapesArray}, t);
-            // Update video
-            this.video.currentTime = this.video.startTime + t;
-            if(this.state && force) {
-                try{
-                    this.video.play();
-                }catch(ex) {
-                    console.error("video warning");
-                }
-            }
-        }
-    }
-
-    setAnimation(type) {
-        if(this.activeTimeline) {
-            this.activeTimeline.hide()
-        }
-        switch(type) {
-            case "Face":
-                this.activeTimeline = this.gui.curvesTimeline;
-                if(!this.selectedAU) return;
-                this.gizmo.stop();
-                this.activeTimeline.setAnimationClip( this.auAnimation );
-                this.activeTimeline.show();
-                this.setSelectedActionUnit(this.selectedAU);
-                
-                break;
-            case "Body":
-                this.activeTimeline = this.gui.keyFramesTimeline;
-                this.activeTimeline.setAnimationClip( this.bodyAnimation );
-                this.activeTimeline.show();            
-                break;
-
-             default:
-                this.activeTimeline = this.gui.clipsTimeline;
-                this.activeTimeline.show();
-                break;
-        }
-    }
-
-    updateCaptureDataTime(data, t) {
-        let timeAcc = 0;
-        let bs = null, lm = null;
-        let idx = -1;
-
-        for(let i = 0; i < data.blendshapesResults.length; i++) {
-            timeAcc += data.blendshapesResults[i].dt*0.001;
-            if(timeAcc <= t) {
-                idx = i
-                
-            }
-        }
-        if(idx >= 0) {
-            bs = data.blendshapesResults[idx];
-            if(data.landmarksResults)
-                lm = data.landmarksResults[idx];
-        }
+            const track = this.activeTimeline.animationClip.tracks[i];
+            let idx = track.idx;
             
-        this.gui.updateCaptureGUI({blendshapesResults: bs, landmarksResults: lm}, false)
-    }
-
-    // Play all animations
-    onPlay(element, e) {
-    
-        this.state = true;
-        this.activeTimeline.active = false;
-        this.gui.setBoneInfoState( true );
-        if(this.video.sync) {
-            try{
-                this.video.paused ? this.video.play() : 0;    
-            }catch(ex) {
-                console.error("video warning");
-            }
-        }
-
-    }
-
-    // Stop all animations 
-    onStop(element, e) {
-
-        this.state = false;
-        this.activeTimeline.active = true;
-        element.innerHTML = "<i class='bi bi-play-fill'></i>";
-        //element.style.removeProperty("border");
-        this.gui.setBoneInfoState( true );
-        this.stopAnimation();
-
-        if(this.video.sync) {
-            this.video.pause();
-            this.video.currentTime = this.video.startTime;
-        }
-        this.setTime(0);
-    }
-
-    onPause(element, e) {
-        this.state = !this.state;
-        this.activeTimeline.active = !this.activeTimeline.active;
-
-        if(this.state) {
-            
-            this.gui.setBoneInfoState( true );
-            if(this.video.sync) {
-                try{
-                    this.video.paused ? this.video.pause() : 0;    
-                }catch(ex) {
-                    console.error("video warning");
-                }
-            }
-        } else {
-
-            this.state = false;
-            if(this.video.sync) {
-                this.video.pause();
-            }
-            this.mixer._actions[0].paused = false;
-            this.gizmo.stop();
-            if(this.NMFController)
-               this.NMFController.stop();
-        }
+            this.activeTimeline.cleanTrack(idx);
         
-        this.gui.setBoneInfoState( false );
-        // (this.video.paused && this.video.sync) ? this.video.play() : 0;    
-    }
-
-    stopAnimation() {
-        let t = 0.0;
-        this.mixer.setTime(t);
-        this.gizmo.updateBones(t);
-        this.activeTimeline.currentTime = t;
-        this.activeTimeline.onSetTime(t);
-    }
-
-    onAnimationEnded() {
-
-        if(this.animLoop) {
-            this.setTime(0.0, true);
-        } else {
-            this.mixer.setTime(0);
-            this.mixer._actions[0].paused = true;
-            let stateBtn = document.querySelector("[title=Play]");
-            stateBtn.children[0].click();
-
-            this.video.pause();
-            this.video.currentTime = this.video.startTime;
+            if(this.activeTimeline.onPreProcessTrack)
+                this.activeTimeline.onPreProcessTrack( track, track.idx );
         }
-    }
-
-
-    resize(width = this.gui.canvasArea.root.clientWidth, height = this.gui.canvasArea.root.clientHeight) {
-        
-        const aspect = width / height;
-        this.camera.aspect = aspect;
-        this.camera.updateProjectionMatrix();
-        this.renderer.setPixelRatio(aspect);
-        this.renderer.setSize(width, height);
-
-        this.gui.resize(width, height);
-    }
-
-    export(type = null) {
-        switch(type){
-            case 'BVH':
-                BVHExporter.export(this.mixer._actions[0], this.skeletonHelper, this.bodyAnimation);
-                break;
-            case 'GLB':
-                let options = {
-                    binary: true,
-                    animations: []
-                };
-                for(let i = 0; i < this.mixer._actions.length; i++) {
-                    options.animations.push(this.mixer._actions[i]._clip);
-                }
-                let model = this.mixer._root.getChildByName('Armature');
-                this.GLTFExporter.parse(model, 
-                    ( gltf ) => BVHExporter.download(gltf, 'animation.glb', 'arraybuffer' ), // called when the gltf has been generated
-                    ( error ) => { console.log( 'An error happened:', error ); }, // called when there is an error in the generation
-                options
-            );
-                break;
-            case 'BVH extended':
-                let LOCAL_STORAGE = 1;
-                if(this.mode == this.eModes.script) {
-                    BVHExporter.export(this.mixer._actions[0], this.skeletonHelper, this.animationClip, LOCAL_STORAGE );
-                    BVHExporter.exportMorphTargets(this.mixer._actions[0], this.morphTargets, this.animationClip, LOCAL_STORAGE);
-                }
-                else {
-                    BVHExporter.export(this.mixer._actions[0], this.skeletonHelper, this.bodyAnimation, LOCAL_STORAGE);
-                    BVHExporter.exportMorphTargets(this.mixer._actions[1], this.morphTargets, this.animationClip, LOCAL_STORAGE);
-                }
-                
-                let bvh = window.localStorage.getItem("bvhskeletonpreview");
-                bvh += window.localStorage.getItem("bvhblendshapespreview");
-                BVHExporter.download(bvh, this.animationClip.name + ".bvhe")
-                break;
-
-            default:
-                let json = this.exportBML();
-                BVHExporter.download(JSON.stringify(json), json.name, "application/json");
-                console.log(type + " ANIMATION EXPORTATION IS NOT YET SUPPORTED");
-                break;
-        }
+        this.updateTracks();
     }
 
     exportBML() {
@@ -1425,7 +1584,7 @@ class Editor {
             behaviours: [],
             indices: [],
             name : this.gui.clipsTimeline.animationClip.name || "bml animation",
-            duration: this.animationClip.duration,
+            duration: this.animation.duration,
         }
 
         if(!this.gui.clipsTimeline.animationClip) {
@@ -1449,43 +1608,5 @@ class Editor {
 
         return json;
     }
-
-    showPreview() {
-        
-        let url = "";
-        if(this.mode == this.eModes.capture || this.mode == this.eModes.video) {
-
-            BVHExporter.copyToLocalStorage(this.mixer._actions[0], this.skeletonHelper, this.bodyAnimation);
-            url = "https://webglstudio.org/users/arodriguez/demos/animationLoader/?load=bvhskeletonpreview";
-        }
-        else{
-            url = "https://webglstudio.org/users/jpozo/SignONRealizer/dev/";
-            let json = this.exportBML();
-
-            const sendData = () => {
-                if(this.appR && this.appR.ECAcontroller)
-                    this.realizer.postMessage(JSON.stringify([{type: "bml", data: json.behaviours}]));
-                else {
-                    setTimeout(sendData, 1000)
-                }
-            }
-           
-            if(!this.realizer || this.realizer.closed)
-                this.realizer = window.open(url, "Preview");
-            else 
-                sendData();
-
-            this.realizer.onload = (e, d) => {
-                this.appR = e.currentTarget.global.app;
-                sendData();
-            }
-
-            this.realizer.addEventListener("beforeunload", () => {
-                this.realizer = null
-            });
-        }
-
-    }
-};
-
-export { Editor };
+}
+export { Editor, KeyframeEditor, ScriptEditor };

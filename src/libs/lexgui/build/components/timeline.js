@@ -44,7 +44,7 @@
             this.framerate = 30;
             this.opacity = options.opacity || 1;
             this.sidebarWidth = 0// 200;
-            this.topMargin = 46;
+            this.topMargin = 47;
             this.renderOutFrames = false;
             this.lastMouse = [];
             this.lastKeyFramesSelected = [];
@@ -109,14 +109,16 @@
             this.canvas.addEventListener("mousedown", this.processMouse.bind(this));
             this.canvas.addEventListener("mouseup", this.processMouse.bind(this));
             this.canvas.addEventListener("mousemove", this.processMouse.bind(this));
-            this.canvas.addEventListener("wheel", this.processMouse.bind(this), {passive:false});
+            this.canvas.addEventListener("wheel", this.processMouse.bind(this));
             this.canvas.addEventListener("dblclick", this.processMouse.bind(this));
             this.canvas.addEventListener("contextmenu", this.processMouse.bind(this));
 
             // setTimeout( () => this.resize(), 10 );
 
             right.onresize = bounding => {
-                this.#resizecanvas( [ bounding.width, bounding.height ] );
+                if(!(bounding.width && bounding.height)) 
+                    return;
+                this.#resizeCanvas( [ bounding.width, bounding.height + this.header_offset ] );
             }
         }
 
@@ -189,8 +191,10 @@
             }
 
             let panel = this.leftPanel;
-            // panel.addBlank(25);
-            panel.addTitle("Tracks");
+            let title = panel.addTitle("Tracks");
+            const styles = window.getComputedStyle(title);
+            const titleHeight = title.clientHeight + parseFloat(styles['marginTop']) + parseFloat(styles['marginBottom']);
+            let p = new LX.Panel({height: "calc(100% - " + titleHeight + "px)"});
 
             if(this.animationClip && this.selectedItems)  {
                 let items = {'id': '', 'children': []};
@@ -241,7 +245,7 @@
                         // panel.addTitle(track.name + (track.type? '(' + track.type + ')' : ''));
                     }
                     items.children.push(t);
-                    let el = panel.addTree(null, t, {filter: false, rename: false, draggable: false, onevent: (e) => {
+                    let el = p.addTree(null, t, {filter: false, rename: false, draggable: false, onevent: (e) => {
                         switch(e.type) {
                             case LX.TreeEvent.NODE_SELECTED:
                                 this.selectTrack(e.node);
@@ -255,20 +259,21 @@
                         }
                     }});
 
-                    el.domEl.addEventListener("wheel", (e) => {
-                        let event = new e.constructor(e.type, e);
-                        this.canvas.dispatchEvent(event);
-                     })
                 }
             }
-
+            panel.attach(p.root)
+            p.root.style.overflowY = "scroll";
+            p.root.addEventListener("scroll", (e) => {
+               
+                this.currentScroll = e.currentTarget.scrollTop/(e.currentTarget.scrollHeight - e.currentTarget.clientHeight);
+             })
             // for(let i = 0; i < this.animationClip.tracks.length; i++) {
             //     let track = this.animationClip.tracks[i];
             //     panel.addTitle(track.name + (track.type? '(' + track.type + ')' : ''));
             // }
-            if(this.leftPanel.parent.root.classList.contains("hidden"))
+            if(this.leftPanel.parent.root.classList.contains("hidden") || !this.root.root.parent)
                 return;
-            this.#resizecanvas([ this.root.root.clientWidth - this.leftPanel.root.clientWidth  - 8, this.size[1]]);
+            this.#resizeCanvas([ this.root.root.clientWidth - this.leftPanel.root.clientWidth  - 8, this.size[1]]);
         }
 
         /**
@@ -440,13 +445,13 @@
             for(let i = 0; i < max_tracks; ++i)
             {
                 ctx.fillStyle = i % 2 == 0 ?  Timeline.TRACK_COLOR_PRIMARY:  Timeline.BACKGROUND_COLOR;
-                ctx.fillRect(0, timeline_height + i * line_height, w, line_height );
+                ctx.fillRect(0, timeline_height + i * line_height  - this.currentScrollInPixels, w, line_height );
             }
         
             //black bg
             ctx.globalAlpha = 0.7;
             ctx.fillStyle = Timeline.BACKGROUND_COLOR;
-            ctx.fillRect( margin, timeline_height, canvas.width - margin, canvas.height - timeline_height );
+            ctx.fillRect( margin, timeline_height - this.currentScrollInPixels, canvas.width - margin, canvas.height - timeline_height );
             ctx.globalAlpha = this.opacity;
             
             //bg lines
@@ -707,7 +712,21 @@
              else 
                 this.canvas.style.cursor = "default";
     
-            var time = this.xToTime(x, true);
+            if( e.type == "wheel" ) {
+                if(e.ctrlKey)
+                {
+                    this.setScale( e.wheelDelta < 0 ? 0.95 : 1.05 );
+                }
+                else if( h < this.scrollableHeight)
+                {
+                    this.currentScroll =  LX.UTILS.clamp( this.currentScroll + (e.wheelDelta < 0 ? 0.1 : -0.1), 0, 1);
+                    this.leftPanel.root.children[1].scrollTop = this.currentScroll* (this.scrollableHeight - h);
+                }
+                
+                return;
+            }
+
+                var time = this.xToTime(x, true);
 
             var is_inside = x >= this.position[0] && x <= (this.position[0] + this.size[0]) &&
                             y >= this.position[1] && y <= (this.position[1] + this.size[1]);
@@ -773,17 +792,24 @@
                 if(this.trackBulletCallback && e.track)
                     this.trackBulletCallback(e.track,e,this,[localX,localY]);
 
-                if( h < this.scrollableHeight && x > w - 10 )
+                if(e.localY <= this.topMargin) {
+                    this.currentTime = time;
+                    innerSetTime(this.currentTime);
+                }
+                else if( h < this.scrollableHeight && x > w - 10 )
                 {
                     this.grabbingScroll = true;
                     this.grabbing = true;
                 }
                 else
                 {
-                    this.grabbing = true;
-                    this.grabTime = time - this.currentTime;
+                    if(!track || track && this.getCurrentKeyFrame(track, time, 0.001) == undefined) {
 
-                    this.grabbing_timeline = current_grabbing_timeline;
+                        this.grabbing = true;
+                        this.grabTime = time - this.currentTime;
+    
+                        this.grabbing_timeline = current_grabbing_timeline;
+                    }
 
                     if(this.onMouseDown && this.active )
                         this.onMouseDown(e, time);
@@ -821,18 +847,6 @@
                 }
                 if(this.onMouseMove)
                     this.onMouseMove(e, time);
-            }
-
-            else if( e.type == "wheel" ) {
-                if(e.ctrlKey)
-                {
-                    this.setScale( e.wheelDelta < 0 ? 0.95 : 1.05 );
-                }
-                else if( h < this.scrollableHeight)
-                {
-                    this.currentScroll = LX.UTILS.clamp( this.currentScroll + (e.wheelDelta < 0 ? 0.1 : -0.1), 0, 1);
-                }
-                
             }
             else if (e.type == "dblclick" && this.onDblClick) {
                 this.onDblClick(e);	
@@ -1152,12 +1166,17 @@
             this.content_area.setSize([size[0], size[1] - this.header_offset]);
             
             let w = size[0] - this.leftPanel.root.clientWidth - 8;
-            this.#resizecanvas([w , size[1]]);
+            this.#resizeCanvas([w , size[1]]);
         }
 
-        #resizecanvas( size ) {
+        #resizeCanvas( size ) {
+            if( size[0] <= 0 && size[1] <=0 )
+                return;
+
+            size[1] -= this.header_offset;
+            this.canvasArea.setSize(size);
             this.canvas.width = size[0];
-            this.canvas.height = size[1] - this.header_offset;
+            this.canvas.height = size[1];
             var w = Math.max(300, this.canvas.width);
             this.secondsToPixels = ( w - this.session.left_margin ) / this.duration;
             this.pixelsToSeconds = 1 / this.secondsToPixels;
@@ -1306,12 +1325,16 @@
                 this.boxSelectionStart = [localX, localY - 20];
                 e.multipleSelection = true;
             }
-            else if(e.ctrlKey && track && !track.locked) {
+            else if(track && !track.locked) {
                 const keyFrameIndex = this.getCurrentKeyFrame( track, this.xToTime( localX ), this.pixelsToSeconds * 5 );
                 if( keyFrameIndex != undefined ) {
                     this.processCurrentKeyFrame( e, keyFrameIndex, track, null, e.multipleSelection ); // Settings this as multiple so time is not being set
-                    this.movingKeys = true;
-                    this.canvas.style.cursor = "grab";  
+                    if(e.ctrlKey ) {
+
+                        this.movingKeys = true;
+                        this.canvas.style.cursor = "grab";  
+                        this.canvas.classList.add('grabbing');
+                    }
                     // Set pre-move state
                     for(let selectedKey of this.lastKeyFramesSelected) {
                         let [name, idx, keyIndex] = selectedKey;
@@ -1320,7 +1343,7 @@
                     }
                     
                     this.timeBeforeMove = track.times[ keyFrameIndex ];
-                    this.canvas.classList.add('grabbing');
+                    
                     
                 }
             } else if(!track) {
@@ -1506,6 +1529,7 @@
                 return;
             
             ctx.save();
+            this.scrollableHeight = this.topMargin;
 
             let offset = this.trackHeight;
             for(let t = 0; t < this.selectedItems.length; t++) {
@@ -1513,7 +1537,7 @@
                 if(!tracks) continue;
                 
                 const height = this.trackHeight;
-                this.scrollableHeight = (tracks.length+1)*height + this.topMargin;
+                this.scrollableHeight += (tracks.length+1)*height;
                 let	scroll_y = - this.currentScrollInPixels;
 
                 let offsetI = 0;
@@ -2167,6 +2191,9 @@
             const name = this.tracksDictionary[track.fullname];
             let t = this.tracksPerItem[ name ][track.idx];
             let currentSelection = [name, track.idx, keyFrameIndex];
+            if(this.lastKeyFramesSelected.indexOf(currentSelection) > -1)
+                return;
+
             if(!multiple)
                 this.selectKeyFrame(t, currentSelection, keyFrameIndex);
             else
@@ -3186,7 +3213,7 @@
                 e.multipleSelection = true;
 
             }
-            else if((e.ctrlKey || e.altKey) && track && !track.locked) {
+            else if(track && !track.locked) {
 
                 const keyFrameIndex = this.getCurrentKeyFrame( track, this.xToTime( localX ), this.pixelsToSeconds * 5 );
                 if( keyFrameIndex != undefined ) {
@@ -3408,12 +3435,13 @@
             ctx.save();
             // this.canvasArea.root.innerHtml = "";
             let offset = this.trackHeight;
+            this.scrollableHeight = this.topMargin;
              for(let t = 0; t < this.selectedItems.length; t++) {
                 let tracks = this.tracksPerItem[this.selectedItems[t]] ? this.tracksPerItem[this.selectedItems[t]] : [{name: this.selectedItems[t]}];
                 if(!tracks) continue;
                 
                 const height = this.trackHeight;
-                this.scrollableHeight = (tracks.length+1)*height + this.topMargin;
+                this.scrollableHeight += (tracks.length+1)*height ;
                 let	scroll_y = - this.currentScrollInPixels;
 
                 let offsetI = 0;
@@ -4104,8 +4132,11 @@
             const name = this.tracksDictionary[track.fullname];
             let t = this.tracksPerItem[ name ][track.idx];
             let currentSelection = [name, track.idx, keyFrameIndex];
-            if(!multiple)
+           if(!multiple)
                 this.selectKeyFrame(t, currentSelection, keyFrameIndex);
+            else
+                this.lastKeyFramesSelected.push( currentSelection );
+
             if( this.onSelectKeyFrame && this.onSelectKeyFrame(e, currentSelection, keyFrameIndex)) {
                 // Event handled
                 return;
@@ -4115,7 +4146,6 @@
             return;
 
             // Select if not handled
-            this.lastKeyFramesSelected.push( currentSelection );
             t.selected[keyFrameIndex] = true;
 
             if( !multiple && this.onSetTime )
