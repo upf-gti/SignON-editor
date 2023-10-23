@@ -113,8 +113,6 @@
             this.canvas.addEventListener("dblclick", this.processMouse.bind(this));
             this.canvas.addEventListener("contextmenu", this.processMouse.bind(this));
 
-            // setTimeout( () => this.resize(), 10 );
-
             right.onresize = bounding => {
                 if(!(bounding.width && bounding.height)) 
                     return;
@@ -325,6 +323,15 @@
             }
 
             return tracks;
+        }
+
+        getCurrentContent(track, time, threshold) {
+
+            if(this.getCurrentKeyFrame)
+                this.getCurrentKeyFrame(track, time, threshold);
+
+            if(this.getCurrentClip)
+                this.getCurrentClip(track, time, threshold);
         }
 
         /**
@@ -803,7 +810,7 @@
                 }
                 else
                 {
-                    if(!track || track && this.getCurrentKeyFrame(track, time, 0.001) == undefined) {
+                    if(!track || track && this.getCurrentContent(track, time, 0.001) == undefined) {
 
                         this.grabbing = true;
                         this.grabTime = time - this.currentTime;

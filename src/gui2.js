@@ -442,8 +442,7 @@ class Gui {
         }
         else if(this.clipsTimeline && this.clipsTimeline.active)
         {
-            // if(e.type == "mousedown")
-            //     this.timeline.deselectAll();
+
             this.clipsTimeline.processMouse(e);
 
         }
@@ -451,11 +450,33 @@ class Gui {
     }
 
     resize(width, height) {
-        this.timelineArea.setSize([width, null]);
+        //this.timelineArea.setSize([width, null]);
         this.editor.activeTimeline.resize();
 
     }
 
+    async promptExit() {
+        this.prompt = await new LX.Dialog("Exit confirmation", (p) => {
+            p.addText(null, "Be sure you have exported the animation. If you exit now, your data will be lost. How would you like to proceed?", null, {disabled: true});
+            p.addButton(null, "Export", () => {
+                p.clear();
+                p.addString("File name", this.editor.animation ? this.editor.animation.name : null, (v) => this.editor.animation.name = v);
+                p.addButton(null, "Export extended BVH", () => this.editor.export("BVH extended", this.editor.animation.name));
+                if(this.editor.mode == this.editor.eModes.script) {
+                    p.addButton( null, "Export BML", () => this.editor.export("", this.animation.name ));
+                }
+                p.addButton( null, "Export GLB", () => this.editor.export("GLB", this.editor.animation.name));
+            });
+            p.addButton(null, "Discard", () => {
+
+            });
+            p.addButton(null, "Cancel", () => {
+                return;
+            });
+
+        });
+        return this.prompt;
+    }
 };
 
 class KeyframesGui extends Gui {
@@ -1603,8 +1624,6 @@ class ScriptGui extends Gui {
 
     /** Non -manual features based on BML */
     updateClipPanel(clip) {
-
-        this.clipInPanel = clip;
         
         let widgets = this.clipPanel;
         
@@ -1614,6 +1633,7 @@ class ScriptGui extends Gui {
             if(!clip)
                 return;
             
+            this.clipInPanel = clip;
             const updateTracks = (refreshPanel) => {
                 if(!clip)
                     return;

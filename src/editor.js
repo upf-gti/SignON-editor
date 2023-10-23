@@ -70,9 +70,12 @@ class Editor {
         window.addEventListener( 'keydown', (e) => {
             switch ( e.key ) {
                 case " ": // Spacebar
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    document.querySelector("[title = Play]").children[0].click()
+                    if(e.target.constructor.name != 'HTMLInputElement') {
+
+                        e.preventDefault();
+                        e.stopImmediatePropagation();
+                        document.querySelector("[title = Play]").children[0].click()
+                    }
                     break;
                 case "Delete":
                     e.preventDefault();
@@ -103,6 +106,25 @@ class Editor {
                     break;
             }
         } );
+
+        // window.addEventListener("beforeunload", (e) => {
+        //     if(!this.animation.tracks.length)
+        //         return;
+        //     e.preventDefault();
+        //     e.cancelBubble = true;
+        //     e.stopPropagation();
+        //     e.returnValue = "Exit"
+        //     window.stop();
+        //     return this.gui.promptExit();
+        // })
+        window.onbeforeunload =  (e) => {
+            if(!this.animation.tracks.length)
+                return;
+            e.preventDefault();
+            e.returnValue = ""
+            window.stop();
+            return "Be sure you have exported the animation. If you exit now, your data will be lost."
+        }
     }
     
 
@@ -171,7 +193,7 @@ class Editor {
         renderer.shadowMap.enabled = true;
 
         canvasArea.root.appendChild(renderer.domElement);
-        canvasArea.onresize = (bounding) => this.resize(bounding[0], bounding[1]);
+        canvasArea.onresize = (bounding) => this.resize(bounding.width, bounding.height);
         renderer.domElement.id = "webgl-canvas";
         renderer.domElement.setAttribute("tabIndex", 1);
 
@@ -552,7 +574,7 @@ class Editor {
         const aspect = width / height;
         this.camera.aspect = aspect;
         this.camera.updateProjectionMatrix();
-        this.renderer.setPixelRatio(aspect);
+        // this.renderer.setPixelRatio(aspect);
         this.renderer.setSize(width, height);
 
         this.gui.resize(width, height);
