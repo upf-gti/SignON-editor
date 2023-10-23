@@ -2770,10 +2770,10 @@
             
             // Reset this clip's properties
             track.hovered[newIdx] = undefined;
-            track.selected[newIdx] = undefined;
+            track.selected[newIdx] = true;
             track.edited[newIdx] = undefined;
 
-           
+            this.lastClipsSelected.push( [track.idx, newIdx] );
                 
             let end = clip.start + clip.duration;
             
@@ -2789,8 +2789,12 @@
             if(this.onSetTime)
                 this.onSetTime(this.currentTime);
 
+            if(this.onSelectClip)
+                this.onSelectClip(clip);
+            
             if(callback)
                 callback();
+
             this.resize();
             return newIdx;
         }

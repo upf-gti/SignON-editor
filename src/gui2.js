@@ -1881,15 +1881,16 @@ class ScriptGui extends Gui {
         let that = this;
         const innerSelect = (asset) => {
            
+                let idx = null;
                 switch(asset.folder.id) {
                     case "Face":
-                        that.clipsTimeline.addClip( new ANIM.FaceLexemeClip({lexeme: asset.id.toUpperCase()})); 
+                        idx = that.clipsTimeline.addClip( new ANIM.FaceLexemeClip({lexeme: asset.id.toUpperCase()})); 
                         break;
                     case "Gaze":
-                        that.clipsTimeline.addClip( new ANIM.GazeClip({influence: asset.id.toUpperCase()})); 
+                        idx = that.clipsTimeline.addClip( new ANIM.GazeClip({influence: asset.id.toUpperCase()})); 
                         break;
                     case "Head movement":
-                        that.clipsTimeline.addClip( new ANIM.HeadClip( {lexeme: asset.id.toUpperCase()})); 
+                        idx = that.clipsTimeline.addClip( new ANIM.HeadClip( {lexeme: asset.id.toUpperCase()})); 
                         break;
                     default:
                         let clipType = asset.id;
@@ -1899,12 +1900,14 @@ class ScriptGui extends Gui {
                             clipType = "Shoulder";
                             data["shoulder" + type] = 0.8
                         }
-                        that.clipsTimeline.addClip( new ANIM[clipType.replaceAll(" ", "") + "Clip"](data));
+                        idx = that.clipsTimeline.addClip( new ANIM[clipType.replaceAll(" ", "") + "Clip"](data));
                         
                         break;
                 }
+                
                 asset_browser.clear();
                 dialog.close();
+                
             
         }
         let asset_browser = new LX.AssetView({  
