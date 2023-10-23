@@ -1400,35 +1400,14 @@ class ScriptGui extends Gui {
         this.clipsTimeline.setFramerate(30);
         // this.clipsTimeline.setScale(400);
         // this.clipsTimeline.hide();
-
-        this.clipsTimeline.canvas.addEventListener( 'keydown', (e) => {
-            switch ( e.key ) {
-                case " ": // Spacebar
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    const stateBtn = document.getElementById("state_btn");
-                    stateBtn.click();
-                    break;
-                case "Delete": // Delete
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    this.clipsTimeline.deleteClip();
-                    this.clipsTimeline.optimizeTracks();
-                    break;
-                case "Backspace":
-                    e.preventDefault();
-                    e.stopImmediatePropagation();
-                    this.clipsTimeline.deleteClip();
-                    this.clipsTimeline.optimizeTracks();
-                    break;
-            }
-        });
-
+        this.timelineArea.attach(this.clipsTimeline.root);
+        this.clipsTimeline.canvas.tabIndex = 1;
+        
         
        // area.onresize = (bounding) => this.timelineArea.setSize(bounding);
         // Create timelines container area
         //this.timelineArea = new LX.Area({ height: 400, resize: true});
-        this.timelineArea.attach(this.clipsTimeline.root);
+       
 
         //Resize timelines on resize timeline container area
        // this.timelineArea.onresize = (bounding) => {this.clipsTimeline.resize( [ bounding.width, bounding.height ] );}
@@ -1461,6 +1440,40 @@ class ScriptGui extends Gui {
 
             this.clipsTimeline.onSetTime(this.clipsTimeline.currentTime) 
         };
+
+        this.clipsTimeline.deleteContent = () => {
+            let clipstToDelete = this.clipsTimeline.lastClipsSelected;
+            for(let i = 0; i < clipstToDelete.length; i++){
+                this.clipsTimeline.deleteClip({}, clipstToDelete[i], null);
+            }
+            this.editor.gizmo.updateTracks();
+        }
+
+        this.clipsTimeline.copyContent = () => {
+            this.clipsTimeline.clipsToCopy = [...this.clipsTimeline.lastClipsSelected];
+        }
+
+        this.clipsTimeline.pasteContent = () => {
+            if(!this.clipsTimeline.clipsToCopy)
+                return;
+            this.clipsTimeline.clipsToCopy.sort((a,b) => {
+                if(a[0]<b[0]) 
+                    return -1;
+                return 1;
+            });
+
+            let offset = 0;
+            for(let i = 0; i < this.clipsTimeline.clipsToCopy.length; i++){
+                let [trackIdx, clipIdx] = this.clipsTimeline.clipsToCopy[i];
+                let clipToCopy = this.clipsTimeline.animationClip.tracks[trackIdx].clips[clipIdx];
+                let newClip = new ANIM[clipToCopy.constructor.name](clipToCopy);
+                if( i == 0) 
+                    offset = newClip.start;
+                newClip.start -= offset ;
+                this.clipsTimeline.addClip(newClip); 
+            }
+            this.clipsTimeline.clipsToCopy = null;
+        }
         // this.clipsTimeline.onUpdateTrack = (idx) 
         this.clipsTimeline.showContextMenu = ( e ) => {
 
@@ -1473,20 +1486,13 @@ class ScriptGui extends Gui {
                 actions.push(
                     {
                         title: "Copy",// + " <i class='bi bi-clipboard-fill float-right'></i>",
-                        callback: () => {this.clipsTimeline.clipsToCopy = [...this.clipsTimeline.lastClipsSelected];}
+                        callback: () => this.clipsTimeline.copyContent()
                     }
                 )
                 actions.push(
                     {
                         title: "Delete",// + " <i class='bi bi-trash float-right'></i>",
-                        callback: () => {
-                            let clipstToDelete = this.clipsTimeline.lastClipsSelected;
-                            for(let i = 0; i < clipstToDelete.length; i++){
-                                this.clipsTimeline.deleteClip(e, clipstToDelete[i], null);
-                            }
-                            this.editor.gizmo.updateTracks();
-                            // this.optimizeTracks();
-                        }
+                        callback: () => this.clipsTimeline.deleteContent()
                     }
                 )
                 actions.push(
@@ -1520,21 +1526,7 @@ class ScriptGui extends Gui {
                     actions.push(
                         {
                             title: "Paste",// + " <i class='bi bi-clipboard-fill float-right'></i>",
-                            callback: () => {
-                                this.clipsTimeline.clipsToCopy.sort((a,b) => {
-                                    if(a[0]<b[0]) 
-                                        return -1;
-                                    return 1;
-                                });
-
-                                for(let i = 0; i < this.clipsTimeline.clipsToCopy.length; i++){
-                                    let [trackIdx, clipIdx] = this.clipsTimeline.clipsToCopy[i];
-                                    let clipToCopy = Object.assign({}, this.clipsTimeline.animationClip.tracks[trackIdx].clips[clipIdx]);
-                                    // let clip = new ANIM.FaceLexemeClip(clipToCopy);
-                                    this.clipsTimeline.addClip(clipToCopy, this.clipsTimeline.clipsToCopy.length > 1 ? clipToCopy.start : 0); 
-                                }
-                                this.clipsTimeline.clipsToCopy = null;
-                            }
+                            callback: () => this.clipsTimeline.pasteContent()
                         }
                     )
                 }
@@ -1567,21 +1559,7 @@ class ScriptGui extends Gui {
 
         let area = new LX.Area({className: "sidePanel", id: 'panel', scroll: true});  
         this.sidePanel.attach(area);
-        // let faceArea = new LX.Area({className: "sidePanel", id: 'Face', scroll: true});  
-        // tabs.add( "Body", bodyArea, true, null, {onSelect: (e,v) => {this.editor.changeAnimation(v)}}  );
-        // if(this.editor.auAnimation) {
-
-        //     tabs.add( "Face", faceArea, false, null, {onSelect: (e,v) => {this.editor.changeAnimation(v); 
-        //         this.updateActionUnitsPanel(this.editor.getSelectedActionUnit());
-        //         this.imageMap.resize();
-        //     } });
-    
-        //     faceArea.split({type: "vertical", sizes: ["50%", "50%"]});
-        //     let [faceTop, faceBottom] = faceArea.sections;
-        //     this.createFacePanel(faceTop);
-        //     this.createActionUnitsPanel(faceBottom);
-        // }
-
+       
         let [top, bottom] = area.split({type: "vertical", resize: false, sizes: "auto"});
         // let [top, bottom] = area.sections;
         this.animationPanel = new LX.Panel({id:"animaiton"});

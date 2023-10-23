@@ -67,7 +67,7 @@ class Editor {
 
         this.initScene();
 
-        window.addEventListener( 'keydown', (e) => {
+        document.addEventListener( 'keydown', (e) => {
             switch ( e.key ) {
                 case " ": // Spacebar
                     if(e.target.constructor.name != 'HTMLInputElement') {
@@ -77,20 +77,20 @@ class Editor {
                         document.querySelector("[title = Play]").children[0].click()
                     }
                     break;
-                case "Delete":
-                    e.preventDefault();
-                    // e.stopImmediatePropagation();
-                    // this.activeTimeline.deleteKeyFrame(e, null);
-                    if(this.activeTimeline.deleteKeyFrame) {
-                        e.multipleSelection = this.activeTimeline.lastKeyFramesSelected.length > 1;
-                        this.activeTimeline.deleteKeyFrame(e);
-                    }
-                    if(this.activeTimeline.deleteClip) {
-                        e.multipleSelection = this.activeTimeline.lastClipsSelected.length > 1;
-                        this.activeTimeline.deleteClip(e, null, this.gizmo.updateTracks.bind(this.gizmo));
-                    }
+                // case "Delete":
+                //     e.preventDefault();
+                //     // e.stopImmediatePropagation();
+                //     // this.activeTimeline.deleteKeyFrame(e, null);
+                //     if(this.activeTimeline.deleteKeyFrame) {
+                //         e.multipleSelection = this.activeTimeline.lastKeyFramesSelected.length > 1;
+                //         this.activeTimeline.deleteKeyFrame(e);
+                //     }
+                //     if(this.activeTimeline.deleteClip) {
+                //         e.multipleSelection = this.activeTimeline.lastClipsSelected.length > 1;
+                //         this.activeTimeline.deleteClip(e, null, this.gizmo.updateTracks.bind(this.gizmo));
+                //     }
                     
-                    break;
+                //     break;
                 case "Escape":
 
                     if(this.gui.prompt) {
@@ -104,6 +104,29 @@ class Editor {
                             this.activeTimeline.restoreState();
                     }
                     break;
+
+                // case "c":
+                //     if(e.ctrlKey && this.mode == this.eModes.script && e.target.classList.contains('lextimeline')){
+                //         this.activeTimeline.clipsToCopy = [...this.activeTimeline.lastClipsSelected];
+                //     }
+                //     break;
+
+                // case "v":
+                //     if(e.ctrlKey && this.mode == this.eModes.script && e.target.classList.contains('lextimeline')) {
+                //         this.activeTimeline.clipsToCopy.sort((a,b) => {
+                //             if(a[0]<b[0]) 
+                //                 return -1;
+                //             return 1;
+                //         });
+
+                //         for(let i = 0; i < this.activeTimeline.clipsToCopy.length; i++){
+                //             let [trackIdx, clipIdx] = this.activeTimeline.clipsToCopy[i];
+                //             let clipToCopy = Object.assign({}, this.activeTimeline.animationClip.tracks[trackIdx].clips[clipIdx]);
+                //             // let clip = new ANIM.FaceLexemeClip(clipToCopy);
+                //             this.activeTimeline.addClip(clipToCopy, this.activeTimeline.clipsToCopy.length > 1 ? clipToCopy.start : 0); 
+                //         }
+                //         this.activeTimeline.clipsToCopy = null;
+                //     }
             }
         } );
 
@@ -665,7 +688,7 @@ class Editor {
 
 class KeyframeEditor extends Editor{
     
-    constructor(app) {
+    constructor(app, mode) {
                 
         super(app);
 
@@ -689,7 +712,7 @@ class KeyframeEditor extends Editor{
         this.video = app.video;
         
         this.mapNames = MapNames.map_llnames[this.character];
-        
+        this.mode = this.eModes[mode];
         this.gui = new KeyframesGui(this);
 
         this.video = document.getElementById("recording");
@@ -1180,9 +1203,7 @@ class KeyframeEditor extends Editor{
         }
 
         this.gizmo.setBone(name);
-        if(this.mode == this.eModes.NMF)
-            this.gizmo.stop();
-        //this.gizmo.mustUpdate = true;
+        this.gizmo.mustUpdate = true;
     }
 
     updateBoneProperties() {
@@ -1415,7 +1436,7 @@ class ScriptEditor extends Editor{
 
         this.activeTimeline = null;
         // ------------------------------------------------------
-        
+        this.mode = this.eModes.script;
         this.gui = new ScriptGui(this);
         
     }

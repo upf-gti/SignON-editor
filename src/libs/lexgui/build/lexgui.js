@@ -410,12 +410,13 @@
 
         static NONE                 = 0;
         static NODE_SELECTED        = 1;
-        static NODE_DBLCLICKED      = 2;
-        static NODE_CONTEXTMENU     = 3;
-        static NODE_DRAGGED         = 4;
-        static NODE_RENAMED         = 5;
-        static NODE_VISIBILITY      = 6;
-        static NODE_CARETCHANGED    = 7;
+        static NODE_DELETED         = 2;
+        static NODE_DBLCLICKED      = 3;
+        static NODE_CONTEXTMENU     = 4;
+        static NODE_DRAGGED         = 5;
+        static NODE_RENAMED         = 6;
+        static NODE_VISIBILITY      = 7;
+        static NODE_CARETCHANGED    = 8;
 
         constructor( type, node, value ) {
             this.type = type || TreeEvent.NONE;
@@ -428,6 +429,7 @@
             switch(this.type) {
                 case TreeEvent.NONE: return "tree_event_none";
                 case TreeEvent.NODE_SELECTED: return "tree_event_selected";
+                case TreeEvent.NODE_DELETED: return "tree_event_deleted";
                 case TreeEvent.NODE_DBLCLICKED:  return "tree_event_dblclick";
                 case TreeEvent.NODE_CONTEXTMENU:  return "tree_event_contextmenu";
                 case TreeEvent.NODE_DRAGGED: return "tree_event_dragged";
@@ -813,10 +815,17 @@
             }
 
             this.root.appendChild( area1.root );
+
             if(resize) 
+            {
                 this.root.appendChild(this.split_bar);
+            }
+
             if(minimizable)
-                this.root.appendChild(this.min);
+            {
+                area2.root.appendChild(this.min);
+            }
+
             this.root.appendChild( area2.root );
             this.sections = [area1, area2];
             this.type = type;
@@ -909,21 +918,26 @@
             if(!this.min)
                 return;
 
+            let [area1, area2] = this.sections;
+
             if(this.min.classList.contains("vertical") && this.min.classList.contains("fa-angle-down")) {
                 this.min.classList.remove("fa-angle-down");
                 this.min.classList.add("fa-angle-up");
-                this.offset = this.sections[1].root.offsetHeight;
-                this.sections[1].root.classList.add("fadeout-vertical");
-                this._moveSplit(-Infinity, true);
+                this.offset = area2.root.offsetHeight - this.min.offsetHeight;
+                area2.root.classList.add("fadeout-vertical");
+                this._moveSplit(-Infinity, true, this.min.offsetHeight); // Force some height here...
 
             }
             else if(this.min.classList.contains("horizontal") && this.min.classList.contains("fa-angle-right")) {
                 this.min.classList.remove("fa-angle-right");
                 this.min.classList.add("fa-angle-left");
-                this.offset = this.sections[1].root.offsetWidth;
-                this.sections[1].root.classList.add("fadeout-horizontal");
+                this.offset = area2.root.offsetWidth;
+                area2.root.classList.add("fadeout-horizontal");
                 this._moveSplit(-Infinity, true);
             }
+
+            // Set min icon to the parent
+            this.root.insertChildAtIndex( this.min, 2 );
         }
 
         /**
@@ -935,18 +949,23 @@
             if(!this.min)
                 return;
             
+            let [area1, area2] = this.sections;
+
             if(this.min.classList.contains("vertical") && this.min.classList.contains("fa-angle-up")) {
                 this.min.classList.remove("fa-angle-up");
                 this.min.classList.add("fa-angle-down");
-                this.sections[1].root.classList.add("fadein-vertical");
+                area2.root.classList.add("fadein-vertical");
                 this._moveSplit(this.offset);
             }
             else if(this.min.classList.contains("horizontal") && this.min.classList.contains("fa-angle-left")) {
                 this.min.classList.remove("fa-angle-left");
                 this.min.classList.add("fa-angle-right");
-                this.sections[1].root.classList.add("fadein-horizontal");
+                area2.root.classList.add("fadein-horizontal");
                 this._moveSplit(this.offset);
             }
+
+            // Set min icon to the minimizable area
+            area2.root.insertChildAtIndex( this.min, 0 );
         }
 
         /**
@@ -1196,7 +1215,7 @@
             return tabs;
         }
 
-        _moveSplit( dt, force_animation = false ) {
+        _moveSplit( dt, force_animation = false, force_width = 0 ) {
 
             if(!this.type)
                 throw("No split area");
@@ -1206,7 +1225,7 @@
 
             var a1 = this.sections[0];
             var a2 = this.sections[1];
-            var splitinfo = " - "+ (LX.DEFAULT_SPLITBAR_SIZE + ( this.min ? this.min.offsetWidth : 0 )) +"px";
+            var splitinfo = " - "+ LX.DEFAULT_SPLITBAR_SIZE + "px";
 
             let transition = null;
             if( !force_animation )
@@ -1221,6 +1240,7 @@
             if(this.type == "horizontal") {
 
                 var size = Math.max(a2.root.offsetWidth + dt,  0);
+                if( force_width ) size = force_width;
 				a1.root.style.width = "-moz-calc( 100% - " + size + "px " + splitinfo + " )";
 				a1.root.style.width = "-webkit-calc( 100% - " + size + "px " + splitinfo + " )";
 				a1.root.style.width = "calc( 100% - " + size + "px " + splitinfo + " )";
@@ -1229,6 +1249,7 @@
             else {
 
                 var size = Math.max((a2.root.offsetHeight + dt) + a2.offset,  0);
+                if( force_width ) size = force_width;
 				a1.root.style.height = "-moz-calc( 100% - " + size + "px " + splitinfo + " )";
 				a1.root.style.height = "-webkit-calc( 100% - " + size + "px " + splitinfo + " )";
 				a1.root.style.height = "calc( 100% - " + size + "px " + splitinfo + " )";
@@ -1348,7 +1369,7 @@
                 this.folded = true;
                 this.folding = folding;
                 
-                if(folding == "up") area.root.insertBefore(area.sections[1].root, area.sections[0].root);
+                if(folding == "up") area.root.insertChildAtIndex(area.sections[1].root, 0);
 
                 // // Add fold back button
 
@@ -2226,6 +2247,7 @@
             let item = document.createElement('li');
             item.className = "lextreeitem " + "datalevel" + level + (is_parent ? " parent" : "") + (is_selected ? " selected" : "");
             item.id = node.id;
+            item.tabIndex = "0";
 
             // Select hierarchy icon
             let icon = "fa-solid fa-square"; // Default: no childs
@@ -2265,13 +2287,16 @@
                 }
 
                 // Only Show children...
-                if(is_parent) {
+                if(is_parent && node.id.length > 1 /* Strange case... */) {
                     node.closed = false;
                     if(that.onevent) {
                         const event = new TreeEvent(TreeEvent.NODE_CARETCHANGED, node, node.closed);
                         that.onevent( event );
                     }
                     that.refresh();
+                    // Focus the element so we can read events...
+                    var el = this.domEl.querySelector("#" + node.id);
+                    if(el) el.focus();
                 }
 
                 if(that.onevent) {
@@ -2298,6 +2323,37 @@
                     const event = new TreeEvent(TreeEvent.NODE_CONTEXTMENU, this.selected.length > 1 ? this.selected : node, e);
                     event.multiple = this.selected.length > 1;
                     that.onevent( event );
+                }
+            });
+
+            item.addEventListener("keydown", e => {
+                e.preventDefault();
+                if( e.key == "Delete" )
+                {
+                    // Send event now so we have the info in selected array..
+                    if(that.onevent) {
+                        const event = new TreeEvent(TreeEvent.NODE_DELETED, this.selected.length > 1 ? this.selected : node, e);
+                        event.multiple = this.selected.length > 1;
+                        that.onevent( event );
+                    }
+
+                    // Delete nodes now
+                    for( let _node of this.selected )
+                    {
+                        let childs = _node.parent.children;
+                        const index = childs.indexOf( _node );
+                        childs.splice( index, 1 );
+                    }
+
+                    this.selected.length = 0;
+                    this.refresh();
+                }
+                else if( e.key == "ArrowUp" || e.key == "ArrowDown" ) // Unique or zero selected
+                {
+                    var selected = this.selected.length > 1 ? (e.key == "ArrowUp" ? this.selected.shift() : this.selected.pop()) : this.selected[0];
+                    var el = this.domEl.querySelector("#" + selected.id);
+                    var sibling = e.key == "ArrowUp" ? el.previousSibling : el.nextSibling;
+                    if( sibling ) sibling.click();
                 }
             });
 
@@ -3867,7 +3923,7 @@
 
             // Add dropdown array button
 
-            const itemNameWidth = "10%";
+            const itemNameWidth = "3%";
 
             var container = document.createElement('div');
             container.className = "lexarray";
@@ -3919,13 +3975,13 @@
                             this.addText(i+"", value, function(value, event) {
                                 values[i] = value;
                                 callback( values );
-                            }, { nameWidth: itemNameWidth, inputWidth: "90%", noreset: true });
+                            }, { nameWidth: itemNameWidth, inputWidth: "95%", noreset: true });
                             break;
                         case Number:
                             this.addNumber(i+"", value, function(value, event) {
                                 values[i] = value;
                                 callback( values );
-                            }, { nameWidth: itemNameWidth, inputWidth: "90%", noreset: true });
+                            }, { nameWidth: itemNameWidth, inputWidth: "95%", noreset: true });
                             break;
                     }
 
@@ -4075,10 +4131,9 @@
                 }
 
                 let tag_input = document.createElement('input');
-                tag_input.style.width = "64px";
                 tag_input.value = "";
                 tag_input.placeholder = "Tag...";
-                tags_container.appendChild(tag_input);
+                tags_container.insertChildAtIndex(tag_input, 0);
 
                 tag_input.onkeydown = function(e) {
                     const val = this.value.replace(/\s/g, '');
@@ -5317,8 +5372,16 @@
             if( options.closable ?? true)
             {
                 this.close = () => {
-                    that.panel.clear();
-                    root.remove();
+
+                    if( !options.onclose )
+                    {
+                        that.panel.clear();
+                        root.remove();
+                    } else
+                    {
+                        options.onclose( this.root );
+                    }
+
                     if(modal)
                         LX.modal.toggle();
                 };
@@ -6373,6 +6436,7 @@
                     let preview = document.createElement('img');
                     const has_image = item.src && ['png', 'jpg'].indexOf( getExtension( item.src ) ) > -1;
                     preview.src = has_image ? item.src : "../images/" + item.type.toLowerCase() + ".png";
+                    if(item.unknown_extension) preview.src = "../images/file.png";
                     itemEl.appendChild(preview);
                 }
 
@@ -6515,22 +6579,29 @@
                 fr.onload = e => { 
                     
                     let ext = file.name.substr(file.name.lastIndexOf('.') + 1).toLowerCase();
-                    let type = 'Resource';
+
+                    let item = {
+                        "id": file.name,
+                        "src": e.currentTarget.result,
+                        "extension": ext
+                    };
 
                     switch(ext)
                     {
                     case 'png':
                     case 'jpg':
-                        type = "image";
+                        item.type = "image"; break;
+                    case 'js': 
+                        item.type = "script"; break;
+                    case 'json': 
+                        item.type = "json"; break;
+                    default:
+                        item.type = ext;
+                        item.unknown_extension = true;
                         break;
                     }
 
-                    this.current_data.push({
-                        "id": file.name,
-                        "src": e.currentTarget.result,
-                        "extension": ext,
-                        "type": type
-                    });
+                    this.current_data.push( item );
                     
                     if(i == (num_files - 1)) {
                         this._refresh_content();
@@ -6839,6 +6910,11 @@
             setTimeout( function(){ URL.revokeObjectURL( url ); }, 1000*60 ); //wait one minute to revoke url
         }
     });
+
+    Element.prototype.insertChildAtIndex = function(child, index = Infinity) {
+        if (index >= this.children.length) this.appendChild(child);
+        else this.insertBefore(child, this.children[index]);
+    }
 
 	LX.UTILS = {
         getTime() { return new Date().getTime() },

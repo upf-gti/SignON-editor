@@ -322,10 +322,10 @@ body.nocursor * {
 /* Split bar */
 
 .lexsplitbar {
-  display: inline-block;
-	background: rgba(186, 188, 207, 0.961);
+  background: rgba(186, 188, 207, 0.01);
   border-radius: 8px;
-  position: relative;
+  /* display: inline-block; */
+  /* position: relative; */
 }
 
 .lexsplitbar:hover {
@@ -334,18 +334,19 @@ body.nocursor * {
 
 .lexsplitbar.horizontal {
   cursor: e-resize;
-  top: calc(50% - 32px);
-  height: 64px;
+  /* top: calc(50% - 32px);
+  height: 64px; */
 }
 
 .lexsplitbar.vertical {
 	cursor: n-resize;
-  width: 64px;
-  left: calc(50% - 32px);
+  margin-top: 2px;
+  /* width: 64px;
+  left: calc(50% - 32px); */
 }
 
 .lexsplitbar:hover {
-	background-color: var(--global-button-color);
+	background: rgba(186, 188, 207, 0.45);
 }
 
 .lexsplitbar.dragging-split-area {
@@ -489,7 +490,7 @@ body.nocursor * {
 }
 
 .lexwidget.small {
-  width: 10% !important;
+  width: 5% !important;
 }
 
 .lexwidget.md {
@@ -1315,6 +1316,7 @@ input[type="range"] {
   line-height: 25px;
   font-size: 13px;
   cursor: pointer;
+  outline: none;
   border-radius: 6px;
   -webkit-user-select: none; /* Safari 3.1+ */
   -moz-user-select: none; /* Firefox 2+ */
@@ -1973,7 +1975,7 @@ meter::-webkit-meter-even-less-good-value {
 }
 
 .lexareatabscontent {
-  overflow-y: scroll;
+  /* overflow-y: scroll; */
 }
 
 .lexareatabscontent.folded {
@@ -2157,6 +2159,12 @@ meter::-webkit-meter-even-less-good-value {
   line-height: 12px;
 }
 
+.lextags input {
+  width: 100%;
+  margin-bottom: 0.5em;
+  text-align: center;
+}
+
 .lextags .lextag {
   padding: 6px;
   background-color: var(--global-color-primary);
@@ -2173,6 +2181,10 @@ meter::-webkit-meter-even-less-good-value {
   background-color: var(--global-selected);
   color: #f5f5f5;
   cursor: pointer;
+}
+
+.lextags .lextag:hover::after {
+  content: "⊗";
 }
 
 /* Custom Widgets Widget */
@@ -2282,38 +2294,35 @@ meter::-webkit-meter-even-less-good-value {
 
 .lexmin.horizontal {
   top: 48px;
-  right: 15px;
+  right: 12px;
   height: fit-content;
 }
 
 .lexmin.vertical {
-  top: -4px;
-  right: 48px;
+  top: -8px;
+  left: 12px;
 }
 
 .lexarea .fadein-vertical {
   animation-name: fadein;
-  animation-duration: 0.25s;
   animation-fill-mode: forwards;
-  transition: 0.25s height;
 }
 .lexarea .fadeout-vertical {
   animation-name: fadeout;
   animation-duration: 0.25s;
   animation-fill-mode: forwards;
-  transition: 0.25s height;
+  transition: height;
 }
 
 .lexarea .fadein-horizontal {
   animation-name: fadein;
-  animation-duration: 0.25s;
   animation-fill-mode: forwards;
 }
 .lexarea .fadeout-horizontal {
   animation-name: fadeout;
   animation-duration: 0.25s;
   animation-fill-mode: forwards;
-  transition: 0.25s width;
+  transition: width;
 }
 
 @keyframes fadein {
@@ -2419,9 +2428,19 @@ ul.lexassetscontent {
   background-color: #555;
   cursor: pointer;
   text-align: center;
-  border-radius: 4px;
+  border-top-left-radius: 2px;
+  border-top-right-radius: 2px;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
   position: relative;
+  border-top: 4px solid rgba(0,0,0,0);
 }
+
+.lexassetscontent li.image  { border-color: rgb(219, 221, 228); }
+.lexassetscontent li.script { border-color: rgb(219, 189, 79); }
+.lexassetscontent li.json   { border-color: rgb(104, 129, 195); }
+.lexassetscontent li.mesh   { border-color: rgb(156, 68, 68); }
+.lexassetscontent li.clip   { border-color: rgb(131, 70, 139); }
 
 .lexassetscontent li:hover {
   outline: 2px solid var(--global-selected);
@@ -2451,7 +2470,7 @@ ul.lexassetscontent {
   display: block;
   height: 20px;
   padding: 0.1em;
-  padding-top: 0.3em;
+  padding-top: 0.15em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -2474,6 +2493,7 @@ ul.lexassetscontent {
   display: block;
   top: 0;
   transition: all 0.1s;
+  display: none; /* testing */
 }
 
 .lexassetscontent li:hover span {
@@ -2504,7 +2524,7 @@ ul.lexassetscontent {
 }
 
 .lexassetscontent li:hover img {
-  transform: scale(1.1);
+  transform: scale(1.12);
 }
 
 /* Code Editor */
@@ -2714,6 +2734,16 @@ ul.lexassetscontent {
 .cm-dec { color: #b1ce9b; } /* decimal */
 .cm-sym { color: #e7ded2; } /* symbol */
 .cm-mtd { color: #f1e9bf; } /* method */
+
+.cm-str.css { color: #c69179; } /* string */
+.cm-kwd.css { color: #d2ba7f; } /* keyword */
+.cm-com.css { color: #75b073; } /* comment */
+.cm-typ.css { color: #b7c3ec; } /* type */
+.cm-lit.css { color: #cf6dcf; } /* literal */
+.cm-bln.css { color: #2194ce; } /* builtin */
+.cm-dec.css { color: #b1ce9b; } /* decimal */
+.cm-sym.css { color: #f9d620; } /* symbol */
+.cm-mtd.css { color: #f1e9bf; } /* method */
 
 .cm-str.json { color: #c69179; } /* string */
 .cm-kwd.json { color: inherit; } /* keyword */

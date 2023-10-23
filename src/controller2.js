@@ -60,7 +60,7 @@ class BMLController {
 
             switch ( e.key ) {
 
-                case 'z':
+                case 'z' : case 'Z':
                     if(e.ctrlKey){
 
                         if(!this.undoSteps.length)
@@ -73,13 +73,6 @@ class BMLController {
                         //update timeline
                         
                     }
-                    break;
-                case 'Delete':
-                    this.timeline.deleteClip();
-                    break;
-
-                case "Space":
-                    console.log("space");
                     break;
             }
 

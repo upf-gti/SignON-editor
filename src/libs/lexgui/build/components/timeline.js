@@ -106,12 +106,17 @@
                 this.canvas.id = this.name + '-canvas';
             }
 
+            // Process mouse events
             this.canvas.addEventListener("mousedown", this.processMouse.bind(this));
             this.canvas.addEventListener("mouseup", this.processMouse.bind(this));
             this.canvas.addEventListener("mousemove", this.processMouse.bind(this));
             this.canvas.addEventListener("wheel", this.processMouse.bind(this));
             this.canvas.addEventListener("dblclick", this.processMouse.bind(this));
             this.canvas.addEventListener("contextmenu", this.processMouse.bind(this));
+
+            this.canvas.tabIndex = 1;
+            // Process keys events
+            this.canvas.addEventListener("keydown", this.processKeys.bind(this));
 
             right.onresize = bounding => {
                 if(!(bounding.width && bounding.height)) 
@@ -689,8 +694,8 @@
 
             if(!this.canvas)
                 return;
-            e.preventDefault();
-            e.stopPropagation();
+            // e.preventDefault();
+            // e.stopPropagation();
             e.multipleSelection = false;
 
             let h = this.canvas.height;
@@ -867,6 +872,29 @@
             return true;
         }
         
+        /**
+         * @method processKeys
+         * @param {*} e
+         */
+        processKeys(e) {
+
+            if( e.type == 'keydown' ) {
+                switch(e.key) {
+                    case 'Delete': case 'Backspace':
+                        this.deleteContent();
+                        break;
+                    case 'c': case 'C':
+                        if(e.ctrlKey)
+                            this.copyContent();
+                        break;
+                    case 'v': case 'V':
+                        if(e.ctrlKey)
+                            this.pasteContent();
+                        break;
+                }
+            }
+        }
+
         /**
          * @method drawTrackWithKeyframes
          * @param {*} ctx
@@ -1450,8 +1478,7 @@
                         {
                             title: "Paste",// + " <i class='bi bi-clipboard-fill float-right'></i>",
                             callback: () => {
-                                let [id, trackIdx, keyIdx] = this.lastKeyFramesSelected[0];
-                                    this.pasteKeyFrameValue(e, this.tracksPerItem[id][trackIdx], keyIdx);
+                                this.pasteContent();
                             }
                         }
                     )
@@ -1460,23 +1487,7 @@
                     {
                         title: "Copy",// + " <i class='bi bi-clipboard-fill float-right'></i>",
                         callback: () => {
-                            let toCopy = {};
-                            for(let i = 0; i < this.lastKeyFramesSelected.length; i++){
-                                let [id, trackIdx, keyIdx] = this.lastKeyFramesSelected[i];
-                                if(toCopy[this.tracksPerItem[id][trackIdx].clipIdx]) {
-                                    toCopy[this.tracksPerItem[id][trackIdx].clipIdx].idxs.push(keyIdx);
-                                } else {
-                                    toCopy[this.tracksPerItem[id][trackIdx].clipIdx] = {idxs : [keyIdx]};
-                                    toCopy[this.tracksPerItem[id][trackIdx].clipIdx].track = this.tracksPerItem[id][trackIdx]
-                                }                
-                                if(i == 0) {
-                                    this.copyKeyFrameValue(this.tracksPerItem[id][trackIdx], keyIdx)
-                                }
-                            }
-                            for(let clipIdx in toCopy) {
-                                
-                                this.copyKeyFrames(toCopy[clipIdx].track, toCopy[clipIdx].idxs)
-                            }
+                            this.copyContent();
                            
                         }
                     }
@@ -1485,12 +1496,7 @@
                     {
                         title: "Delete",// + " <i class='bi bi-trash float-right'></i>",
                         callback: () => {
-                            let keyframesToDelete = this.lastKeyFramesSelected;
-                            e.multipleSelection = keyframesToDelete.length > 1 ?? false;
-                            for(let i = 0; i < keyframesToDelete.length; i++){
-                                this.deleteKeyFrame(e, keyframesToDelete[i][1], keyframesToDelete[i][2]);
-                            }
-                            
+                            this.deleteKeyFrame({});
                         }
                     }
                 )
@@ -1510,12 +1516,8 @@
                         {
                             title: "Paste",// + " <i class='bi bi-clipboard-fill float-right'></i>",
                             callback: () => {
-                                let currentTime = this.currentTime;
-                                for(let clipIdx in this.clipboard.keyframes) {
-                                    let indices = Object.keys( this.clipboard.keyframes[clipIdx].values)
-                                    this.pasteKeyFrames(e, clipIdx, indices);
-                                    this.currentTime = currentTime;
-                                }
+                                this.pasteContent();
+                        
                             }
                         }
                     )
@@ -1767,8 +1769,24 @@
                 this.onSetTime(  this.animationClip.tracks[track.clipIdx].times[ index ]);
         }
 
-        canPasteKeyFrame () {
-            return this.clipboard != null;
+        copyContent() {
+            let toCopy = {};
+            for(let i = 0; i < this.lastKeyFramesSelected.length; i++){
+                let [id, trackIdx, keyIdx] = this.lastKeyFramesSelected[i];
+                if(toCopy[this.tracksPerItem[id][trackIdx].clipIdx]) {
+                    toCopy[this.tracksPerItem[id][trackIdx].clipIdx].idxs.push(keyIdx);
+                } else {
+                    toCopy[this.tracksPerItem[id][trackIdx].clipIdx] = {idxs : [keyIdx]};
+                    toCopy[this.tracksPerItem[id][trackIdx].clipIdx].track = this.tracksPerItem[id][trackIdx]
+                }                
+                if(i == 0) {
+                    this.copyKeyFrameValue(this.tracksPerItem[id][trackIdx], keyIdx)
+                }
+            }
+            for(let clipIdx in toCopy) {
+                
+                this.copyKeyFrames(toCopy[clipIdx].track, toCopy[clipIdx].idxs);
+            }
         }
 
         copyKeyFrameValue( track, index ) {
@@ -1809,6 +1827,29 @@
                 
                 this.clipboard.keyframes[clipIdx].values[indices[idx]] =  values;
             };
+        }
+
+        pasteContent() {
+            if(!this.clipboard)
+                return;
+            
+            if(this.clipboard.value && this.lastKeyFramesSelected.length == 1) {
+
+                let [id, trackIdx, keyIdx] = this.lastKeyFramesSelected[0];
+                this.pasteKeyFrameValue({}, this.tracksPerItem[id][trackIdx], keyIdx);
+            }
+            if(this.clipboard.keyframes) {
+                let currentTime = this.currentTime;
+                for(let clipIdx in this.clipboard.keyframes) {
+                    let indices = Object.keys( this.clipboard.keyframes[clipIdx].values)
+                    this.pasteKeyFrames({multipleSelection: this.clipboard.keyframes.length}, clipIdx, indices);
+                    this.currentTime = currentTime;
+                }
+            }
+        }
+
+        canPasteKeyFrame () {
+            return this.clipboard != null;
         }
 
         #paste( track, index ) {
@@ -1970,6 +2011,11 @@
             return newIdx;
         }
 
+        deleteContent() {
+            
+            this.deleteKeyFrame({ multipleSelection: this.lastKeyFramesSelected.length > 1});
+        }
+
         /** Delete a keyframe given the track and the its index
          * @track: track that keyframe belongs to
          * @index: index of the keyframe on the track
@@ -2041,6 +2087,7 @@
 
                     // Delete every selected key
                     for(let [name, idx, keyIndex] of pts) {
+                        this.saveState(this.tracksPerItem[name][idx].clipIdx);
                         deletedIndices += this.#delete( this.tracksPerItem[name][idx], keyIndex - deletedIndices );
                     }
                 }
@@ -2365,14 +2412,14 @@
                 if(this.lastClipsSelected.length){
                     selectedClips = this.lastClipsSelected;
                 }
-                // else{
-                // 	clipIndex = this.getCurrentClip( track, this.xToTime( localX ), this.pixelsToSeconds * 5 );
-                // 	if(clipIndex != undefined)
-                // 	{
-                // 		selectedClips = [[trackIndex, clipIndex]];
-                // 	}
+                else{
+                	let clipIndex = this.getCurrentClip( track, this.xToTime( localX ), this.pixelsToSeconds * 5 );
+                	if(clipIndex != undefined)
+                	{
+                		this.lastClipsSelected = selectedClips = [[track.idx, clipIndex]];
+                	}
                 
-                // }
+                }
                 this.canvas.style.cursor = "grab";  
                 for(let i = 0; i< selectedClips.length; i++)
                 {
@@ -2528,17 +2575,14 @@
                 actions.push(
                     {
                         title: "Copy",// + " <i class='bi bi-clipboard-fill float-right'></i>",
-                        callback: () => {this.clipsToCopy = [...this.lastClipsSelected];}
+                        callback: () => { this.copyContent();}
                     }
                 )
                 actions.push(
                     {
                         title: "Delete",// + " <i class='bi bi-trash float-right'></i>",
                         callback: () => {
-                            let clipstToDelete = this.lastClipsSelected;
-                            for(let i = 0; i < clipstToDelete.length; i++){
-                                this.deleteClip(e, clipstToDelete[i], null);
-                            }
+                            this.deleteContent({});
                             // this.optimizeTracks();
                         }
                     }
@@ -2552,18 +2596,7 @@
                         {
                             title: "Paste",// + " <i class='bi bi-clipboard-fill float-right'></i>",
                             callback: () => {
-                                this.clipsToCopy.sort((a,b) => {
-                                    if(a[0]<b[0]) 
-                                        return -1;
-                                    return 1;
-                                });
-
-                                for(let i = 0; i < this.clipsToCopy.length; i++){
-                                    let [trackIdx, clipIdx] = this.clipsToCopy[i];
-                                    let clipToCopy = Object.assign({}, this.animationClip.tracks[trackIdx].clips[clipIdx]);
-                                    this.addClip(clipToCopy, this.clipsToCopy.length > 1 ? clipToCopy.start : 0); 
-                                }
-                                this.clipsToCopy = null;
+                                this.pasteContent();
                             }
                         }
                     )
@@ -2791,7 +2824,7 @@
 
             if(this.onSelectClip)
                 this.onSelectClip(clip);
-            
+
             if(callback)
                 callback();
 
@@ -2863,6 +2896,9 @@
             return newIdx;
         }
 
+        deleteContent() {
+            this.deleteClip({});
+        }
 
         /** Delete clip from the timeline
          * @clip: clip to be delete
@@ -2892,6 +2928,7 @@
 
                     // Delete every selected clip
                     for(let [trackIdx, clipIdx] of pts) {
+                        this.saveState(clip);
                         this.#delete(trackIdx, clipIdx );
                         deletedIndices++;
                     }
@@ -2938,6 +2975,28 @@
                 }
             }
 
+        }
+
+        copyContent() {
+            this.clipsToCopy = [...this.lastClipsSelected];
+        }
+
+        pasteContent() {
+            if(!this.clipsToCopy)
+                return;
+            
+            this.clipsToCopy.sort((a,b) => {
+                if(a[0]<b[0]) 
+                    return -1;
+                return 1;
+            });
+
+            for(let i = 0; i < this.clipsToCopy.length; i++){
+                let [trackIdx, clipIdx] = this.clipsToCopy[i];
+                let clipToCopy = Object.assign({}, this.animationClip.tracks[trackIdx].clips[clipIdx]);
+                this.addClip(clipToCopy, this.clipsToCopy.length > 1 ? clipToCopy.start : 0); 
+            }
+            this.clipsToCopy = null;
         }
 
         /**
@@ -3359,8 +3418,7 @@
                         {
                             title: "Paste",// + " <i class='bi bi-clipboard-fill float-right'></i>",
                             callback: () => {
-                                let [id, trackIdx, keyIdx] = this.lastKeyFramesSelected[0];
-                                    this.pasteKeyFrameValue(e, this.tracksPerItem[id][trackIdx], keyIdx);
+                                this.pasteContent();
                             }
                         }
                     )
@@ -3369,24 +3427,7 @@
                     {
                         title: "Copy",// + " <i class='bi bi-clipboard-fill float-right'></i>",
                         callback: () => {
-                            let toCopy = {};
-                            for(let i = 0; i < this.lastKeyFramesSelected.length; i++){
-                                let [id, trackIdx, keyIdx] = this.lastKeyFramesSelected[i];
-                                if(toCopy[this.tracksPerItem[id][trackIdx].clipIdx]) {
-                                    toCopy[this.tracksPerItem[id][trackIdx].clipIdx].idxs.push(keyIdx);
-                                } else {
-                                    toCopy[this.tracksPerItem[id][trackIdx].clipIdx] = {idxs : [keyIdx]};
-                                    toCopy[this.tracksPerItem[id][trackIdx].clipIdx].track = this.tracksPerItem[id][trackIdx]
-                                }                
-                                if(i == 0) {
-                                    this.copyKeyFrameValue(this.tracksPerItem[id][trackIdx], keyIdx)
-                                }
-                            }
-                            for(let clipIdx in toCopy) {
-                                
-                                this.copyKeyFrames(toCopy[clipIdx].track, toCopy[clipIdx].idxs)
-                            }
-                           
+                            this.copyContent();
                         }
                     }
                 )
@@ -3394,11 +3435,7 @@
                     {
                         title: "Delete",// + " <i class='bi bi-trash float-right'></i>",
                         callback: () => {
-                            let keyframesToDelete = this.lastKeyFramesSelected;
-                            e.multipleSelection = keyframesToDelete.length > 1 ?? false;
-                            for(let i = 0; i < keyframesToDelete.length; i++){
-                                this.deleteKeyFrame(e, keyframesToDelete[i][1], keyframesToDelete[i][2]);
-                            }
+                            this.deleteContent({});
                             
                         }
                     }
@@ -3419,12 +3456,7 @@
                         {
                             title: "Paste",// + " <i class='bi bi-clipboard-fill float-right'></i>",
                             callback: () => {
-                                let currentTime = this.currentTime;
-                                for(let clipIdx in this.clipboard.keyframes) {
-                                    let indices = Object.keys( this.clipboard.keyframes[clipIdx].values)
-                                    this.pasteKeyFrames(e, clipIdx, indices);
-                                    this.currentTime = currentTime;
-                                }
+                                this.pasteContent();
                             }
                         }
                     )
@@ -3745,10 +3777,26 @@
                 this.onSetTime(  this.animationClip.tracks[track.clipIdx].times[ index ]);
         }
 
-        canPasteKeyFrame () {
-            return this.clipboard != null;
+        copyContent() {
+            let toCopy = {};
+            for(let i = 0; i < this.lastKeyFramesSelected.length; i++){
+                let [id, trackIdx, keyIdx] = this.lastKeyFramesSelected[i];
+                if(toCopy[this.tracksPerItem[id][trackIdx].clipIdx]) {
+                    toCopy[this.tracksPerItem[id][trackIdx].clipIdx].idxs.push(keyIdx);
+                } else {
+                    toCopy[this.tracksPerItem[id][trackIdx].clipIdx] = {idxs : [keyIdx]};
+                    toCopy[this.tracksPerItem[id][trackIdx].clipIdx].track = this.tracksPerItem[id][trackIdx]
+                }                
+                if(i == 0) {
+                    this.copyKeyFrameValue(this.tracksPerItem[id][trackIdx], keyIdx)
+                }
+            }
+            for(let clipIdx in toCopy) {
+                
+                this.copyKeyFrames(toCopy[clipIdx].track, toCopy[clipIdx].idxs)
+            }
         }
-
+        
         copyKeyFrame( track, index ) {
 
             // 1 element clipboard by now
@@ -3763,6 +3811,30 @@
                 values: values
             };
         }
+
+        pasteContent() {
+            if(!this.clipboard)
+                return;
+            
+            if(this.clipboard.value && this.lastKeyFramesSelected.length == 1) {
+
+                let [id, trackIdx, keyIdx] = this.lastKeyFramesSelected[0];
+                this.pasteKeyFrameValue({}, this.tracksPerItem[id][trackIdx], keyIdx);
+            }
+            if(this.clipboard.keyframes) {
+                let currentTime = this.currentTime;
+                for(let clipIdx in this.clipboard.keyframes) {
+                    let indices = Object.keys( this.clipboard.keyframes[clipIdx].values)
+                    this.pasteKeyFrames({multipleSelection: this.clipboard.keyframes.length}, clipIdx, indices);
+                    this.currentTime = currentTime;
+                }
+            }
+        }
+
+        canPasteKeyFrame () {
+            return this.clipboard != null;
+        }
+
 
         #paste( track, index ) {
 
@@ -3786,6 +3858,25 @@
         }
 
         pasteKeyFrame( e, track, index ) {
+
+            this.saveState(track.clipIdx);
+
+            // Copy to current key
+            this.#paste( track, index );
+            
+            if(!e.multipleSelection)
+            return;
+            
+            // Don't want anything after this
+            this.clearState();
+
+            // Copy to every selected key
+            for(let [name, idx, keyIndex] of this.lastKeyFramesSelected) {
+                this.#paste( this.tracksPerItem[name][idx], keyIndex );
+            }
+        }
+
+        pasteKeyFrameValue( e, track, index ) {
 
             this.saveState(track.clipIdx);
 
@@ -3884,6 +3975,11 @@
             return newIdx;
         }
 
+        deleteContent() {
+            
+            this.deleteKeyFrame({ multipleSelection: this.lastKeyFramesSelected.length > 1});
+        }
+
         /** Delete a keyframe given the track and the its index
          * @track: track that keyframe belongs to
          * @index: index of the keyframe on the track
@@ -3931,7 +4027,7 @@
 
             return true;
         }
-
+        
         /** Delete one or more keyframes given the triggered event
          * @e: event
          * @track:
@@ -3955,6 +4051,7 @@
 
                     // Delete every selected key
                     for(let [name, idx, keyIndex] of pts) {
+                        this.saveState(this.tracksPerItem[name][idx].clipIdx);
                         let deleted = this.#delete( this.tracksPerItem[name][idx], keyIndex - deletedIndices );
                         deletedIndices += deleted ? 1 : 0;
                     }
