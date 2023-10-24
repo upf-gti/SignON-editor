@@ -61,7 +61,7 @@ class Gui {
         let menubar = this.menubar;
         
         
-        menubar.add("Project/");
+        // menubar.add("Project/");
         if(this.editor.mode == this.editor.eModes.script)
             menubar.add("Project/Import animation", {icon: "fa fa-file-import", callback: () => {
         
@@ -92,16 +92,10 @@ class Gui {
         menubar.add("Project/Upload to server", {icon: "fa fa-upload", callback: () => this.editor.getApp().storeAnimation() });
         menubar.add("Project/Preview realizer", {icon: "fa fa-street-view",  callback: () => this.editor.showPreview() });
 
-        // menubar.add("Editor/Manual Features", { id: "mf-mode", type: "checkbox", checkbox: this.editor.mode == this.editor.eModes.MF, callback: (v) => {
-        //     this.changeEditorMode(this.editor.eModes.MF);
-        // }});
-        // menubar.add("Editor/Non-Manual Features", { id: "nmf-mode", type: "checkbox", checkbox: this.editor.mode == this.editor.eModes.NMF, callback: (v) => {
-        //     this.changeEditorMode(this.editor.eModes.NMF);
-        // }});
-
+        // menubar.add("Timeline/");
         menubar.add("Timeline/Shortcuts", { icon: "fa fa-keyboard", disabled: true });
         menubar.add("Timeline/Shortcuts/Play-Pause", { short: "SPACE" });
-        menubar.add("Timeline/Shortcuts/Zoom", { short: "CTRL+ Wheel" });
+        menubar.add("Timeline/Shortcuts/Zoom", { short: "Hold LSHIFT+Wheel" });
         menubar.add("Timeline/Shortcuts/Scroll", { short: "Wheel" });
         menubar.add("Timeline/Shortcuts/Move timeline", { short: "Left Click+Drag" });
         
@@ -130,9 +124,9 @@ class Gui {
             menubar.add("Timeline/Shortcuts/Key Selection/Box", { short: "Hold LSHIFT+Drag" });
         }
 
-        menubar.add("Timeline/");
+
         menubar.add("Timeline/Optimize all tracks", { callback: () => this.editor.optimizeTracks() });
-        menubar.add("Timeline/Clean tracks", { callback: () => this.editor.cleanTracks() });
+        menubar.add("Timeline/Clear tracks", { callback: () => this.editor.clearTracks() });
         if(this.showVideo)
             menubar.add("View/Show video", { type: "checkbox", checked: this.showVideo, callback: (v) => {
                 this.showVideo = v;
@@ -147,7 +141,7 @@ class Gui {
         // }});
 
         if(this.editor.mode == this.editor.eModes.script) {
-            menubar.add("Help/");
+            // menubar.add("Help/");
             menubar.add("Help/BML Instructions", {callback: () => window.open("https://github.com/upf-gti/SignON-realizer/blob/SiGMLExperiments/docs/InstructionsBML.md", "_blank")});
         }
 
@@ -288,18 +282,12 @@ class Gui {
         let prevDialog = document.getElementById("settings-dialog");
         if(prevDialog) prevDialog.remove();
         
-        const dialog = new LiteGUI.Dialog({ id: 'settings-dialog', title: UTILS.firstToUpperCase(settings), close: true, width: 380, height: 210, scroll: false, draggable: true});
-        dialog.show();
-        
-        const inspector = new LiteGUI.Inspector();
-        
-        switch( settings ) {
-            case 'gizmo': 
-            this.editor.gizmo.showOptions( inspector );
-            break;
-        };
-        
-        dialog.add( inspector );
+        const dialog = new LX.Dialog(UTILS.firstToUpperCase(settings), p => {
+            if(settings == 'gizmo') {
+                this.editor.gizmo.showOptions( p );
+            }
+        }, { id: 'settings-dialog', close: true, width: 380, height: 210, scroll: false, draggable: true});
+
     }
     
      
@@ -339,80 +327,17 @@ class Gui {
     }
 
     showTimeline() {
-        // let clickEvent = new MouseEvent( "mousedown" ); // Create the event.
-        // let el = this.mainArea.root.getElementsByClassName("lexmin")[0];
-        
-        // if(el.classList.contains("fa-angle-left"))
-        //     el.dispatchEvent( clickEvent ); 
-        // if(this.timelineVisible)
-        //     return;
-
+  
         this.timelineVisible = true;
         this.editor.activeTimeline.show();
         this.timelineArea.parentArea.maximize();
-        // let menubarItem = this.menubar.getItem("View/Show timeline");
-        // if(menubarItem && !menubarItem.cheked) {
-        //     menubarItem.checked = this.timelineVisible;
-        // }
     }
 
     hideTimeline() {
-        // if(!this.timelineVisible)
-        //     return;
-        
+   
         this.timelineVisible = false;
         this.timelineArea.parentArea.minimize();        
         this.editor.activeTimeline.hide();
-        // let menubarItem = this.menubar.getItem("View/Show timeline");
-        // if(menubarItem && menubarItem.cheked) {
-        //     menubarItem.checked = this.timelineVisible;
-        // }
-    }
-
-    showKeyFrameOptions(e, track) {
-
-        let actions = [];
-        let keyframes = this.keyFramesTimeline.lastKeyFramesSelected;
-        let index = keyframes.map((x) => x[2]);
-        if(index !== undefined) {
-            if(!track)
-            return;
-    
-            e.multipleSelection = index.length > 1//this.keyFramesTimeline.isKeyFrameSelected(track, index);
-    
-            actions.push(
-                {
-                    title: (e.multipleSelection ? "Multiple selection" : "[" + index + "] " + track.name),
-                    disabled: true
-                },
-                null,
-                {
-                    title: "Copy" + " <i class='bi bi-clipboard float-right'></i>",
-                    callback: () => this.keyFramesTimeline.copyKeyFrame( track, index )
-                },
-                {
-                    title: "Paste" + (e.multipleSelection ? " (" + this.keyFramesTimeline.getNumKeyFramesSelected() + ")" : "") +  " <i class='bi bi-clipboard-check float-right'></i>",
-                    disabled: !this.keyFramesTimeline.canPasteKeyFrame(),
-                    callback: () => this.keyFramesTimeline.pasteKeyFrame( e, track, index )
-                },
-                {
-                    title: "Delete" + (e.multipleSelection ? " (" + this.keyFramesTimeline.getNumKeyFramesSelected() + ")" : "") +  " <i class='bi bi-trash float-right'></i>",
-                    callback: () => this.keyFramesTimeline.deleteKeyFrame( e, track, index )
-                }
-            );
-        }else {
-
-            // No keyframe selected
-
-            actions.push(
-                {
-                    title: "Add" + " <i class='bi bi-plus float-right'></i>",
-                    callback: () => this.timkeyFramesTimelineeline.addKeyFrame( track )
-                }
-            );
-        }
-        
-        new LiteGUI.ContextMenu( actions, { event: e });
     }
     
     /** ------------------------------------------------------------ */
@@ -424,35 +349,9 @@ class Gui {
         this.tree.select(item);
     }
 
-    onMouse(e, nmf = null) {
-
-        e.preventDefault();
-        //let rect = this.timeline.canvas.getBoundingClientRect();
-        // if( e.x >= rect.left && e.x <= rect.right && e.y >= rect.top && e.y <= rect.bottom)
-        // {
-        //     if(e.type == "mousedown" && this.clipsTimeline)
-        //         this.clipsTimeline.selectedClip = null;
-        //     this.timeline.processMouse(e);
-        //     return;
-        // }
-        if(this.keyFramesTimeline && this.keyFramesTimeline.active)
-        {
-            this.keyFramesTimeline.processMouse(e);
-            return;
-        }
-        else if(this.clipsTimeline && this.clipsTimeline.active)
-        {
-
-            this.clipsTimeline.processMouse(e);
-
-        }
-        
-    }
-
     resize(width, height) {
         //this.timelineArea.setSize([width, null]);
         this.editor.activeTimeline.resize();
-
     }
 
     async promptExit() {
@@ -684,26 +583,10 @@ class KeyframesGui extends Gui {
         this.curvesTimeline.onDeleteKeyFrame = (trackIdx, tidx) => this.editor.removeAnimationData(this.curvesTimeline.animationClip, trackIdx, tidx);
         this.curvesTimeline.onGetSelectedItem = () => { return this.editor.getSelectedActionUnit(); };
 
-        this.curvesTimeline.onMouse = (e, time) => {
-            if(e.type == "mousemove") {
-
-            }
-        }
-        
-        // area.onresize = (bounding) => this.timelineArea.setSize(bounding);
-        // Create timelines container area
-        //this.timelineArea = new LX.Area({ height: 400, overlay:"bottom", resize: true});
         this.timelineArea.attach(this.keyFramesTimeline.root);
         this.timelineArea.attach(this.curvesTimeline.root);
         this.keyFramesTimeline.hide();
         this.curvesTimeline.hide();
-
-
-        //Resize timelines on resize timeline container area
-        // this.timelineArea.onresize = (bounding) => {this.keyFramesTimeline.resize( [ bounding.width, bounding.height ] );}
-        // this.timelineArea.onresize = (bounding) => {this.curvesTimeline.resize( [ bounding.width, bounding.height ] );}
-        //area.attach(this.timelineArea);
-       // this.timelineArea.hide();
 
     }
     
@@ -711,20 +594,6 @@ class KeyframesGui extends Gui {
         // Hide capture buttons
         let buttonContainer = document.getElementById("capture-buttons");
         buttonContainer.style.display = "none";
-        // let capture = document.getElementById("capture_btn");
-        // capture.disabled = true;
-        // capture.style.display = "none";
-
-        // let redo = document.getElementById("redo_btn");
-        // if(redo){
-        //     redo.disabled = true;
-        //     redo.style.display = "none";
-        // } 
-            
-        // let trimBtn = document.getElementById("trim_btn");
-        // trimBtn.disabled = true;
-        // trimBtn.style.display = "none";
-
     
         // Reposition video the canvas elements
         let videoDiv = document.getElementById("capture");
@@ -751,12 +620,6 @@ class KeyframesGui extends Gui {
         videoCanvas.height = 300;
         videoCanvas.width = 300 * aspectRatio;
         $(videoDiv).draggable({containment: "#canvasarea"}).resizable({ aspectRatio: true, containment: "#outputVideo"});
-
-        // this.hideCaptureArea();
-        
-        //Update menu bar
-        // this.updateMenubar();
-
     }
     
     changeCaptureGUIVisivility(hidde) {
@@ -1034,12 +897,9 @@ class KeyframesGui extends Gui {
         options = options || {};
         this.boneProperties = {};
         this.itemSelected = itemSelected;
-        // $(root.content).empty();
         
         var mytree = this.updateNodeTree();
     
-        // var litetree = new LiteGUI.Tree(mytree, {id: "tree"});
-        // litetree.setSelectedItem(itemSelected);
         let litetree = skeletonPanel.addTree("Skeleton bones", mytree, { 
             // icons: tree_icons, 
             filter: true,
@@ -1400,6 +1260,30 @@ class ScriptGui extends Gui {
         this.clipsTimeline.setFramerate(30);
         // this.clipsTimeline.setScale(400);
         // this.clipsTimeline.hide();
+        this.clipsTimeline.addButtons([
+            {
+                name: 'Animation loop',
+                property: 'animLoop',
+                selectable: true,
+                selected: this.editor.animLoop,
+                width: '40px',
+                icon: 'fa-solid fa-person-walking-arrow-loop-left',
+                callback: (v) =>  {
+                    this.editor.animLoop = !this.editor.animLoop;
+                    this.editor.setAnimationLoop(this.editor.animLoop);
+                    
+                }
+            },
+            {
+                name: 'Clear all tracks',
+                property: 'clearTracks',
+                width: '40px',
+                icon: 'fa-solid fa-trash',
+                callback: (v) =>  {
+                    this.editor.clearTracks()     
+                }
+            }
+        ])
         this.timelineArea.attach(this.clipsTimeline.root);
         this.clipsTimeline.canvas.tabIndex = 1;
         
@@ -1742,7 +1626,7 @@ class ScriptGui extends Gui {
             if(clip.fadein!= undefined && clip.fadeout!= undefined)  {
 
                 widgets.branch("Sync points", {icon: "fa-solid fa-chart-line"});
-
+                widgets.addText(null, "These sync points define the dynamic progress of the action. They are normalized by duration.", null, {disabled: true});
                 const syncvalues = [];
                 
                 if(clip.fadein != undefined)
@@ -1753,14 +1637,14 @@ class ScriptGui extends Gui {
                         {              
                             clip.attackPeak = clip.fadein = v + clip.start;
                             updateTracks();
-                        }, {min:0, max: clip.fadeout - clip.start, step:0.01, precision:2});
+                        }, {min:0, max: clip.fadeout - clip.start, step:0.01, precision:2, title: "Maximum action achieved"});
                     
                     if(clip.ready != undefined)
                         widgets.addNumber("Ready (s)", (clip.fadein - clip.start).toFixed(2), (v) =>
                         {              
                             clip.ready = clip.fadein = v + clip.start;
                             updateTracks();
-                        }, {min:0, max: clip.fadeout - clip.start, step:0.01, precision:2});
+                        }, {min:0, max: clip.fadeout - clip.start, step:0.01, precision:2, title: "Target acquired or end of the preparation phase"});
                 }
 
                 if(clip.strokeStart != undefined) {
@@ -1768,7 +1652,7 @@ class ScriptGui extends Gui {
                     {              
                         clip.strokeStart = v + clip.start;
                         updateTracks();
-                    }, {min: clip.ready - clip.start, max: clip.stroke - clip.start, step:0.01, precision:2});
+                    }, {min: clip.ready - clip.start, max: clip.stroke - clip.start, step:0.01, precision:2, title: "Start of the stroke"});
                 }
 
                 if(clip.stroke != undefined) {
@@ -1778,7 +1662,7 @@ class ScriptGui extends Gui {
                         updateTracks(true);
                         // this.updateClipPanel(clip);
 
-                    }, {min: clip.strokeStart - clip.start, max: clip.strokeEnd - clip.start, step:0.01, precision:2});
+                    }, {min: clip.strokeStart - clip.start, max: clip.strokeEnd - clip.start, step:0.01, precision:2, title: "Stroke of the motion"});
                 }
 
                 if(clip.strokeEnd != undefined) {
@@ -1788,7 +1672,7 @@ class ScriptGui extends Gui {
                         updateTracks(true);
                         // this.updateClipPanel(clip);
 
-                    }, {min: clip.stroke - clip.start, max: clip.relax - clip.start, step:0.01, precision:2});
+                    }, {min: clip.stroke - clip.start, max: clip.relax - clip.start, step:0.01, precision:2, title: "End of the stroke"});
                 }
 
 
@@ -1806,7 +1690,7 @@ class ScriptGui extends Gui {
                             if(clip.ready != undefined)
                                 clip.ready = Math.min(clip.fadeout, clip.fadein);
                             updateTracks();
-                        }, {min: clip.fadein - clip.start, max: clip.duration , step:0.01, precision:2});
+                        }, {min: clip.fadein - clip.start, max: clip.duration , step:0.01, precision:2, title: "Decay or retraction phase starts"});
                 }
 
                 if(syncvalues.length) {
@@ -1859,6 +1743,7 @@ class ScriptGui extends Gui {
         let that = this;
         const innerSelect = (asset) => {
            
+                that.clipsTimeline.unSelectAllClips();
                 let idx = null;
                 switch(asset.folder.id) {
                     case "Face":
@@ -1882,21 +1767,19 @@ class ScriptGui extends Gui {
                         
                         break;
                 }
-                
                 asset_browser.clear();
                 dialog.close();
-                
-            
         }
         let asset_browser = new LX.AssetView({  
             preview_actions: [{
                 name: 'Add clip', 
-                callback: innerSelect}]
+                callback: innerSelect,
+                allowed_types: ["Clip"]
+            }]
         });
-
+        
         let dialog = new LX.Dialog('BML clips', (p) => {
 
-            
             p.attach( asset_browser );
             let asset_data = [{id: "Face", type: "folder", src: "./data/imgs/folder.png", children: []}, {id: "Gaze", type: "folder", src: "./data/imgs/folder.png", children: []}, {id: "Head movement", type: "folder", src: "./data/imgs/folder.png", children: []}, {id: "Body movement", type: "folder", src: "./data/imgs/folder.png", children: []}];
                 
@@ -1905,7 +1788,7 @@ class ScriptGui extends Gui {
             for(let i = 0; i < values.length; i++){
                 let data = {
                     id: values[i], 
-                    type: "clip",
+                    type: "Clip",
                     src: "./data/imgs/thumbnails/" + values[i].toLowerCase().replaceAll(" ", "_") + ".png"
                 }
                 asset_data[0].children.push(data);
@@ -1916,7 +1799,7 @@ class ScriptGui extends Gui {
             for(let i = 0; i < values.length; i++){
                 let data = {
                     id: values[i], 
-                    type: "clip",
+                    type: "Clip",
                     // src: "./data/imgs/thumbnails/" + values[i].toLowerCase().replaceAll(" ", "_") + ".png"
                 }
                 asset_data[1].children.push(data);
@@ -1927,7 +1810,7 @@ class ScriptGui extends Gui {
             for(let i = 0; i < values.length; i++){
                 let data = {
                     id: values[i], 
-                    type: "clip",
+                    type: "Clip",
                     // src: "./data/imgs/thumbnails/" + values[i].toLowerCase().replaceAll(" ", "_") + ".png"
                 }
                 asset_data[2].children.push(data);
@@ -1938,13 +1821,12 @@ class ScriptGui extends Gui {
             for(let i = 0; i < values.length; i++){
                 let data = {
                     id: values[i], 
-                    type: "clip",
+                    type: "Clip",
                     // src: "./data/imgs/thumbnails/" + values[i].toLowerCase().replaceAll(" ", "_") + ".png"
                 }
                 asset_data[3].children.push(data);
             }
 
-            asset_browser.allowed_types = ["Clip"];
             asset_browser.load( asset_data, (e,v) => {
                 switch(e.type) {
                     case LX.AssetViewEvent.ASSET_SELECTED: 
@@ -1963,31 +1845,7 @@ class ScriptGui extends Gui {
                         console.log(e.item.id + " is now called " + e.value); 
                         break;
                     case LX.AssetViewEvent.ASSET_DBCLICK: 
-                        innerSelect(e.item)
-                        // dialog.close();
-                        // let asset = e.item;
-                        // switch(asset.folder.id) {
-                        //     case "Face":
-                        //         that.clipsTimeline.addClip( new ANIM.FaceLexemeClip({lexeme: asset.id})); 
-                        //         break;
-                        //     case "Gaze":
-                        //         that.clipsTimeline.addClip( new ANIM.GazeClip({influence: asset.id})); 
-                        //         break;
-                        //     case "Head movement":
-                        //         that.clipsTimeline.addClip( new ANIM.HeadClip({lexeme: asset.id})); 
-                        //         break;
-                        //     default:
-                        //         let clipType = asset.id;
-                        //         let data = {properties: {hand: this.editor.dominantHand}};
-                        //         if(clipType.includes("Shoulder")) {
-                        //             let type = clipType.split(" ")[1];
-                        //             clipType = "Shoulder";
-                        //             data["shoulder" + type] = 0.8
-                        //         }
-                        //         that.clipsTimeline.addClip( new ANIM[clipType.replaceAll(" ", "") + "Clip"](data));
-                        //         break;
-                        // }
-                        
+                        innerSelect(e.item);                        
                         break;
                 }
             })
@@ -2003,19 +1861,21 @@ class ScriptGui extends Gui {
         let dialog = new LX.Dialog('Non Manual Features presets', (p) => {
 
             let values = ANIM.FacePresetClip.facePreset; //["Yes/No-Question", "Negative", "WH-word Questions", "Topic", "RH-Questions"];
-            let asset_browser = new LX.AssetView({ skip_browser: true, skip_preview: true  });
+            let asset_browser = new LX.AssetView({ skip_browser: true, skip_preview: true, allowed_types: ["Clips"]  });
             p.attach( asset_browser );
             let asset_data = [];
             
             // Create a collection of widgets values
             for(let i = 0; i < values.length; i++){
-                let data = { id: values[i], type: "clips" };
+                let data = { id: values[i], type: "Clips" };
                 asset_data.push(data);
             }
             
             asset_browser.load( asset_data, e => {
                 switch(e.type) {
                     case LX.AssetViewEvent.ASSET_SELECTED: 
+                        that.clipsTimeline.unSelectAllClips();
+
                         if(e.multiple)
                             console.log("Selected: ", e.item); 
                         else
@@ -2057,21 +1917,15 @@ class ScriptGui extends Gui {
                     editor.showGUI = !editor.showGUI;
 
                     editor.scene.getObjectByName('Grid').visible = editor.showGUI;
-                    let clickEvent = new MouseEvent( "mousedown" ); // Create the event.
-                    let el = this.mainArea.root.getElementsByClassName("lexmin")[0];
-                    
+                  
                     if(editor.showGUI) {
                         this.showTimeline();
-                        this.sidePanel.parentArea.maximize()
-                        // if(el.classList.contains("fa-angle-left"))
-                        //     el.dispatchEvent( clickEvent ); 
+                        this.sidePanel.parentArea.maximize();                       
                         
                     } else {
                         this.hideTimeline();
                         this.sidePanel.parentArea.minimize();
-                       // setTimeout(() => this.hideTimeline(), 400)
-                        // if(!el.classList.contains("fa-angle-left"))
-                        //     el.dispatchEvent( clickEvent ); 
+
                     }
                     
                     const video = document.getElementById("capture");
@@ -2079,18 +1933,18 @@ class ScriptGui extends Gui {
                 }
             },
     
-            {
-                name: 'Animation loop',
-                property: 'animLoop',
-                selectable: true,
-                selected: true,
-                icon: 'fa-solid fa-person-walking-arrow-loop-left',
-                callback: (v) =>  {
-                    editor.animLoop = !editor.animLoop;
-                    editor.setAnimationLoop(editor.animLoop);
+            // {
+            //     name: 'Animation loop',
+            //     property: 'animLoop',
+            //     selectable: true,
+            //     selected: true,
+            //     icon: 'fa-solid fa-person-walking-arrow-loop-left',
+            //     callback: (v) =>  {
+            //         editor.animLoop = !editor.animLoop;
+            //         editor.setAnimationLoop(editor.animLoop);
                     
-                }
-            }
+            //     }
+            // }
         ]
         area.addOverlayButtons(canvasButtons, { float: "htc" } );
     }

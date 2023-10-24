@@ -340,7 +340,7 @@ class Editor {
         this.mixer.setTime(t);
     }
 
-    cleanTracks() {
+    clearTracks() {
 
     }
 
@@ -541,11 +541,8 @@ class Editor {
             else
                 this.mixer._actions[i].loop = THREE.LoopRepeat;
         }
+        this.gizmo.updateTracks();
     }
-
-
-
-    
 
     setAnimation(type) {
         if(this.activeTimeline) {
@@ -586,8 +583,10 @@ class Editor {
             let stateBtn = document.querySelector("[title=Play]");
             stateBtn.children[0].click();
 
-            this.video.pause();
-            this.video.currentTime = this.video.startTime;
+            if( this.video ) {
+                this.video.pause();
+                this.video.currentTime = this.video.startTime;
+            }
         }
     }
 
@@ -910,8 +909,7 @@ class KeyframeEditor extends Editor{
     loadAnimation( animation ) {
 
         const extension = UTILS.getExtension(animation.name);
-        // // Canvas UI buttons
-        // this.createSceneUI();
+    
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
         
@@ -1546,7 +1544,7 @@ class ScriptEditor extends Editor{
                     p.addText("", "There is already an animation. What do you want to do?", null, {disabled: true});
                     p.sameLine(3);
                     p.addButton(null, "Replace", () => { 
-                        this.cleanTracks();
+                        this.clearTracks();
                         this.clipName = anim.name;
                         this.animation = anim;
                         this.gui.loadBMLClip(this.animation);
@@ -1604,7 +1602,7 @@ class ScriptEditor extends Editor{
         }
     }
 
-    cleanTracks() {
+    clearTracks() {
         if(!this.activeTimeline.animationClip)
             return;
 
@@ -1613,7 +1611,7 @@ class ScriptEditor extends Editor{
             const track = this.activeTimeline.animationClip.tracks[i];
             let idx = track.idx;
             
-            this.activeTimeline.cleanTrack(idx);
+            this.activeTimeline.clearTrack(idx);
         
             if(this.activeTimeline.onPreProcessTrack)
                 this.activeTimeline.onPreProcessTrack( track, track.idx );
