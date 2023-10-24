@@ -719,7 +719,7 @@ class KeyframesGui extends Gui {
         let container = document.createElement("div");
         
         let img = document.createElement("img");
-        img.src = "./data/imgs/face areas2.png";
+        img.src = "./data/imgs/masks/face areas2.png";
         img.setAttribute("usemap", "#areasmap");
         img.style.position = "relative";
         container.appendChild(img);
@@ -764,10 +764,10 @@ class KeyframesGui extends Gui {
                     maparea.coords = "155,569,184,583,258,592,342,579,364,567,377,597,311,666,259,681,205,671,132,610,130,595";
                     break;
             }
-            maparea.src = "./data/imgs/"+ maparea.name + " selected.png";
+            maparea.src = "./data/imgs/masks/"+ maparea.name + " selected.png";
             map.appendChild(maparea);
             let imgHover = document.createElement("img");
-            imgHover.src = "./data/imgs/"+ maparea.name + " selected.png";
+            imgHover.src = "./data/imgs/masks/"+ maparea.name + " selected.png";
             imgHover.alt = maparea.name;
             imgHover.style.display = "none";
             imgHover.style.position = "relative";
@@ -789,7 +789,7 @@ class KeyframesGui extends Gui {
             e.stopPropagation();
             this.updateActionUnitsPanel(e.target.name);
            
-            img.src = "./data/imgs/face areas2 " + e.target.name + ".png";
+            img.src = "./data/imgs/masks/face areas2 " + e.target.name + ".png";
             document.getElementsByClassName("map-container")[0].style.backgroundImage ="url('" +img.src +"')";
 
         });
@@ -877,7 +877,7 @@ class KeyframesGui extends Gui {
             tabs.add(area, panel, this.editor.getSelectedActionUnit() == area, null, {onSelect : (e, v) => {
                 this.showTimeline();
                 this.editor.setSelectedActionUnit(v);
-                document.getElementsByClassName("map-container")[0].style.backgroundImage ="url('" +"./data/imgs/face areas2 " + v + ".png"+"')";
+                document.getElementsByClassName("map-container")[0].style.backgroundImage ="url('" +"./data/imgs/masks/face areas2 " + v + ".png"+"')";
             }
             });
         }
@@ -1346,6 +1346,7 @@ class ScriptGui extends Gui {
                 return 1;
             });
 
+            this.clipsTimeline.unSelectAllClips();
             let offset = 0;
             for(let i = 0; i < this.clipsTimeline.clipsToCopy.length; i++){
                 let [trackIdx, clipIdx] = this.clipsTimeline.clipsToCopy[i];
@@ -1510,10 +1511,10 @@ class ScriptGui extends Gui {
                     // syncvalues.push([clip.start, 0]);
 
                     if(clip.fadein != undefined)
-                        syncvalues.push([clip.fadein - clip.start, clip.properties.amount || 1]);
+                        syncvalues.push([clip.fadein - clip.start, (clip.properties.amount || 1) - 0.2]);
                     
                     if(clip.fadeout != undefined) 
-                        syncvalues.push([clip.fadeout - clip.start, clip.properties.amount || 1]);
+                        syncvalues.push([clip.fadeout - clip.start, (clip.properties.amount || 1) - 0.2]);
                     
                     // syncvalues.push([clip.duration + clip.start, 0]);
                     // this.curve.curve_instance.element.value = syncvalues;
@@ -1631,7 +1632,7 @@ class ScriptGui extends Gui {
                 
                 if(clip.fadein != undefined)
                 {
-                    syncvalues.push([clip.fadein - clip.start, clip.properties.amount || 1]);
+                    syncvalues.push([clip.fadein - clip.start, (clip.properties.amount || 1) - 0.2]);
                     if(clip.attackPeak != undefined)
                         widgets.addNumber("Attack Peak (s)", (clip.fadein - clip.start).toFixed(2), (v) =>
                         {              
@@ -1678,7 +1679,7 @@ class ScriptGui extends Gui {
 
                 if(clip.fadeout != undefined) 
                 {
-                    syncvalues.push([clip.fadeout - clip.start, clip.properties.amount || 1]);
+                    syncvalues.push([clip.fadeout - clip.start, (clip.properties.amount || 1) - 0.2]);
                     
                     if(clip.relax != undefined)
                         widgets.addNumber("Relax (s)", (clip.fadeout - clip.start).toFixed(2), (v) =>
@@ -1708,7 +1709,7 @@ class ScriptGui extends Gui {
                         updateTracks(true);
                         // this.updateClipPanel(clip);
         
-                    }, {xrange: [0, clip.duration], allow_add_values: false, draggable_y: false});
+                    }, {xrange: [0, clip.duration], allow_add_values: false, draggable_y: false, smooth: 0.2});
                 }
             }
 

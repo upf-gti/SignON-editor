@@ -245,25 +245,108 @@ canvas {
 	width: 45px;
 	height: 45px;
 	border-radius: 4px;
-	background-image: url("../data/imgs/animics_monster.png");/* #4b9cdb;*/
+	background-image: url("../data/imgs/monster.png");/* #4b9cdb;*/
   }
 
-  .load-7 .square {
-	/* animation: loadingG 1.5s cubic-bezier(0.17, 0.37, 0.43, 0.67) infinite; */
-	animation: loadingG 1.5s cubic-bezier(0.17, 0.37, 0.43, 0.67) infinite;
-  }
+/* .load-7 .square {
+/* animation: loadingG 1.5s cubic-bezier(0.17, 0.37, 0.43, 0.67) infinite; */
+/* animation: loadingG 1.5s cubic-bezier(0.17, 0.37, 0.43, 0.67) infinite;
+} */ 
 
-  @keyframes loadingG {
-	0% {
-	  transform: translate(0, 0) rotate(0deg);
-	}
-	50% {
-	  transform: translate(70px, 0) rotate(360deg);
-	}
-	100% {
-	  transform: translate(0, 0) rotate(0deg);
-	}
-  }
+@keyframes loadingG {
+0% {
+	transform: translate(0, 0) rotate(0deg);
+}
+50% {
+	transform: translate(70px, 0) rotate(360deg);
+}
+100% {
+	transform: translate(0, 0) rotate(0deg);
+}
+}
+
+.load-7 .square {
+
+	position: relative;
+	top: 0;
+	left: 0;
+	animation: combined 2s linear infinite alternate;
+    /* -webkit-animation: combined 2s linear infinite alternate; */
+}
+
+ @keyframes combined {
+    16%, 48%, 78%  {
+        top: 120px;
+        animation-timing-function: ease-out;
+    }
+    32% {
+        top: 0px;
+        animation-timing-function: ease-in;
+    }
+    62% {
+        top: 50px;
+        animation-timing-function: ease-in;
+    }
+    90% {
+        top: 70px;
+        animation-timing-function: ease-in;
+    }
+    100% {
+        
+        top: 120px;
+        animation-timing-function: ease-out;
+        left:100%;
+    }
+}
+
+@-webkit-keyframes combined {
+    16%, 48%, 78%  {
+        top: 120px;
+        -webkit-animation-timing-function: ease-out;
+    }
+    32% {
+        top: 0px;
+        -webkit-animation-timing-function: ease-in;
+    }
+    62% {
+        top: 50px;
+        -webkit-animation-timing-function: ease-in;
+    }
+    90% {
+        top: 70px;
+        -webkit-animation-timing-function: ease-in;
+    }
+    100% {
+        
+        top: 120px;
+        -webkit-animation-timing-function: ease-out;
+        left:100%;
+    }
+}
+/* @keyframes combined {
+    10%, 38%, 68%  {
+        top: 0px;
+        animation-timing-function: ease-in;
+    }
+    22% {
+        top: 40px;
+        animation-timing-function: ease-out;
+    }
+    52% {
+        top: 90px;
+        animation-timing-function: ease-out;
+    }
+    84% {
+        top: 120px;
+        animation-timing-function: ease-out;
+    }
+    100% {
+       
+        top: 0px;
+        animation-timing-function: ease-in;
+        left:100%;
+    }
+} */
 
 /* ---------- Auxiliary Elements ---------- */
 /* Capture button */
