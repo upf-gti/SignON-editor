@@ -373,12 +373,25 @@ class Gui {
                 return;
             });
 
+        }, {
+            onclose: (root) => {
+            
+                root.remove();
+                this.prompt = null;
+            }
         });
         return this.prompt;
     }
 
     showClearTracksConfirmation(callback) {
-        this.prompt = new LX.prompt("Are you sure you want to delete all the tracks? You won't be able to restore the animation.", "Clear all tracks", callback, {input:false} );
+        this.prompt = new LX.prompt("Are you sure you want to delete all the tracks? You won't be able to restore the animation.", "Clear all tracks", callback, {input:false},  
+        {
+            onclose: (root) => {
+            
+                root.remove();
+                this.prompt = null;
+            }
+        } );
     }
 };
 
@@ -1746,7 +1759,13 @@ class ScriptGui extends Gui {
 
     showGuide() {
         
-        this.prompt = LX.message("Right click on timeline to create a new clip. You can create a clip from a selected lexeme or from a preset configuration.", "How to start?");
+        this.prompt = LX.message("Right click on timeline to create a new clip. You can create a clip from a selected lexeme or from a preset configuration.", "How to start?",  {
+            onclose: (root) => {
+            
+                root.remove();
+                this.prompt = null;
+            }
+        });
 
     }
 
@@ -1758,9 +1777,15 @@ class ScriptGui extends Gui {
                presetInfo.clips.push(this.clipsTimeline.animationClip.tracks[trackIdx].clips[clipIdx]);
            }
            let preset = new ANIM.FacePresetClip(presetInfo);
-       }, {} )
+       },
+       {
+        onclose: (root) => {
+        
+            root.remove();
+            this.prompt = null;
+        }
+    } )
 
-       this.prompt = null;
    }
 
     createClipsDialog() {
@@ -1803,7 +1828,7 @@ class ScriptGui extends Gui {
             }]
         });
         
-        let dialog = new LX.Dialog('BML clips', (p) => {
+        let dialog = this.prompt = new LX.Dialog('BML clips', (p) => {
 
             p.attach( asset_browser );
             let asset_data = [{id: "Face", type: "folder", src: "./data/imgs/folder.png", children: []}, {id: "Gaze", type: "folder", src: "./data/imgs/folder.png", children: []}, {id: "Head movement", type: "folder", src: "./data/imgs/folder.png", children: []}, {id: "Body movement", type: "folder", src: "./data/imgs/folder.png", children: []}];
@@ -1874,7 +1899,13 @@ class ScriptGui extends Gui {
                         break;
                 }
             })
-        },{ title:'Lexemes', close: true, minimize: false, size: ["80%", "70%"], scroll: true, resizable: true, draggable: true });
+        },{ title:'Lexemes', close: true, minimize: false, size: ["80%", "70%"], scroll: true, resizable: true, draggable: true, 
+            onclose: (root) => {
+            
+                root.remove();
+                this.prompt = null;
+            }
+         });
        
     }
 
@@ -1883,7 +1914,7 @@ class ScriptGui extends Gui {
         
         let that = this;
         // Create a new dialog
-        let dialog = new LX.Dialog('Non Manual Features presets', (p) => {
+        let dialog = this.prompt = new LX.Dialog('Non Manual Features presets', (p) => {
 
             let values = ANIM.FacePresetClip.facePreset; //["Yes/No-Question", "Negative", "WH-word Questions", "Topic", "RH-Questions"];
             let asset_browser = new LX.AssetView({ skip_browser: true, skip_preview: true, allowed_types: ["Clips"]  });
@@ -1923,7 +1954,14 @@ class ScriptGui extends Gui {
                         break;
                 }
             })
-        }, { title:'Presets', close: true, minimize: false, size: [800], scroll: true, resizable: true, draggable: true});
+        }, { title:'Presets', close: true, minimize: false, size: [800], scroll: true, resizable: true, draggable: true, 
+    
+            onclose: (root) => {
+                
+                root.remove();
+                this.prompt = null;
+            }
+        });
     }
 
     createSceneUI(area) {
