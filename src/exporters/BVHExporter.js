@@ -13,7 +13,7 @@ const BVHExporter = {
             window.navigator.msSaveOrOpenBlob(file, filename);
         else { // Others
             var a = document.createElement("a"),
-                    url = URL.createObjectURL(file);
+            url = URL.createObjectURL(file);
             a.href = url;
             a.download = filename;
             document.body.appendChild(a);

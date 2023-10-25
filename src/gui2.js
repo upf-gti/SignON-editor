@@ -78,18 +78,18 @@ class Gui {
   
         menubar.add("Project/Export animation", {icon: "fa fa-file-export"});
         menubar.add("Project/Export animation/Export extended BVH", {callback: () => {
-            LX.prompt("File name", "Export BVH animation", (v) => this.editor.export("BVH extended", v), {input: this.editor.animation ? this.editor.animation.name : null } );      
+            LX.prompt("File name", "Export BVH animation", (v) => this.editor.export("BVH extended", v), {input: this.editor.clipName, required: true } );      
         }});
         if(this.editor.mode == this.editor.eModes.script) {
             menubar.add("Project/Export animation/Export BML", {callback: () => 
-                LX.prompt("File name", "Export BML animation", (v) => this.editor.export("", v), {input: this.editor.animation ? this.editor.animation.name : null} )     
+                LX.prompt("File name", "Export BML animation", (v) => this.editor.export("", v), {input: this.editor.clipName, required: true} )     
             });
         }
         menubar.add("Project/Export scene", {icon: "fa fa-download"});
         menubar.add("Project/Export scene/Export GLB", {callback: () => 
-            LX.prompt("File name", "Export GLB", (v) => this.editor.export("GLB", v), {input: this.editor.animation ? this.editor.animation.name : null} )     
+            LX.prompt("File name", "Export GLB", (v) => this.editor.export("GLB", v), {input: this.editor.clipName, required: true} )     
         });
-        menubar.add("Project/Upload to server", {icon: "fa fa-upload", callback: () => this.editor.getApp().storeAnimation() });
+        // menubar.add("Project/Upload to server", {icon: "fa fa-upload", callback: () => this.editor.getApp().storeAnimation() }); --> NOT YET
         menubar.add("Project/Preview realizer", {icon: "fa fa-street-view",  callback: () => this.editor.showPreview() });
 
         // menubar.add("Timeline/");
@@ -126,7 +126,7 @@ class Gui {
 
 
         menubar.add("Timeline/Optimize all tracks", { callback: () => this.editor.optimizeTracks() });
-        menubar.add("Timeline/Clear tracks", { callback: () => this.editor.clearTracks() });
+        menubar.add("Timeline/Clear tracks", { callback: () => this.editor.clearAllTracks() });
         if(this.showVideo)
             menubar.add("View/Show video", { type: "checkbox", checked: this.showVideo, callback: (v) => {
                 this.showVideo = v;
@@ -359,12 +359,12 @@ class Gui {
             p.addText(null, "Be sure you have exported the animation. If you exit now, your data will be lost. How would you like to proceed?", null, {disabled: true});
             p.addButton(null, "Export", () => {
                 p.clear();
-                p.addString("File name", this.editor.animation ? this.editor.animation.name : null, (v) => this.editor.animation.name = v);
-                p.addButton(null, "Export extended BVH", () => this.editor.export("BVH extended", this.editor.animation.name));
+                p.addString("File name", this.editor.clipName, (v) => this.editor.clipName = v);
+                p.addButton(null, "Export extended BVH", () => this.editor.export("BVH extended", this.editor.clipName));
                 if(this.editor.mode == this.editor.eModes.script) {
-                    p.addButton( null, "Export BML", () => this.editor.export("", this.animation.name ));
+                    p.addButton( null, "Export BML", () => this.editor.export("", this.editor.clipName ));
                 }
-                p.addButton( null, "Export GLB", () => this.editor.export("GLB", this.editor.animation.name));
+                p.addButton( null, "Export GLB", () => this.editor.export("GLB", this.editor.clipName));
             });
             p.addButton(null, "Discard", () => {
 
@@ -375,6 +375,10 @@ class Gui {
 
         });
         return this.prompt;
+    }
+
+    showClearTracksConfirmation(callback) {
+        this.prompt = new LX.prompt("Are you sure you want to delete all the tracks? You won't be able to restore the animation.", "Clear all tracks", callback, {input:false} );
     }
 };
 
@@ -444,7 +448,7 @@ class KeyframesGui extends Gui {
                     let inputEl = input.domEl.getElementsByTagName("input")[0];
                     inputEl.value = "";
                     input.domEl.classList.add("hidden");
-                    this.editor.__app.onBeginCapture();
+                    this.editor.getApp().onBeginCapture();
                 }
             }, {
                 value: 'video',
@@ -464,7 +468,7 @@ class KeyframesGui extends Gui {
                 return;
 
             }
-            this.editor.__app.onLoadVideo( value );
+            this.editor.getApp().onLoadVideo( value );
 
         }, { id: "video-input", placeholder: "No file selected", local: false, type: "buffer", read: false, width: "200px"} );
         
@@ -687,8 +691,18 @@ class KeyframesGui extends Gui {
     /** -------------------- SIDE PANEL (editor) -------------------- */
     createSidePanel() {
   
+        
+        let area = new LX.Area({className: "sidePanel", id: 'panel', scroll: true});  
+        this.sidePanel.attach(area);
+       
+        let [top, bottom] = area.split({type: "vertical", resize: false, sizes: "auto"});
+        // let [top, bottom] = area.sections;
+        this.animationPanel = new LX.Panel({id:"animaiton"});
+        top.attach(this.animationPanel);
+        this.updateAnimationPanel( );
+
         //create tabs
-        let tabs = this.sidePanel.addTabs({fit: true});
+        let tabs = bottom.addTabs({fit: true});
 
         let bodyArea = new LX.Area({className: "sidePanel", id: 'Body', scroll: true});  
         let faceArea = new LX.Area({className: "sidePanel", id: 'Face', scroll: true});  
@@ -712,6 +726,23 @@ class KeyframesGui extends Gui {
         this.createSkeletonPanel( bodyTop, 'root', {firstBone: true} );
         this.createBonePanel( bodyBottom );
         
+    }
+
+    updateAnimationPanel( options = {}) {
+        let widgets = this.animationPanel;
+
+        widgets.onRefresh = (o) => {
+
+            o = o || {};
+            widgets.clear();
+            widgets.addTitle("Animation");
+            widgets.addText("Name", this.editor.clipName || "", (v) => this.editor.clipName = v)
+            widgets.addNumber("Speed", this.editor.mixer.timeScale, v => {
+                this.editor.mixer.timeScale = v;
+            }, {min: 0.25, max: 1.5, step: 0.05, precision: 2});
+            widgets.addSeparator();
+        }
+        widgets.onRefresh(options);
     }
 
     createFacePanel(root, itemSelected, options = {}) {
@@ -1280,7 +1311,7 @@ class ScriptGui extends Gui {
                 width: '40px',
                 icon: 'fa-solid fa-trash',
                 callback: (v) =>  {
-                    this.editor.clearTracks()     
+                    this.editor.clearAllTracks()     
                 }
             }
         ])
@@ -1442,22 +1473,17 @@ class ScriptGui extends Gui {
     /** -------------------- SIDE PANEL (editor) -------------------- */
     createSidePanel() {
 
-        let area = new LX.Area({className: "sidePanel", id: 'panel', scroll: true});  
-        this.sidePanel.attach(area);
+        // let area = new LX.Area({className: "sidePanel", id: 'panel', scroll: true});  
+        // this.sidePanel.attach(area);
        
-        let [top, bottom] = area.split({type: "vertical", resize: false, sizes: "auto"});
+        let [top, bottom] = this.sidePanel.split({type: "vertical", resize: false, sizes: "auto"});
         // let [top, bottom] = area.sections;
         this.animationPanel = new LX.Panel({id:"animaiton"});
         top.attach(this.animationPanel);
         this.clipPanel = new LX.Panel({id:"bml-clip"});
         bottom.attach(this.clipPanel);
 
-        this.animationPanel.addTitle("Animation");
-        this.animationPanel.addComboButtons("Dominant hand", [{value: "Left", callback: (v) => this.editor.dominantHand = v}, {value:"Right", callback: (v) => this.editor.dominantHand = v}], {selected: this.editor.dominantHand})
-        this.animationPanel.addButton(null, "Add clip", () => this.createClipsDialog() )
-        this.animationPanel.addButton(null, "Add preset", () => this.createPresetsDialog() )
-        this.animationPanel.addSeparator();
-        // this.updateAnimationPanel( );
+        this.updateAnimationPanel( );
         this.updateClipPanel( );
         
     }
@@ -1469,18 +1495,16 @@ class ScriptGui extends Gui {
 
             o = o || {};
             widgets.clear();
-            widgets.branch("Animation Clip", {icon: "fa-solid fa-child-reaching"});
-            widgets.addText("Name", this.editor.animation.name || "Unnamed", v => this.editor.animation.name = v );
-            widgets.addText("Frame rate", this.clipsTimeline.framerate, null, {disabled: true});
-            widgets.addText("Duration", this.duration.toFixed(2), null, {disabled: true});
+            widgets.addTitle("Animation");
+            widgets.addText("Name", this.editor.clipName || "", (v) => this.editor.clipName = v)
             widgets.addNumber("Speed", this.editor.mixer.timeScale, v => {
                 this.editor.mixer.timeScale = v;
             }, {min: 0.25, max: 1.5, step: 0.05, precision: 2});
             widgets.addSeparator();
-            widgets.addNumber("Optimize Threshold", this.editor.optimizeThreshold, v => {
-                this.editor.optimizeThreshold = v;
-            }, {min: 0, max: 0.25, step: 0.001, precision: 4});
-            // widgets.widgets_per_row = 1;
+            widgets.addComboButtons("Dominant hand", [{value: "Left", callback: (v) => this.editor.dominantHand = v}, {value:"Right", callback: (v) => this.editor.dominantHand = v}], {selected: this.editor.dominantHand})
+            widgets.addButton(null, "Add clip", () => this.createClipsDialog() )
+            widgets.addButton(null, "Add preset", () => this.createPresetsDialog() )
+            widgets.addSeparator();
         }
         widgets.onRefresh(options);
     }

@@ -105,28 +105,6 @@ class Editor {
                     }
                     break;
 
-                // case "c":
-                //     if(e.ctrlKey && this.mode == this.eModes.script && e.target.classList.contains('lextimeline')){
-                //         this.activeTimeline.clipsToCopy = [...this.activeTimeline.lastClipsSelected];
-                //     }
-                //     break;
-
-                // case "v":
-                //     if(e.ctrlKey && this.mode == this.eModes.script && e.target.classList.contains('lextimeline')) {
-                //         this.activeTimeline.clipsToCopy.sort((a,b) => {
-                //             if(a[0]<b[0]) 
-                //                 return -1;
-                //             return 1;
-                //         });
-
-                //         for(let i = 0; i < this.activeTimeline.clipsToCopy.length; i++){
-                //             let [trackIdx, clipIdx] = this.activeTimeline.clipsToCopy[i];
-                //             let clipToCopy = Object.assign({}, this.activeTimeline.animationClip.tracks[trackIdx].clips[clipIdx]);
-                //             // let clip = new ANIM.FaceLexemeClip(clipToCopy);
-                //             this.activeTimeline.addClip(clipToCopy, this.activeTimeline.clipsToCopy.length > 1 ? clipToCopy.start : 0); 
-                //         }
-                //         this.activeTimeline.clipsToCopy = null;
-                //     }
             }
         } );
 
@@ -340,7 +318,7 @@ class Editor {
         this.mixer.setTime(t);
     }
 
-    clearTracks() {
+    clearAllTracks() {
 
     }
 
@@ -428,10 +406,6 @@ class Editor {
             }
         }
         this.activeTimeline.draw();
-        // this.gui.keyFramesTimeline.draw();
-        // if(this.gui.clipsTimeline)
-        //     this.gui.clipsTimeline.optimizeTracks();
-        // this.gui.clipsTimeline.draw();
     }
 
     updateAnimationAction(animation, idx, replace = false) {
@@ -602,7 +576,7 @@ class Editor {
         this.gui.resize(width, height);
     }
 
-    export(type = null) {
+    export(type = null, name) {
         switch(type){
             case 'BVH':
                 BVHExporter.export(this.mixer._actions[0], this.skeletonHelper, this.bodyAnimation);
@@ -617,7 +591,7 @@ class Editor {
                 }
                 let model = this.mixer._root.getChildByName('Armature');
                 this.GLTFExporter.parse(model, 
-                    ( gltf ) => BVHExporter.download(gltf, 'animation.glb', 'arraybuffer' ), // called when the gltf has been generated
+                    ( gltf ) => BVHExporter.download(gltf, (name || this.clipName) + '.glb', 'arraybuffer' ), // called when the gltf has been generated
                     ( error ) => { console.log( 'An error happened:', error ); }, // called when there is an error in the generation
                 options
             );
@@ -635,17 +609,17 @@ class Editor {
                 
                 let bvh = window.localStorage.getItem("bvhskeletonpreview");
                 bvh += window.localStorage.getItem("bvhblendshapespreview");
-                BVHExporter.download(bvh, this.animation.name + ".bvhe")
+                BVHExporter.download(bvh, (name || this.clipName) + ".bvhe")
                 break;
 
             default:
                 let json = this.exportBML();
-                BVHExporter.download(JSON.stringify(json), json.name, "application/json");
+                if(!json) return;
+                BVHExporter.download(JSON.stringify(json), (name || this.clipName), "application/json");
                 console.log(type + " ANIMATION EXPORTATION IS NOT YET SUPPORTED");
                 break;
         }
     }
-
 
     showPreview() {
         
@@ -1414,8 +1388,6 @@ class KeyframeEditor extends Editor{
 
             
     }
-
-
 }
 
 class ScriptEditor extends Editor{
@@ -1435,11 +1407,9 @@ class ScriptEditor extends Editor{
         this.activeTimeline = null;
         // ------------------------------------------------------
         this.mode = this.eModes.script;
-        this.gui = new ScriptGui(this);
-        
+        this.gui = new ScriptGui(this);  
     }
     
-
     loadModel(clip) {
         // Load the target model (Eva) 
         UTILS.loadGLTF("models/Eva_Y.glb", (gltf) => {
@@ -1522,8 +1492,8 @@ class ScriptEditor extends Editor{
                 if(this.mixer._actions.length) this.mixer._actions.pop();
                 this.mixer.clipAction( this.animation  ).setEffectiveWeight( 1.0 ).play();
             }
-            this.gui.clipsTimeline.onUpdateTrack = this.gizmo.updateTracks.bind(this.gizmo);
-            this.gizmo.begin(this.gui.clipsTimeline);
+            this.activeTimeline.onUpdateTrack = this.gizmo.updateTracks.bind(this.gizmo);
+            this.gizmo.begin(this.activeTimeline);
             this.animate();
             $('#loading').fadeOut();
             
@@ -1539,14 +1509,30 @@ class ScriptEditor extends Editor{
         fr.readAsText( file );
         fr.onload = e => { 
             let anim = JSON.parse(e.currentTarget.result);
-            if(this.animation.tracks.length) {
+            let empty = true;
+            if(this.activeTimeline.animationClip.tracks.length) {
+                for(let i = 0; i < this.activeTimeline.animationClip.tracks.length; i++) {
+                    if(this.activeTimeline.animationClip.tracks[i].clips.length){
+                        empty = false;
+                        break;
+                    }
+                }   
+            }
+            if(empty) {
+                this.activeTimeline.currentTime = 0;
+                this.clipName = anim.name;
+                this.animation = anim;
+                this.gui.loadBMLClip(this.animation);
+            }
+            else {
                 this.gui.prompt = new LX.Dialog("Import animation" , (p) => {
                     p.addText("", "There is already an animation. What do you want to do?", null, {disabled: true});
                     p.sameLine(3);
                     p.addButton(null, "Replace", () => { 
-                        this.clearTracks();
+                        this.clearAllTracks(false);
                         this.clipName = anim.name;
                         this.animation = anim;
+                        this.activeTimeline.currentTime = 0;
                         this.gui.loadBMLClip(this.animation);
                         this.gui.prompt.close();
                     }, { buttonClass: "accept" });
@@ -1554,16 +1540,9 @@ class ScriptEditor extends Editor{
                         this.gui.loadBMLClip(anim);
                         this.gui.prompt.close() }, { buttonClass: "accept" });
                     p.addButton(null, "Cancel", () => { this.gui.prompt.close();} );
-                    
-                    
                 })
-                
             }
-            else {
-                this.clipName = anim.name;
-                this.animation = anim;
-                this.gui.loadBMLClip(this.animation);
-            }
+            this.gui.updateAnimationPanel();
         }
     }
 
@@ -1579,7 +1558,7 @@ class ScriptEditor extends Editor{
         if(tracks) {
             for(let t = 0; t < tracks.length; t++) {
                 let [trackIdx, clipIdx] = tracks[t];
-                let clip = this.gui.clipsTimeline.animationClip.tracks[trackIdx].clips[clipIdx].toJSON();
+                let clip = this.activeTimeline.animationClip.tracks[trackIdx].clips[clipIdx].toJSON();
                 if(this.animation.tracks.length == trackIdx)
                     this.animation.tracks.push([clip]);
                 else
@@ -1587,36 +1566,44 @@ class ScriptEditor extends Editor{
             }
         }
         // else if(trackIdx != null) {
-        //     for(let i = 0; i < this.gui.clipsTimeline.animationClip.tracks[trackIdx].clips.length; i++) {
+        //     for(let i = 0; i < this.activeTimeline.animationClip.tracks[trackIdx].clips.length; i++) {
 
-        //         this.animation.tracks[trackIdx][i] = this.gui.clipsTimeline.animationClip.tracks[trackIdx].clips[i];
+        //         this.animation.tracks[trackIdx][i] = this.activeTimeline.animationClip.tracks[trackIdx].clips[i];
         //     }
         // }
          else {
-            for(let idx = 0; idx < this.gui.clipsTimeline.animationClip.tracks.length; idx++) {
-                for(let i = 0; i < this.gui.clipsTimeline.animationClip.tracks[idx].clips.length; i++) {
+            for(let idx = 0; idx < this.activeTimeline.animationClip.tracks.length; idx++) {
+                for(let i = 0; i < this.activeTimeline.animationClip.tracks[idx].clips.length; i++) {
 
-                    this.animation.tracks[idx][i] = this.gui.clipsTimeline.animationClip.tracks[idx].clips[i].toJSON();
+                    this.animation.tracks[idx][i] = this.activeTimeline.animationClip.tracks[idx].clips[i].toJSON();
                 }
             }
         }
     }
 
-    clearTracks() {
+    clearAllTracks(showConfirmation = true) {
         if(!this.activeTimeline.animationClip)
             return;
 
-        for( let i = 0; i < this.activeTimeline.animationClip.tracks.length; ++i ) {
+        const clearTracks = () => {
+            for( let i = 0; i < this.activeTimeline.animationClip.tracks.length; ++i ) {
 
-            const track = this.activeTimeline.animationClip.tracks[i];
-            let idx = track.idx;
+                const track = this.activeTimeline.animationClip.tracks[i];
+                let idx = track.idx;
+                
+                this.activeTimeline.clearTrack(idx);
             
-            this.activeTimeline.clearTrack(idx);
-        
-            if(this.activeTimeline.onPreProcessTrack)
-                this.activeTimeline.onPreProcessTrack( track, track.idx );
+                if(this.activeTimeline.onPreProcessTrack)
+                    this.activeTimeline.onPreProcessTrack( track, track.idx );
+            }
+            this.updateTracks();
+
         }
-        this.updateTracks();
+        
+        if(showConfirmation) 
+            this.gui.showClearTracksConfirmation(clearTracks);
+        else 
+            clearTracks();
     }
 
     exportBML() {
@@ -1624,19 +1611,27 @@ class ScriptEditor extends Editor{
         let json =  {
             behaviours: [],
             indices: [],
-            name : this.gui.clipsTimeline.animationClip.name || "bml animation",
+            name : this.clipName || "BML animation",
             duration: this.animation.duration,
         }
 
-        if(!this.gui.clipsTimeline.animationClip) {
-
+        let empty = this.activeTimeline.animationClip.tracks.length;
+        if(this.activeTimeline.animationClip.tracks.length) {
+            for(let i = 0; i < this.activeTimeline.animationClip.tracks.length; i++) {
+                if(this.activeTimeline.animationClip.tracks[i].clips.length){
+                    empty = false;
+                    break;
+                }
+            }   
+        }
+        if(!empty) {
             alert("You can't export an animation with empty tracks.")
             return;
         }
        
-        for(let i = 0; i < this.gui.clipsTimeline.animationClip.tracks.length; i++ ) {
-            for(let j = 0; j < this.gui.clipsTimeline.animationClip.tracks[i].clips.length; j++) {
-                let data = this.gui.clipsTimeline.animationClip.tracks[i].clips[j];
+        for(let i = 0; i < this.activeTimeline.animationClip.tracks.length; i++ ) {
+            for(let j = 0; j < this.activeTimeline.animationClip.tracks[i].clips.length; j++) {
+                let data = this.activeTimeline.animationClip.tracks[i].clips[j];
                 let type = ANIM[data.constructor.name];
                 if(data.toJSON) data = data.toJSON()
                 if(data)

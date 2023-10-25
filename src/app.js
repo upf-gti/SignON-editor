@@ -278,10 +278,6 @@ class App {
         // Creates the scene and loads the animation
         this.editor.trimTimes = [startTime, endTime];
         this.editor.buildAnimation( {landmarks: MediaPipe.landmarks, blendshapes: MediaPipe.blendshapes} );
-
-        const name = "Unnamed";
-        this.editor.clipName = name;
-
     }
 
     onBMLProject(dataFile) {
@@ -299,8 +295,7 @@ class App {
     
         }
         else {
-            const name = "bml based";
-            this.editor.clipName = name;
+            this.editor.clipName = "";
             this.editor.loadModel();    
         }
 
@@ -443,7 +438,8 @@ class App {
 
             // CHECK THE INPUT FILE !!!!TODO!!!!
             let file = undefined;
-
+            //If BML animation --> put languege
+            LX.prompt("Have you finished editing your animation? Remember that uploading the animation to the database implies that it will be used in the synthesis of the 3D avatar used in SignON European project.", "Upload animation", (v) => this.editor.export("", v), {input: this.editor.clipName} ) 
             this.editor.gui.prompt = LX.prompt( "Have you finished editing your animation? Remember that uploading the animation to the database implies that it will be used in the synthesis of the 3D avatar used in SignON European project.", "Upload animation", async () => {
                 // Check if are files loaded
                 if (file) {
@@ -451,7 +447,7 @@ class App {
                     await this.FS.login();
 
                     // folder, data, filename, metadata
-                    await this.FS.uploadData("animations", file, file.name || "noName", "");
+                    await this.FS.uploadData("animations", file, file.name || "animics animation", "");
 
                     // Log out the user
                     this.FS.logout();
