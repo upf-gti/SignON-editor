@@ -1603,7 +1603,7 @@ class ScriptEditor extends Editor{
                     this.activeTimeline.onPreProcessTrack( track, track.idx );
             }
             this.updateTracks();
-
+            this.gui.updateClipPanel();
         }
         
         if(showConfirmation) 

@@ -236,11 +236,11 @@ class Gui {
                     if(!editor.showGUI) {
                         editor.gizmo.stop();
                         this.hideTimeline();
-                        this.mainArea.minimize();
+                        this.mainArea.extend();
 
                     } else {
                         this.showTimeline();
-                        this.mainArea.maximize();
+                        this.mainArea.reduce();
                     }
                     
                     
@@ -330,13 +330,13 @@ class Gui {
   
         this.timelineVisible = true;
         this.editor.activeTimeline.show();
-        this.timelineArea.parentArea.maximize();
+        this.timelineArea.parentArea.reduce();
     }
 
     hideTimeline() {
    
         this.timelineVisible = false;
-        this.timelineArea.parentArea.minimize();        
+        this.timelineArea.parentArea.extend();        
         this.editor.activeTimeline.hide();
     }
     
@@ -1375,6 +1375,7 @@ class ScriptGui extends Gui {
                 this.clipsTimeline.deleteClip({}, clipstToDelete[i], null);
             }
             this.editor.gizmo.updateTracks();
+            this.updateClipPanel();
         }
 
         this.clipsTimeline.copyContent = () => {
@@ -1750,7 +1751,11 @@ class ScriptGui extends Gui {
                 }
             }
 
-            widgets.addButton(null, "Delete", (v, e) => this.clipsTimeline.deleteClip(e, this.clipsTimeline.lastClipsSelected[0], () => {clip = null;  this.clipsTimeline.optimizeTracks(); updateTracks()}));
+            widgets.addButton(null, "Delete", (v, e) => this.clipsTimeline.deleteClip(e, this.clipsTimeline.lastClipsSelected[0], () => {
+                clip = null;  
+                this.clipsTimeline.optimizeTracks(); 
+                updateTracks(); 
+            }));
             widgets.merge();
         }
         widgets.onRefresh(clip);
@@ -1983,11 +1988,11 @@ class ScriptGui extends Gui {
                   
                     if(editor.showGUI) {
                         this.showTimeline();
-                        this.sidePanel.parentArea.maximize();                       
+                        this.sidePanel.parentArea.reduce();                       
                         
                     } else {
                         this.hideTimeline();
-                        this.sidePanel.parentArea.minimize();
+                        this.sidePanel.parentArea.extend();
 
                     }
                     

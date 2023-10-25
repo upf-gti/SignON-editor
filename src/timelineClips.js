@@ -2071,13 +2071,20 @@ ArmLocationClip.prototype.showInfo = function(panel, callback)
 	}
 
 	panel.addSeparator();
-	// Hnad constellation properties
+	// Hand constellation properties
 	panel.addText(null, "Part of the hand that will try to reach the body location", null, {disabled: true});
 
 	// Part of the hand
-	panel.addDropdown("Location", ArmLocationClip.fingers, this.properties.srcLocation, (v, e, name) => {
+	panel.addDropdown("Location", ArmLocationClip.hand_locations, this.properties.srcLocation, (v, e, name) => {
 				
 		this.properties.srcLocation = v;
+		if(this.properties.srcLocation == "Tip")
+		{
+			this.properties.srcSide = "";
+		}
+		if(this.properties.srcLocation != "Tip" && this.properties.srcLocation != "Pad" && this.properties.srcLocation != "Mid" && this.properties.srcLocation != "Base") {
+			this.properties.srcFinger = "";
+		}
 		if(callback)
 			callback(true);
 		
@@ -2087,6 +2094,7 @@ ArmLocationClip.prototype.showInfo = function(panel, callback)
 		panel.addDropdown("Side", ArmLocationClip.hand_sides, this.properties.srcSide, (v, e, name) => {
 				
 			this.properties.srcSide = v;
+		
 			if(callback)
 				callback();
 			
@@ -2252,7 +2260,7 @@ PalmOrientationClip.prototype.showInfo = function(panel, callback)
 
 	panel.addText(null, "Roll of the wrist joint", null, {disabled: true});
 	// Direction property
-	panel.addDropdown("Direction", Object.keys(PalmOrientationClip.directions), this.properties.palmor, (v, e, name) => {
+	panel.addDropdown("Direction", PalmOrientationClip.directions, this.properties.palmor, (v, e, name) => {
 		
 		this.properties.palmor = v;
 		if(callback)
@@ -2282,7 +2290,7 @@ PalmOrientationClip.prototype.showInfo = function(panel, callback)
 	panel.addTitle( "Optionals");
 
 	// Second direction side
-	panel.addDropdown("Second direction", ["", ...Object.keys(PalmOrientationClip.directions)], this.properties.secondPalmor, (v, e, name) => {
+	panel.addDropdown("Second direction", ["", ...PalmOrientationClip.directions], this.properties.secondPalmor, (v, e, name) => {
 		
 		this.properties.secondPalmor = v;
 		if(callback)
@@ -2900,6 +2908,13 @@ HandConstellationClip.prototype.showInfo = function(panel, callback)
 	panel.addDropdown("Location", HandConstellationClip.hand_locations, this.properties.srcLocation, (v, e, name) => {
 				
 		this.properties.srcLocation = v;
+		if(this.properties.srcLocation == "Tip")
+		{
+			this.properties.srcSide = "";
+		}
+		if(this.properties.srcLocation != "Tip" && this.properties.srcLocation != "Pad" && this.properties.srcLocation != "Mid" && this.properties.srcLocation != "Base") {
+			this.properties.srcFinger = "";
+		}
 		if(callback)
 			callback(true);
 		
@@ -2931,6 +2946,13 @@ HandConstellationClip.prototype.showInfo = function(panel, callback)
 	panel.addDropdown("Location", [...HandConstellationClip.hand_locations, ...HandConstellationClip.arm_locations], this.properties.dstLocation, (v, e, name) => {
 				
 		this.properties.dstLocation = v;
+		if(this.properties.dstLocation == "Tip")
+		{
+			this.properties.dstSide = "";
+		}
+		if(this.properties.dstLocation != "Tip" && this.properties.dstLocation != "Pad" && this.properties.dstLocation != "Mid" && this.properties.dstLocation != "Base") {
+			this.properties.dstSide = "";
+		}
 		if(callback)
 			callback(true);
 		
@@ -3552,14 +3574,14 @@ CircularMotionClip.prototype.showInfo = function(panel, callback)
 		this.properties.startAngle = v;
 		if(callback)
 			callback();
-	}, {precision: 2, min: -360, max: 360, step: 0.1});
+	}, {precision: 2, step: 0.1});
 
 	panel.addNumber("End angle (deg)", this.properties.endAngle, (v, e, name) =>
 	{
 		this.properties.endAngle = v;
 		if(callback)
 			callback();
-	}, {precision: 2, min: -360, max: 360, step: 0.1});
+	}, {precision: 2, step: 0.1});
 
 
 	panel.addCheckbox("Apply zig-zag", this.zigzag, (v, e, name) =>
@@ -3602,7 +3624,7 @@ CircularMotionClip.prototype.showInfo = function(panel, callback)
 //WristMotionClip
 WristMotionClip.type = "gesture";
 WristMotionClip.hands = ["Left", "Right", "Both"];
-WristMotionClip.modes = ["Nod", "Nodding", "Swing", "Swinging", "Twist", "Twisting", "Stir CW", "Stir CCW", "All"];
+WristMotionClip.modes = ["Nod", "Swing", "Twist", "Stir CW", "Stir CCW", "All"];
 
 WristMotionClip.id = ANIM.WRISTMOTION ? ANIM.WRISTMOTION: ANIM.clipTypes.length;
 WristMotionClip.clipColor = "#5e9fdd";
@@ -3765,7 +3787,7 @@ function FingerplayMotionClip(o)
 		// optionals
 		speed: 3, // oscillations per second. Default 3
 		intensity: 0.5, //[0,1]. Default 0.3
-		fingers: "Thumb Index Middle Ring Pinky", // string with numbers. Each number present activates a finger. 2=index, 3=middle, 4=ring, 4=pinky. I.E. "234" activates index, middle, ring but not pinky. Default all enabled
+		fingers: "Thumb Middle", // string with numbers. Each number present activates a finger. 2=index, 3=middle, 4=ring, 4=pinky. I.E. "234" activates index, middle, ring but not pinky. Default all enabled
 		exemptedFingers: "", //string with numbers. Blocks a finger from doing the finger play. Default all fingers move
 	}
 
@@ -3794,8 +3816,22 @@ FingerplayMotionClip.prototype.configure = function(o)
 		if(o[p] != undefined) {
 			this.properties[p] = o[p];
 		}
-		if(typeof(this.properties[p]) == 'string')
-			this.properties[p] = capitalize(this.properties[p].replaceAll("_", " "));
+		if(typeof(this.properties[p]) == 'string') {
+
+			if(p == 'fingers')  {
+				let fingers = this.properties[p].replaceAll("_", " ").split(" ");
+				for(let i = 0; i < fingers.length; i++) {
+					fingers[i] = capitalize(fingers[i]);
+				}
+				this.properties[p] = fingers.join(" ");
+				if(this.properties[p][this.properties[p].length - 1] != " ")
+					this.properties[p] += " ";
+			}
+			else {
+
+				this.properties[p] = capitalize(this.properties[p].replaceAll("_", " "));
+			}
+		}
 	}
 
 	if(o.fingers) {
