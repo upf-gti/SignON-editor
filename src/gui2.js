@@ -1764,13 +1764,24 @@ class ScriptGui extends Gui {
 
     showGuide() {
         
-        this.prompt = LX.message("Right click on timeline to create a new clip. You can create a clip from a selected lexeme or from a preset configuration.", "How to start?",  {
-            onclose: (root) => {
+        this.prompt = new LX.Dialog("How to start?", (p) =>{
+            p.addText(null, "You can create an animation from a selected clip or from a preset configuration. You can also import animations or presets in JSON format following the BML standard.", null, {disabled: true, height: "50%"})
+            p.addText(null, "Go to Menubar -> Timeline -> Shortcuts for more information about the tool.", null, {disabled: true, height: "50%"})
+        }, {closable: true, onclose: (root) => {
             
-                root.remove();
-                this.prompt = null;
-            }
-        });
+            root.remove();
+            this.prompt = null;
+        },
+        size: ["30%", 200], modal: true
+    })
+        // LX.message("You can create an animation from a selected clip or from a preset configuration. You can also import animations or presets in JSON format following the BML standard. Go to Menubar -> Timeline -> Shortcuts for more information about the tool.", "How to start?",  {
+        //     onclose: (root) => {
+            
+        //         root.remove();
+        //         this.prompt = null;
+        //     },
+        //     size: ["25%", 300]
+        // });
 
     }
 
