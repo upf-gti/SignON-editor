@@ -632,7 +632,7 @@ class Editor {
         else{
             url = "https://webglstudio.org/users/jpozo/SignONRealizer/dev/";
             let json = this.exportBML();
-
+            if(!json) return;
             const sendData = () => {
                 if(this.appR && this.appR.ECAcontroller)
                     this.realizer.postMessage(JSON.stringify([{type: "bml", data: json.behaviours}]));
@@ -747,7 +747,7 @@ class KeyframeEditor extends Editor{
                 model.getObjectByName("mixamorig_RightHand").scale.set( 0.85, 0.85, 0.85 );
                 model.getObjectByName("mixamorig_LeftHand").scale.set( 0.85, 0.85, 0.85 );
                 this.skeletonHelper = new THREE.SkeletonHelper(model);
-                
+
                 updateThreeJSSkeleton(this.help.bones);
                 this.skeletonHelper.visible = true;
                 this.skeletonHelper.name = "SkeletonHelper";
@@ -1621,7 +1621,7 @@ class ScriptEditor extends Editor{
             duration: this.animation.duration,
         }
 
-        let empty = this.activeTimeline.animationClip.tracks.length;
+        let empty = true;
         if(this.activeTimeline.animationClip.tracks.length) {
             for(let i = 0; i < this.activeTimeline.animationClip.tracks.length; i++) {
                 if(this.activeTimeline.animationClip.tracks[i].clips.length){
@@ -1630,7 +1630,7 @@ class ScriptEditor extends Editor{
                 }
             }   
         }
-        if(!empty) {
+        if(empty) {
             alert("You can't export an animation with empty tracks.")
             return;
         }
