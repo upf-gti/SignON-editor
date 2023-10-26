@@ -1452,13 +1452,13 @@ class ScriptEditor extends Editor{
             model.rotateOnAxis(new THREE.Vector3(1,0,0), -Math.PI/2);
             model.getObjectByName("mixamorig_RightHand").scale.set( 0.85, 0.85, 0.85 );
             model.getObjectByName("mixamorig_LeftHand").scale.set( 0.85, 0.85, 0.85 );
-            // this.skeletonHelper = this.retargeting.tgtSkeletonHelper || new THREE.SkeletonHelper(model);
-            // this.skeletonHelper.name = "SkeletonHelper";
+            this.skeletonHelper = new THREE.SkeletonHelper(model);
+            this.skeletonHelper.name = "SkeletonHelper";
 
             //Create animations
             this.mixer = new THREE.AnimationMixer(model);
             
-            // this.skeletonHelper.skeleton = this.help; //= createSkeleton();
+            this.skeletonHelper.skeleton = this.help; //= createSkeleton();
 
             //Create face animation from mediapipe blendshapes
             // this.blendshapesManager = new BlendshapesManager(skinnedMeshes, this.morphTargets, this.mapNames);
