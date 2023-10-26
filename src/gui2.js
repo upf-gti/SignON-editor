@@ -1330,16 +1330,6 @@ class ScriptGui extends Gui {
         ])
         this.timelineArea.attach(this.clipsTimeline.root);
         this.clipsTimeline.canvas.tabIndex = 1;
-        
-        
-       // area.onresize = (bounding) => this.timelineArea.setSize(bounding);
-        // Create timelines container area
-        //this.timelineArea = new LX.Area({ height: 400, resize: true});
-       
-
-        //Resize timelines on resize timeline container area
-       // this.timelineArea.onresize = (bounding) => {this.clipsTimeline.resize( [ bounding.width, bounding.height ] );}
-       // area.attach(this.timelineArea);
                 
     }
     
@@ -1351,19 +1341,14 @@ class ScriptGui extends Gui {
                 
                 this.clipsTimeline.addClip(new ANIM.clipTypes[clip.indices[i]]( clip.behaviours[i]));
                 
-                //to do -- parse bml animation clip
-                // 
-                //add clip --> new ANIM.FaceLexemeClip({lexeme: e.item.id}
             }
         }
         this.clip = this.clipsTimeline.animationClip || clip ;
         this.duration = clip.duration || 0;
 
         this.clipsTimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animation.duration - 0.001) );
-        // this.clipsTimeline.onSetDuration = (t) => {this.editor.gizmo.updateTracks()};
         this.clipsTimeline.onSelectClip = this.updateClipPanel.bind(this);
         this.clipsTimeline.onClipMoved = (selected)=> {
-            // this.editor.updateTracks(selected);
             this.editor.gizmo.updateTracks();
 
             this.clipsTimeline.onSetTime(this.clipsTimeline.currentTime) 
@@ -1770,9 +1755,9 @@ class ScriptGui extends Gui {
             p.addText(null, "You can create an animation from a selected clip or from a preset configuration. You can also import animations or presets in JSON format following the BML standard.", null, {disabled: true, height: "50%"})
             p.addText(null, "Go to Menubar -> Timeline -> Shortcuts for more information about the tool.", null, {disabled: true, height: "50%"})
         }, {closable: true, onclose: (root) => {
-            
             root.remove();
             this.prompt = null;
+            LX.popup("Click on Timeline tab to discover all the available interactions!", null, {position: [ "10px", "50px"], timeout: 5000})
         },
         size: ["30%", 200], modal: true
     })
