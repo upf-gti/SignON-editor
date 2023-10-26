@@ -266,7 +266,6 @@ class Editor {
         if (this.mixer && this.state) {
 
             this.mixer.update(dt);
-            console.log(this.mixer.time)
             this.currentTime = this.activeTimeline.currentTime = this.mixer.time;
             LX.emit( "@on_current_time_" + this.activeTimeline.constructor.name, this.currentTime );
             if(this.onUpdateAnimationTime)
