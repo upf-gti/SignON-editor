@@ -1513,7 +1513,7 @@ ElbowRaiseClip.prototype.toJSON = function()
 	for(var i in this.properties)
 	{
 		if(i == "amount")
-			json[i] = this.properties.amount;
+			json.elbowRaise = this.properties.amount;
 		else
 			json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
 	}
@@ -1552,7 +1552,7 @@ ElbowRaiseClip.prototype.showInfo = function(panel, callback)
 	// EblowRaise amount property
 	let options = { precision: 2, min : -1, max : 1, step:  0.01, title: "Amplitude of the movement"};
 	
-	panel.addNumber("Intensity", this.properties.amount, (v, e, name) =>
+	panel.addNumber("Amplitude", this.properties.amount, (v, e, name) =>
 	{
 		this.properties.amount = v;
 		if(callback)
@@ -1594,7 +1594,7 @@ function ShoulderClip(o)
 
 	if(o)
 		this.configure(o);
-
+	this.id = this.id + " " + this.movementType;
 	this.color = "#1a1f23";
 	this.font = "11px Calibri";
 	this.clipColor = ShoulderClip.clipColor;
@@ -1639,7 +1639,7 @@ ShoulderClip.prototype.toJSON = function()
 		type: "gesture"
 	}
 
-	json["shoulder" + this.movementType] = this.properties.amount;
+	json["shoulder" + this.movementType] = this.properties["shoulder" + this.movementType] = this.properties.amount;
 
 	for(var i in this.properties)
 	{
@@ -1669,8 +1669,14 @@ ShoulderClip.prototype.showInfo = function(panel, callback)
 	panel.addText(null, "Moves the shoulder forward or up", null, {disabled: true});
 	// Movement type
 	panel.addDropdown("Movement", ShoulderClip.movements, this.movementType, (v, e, name) => {
-		
+		delete this.properties.shoulderRaise;
+		delete this.properties.shoulderHunch;
+
 		this.movementType = v;
+		if(this.id == "Shoulder Raise" || this.id == "Shoulder Hunch" ) {
+			this.id = "Shoulder "+ this.movementType;
+		}
+		
 		if(callback)
 			callback();
 		
@@ -1687,7 +1693,7 @@ ShoulderClip.prototype.showInfo = function(panel, callback)
 
 	// ShoulderRaise/ShoulderHunch amount property
 	let options = { precision: 2, min : -1, max : 1, step:  0.01, title: "Amplitude of the movement"};	
-	panel.addNumber("Intensity", this.properties.amount, (v, e, name) =>
+	panel.addNumber("Amplitude", this.properties.amount, (v, e, name) =>
 	{
 		this.properties.amount = v;
 		if(callback)
@@ -2951,7 +2957,7 @@ HandConstellationClip.prototype.showInfo = function(panel, callback)
 			this.properties.dstSide = "";
 		}
 		if(this.properties.dstLocation != "Tip" && this.properties.dstLocation != "Pad" && this.properties.dstLocation != "Mid" && this.properties.dstLocation != "Base") {
-			this.properties.dstSide = "";
+			this.properties.dstFinger = "";
 		}
 		if(callback)
 			callback(true);
