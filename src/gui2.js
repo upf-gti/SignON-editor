@@ -1663,7 +1663,7 @@ class ScriptGui extends Gui {
             }, {min:0.01, step:0.01, precision:2});
 
             if(clip.fadein!= undefined && clip.fadeout!= undefined)  {
-
+                widgets.merge();
                 widgets.branch("Sync points", {icon: "fa-solid fa-chart-line"});
                 widgets.addText(null, "These sync points define the dynamic progress of the action. They are normalized by duration.", null, {disabled: true});
                 const syncvalues = [];
@@ -1733,6 +1733,7 @@ class ScriptGui extends Gui {
                 }
 
                 if(syncvalues.length) {
+                   
                     this.curve = widgets.addCurve("Synchronization", syncvalues, (value, event) => {
                         if(event && event.type != "mouseup") return;
                         if(clip.fadein!= undefined) {
@@ -1749,6 +1750,7 @@ class ScriptGui extends Gui {
         
                     }, {xrange: [0, clip.duration], allow_add_values: false, draggable_y: false, smooth: 0.2});
                 }
+                widgets.merge();
             }
 
             widgets.addButton(null, "Delete", (v, e) => this.clipsTimeline.deleteClip(e, this.clipsTimeline.lastClipsSelected[0], () => {
@@ -1756,7 +1758,7 @@ class ScriptGui extends Gui {
                 this.clipsTimeline.optimizeTracks(); 
                 updateTracks(); 
             }));
-            widgets.merge();
+            
         }
         widgets.onRefresh(clip);
         
