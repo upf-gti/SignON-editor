@@ -1360,7 +1360,7 @@ class ScriptGui extends Gui {
         this.duration = clip.duration || 0;
 
         this.clipsTimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animation.duration - 0.001) );
-        // this.clipsTimeline.onSetDuration = (t) => {this.duration = this.keyFramesTimeline.duration = this.keyFramesTimeline.animationClip.duration = t};
+        // this.clipsTimeline.onSetDuration = (t) => {this.editor.gizmo.updateTracks()};
         this.clipsTimeline.onSelectClip = this.updateClipPanel.bind(this);
         this.clipsTimeline.onClipMoved = (selected)=> {
             // this.editor.updateTracks(selected);
