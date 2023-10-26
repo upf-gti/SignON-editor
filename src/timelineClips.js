@@ -1031,7 +1031,7 @@ FacePresetClip.prototype.addPreset = function(preset){
 	if(!clip && FacePresetClip.customPresets[preset])
 	{
 		for(let i = 0; i < FacePresetClip.customPresets[preset].length; i++){
-			clip = new FaceLexemeClip(FacePresetClip.customPresets[preset][i]);
+			clip = new FacePresetClip.customPresets[preset][i].constructor(FacePresetClip.customPresets[preset][i]);
 			this.clips.push(clip);
 		}
 
