@@ -903,21 +903,29 @@ FacePresetClip.prototype.addPreset = function(preset){
 			clip = new FaceLexemeClip({lexeme: "BROW_RAISER", start: this.start, duration: this.duration});
 			this.clips.push(clip);
 			// Tilt head forward
+			clip = new HeadClip({lexeme: "TILT_FORWARD", start: this.start, repetition: 0, amount: 0.5});
+			this.clips.push(clip);
 			break;
 		case "Negative":
 			// Shake head
+			clip = new HeadClip({lexeme: "SHAKE", start: this.start, repetition:0, amount: 0.5});
+			this.clips.push(clip);
 			break;
 		case "WH-word Questions":
 			// Furrows eyebrows
 			clip = new FaceLexemeClip({lexeme: "BROW_LOWERER", start: this.start, duration: this.duration});
 			this.clips.push(clip);
 			// Tilt head forward
+			clip = new HeadClip({lexeme: "TILT_FORWARD", start: this.start, repetition:0, amount: 0.5});
+			this.clips.push(clip);
 			break;
 		case "Topic":
 			// Raise eyebrows
 			clip = new FaceLexemeClip({lexeme: "BROW_RAISER", start: this.start, duration: this.duration});
 			this.clips.push(clip);
 			// Tilt head backward
+			clip = new HeadClip({lexeme: "TILT_BACKWARD", start: this.start, repetition:0, amount: 0.5});
+			this.clips.push(clip);
 			break;
 		case "RH-Questions":
 			// Raise eyebrows
@@ -1676,7 +1684,7 @@ ShoulderClip.prototype.showInfo = function(panel, callback)
 		if(this.id == "Shoulder Raise" || this.id == "Shoulder Hunch" ) {
 			this.id = "Shoulder "+ this.movementType;
 		}
-		
+
 		if(callback)
 			callback();
 		
