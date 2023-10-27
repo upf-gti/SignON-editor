@@ -33,20 +33,7 @@ ANIM.blendToOperation = {
 //clip types
 ANIM.MISSING_CLIP = -1; //used when after loading a clip the type is not found in the system
 ANIM.SPEECH = 0;
-// ANIM.AUDIO = 1;
-// ANIM.FACELEXEME = 2;
-// ANIM.FACEFACS = 3;
-// ANIM.FACEEMOTION = 4;
-// ANIM.GAZE = 5;
-// ANIM.GESTURE = 6;
-// ANIM.HEAD = 7;
-// ANIM.HEADDIRECTION = 8;
-// ANIM.POSTURE = 9;
-// ANIM.LOCOMOTION = 10;
 
-// ANIM.CUSTOM = 11;
-
-// ANIM.clipTypes = [FaceLexemeClip, FaceFACSClip, FaceEmotionClip, GazeClip, HeadClip, ShoulderClip, ShoulderHunchClip, BodyMovementClip] ;
 
 ANIM.registerClipType = function(ctor)
 {
@@ -1472,7 +1459,10 @@ function ElbowRaiseClip(o)
 		hand: "Right",	
 		elbowRaise : 0.8,	
 		amount: 0.8,
-		shift : false
+		shift : false,
+		lrSym: null,
+		udSym: null,
+		ioSym: null
 	}
 
 	if(o)
@@ -1597,7 +1587,10 @@ function ShoulderClip(o)
 		hand: "Right",	
 		shoulderRaise : 0.8,	
 		amount: 0.8,
-		shift : false
+		shift : false,
+		lrSym: null,
+		udSym: null,
+		ioSym: null
 	}
 
 	if(o)
@@ -1737,7 +1730,10 @@ function BodyMovementClip(o)
 		hand: "Right",
 		bodyMovement : "Tilt forward",	
 		amount: 0.5,	
-		shift : false
+		shift : false,
+		lrSym: null,
+		udSym: null,
+		ioSym: null
 	}
 
 	if(o)
@@ -1875,6 +1871,9 @@ function ArmLocationClip(o)
 					// i.e.: set to true; contact tip of index; reach destination. Afterwards, changing index finger state (handshape) will make the location change depending on where the tip of the index is  
 	
 		shift: false, // contact information ( srcFinger, srcLocation, srcSide ) is not kept for shift
+		lrSym: null,
+		udSym: null,
+		ioSym: null
 	}
 
 	if(o)
@@ -1917,6 +1916,7 @@ ArmLocationClip.prototype.configure = function(o)
 	if(o.displace) {
 		this.properties.displace = "";
 		for(let i = 0; i < o.displace.length; i++) {
+			this.properties.displace += i > 0 ? " " : "";
 			let char = o.displace[i];
 			switch(char) {
 				case "u":
@@ -2150,7 +2150,10 @@ function PalmOrientationClip(o)
     
 		// optionals
 		secondPalmor: "", // string 8 directions. Will compute midpoint between palmor and secondPalmor.
-		shift: false 
+		shift: false,
+		lrSym: null,
+		udSym: null,
+		ioSym: null
 	}
 
 	if(o)
@@ -2185,6 +2188,7 @@ PalmOrientationClip.prototype.configure = function(o)
 	if(o.palmor) {
 		this.properties.palmor = "";
 		for(let i = 0; i < o.palmor.length; i++) {
+			this.properties.palmor += i > 0 ? " " : "";
 			let char = o.palmor[i];
 			switch(char) {
 				case "u":
@@ -2206,6 +2210,7 @@ PalmOrientationClip.prototype.configure = function(o)
 	if(o.secondPalmor) {
 		this.properties.secondPalmor = "";
 		for(let i = 0; i < o.secondPalmor.length; i++) {
+			this.properties.secondPalmor += i > 0 ? " " : "";
 			let char = o.secondPalmor[i];
 			switch(char) {
 				case "u":
@@ -2342,6 +2347,9 @@ function HandOrientationClip(o)
 		// optionals
 		secondExtfidir: "", // string 26 directions. Will compute midpoint between extifidir and secondExtfidir  
 		shift: false, // optional
+		lrSym: null,
+		udSym: null,
+		ioSym: null
 	}
 
 	if(o)
@@ -2377,6 +2385,7 @@ HandOrientationClip.prototype.configure = function(o)
 		this.properties.extfidir = "";
 		for(let i = 0; i < o.extfidir.length; i++) {
 			let char = o.extfidir[i];
+			this.properties.extfidir += i > 0 ? " " : "";
 			switch(char) {
 				case "u":
 					this.properties.extfidir += "Up";
@@ -2404,12 +2413,13 @@ HandOrientationClip.prototype.configure = function(o)
 		this.properties.secondExtfidir = "";
 		for(let i = 0; i < o.secondExtfidir.length; i++) {
 			let char = o.secondExtfidir[i];
+			this.properties.secondExtfidir += i > 0 ? " " : "";
 			switch(char) {
 				case "u":
 					this.properties.secondExtfidir += "Up";
 					break;
 				case "d":
-					this.properties.secondExtfidir +=	"Down";
+					this.properties.secondExtfidir += "Down";
 					break;
 				case "l":
 					this.properties.secondExtfidir += "Left";
@@ -2548,12 +2558,15 @@ function HandshapeClip(o)
 		thumbshape: "", //string from thumbshape table. if not present, the predefined thumbshape for the handshape will be used
 		secondThumbshape: "", // string from thumbshape table. Applied to secondHandshape
 		tco: 0, // number [0,1]. Thumb Combination Opening from the Hamnosys specification 
-		secondtco: 0.3, // number [0,1]. Thumb Combination Opening from the Hamnosys specification. Applied to secondHandshape
+		secondtco: 0, // number [0,1]. Thumb Combination Opening from the Hamnosys specification. Applied to secondHandshape
 		
 		mainBend: "", // bend applied to selected fingers from the default handshapes. Basic handshapes and ThumbCombination handshapes behave differently. Value from the bend table
 		secondMainBend: "", // mainbend applied to secondHandshape
 		mainSplay: 0.5, // number [-1,1]. Separates laterally fingers 2,4,5. Splay diminishes the more the finger is bent
 		shift: false,
+		lrSym: null,
+		udSym: null,
+		ioSym: null
 	}
 
 	if(o)
@@ -2783,6 +2796,9 @@ function HandConstellationClip(o)
 		keepUpdatingContact: false, // once peak is reached, the location will be updated only if this is true. 
 						// i.e.: set to false; contact tip of index; reach destination. Afterwards, changing index finger state will not modify the location
 						// i.e.: set to true; contact tip of index; reach destination. Afterwards, changing index finger state (handshape) will make the location change depending on where the tip of the index is  
+		lrSym: null,
+		udSym: null,
+		ioSym: null
 	}
 
 	if(o)
@@ -2825,6 +2841,7 @@ HandConstellationClip.prototype.configure = function(o)
 	if(o.distanceDirection) {
 		this.properties.distanceDirection = "";
 		for(let i = 0; i < o.distanceDirection.length; i++) {
+			this.properties.distanceDirection += i > 0 ? " " : "";
 			let char = o.distanceDirection[i];
 			switch(char) {
 				case "u":
@@ -3058,6 +3075,9 @@ function DirectedMotionClip(o)
 		zigzag: "", // string 26 directions
 		zigzagSize: 0.05, // amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
 		zigzagSpeed: 2, // oscillations per second. Default 2
+		lrSym: null,
+		udSym: null,
+		ioSym: null
 	}
 	this.zigzag = false;
 
@@ -3093,6 +3113,7 @@ DirectedMotionClip.prototype.configure = function(o)
 	if(o.direction) {
 		this.properties.direction = "";
 		for(let i = 0; i < o.direction.length; i++) {
+			this.properties.direction += i > 0 ? " " : "";
 			let char = o.direction[i];
 			switch(char) {
 				case "u":
@@ -3121,6 +3142,7 @@ DirectedMotionClip.prototype.configure = function(o)
 	if(o.secondDirection) {
 		this.properties.secondDirection = "";
 		for(let i = 0; i < o.secondDirection.length; i++) {
+			this.properties.secondDirection += i > 0 ? " " : "";
 			let char = o.secondDirection[i];
 			switch(char) {
 				case "u":
@@ -3142,6 +3164,7 @@ DirectedMotionClip.prototype.configure = function(o)
 	if(o.curve) {
 		this.properties.curve = "";
 		for(let i = 0; i < o.curve.length; i++) {
+			this.properties.curve += i > 0 ? " " : "";
 			let char = o.curve[i];
 			switch(char) {
 				case "u":
@@ -3163,6 +3186,7 @@ DirectedMotionClip.prototype.configure = function(o)
 	if(o.secondCurve) {
 		this.properties.secondCurve = "";
 		for(let i = 0; i < o.secondCurve.length; i++) {
+			this.properties.secondCurve += i > 0 ? " " : "";
 			let char = o.secondCurve[i];
 			switch(char) {
 				case "u":
@@ -3184,6 +3208,7 @@ DirectedMotionClip.prototype.configure = function(o)
 	if(o.zigzag) {
 		this.properties.zigzag = "";
 		for(let i = 0; i < o.zigzag.length; i++) {
+			this.properties.zigzag += i > 0 ? " " : "";
 			let char = o.zigzag[i];
 			switch(char) {
 				case "u":
@@ -3391,6 +3416,9 @@ function CircularMotionClip(o)
 		zigzag: "", // string 26 directions
 		zigzagSize: "", // amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
 		zigzagSpeed: "", // oscillations per second. Default 2
+		lrSym: null,
+		udSym: null,
+		ioSym: null
 	}
 	this.zigzag = false;
 
@@ -3424,6 +3452,7 @@ CircularMotionClip.prototype.configure = function(o)
 	if(o.direction) {
 		this.properties.direction = "";
 		for(let i = 0; i < o.direction.length; i++) {
+			this.properties.direction += i > 0 ? " " : "";
 			let char = o.direction[i];
 			switch(char) {
 				case "u":
@@ -3451,6 +3480,7 @@ CircularMotionClip.prototype.configure = function(o)
 	if(o.secondDirection) {
 		this.properties.secondDirection = "";
 		for(let i = 0; i < o.secondDirection.length; i++) {
+			this.properties.secondDirection += i > 0 ? " " : "";
 			let char = o.secondDirection[i];
 			switch(char) {
 				case "u":
@@ -3472,6 +3502,7 @@ CircularMotionClip.prototype.configure = function(o)
 	if(o.zigzag) {
 		this.properties.zigzag = "";
 		for(let i = 0; i < o.zigzag.length; i++) {
+			this.properties.zigzag += i > 0 ? " " : "";
 			let char = o.zigzag[i];
 			switch(char) {
 				case "u":
@@ -3666,6 +3697,9 @@ function WristMotionClip(o)
 		// optionals
 		speed: 3, // oscillations per second. Negative values accepted. Default 3. 
 		intensity: 0.3, // [0,1]. Default 0.3
+		lrSym: null,
+		udSym: null,
+		ioSym: null
 	}
 
 	if(o)
@@ -3803,6 +3837,9 @@ function FingerplayMotionClip(o)
 		intensity: 0.5, //[0,1]. Default 0.3
 		fingers: "Thumb Middle", // string with numbers. Each number present activates a finger. 2=index, 3=middle, 4=ring, 4=pinky. I.E. "234" activates index, middle, ring but not pinky. Default all enabled
 		exemptedFingers: "", //string with numbers. Blocks a finger from doing the finger play. Default all fingers move
+		lrSym: null,
+		udSym: null,
+		ioSym: null
 	}
 
 	if(o)
@@ -3961,6 +3998,108 @@ FingerplayMotionClip.prototype.showInfo = function(panel, callback)
 				callback();
 		} )
 	}
+}
+
+CustomClip.type = "custom";
+CustomClip.id = ANIM.CUSTOMCLIP ? ANIM.CUSTOMCLIP: ANIM.clipTypes.length;
+CustomClip.clipColor = "white";
+
+function CustomClip(o)
+{
+	this.id = "custom"
+	this.start = 0;
+	this.duration = 1;
+	
+	this.properties = o.properties || {clips: [], amount: 1};
+	
+	this._width = 0;
+	this.color = "#1a1f23";
+	this.font = "11px Calibri";
+	this.clipColor = CustomClip.clipColor;
+	
+	if(o)
+		this.configure(o);
+	
+}
+
+ANIM.registerClipType( CustomClip );
+
+CustomClip.prototype.configure = function(o)
+{
+	this.start = o.start || 0;
+	if(o.duration) this.duration = o.duration || 1;
+	if(o.end) this.duration = (o.end - o.start) || 1;
+	for(let property in this.properties) {
+		
+		if(o[property] != undefined)
+			this.properties[property] = o[property];
+	}
+	this.type = o.type || CustomClip.type;
+	this.id = o.id || this.id;
+}
+
+CustomClip.prototype.toJSON = function()
+{
+	var json = {
+		id: this.id,
+		start: this.start,
+		end: this.start + this.duration,
+		type: this.type
+	}
+	for(var i in this.properties)
+	{
+		json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
+	}
+	return json;
+}
+
+CustomClip.prototype.fromJSON = function( json )
+{
+	this.id = json.id;
+	this.configure(json);
+}
+
+
+CustomClip.prototype.drawClip = function( ctx, w,h, selected, timeline )
+{
+	ctx.font = this.font;
+	let textInfo = ctx.measureText( this.id );
+	if(timeline && timeline.timeToX)
+	{
+
+		let attackX = timeline.secondsToPixels * (this.attackPeak - this.start);
+		let relaxX = timeline.secondsToPixels * (this.relax - this.start);
+		
+		ctx.fillStyle = this.clipColor;
+		let color = HexToRgb(ctx.fillStyle);
+		color = color.map(x => x*=0.8);
+		ctx.fillStyle = 'rgba(' + color.join(',') + ', 1)';
+		roundedRect(ctx, 0, 0, attackX, h, 5, 0, true);
+		roundedRect(ctx, relaxX, 0, w - relaxX, h, 0, 5, true);
+		ctx.globalCompositeOperation = "source-over";
+		
+	}
+	ctx.fillStyle = this.color;
+	
+	if( textInfo.width < (w - 24) )
+		ctx.fillText( this.id, 24, h/2 + 11/2);
+}
+
+CustomClip.prototype.showInfo = function(panel, callback)
+{
+
+	// Amount property
+	panel.addNumber("Intensity", this.properties.amount.toFixed(2), (v, e, name) =>
+	{
+		this.properties.amount = v;
+		for(let i = 0; i < this.properties.clips.length; i++ ) {
+			if(this.properties.clips[i].properties.amount)
+			this.properties.clips[i].properties.amount *= v;
+		}
+		if(callback)
+			callback();
+	}, { precision: 2,  min: 0, max: 1, step: 0.01, title: "Intensity" } );
+
 }
 
 //helpers **************************

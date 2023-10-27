@@ -1,6 +1,6 @@
 import { UTILS } from "./utils.js";
 import { VideoUtils } from "./video.js"; 
-
+import { sigmlStringToBML } from './libs/bml/SigmlToBML.js';
 class Gui {
 
     constructor(editor) {
@@ -1333,18 +1333,99 @@ class ScriptGui extends Gui {
                 
     }
     
-    loadBMLClip(clip, callback) {
+    loadBMLClip(clip, callback, breakdown = true) {
         
         
+        let clips = [];
+        let globalStart = 10000;
+        let globalEnd = -10000;
         if(clip && clip.duration) {
             for(let i = 0; i < clip.behaviours.length; i++) {
+                let clipClass = null;
+                if(!clip.indices){
+                    switch(clip.behaviours[i].type) {
+                        case "gaze":
+                            clipClass = ANIM.GazeClip;
+                            break;
+                        case "gazeShift":
+                            clipClass = ANIM.GazeClip;
+                            break;
+                        case "head":
+                            clipClass = ANIM.HeadClip;
+                            break;
+                        case "headDirectionShift":
+                            clipClass = ANIM.HeadClip;
+                            break;
+                        case "face":
+                            clipClass = ANIM.FaceLexemeClip;
+                            break;
+                        case "faceLexeme":
+                            clipClass = ANIM.FaceLexemeClip;
+                            break;
+                        case "faceFACS":
+                            clipClass = ANIM.FaceFACSClip;
+                            break;
+                        case "faceEmotion":
+                            clipClass = ANIM.FaceEmotionClip;
+                            break;
+                        case "faceVA":
+                            break;
+                        case "faceShift":
+                            clipClass = ANIM.FaceLexemeClip;
+                            break;
+                        case "speech":
+                            break;
+                        case "gesture":
+                            if(clip.behaviours[i].handConstellation)
+                                clipClass = ANIM.HandConstellationClip;
+                            else if(clip.behaviours[i].bodyMovement)
+                                clipClass = ANIM.BodyMovementClip;
+                            else if(clip.behaviours[i].elbowRaise)
+                                clipClass = ANIM.ElbowRaiseClip;
+                            else if(clip.behaviours[i].shoulderRaise || clip.behaviours[i].shoulderHunch)
+                                clipClass = ANIM.ShoulderClip;
+                            else if(clip.behaviours[i].locationBodyArm)
+                                clipClass = ANIM.ArmLocationClip;
+                            else if(clip.behaviours[i].palmor)
+                                clipClass = ANIM.PalmOrientationClip;
+                            else if(clip.behaviours[i].extfidir)
+                                clipClass = ANIM.HandOrientationClip;
+                            else if(clip.behaviours[i].handshape)
+                                clipClass = ANIM.HandshapeClip;
+                            else if(clip.behaviours[i].motion && clip.behaviours[i].motion == "directed")
+                                clipClass = ANIM.DirectedMotionClip;
+                            else if(clip.behaviours[i].motion && clip.behaviours[i].motion == "dircular")
+                                clipClass = ANIM.CircularMotionClip;
+                            else if(clip.behaviours[i].motion && clip.behaviours[i].motion == "drist")
+                                clipClass = ANIM.WristMotionClip;
+                            else if(clip.behaviours[i].motion && clip.behaviours[i].motion == "fingerplay")
+                                clipClass = ANIM.FingerplayMotionClip;
+
+                    }
+                }
+                else {
+                    clipClass = ANIM.clipTypes[clip.indices[i]];
+                }
+
+                if(!clipClass)
+                    continue;
+
+                globalStart = Math.min(globalStart, clip.behaviours[i].start);
+                globalEnd = Math.max(globalEnd, clip.behaviours[i].end);
                 
-                this.clipsTimeline.addClip(new ANIM.clipTypes[clip.indices[i]]( clip.behaviours[i]));
+                if(breakdown)
+                    this.clipsTimeline.addClip(new clipClass( clip.behaviours[i]));
+                else
+                    clips.push(new clipClass( clip.behaviours[i]));
                 
             }
         }
+
+        if(!breakdown) {
+            this.clipsTimeline.addClip(new ANIM.CustomClip( {start: globalStart, end: globalEnd, type: "glossa", id: clip.behaviours.name, properties: {clips, amount: 1},}));
+        }
         this.clip = this.clipsTimeline.animationClip || clip ;
-        this.duration = clip.duration || 0;
+        this.duration = this.clip.duration || 0;
 
         this.clipsTimeline.onSetTime = (t) => this.editor.setTime( Math.clamp(t, 0, this.editor.animation.duration - 0.001) );
         this.clipsTimeline.onSelectClip = this.updateClipPanel.bind(this);
@@ -1433,6 +1514,10 @@ class ScriptGui extends Gui {
                     {
                         title: "Add preset",
                         callback: this.createPresetsDialog.bind(this)
+                    },
+                    {
+                        title: "Add signed glossa",
+                        callback: this.createSignsDialog.bind(this)
                     }
                 );
                 
@@ -1503,6 +1588,7 @@ class ScriptGui extends Gui {
             widgets.addComboButtons("Dominant hand", [{value: "Left", callback: (v) => this.editor.dominantHand = v}, {value:"Right", callback: (v) => this.editor.dominantHand = v}], {selected: this.editor.dominantHand})
             widgets.addButton(null, "Add clip", () => this.createClipsDialog() )
             widgets.addButton(null, "Add preset", () => this.createPresetsDialog() )
+            widgets.addButton(null, "Add signed glossa", () => this.createSignsDialog() )
             widgets.addSeparator();
         }
         widgets.onRefresh(options);
@@ -1630,6 +1716,10 @@ class ScriptGui extends Gui {
                 clip.relax = clip.fadeout += diff;
                 this.clipInPanel.start = v;
                 clip.start = v;
+                
+                if(clip.onChangeStart) {
+                    clip.onChangeStart(v);
+                }
                 updateTracks(true);
                 // this.updateClipPanel(clip);
                 
@@ -1645,7 +1735,7 @@ class ScriptGui extends Gui {
                 clip.relax = clip.fadeout = Math.min(v + clip.start, clip.relax);
                 updateTracks(true);
                 // this.updateClipPanel(clip);
-            }, {min:0.01, step:0.01, precision:2});
+            }, {min:0.01, step:0.01, precision:2, disabled: clip.type == "custom"});
 
             if(clip.fadein!= undefined && clip.fadeout!= undefined)  {
                 widgets.merge();
@@ -1824,6 +1914,7 @@ class ScriptGui extends Gui {
                 dialog.close();
         }
         let asset_browser = new LX.AssetView({  
+            root_path: "./src/libs/lexgui/",
             preview_actions: [{
                 name: 'Add clip', 
                 callback: innerSelect,
@@ -1834,7 +1925,7 @@ class ScriptGui extends Gui {
         let dialog = this.prompt = new LX.Dialog('BML clips', (p) => {
 
             p.attach( asset_browser );
-            let asset_data = [{id: "Face", type: "folder", src: "./data/imgs/folder.png", children: []}, {id: "Gaze", type: "folder", src: "./data/imgs/folder.png", children: []}, {id: "Head movement", type: "folder", src: "./data/imgs/folder.png", children: []}, {id: "Body movement", type: "folder", src: "./data/imgs/folder.png", children: []}];
+            let asset_data = [{id: "Face", type: "folder", children: []}, {id: "Gaze", type: "folder",  children: []}, {id: "Head movement", type: "folder",  children: []}, {id: "Body movement", type: "folder",  children: []}];
                 
             // FACE CLIP
             let values = ANIM.FaceLexemeClip.lexemes;
@@ -1917,10 +2008,10 @@ class ScriptGui extends Gui {
         
         let that = this;
         // Create a new dialog
-        let dialog = this.prompt = new LX.Dialog('Non Manual Features presets', (p) => {
+        let dialog = this.prompt = new LX.Dialog('Available presets', (p) => {
 
             let values = ANIM.FacePresetClip.facePreset; //["Yes/No-Question", "Negative", "WH-word Questions", "Topic", "RH-Questions"];
-            let asset_browser = new LX.AssetView({ skip_browser: true, skip_preview: true, allowed_types: ["Clips"]  });
+            let asset_browser = new LX.AssetView({ root_path: "./src/libs/lexgui/", skip_browser: true, skip_preview: true, allowed_types: ["Clips"]  });
             p.attach( asset_browser );
             let asset_data = [];
             
@@ -1966,6 +2057,124 @@ class ScriptGui extends Gui {
             }
         });
     }
+
+    createSignsDialog() {
+        
+        let that = this;
+        let fs = this.editor.getApp().FS;
+        
+        // Create a new dialog
+        let dialog = this.prompt = new LX.Dialog('Available signs', async (p) => {
+            const innerSelect = (asset, action) => {
+           
+                that.clipsTimeline.unSelectAllClips();
+                console.log(asset)
+                // sigmlStringToBML
+                asset.bml.name = asset.id;
+                this.loadBMLClip(asset.bml, null, action != "Add as glossa")
+                
+                let idx = null;
+                switch(asset.folder.id) {
+                    default:
+                        break;
+                }
+                asset_browser.clear();
+                dialog.close();
+            }
+            const loadData = () => {
+                asset_browser.load( this.dictionaries, e => {
+                    switch(e.type) {
+                        case LX.AssetViewEvent.ASSET_SELECTED: 
+                            //request data
+                            if(e.item.type == "folder")
+                                return;
+                            LX.request({ url: fs.root+ "/"+ e.item.fullpath, dataType: 'text/plain', success: (f) => {
+                                const bytesize = f => new Blob([f]).size;
+                                e.item.bytesize = bytesize();
+                                e.item.bml = e.item.type == "bml" ? f : sigmlStringToBML(f);
+                                e.item.bml.behaviours = e.item.bml.data;
+                                
+                            } });
+                            if(e.multiple)
+                                console.log("Selected: ", e.item); 
+                            else
+                                console.log(e.item.id + " selected"); 
+                                
+                            break;
+                        case LX.AssetViewEvent.ASSET_DELETED: 
+                            console.log(e.item.id + " deleted"); 
+                            break;
+                        case LX.AssetViewEvent.ASSET_CLONED: 
+                            console.log(e.item.id + " cloned"); 
+                            break;
+                        case LX.AssetViewEvent.ASSET_RENAMED:
+                            console.log(e.item.id + " is now called " + e.value); 
+                            break;
+                        case LX.AssetViewEvent.ASSET_DBCLICK: 
+                            // innerSelect(e.item);                        
+                        break;
+                    }
+                })
+            }
+
+            let asset_browser = new LX.AssetView({ root_path: "./src/libs/lexgui/", allowed_types: ["sigml", "bml"], preview_actions: [
+                {
+                    name: 'Add as glossa', 
+                    callback: innerSelect.bind("glossa")
+                },
+                {
+                    name: 'Breakdown into BML clips', 
+                    callback: innerSelect.bind("clips")
+                }
+            ]  
+            });
+            
+            p.attach( asset_browser );
+            if(!this.dictionaries) {
+                this.dictionaries = [];
+                
+                await fs.login();
+                await fs.getFolders(async (units) => {
+                   for(let i = 0; i < units.length; i++) {
+                        let data = {};
+                        if(units[i].name == fs.user && units[i].folders.dictionaries) {
+        
+                            const dictionaries = units[i].folders.dictionaries;
+                            for(let dictionary in dictionaries) {
+                                data[dictionary] = [];
+                                
+                                await fs.getFiles(units[i].name, "dictionaries/" + dictionary + "/Glosses/").then(async (files, resp) => {
+                                    
+                                    let files_data = [];
+                                    for(let f = 0; f < files.length; f++) {
+                                        files[f].id = files[f].filename;
+                                        files[f].folder = dictionary;
+                                        files[f].type = files[f].filename.split(".")[1];
+                                        files_data.push(files[f]);
+                                    }
+                                    data[dictionary] = files;
+                                    this.dictionaries.push({id: dictionary, type:"folder",  children: files});
+                                })
+                            }
+                        }
+                    }
+                    await loadData();
+                    })  
+            }
+            else {
+               loadData();
+            }
+           
+        }, { title:'Signs', close: true, minimize: false, size: ["80%", "70%"], scroll: true, resizable: true, draggable: false, 
+    
+            onclose: (root) => {
+                
+                root.remove();
+                this.prompt = null;
+            }
+        });
+    }
+
 
     createSceneUI(area) {
 

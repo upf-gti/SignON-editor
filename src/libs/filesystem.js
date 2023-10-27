@@ -146,10 +146,17 @@ class FileSystem{
                     return;
                 }
                 //resp.data = JSON.parse(resp.data);
-                LiteFileServer.Session.processFileList( resp.data, unit + "/" + folder );
+                LFS.Session.processFileList( resp.data, unit + "/" + folder );
                 onFiles(resp.data, resp);
             });
         });
+    }
+
+    async getFolders( onFolders ){
+        var session = this.session;
+
+        session.getUnitsAndFolders(onFolders);
+
     }
 }
 

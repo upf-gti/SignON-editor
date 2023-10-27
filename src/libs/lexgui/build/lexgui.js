@@ -16,6 +16,9 @@
         signals: {} // events and triggers
     };
 
+    LX.MOUSE_DOUBLE_CLICK = 2;
+    LX.MOUSE_TRIPLE_CLICK = 3;
+
     function clamp (num, min, max) { return Math.min(Math.max(num, min), max) }
     function round(num, n) { return +num.toFixed(n); }
     function deepCopy(o) { return JSON.parse(JSON.stringify(o)) }
@@ -6191,7 +6194,7 @@
         static ASSET_DELETED    = 2;
         static ASSET_RENAMED    = 3;
         static ASSET_CLONED     = 4;
-        static ASSET_DBCLICK    = 5;
+        static ASSET_DBLCLICK   = 5;
 
         constructor( type, item, value ) {
             this.type = type || TreeEvent.NONE;
@@ -6207,7 +6210,7 @@
                 case AssetViewEvent.ASSET_DELETED: return "assetview_event_deleted";
                 case AssetViewEvent.ASSET_RENAMED:  return "assetview_event_renamed";
                 case AssetViewEvent.ASSET_CLONED:  return "assetview_event_cloned";
-                case AssetViewEvent.ASSET_DBCLICK:  return "assetview_event_dbclick";
+                case AssetViewEvent.ASSET_DBLCLICK:  return "assetview_event_dbclick";
             }
         }
     };
@@ -6225,6 +6228,16 @@
          * @param {object} options
          */
         constructor( options = {} ) {
+
+            this.rootPath = "../";
+
+            if(options.root_path)
+            {
+                if(options.root_path.constructor !== String)
+                    console.warn("Asset Root Path must be a String (now is " + path.constructor.name + ")");
+                else
+                    this.rootPath = options.root_path;
+            }
 
             let div = document.createElement('div');
             div.className = 'lexassetbrowser';
@@ -6494,10 +6507,10 @@
             const add_item = function(item) {
 
                 const type = item.type.charAt(0).toUpperCase() + item.type.slice(1);
+                const extension = getExtension( item.id );
                 const is_folder = type === "Folder";
-                const is_image = type === "Image";
 
-                if((that.filter != "None" && type != that.filter) || !item.id.toLowerCase().includes(that.search_value.toLowerCase()))
+                if((that.filter != "None" && type.toLowerCase() != that.filter.toLowerCase()) || !item.id.toLowerCase().includes(that.search_value.toLowerCase()))
                     return;
 
                 let itemEl = document.createElement('li');
@@ -6513,11 +6526,36 @@
 
                 if( !that.skip_preview ) {
 
-                    let preview = document.createElement('img');
+                    let preview = null;
                     const has_image = item.src && ['png', 'jpg'].indexOf( getExtension( item.src ) ) > -1;
-                    preview.src = has_image ? item.src : "../images/" + item.type.toLowerCase() + ".png";
-                    if(item.unknown_extension) preview.src = "../images/file.png";
-                    itemEl.appendChild(preview);
+
+                    if( has_image || is_folder)
+                    {
+                        preview = document.createElement('img');
+                        preview.src = item.unknown_extension ? that.rootPath + "images/file.png" : (is_folder ? that.rootPath + "images/folder.png" : item.src);
+                        itemEl.appendChild(preview);
+                    }
+                    else
+                    {
+                        preview = document.createElement('svg');
+                        preview.className = "asset-file-preview";
+                        itemEl.appendChild(preview);
+                        
+                        let textEl = document.createElement('text');
+                        preview.appendChild(textEl);
+                        textEl.innerText = "." + extension.toUpperCase();;
+
+                        var newLength = textEl.innerText.length;
+                        var charsPerLine = 2.5;
+                        var newEmSize = charsPerLine / newLength;
+                        var textBaseSize = 64;
+
+                        if(newEmSize < 1) {
+                            var newFontSize = newEmSize * textBaseSize;
+                            textEl.style.fontSize = newFontSize + "px";
+                            preview.style.paddingTop = "calc(50% - " + (textEl.offsetHeight * 0.5 + 10) + "px)"
+                        }
+                    }
                 }
 
                 if( !is_folder )
@@ -6532,17 +6570,27 @@
                     e.stopImmediatePropagation();
                     e.stopPropagation();
 
+                    const is_double_click = e.detail == LX.MOUSE_DOUBLE_CLICK;
+
                     if( !is_folder ) {
-                        if(!e.shiftKey)
-                            that.content.querySelectorAll('.lexassetitem').forEach( i => i.classList.remove('selected') );
-                        this.classList.add('selected');
-                        if( !that.skip_preview )
-                            that._preview_asset( item );
-                    } else
-                        that._enter_folder( item );
+
+                        if(!is_double_click)
+                        {
+                            if(!e.shiftKey)
+                                that.content.querySelectorAll('.lexassetitem').forEach( i => i.classList.remove('selected') );
+                            this.classList.add('selected');
+                            if( !that.skip_preview )
+                                that._preview_asset( item );
+                        }
+                    }
+                    else
+                    {
+                        if(is_double_click) that._enter_folder( item );
+                        else console.log("TODO: Select Folder"); 
+                    }
 
                     if(that.onevent) {
-                        const event = new AssetViewEvent(e.detail === 1 ? AssetViewEvent.ASSET_SELECTED: AssetViewEvent.ASSET_DBCLICK, e.shiftKey ? [item] : item );
+                        const event = new AssetViewEvent(is_double_click ? AssetViewEvent.ASSET_DBLCLICK : AssetViewEvent.ASSET_SELECTED, e.shiftKey ? [item] : item );
                         event.multiple = !!e.shiftKey;
                         that.onevent( event );
                     }
@@ -6607,7 +6655,7 @@
             if( file.type == 'image' || file.src )
             {
                 const has_image = ['png', 'jpg'].indexOf( getExtension( file.src ) ) > -1;
-                const source = has_image ? file.src : "../images/" + file.type.toLowerCase() + ".png";
+                const source = has_image ? file.src : this.rootPath + "images/" + file.type.toLowerCase() + ".png";
                 this.previewPanel.addImage(source, { style: { width: "100%" } });
             }
 

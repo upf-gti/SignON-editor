@@ -125,12 +125,44 @@ class BMLController {
             let track = timeline.animationClip.tracks[i];
             for(let j = 0; j < track.clips.length; j++){
                 let clip = track.clips[j];
-                var data = ANIM.clipToJSON( timeline.animationClip.tracks[i].clips[j] );
-                if(data)
-                {
-                    data[3].end = data[3].end || data[3].start + data[3].duration;
-                    json[data[3].type].push( data[3] );
+                if(clip.properties.clips) {
+                    const subclips = clip.properties.clips;
+                    let offset = 0;
+                    for(let c = 0; c < subclips.length; c++) {
+                        if(c == 0) {
+                            offset = clip.start - subclips[0].start;
+                        }
+                        subclips[c].start += offset;
+                        
+                        if(subclips[c].attackPeak != null)
+                            subclips[c].attackPeak += offset;
+                        if(subclips[c].startStroke != null)
+                            subclips[c].startStroke += offset;
+                        if(subclips[c].stroke != null)
+                            subclips[c].stroke += offset;
+                        if(subclips[c].endStroke != null)
+                            subclips[c].endStroke += offset;
+                        if(subclips[c].ready != null)
+                            subclips[c].ready += offset;
+                        if(subclips[c].relax != null)
+                            subclips[c].relax += offset;		
+                        var data = ANIM.clipToJSON( subclips[c] );
+                        if(data)
+                        {
+                            data[3].end = data[3].end || data[3].start + data[3].duration;
+                            json[data[3].type].push( data[3] );
+                        }
+                    }
                 }
+                else {
+                    var data = ANIM.clipToJSON( timeline.animationClip.tracks[i].clips[j] );
+                    if(data)
+                    {
+                        data[3].end = data[3].end || data[3].start + data[3].duration;
+                        json[data[3].type].push( data[3] );
+                    }
+                }
+               
             }
         }    
 
