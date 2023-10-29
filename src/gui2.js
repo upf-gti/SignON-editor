@@ -1422,7 +1422,7 @@ class ScriptGui extends Gui {
         }
 
         if(!breakdown) {
-            this.clipsTimeline.addClip(new ANIM.SuperClip( {duration: globalEnd - globalStart, type: "glossa", id: clip.behaviours.name, clips}));
+            this.clipsTimeline.addClip(new ANIM.SuperClip( {duration: globalEnd - globalStart, type: "glossa", id: clip.name, clips}));
         }
         this.clip = this.clipsTimeline.animationClip || clip ;
         this.duration = this.clip.duration || 0;
@@ -1646,8 +1646,11 @@ class ScriptGui extends Gui {
                 icon = "fa-solid fa-user-large";
             else if(clip.constructor.name.includes("Gaze"))
                 icon = "fa-solid fa-eye";
+            else if(clip.constructor.name.includes("Super")) 
+                icon = "fa-solid fa-clapperboard";
 
-            widgets.addTitle(clip.constructor.name.match(/[A-Z][a-z]+|[0-9]+/g).join(" "), {icon} );
+            let clipName = clip.constructor.name.includes("Super") ? "Glossa Clip" : clip.constructor.name.match(/[A-Z][a-z]+|[0-9]+/g).join(" ");
+            widgets.addTitle(clipName, {icon} );
             widgets.addText("Id", clip.id, (v) => this.clipInPanel.id = v)
             
             widgets.branch("Content");
