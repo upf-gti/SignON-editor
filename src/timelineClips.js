@@ -4000,31 +4000,29 @@ FingerplayMotionClip.prototype.showInfo = function(panel, callback)
 	}
 }
 
-CustomClip.type = "custom";
-CustomClip.id = ANIM.CUSTOMCLIP ? ANIM.CUSTOMCLIP: ANIM.clipTypes.length;
-CustomClip.clipColor = "white";
+SuperClip.type = "super";
+SuperClip.id = ANIM.SUPERCLIP ? ANIM.SUPERCLIP: ANIM.clipTypes.length;
+SuperClip.clipColor = "white";
 
-function CustomClip(o)
+function SuperClip(o)
 {
-	this.id = "custom"
+	this.id = "super"
 	this.start = 0;
 	this.duration = 1;
 	
-	this.properties = o.properties || {clips: [], amount: 1};
-	
-	this._width = 0;
+	this.properties = o.properties || {amount: 1};
+	this.clips = [];
 	this.color = "#1a1f23";
 	this.font = "11px Calibri";
-	this.clipColor = CustomClip.clipColor;
+	this.clipColor = SuperClip.clipColor;
 	
 	if(o)
-		this.configure(o);
-	
+		this.configure(o);	
 }
 
-ANIM.registerClipType( CustomClip );
+ANIM.registerClipType( SuperClip );
 
-CustomClip.prototype.configure = function(o)
+SuperClip.prototype.configure = function(o)
 {
 	this.start = o.start || 0;
 	if(o.duration) this.duration = o.duration || 1;
@@ -4034,11 +4032,12 @@ CustomClip.prototype.configure = function(o)
 		if(o[property] != undefined)
 			this.properties[property] = o[property];
 	}
-	this.type = o.type || CustomClip.type;
+	this.type = o.type || SuperClip.type;
 	this.id = o.id || this.id;
+	this.clips = o.clips || [];
 }
 
-CustomClip.prototype.toJSON = function()
+SuperClip.prototype.toJSON = function()
 {
 	var json = {
 		id: this.id,
@@ -4046,21 +4045,51 @@ CustomClip.prototype.toJSON = function()
 		end: this.start + this.duration,
 		type: this.type
 	}
-	for(var i in this.properties)
-	{
-		json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
+	// for(var i in this.properties)
+	// {
+	// 	json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
+	// }
+
+	if(this.clips) {
+		const subclips = this.clips;
+		let offset = this.start;
+		for(let c = 0; c < subclips.length; c++) {
+	
+			let data = ANIM.clipToJSON( subclips[c] );
+			if(data)
+			{
+				data[1] = data[3].start += offset;
+			
+				if(data[3].attackPeak != null)
+					data[3].attackPeak += offset;
+				if(data[3].startStroke != null)
+					data[3].startStroke += offset;
+				if(data[3].stroke != null)
+					data[3].stroke += offset;
+				if(data[3].endStroke != null)
+					data[3].endStroke += offset;
+				if(data[3].ready != null)
+					data[3].ready += offset;
+				if(data[3].relax != null)
+					data[3].relax += offset;
+				data[3].end = (data[3].end + offset) || (data[3].start + data[3].duration);
+				if(!json[data[3].type])
+					json[data[3].type] = [];
+				json[data[3].type].push( data[3] );
+			}
+		}
 	}
 	return json;
 }
 
-CustomClip.prototype.fromJSON = function( json )
+SuperClip.prototype.fromJSON = function( json )
 {
 	this.id = json.id;
 	this.configure(json);
 }
 
 
-CustomClip.prototype.drawClip = function( ctx, w,h, selected, timeline )
+SuperClip.prototype.drawClip = function( ctx, w,h, selected, timeline )
 {
 	ctx.font = this.font;
 	let textInfo = ctx.measureText( this.id );
@@ -4085,16 +4114,16 @@ CustomClip.prototype.drawClip = function( ctx, w,h, selected, timeline )
 		ctx.fillText( this.id, 24, h/2 + 11/2);
 }
 
-CustomClip.prototype.showInfo = function(panel, callback)
+SuperClip.prototype.showInfo = function(panel, callback)
 {
 
 	// Amount property
 	panel.addNumber("Intensity", this.properties.amount.toFixed(2), (v, e, name) =>
 	{
 		this.properties.amount = v;
-		for(let i = 0; i < this.properties.clips.length; i++ ) {
-			if(this.properties.clips[i].properties.amount)
-			this.properties.clips[i].properties.amount *= v;
+		for(let i = 0; i < this.clips.length; i++ ) {
+			if(this.clips[i].properties.amount)
+			this.clips[i].properties.amount *= v;
 		}
 		if(callback)
 			callback();

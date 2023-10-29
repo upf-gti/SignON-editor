@@ -1422,7 +1422,7 @@ class ScriptGui extends Gui {
         }
 
         if(!breakdown) {
-            this.clipsTimeline.addClip(new ANIM.CustomClip( {start: globalStart, end: globalEnd, type: "glossa", id: clip.behaviours.name, properties: {clips, amount: 1},}));
+            this.clipsTimeline.addClip(new ANIM.SuperClip( {duration: globalEnd - globalStart, type: "glossa", id: clip.behaviours.name, clips}));
         }
         this.clip = this.clipsTimeline.animationClip || clip ;
         this.duration = this.clip.duration || 0;
