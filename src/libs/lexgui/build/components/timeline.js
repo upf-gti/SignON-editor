@@ -824,7 +824,7 @@
                 this.timeBeforeMove = null;
                 e.discard = discard;
                 
-                if(e.localY <= this.topMargin) {
+                if(e.localY <= this.topMargin && !e.shiftKey) {
                     this.currentTime = Math.max(0, time);
                     innerSetTime(this.currentTime);
                     return;
@@ -3471,7 +3471,7 @@
                     this.processCurrentKeyFrame( e, null, track, localX, true ); 
                 }
                 // Box selection
-                else if (this.boxSelectionEnd){
+                else if(this.boxSelectionEnd){
             
                     this.unSelectAllKeyFrames();
                     
