@@ -1864,7 +1864,7 @@ class ScriptGui extends Gui {
         }, {closable: true, onclose: (root) => {
             root.remove();
             this.prompt = null;
-            LX.popup("Click on Timeline tab to discover all the available interactions.", "Util info!", {position: [ "10px", "50px"], timeout: 5000})
+            LX.popup("Click on Timeline tab to discover all the available interactions.", "Useful info!", {position: [ "10px", "50px"], timeout: 5000})
         },
         size: ["30%", 200], modal: true
     })
@@ -2169,7 +2169,17 @@ class ScriptGui extends Gui {
             p.attach( asset_browser );
             if(!this.dictionaries) {
                 this.dictionaries = [];
-                
+                let modal = new LX.Dialog(null, m => {
+                    let div = document.createElement("div");
+                    div.classList.add("load")
+
+                    let img = document.createElement("img");
+                    img.src = "./data/imgs/monster.png";
+                    img.classList = "loading";
+                    img.width = "50px";
+                    div.appendChild(img);
+                    m.attach(div)
+                }, {size: ["80%", "70%"]})
                 await fs.login();
                 await fs.getFolders(async (units) => {
                    for(let i = 0; i < units.length; i++) {
@@ -2202,7 +2212,9 @@ class ScriptGui extends Gui {
                         }
                     }
                     await loadData();
-                    })  
+                    modal.close()
+                    }) 
+                     
             }
             else {
                loadData();
