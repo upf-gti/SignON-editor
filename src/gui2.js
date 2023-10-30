@@ -1528,7 +1528,7 @@ class ScriptGui extends Gui {
                         callback: this.createPresetsDialog.bind(this)
                     },
                     {
-                        title: "Add signed glossa",
+                        title: "Add sign",
                         callback: this.createSignsDialog.bind(this)
                     }
                 );
@@ -1600,7 +1600,7 @@ class ScriptGui extends Gui {
             widgets.addComboButtons("Dominant hand", [{value: "Left", callback: (v) => this.editor.dominantHand = v}, {value:"Right", callback: (v) => this.editor.dominantHand = v}], {selected: this.editor.dominantHand})
             widgets.addButton(null, "Add clip", () => this.createClipsDialog() )
             widgets.addButton(null, "Add preset", () => this.createPresetsDialog() )
-            widgets.addButton(null, "Add signed glossa", () => this.createSignsDialog() )
+            widgets.addButton(null, "Add sign", () => this.createSignsDialog() )
             widgets.addSeparator();
         }
         widgets.onRefresh(options);
@@ -2108,7 +2108,7 @@ class ScriptGui extends Gui {
                 console.log(asset)
                 // sigmlStringToBML
                 asset.bml.name = asset.id;
-                this.loadBMLClip(asset.bml, null, action != "Add as glossa")
+                this.loadBMLClip(asset.bml, null, action != "Add as single clip")
                 
                 let idx = null;
                 switch(asset.folder.id) {
@@ -2156,7 +2156,7 @@ class ScriptGui extends Gui {
 
             let asset_browser = new LX.AssetView({ root_path: "./src/libs/lexgui/", allowed_types: ["sigml", "bml"], preview_actions: [
                 {
-                    name: 'Add as glossa', 
+                    name: 'Add as single clip', 
                     callback: innerSelect.bind("glossa")
                 },
                 {
