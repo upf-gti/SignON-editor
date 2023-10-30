@@ -1414,7 +1414,7 @@ class ScriptGui extends Gui {
                 globalEnd = Math.max(globalEnd, clip.behaviours[i].end);
                 
                 if(breakdown)
-                    this.clipsTimeline.addClip(new clipClass( clip.behaviours[i]));
+                    clips.push(new clipClass( clip.behaviours[i]));
                 else
                     clips.push(new clipClass( clip.behaviours[i]));
                 
@@ -1423,6 +1423,9 @@ class ScriptGui extends Gui {
 
         if(!breakdown) {
             this.clipsTimeline.addClip(new ANIM.SuperClip( {duration: globalEnd - globalStart, type: "glossa", id: clip.name, clips}));
+        }
+        else {
+            this.clipsTimeline.addClips(clips);
         }
         this.clip = this.clipsTimeline.animationClip || clip ;
         this.duration = this.clip.duration || 0;
@@ -1459,6 +1462,7 @@ class ScriptGui extends Gui {
 
             this.clipsTimeline.unSelectAllClips();
             let offset = 0;
+            let clips = [];
             for(let i = 0; i < this.clipsTimeline.clipsToCopy.length; i++){
                 let [trackIdx, clipIdx] = this.clipsTimeline.clipsToCopy[i];
                 let clipToCopy = this.clipsTimeline.animationClip.tracks[trackIdx].clips[clipIdx];
@@ -1466,8 +1470,9 @@ class ScriptGui extends Gui {
                 if( i == 0) 
                     offset = newClip.start;
                 newClip.start -= offset ;
-                this.clipsTimeline.addClip(newClip); 
+                clips.push(newClip); 
             }
+            this.clipsTimeline.addClips(clips);
             this.clipsTimeline.clipsToCopy = null;
         }
         // this.clipsTimeline.onUpdateTrack = (idx) 
@@ -2036,9 +2041,10 @@ class ScriptGui extends Gui {
 
                         dialog.close();
                         let presetClip = new ANIM.FacePresetClip({preset: e.item.id});
-                        for(let i = 0; i < presetClip.clips.length; i++){
-                            that.clipsTimeline.addClip( presetClip.clips[i], presetClip.clips[i].start);
-                        }
+                        that.clipsTimeline.addClips(presetClip.clips)
+                        // for(let i = 0; i < presetClip.clips.length; i++){
+                        //     that.clipsTimeline.addClip( presetClip.clips[i], presetClip.clips[i].start);
+                        // }
                         break;
                     case LX.AssetViewEvent.ASSET_DELETED: 
                         console.log(e.item.id + " deleted"); 
