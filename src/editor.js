@@ -1416,7 +1416,7 @@ class ScriptEditor extends Editor{
     
     loadModel(clip) {
         // Load the target model (Eva) 
-        UTILS.loadGLTF("models/Eva_Y.glb", (gltf) => {
+        UTILS.loadGLTF("models/EvaHandsEyesFixed.glb", (gltf) => {
             let model = gltf.scene;
             model.name = this.character;
             model.visible = true;

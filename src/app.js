@@ -45,11 +45,14 @@ class App {
                 this.editor = new KeyframeEditor(this, "video");
                 this.onLoadVideo( settings.data );
                 break;
-            default:
+            case 'bml':
                 this.editor = new ScriptEditor(this, 'script');
                 this.onBMLProject( settings.data );
                 break;
-                
+            default:
+                alert("Format not supported.\n\nFormats accepted:\n\tVideo: 'mp4','wav'\n\tScript animation: 'bml'\n\tKeyframe animation: 'bvh', 'bvhe'");
+                return;
+                break;    
         }
         this.editor.init();
         window.addEventListener("resize", this.onResize.bind(this));

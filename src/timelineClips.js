@@ -2570,7 +2570,7 @@ function HandshapeClip(o)
 		
 		mainBend: "", // bend applied to selected fingers from the default handshapes. Basic handshapes and ThumbCombination handshapes behave differently. Value from the bend table
 		secondMainBend: "", // mainbend applied to secondHandshape
-		mainSplay: 0.5, // number [-1,1]. Separates laterally fingers 2,4,5. Splay diminishes the more the finger is bent
+		mainSplay: null, // number [-1,1]. Separates laterally fingers 2,4,5. Splay diminishes the more the finger is bent
 		shift: false,
 		lrSym: null,
 		udSym: null,
@@ -2699,12 +2699,22 @@ HandshapeClip.prototype.showInfo = function(panel, callback)
 	}, {precision: 2, min: 0, max: 1, step: 0.01});
 
 	// Main splay property 
-	panel.addNumber("Main splay fingers", this.properties.mainSplay, (v, e, name) =>
-	{
-		this.properties.mainSplay = v;
+	panel.addCheckbox("Set splay fingers", this.properties.mainSplay!= null, (v) => {
+
+		this.properties.mainSplay = v ? 0.5 : null;
 		if(callback)
-			callback();
-	}, {precision: 2, min: 0, max: 1, step: 0.01});
+			callback(true);
+	}, {title: "Separates laterally index, ring and pinky fingers"} );
+
+	if(this.properties.mainSplay != null) {
+
+		panel.addNumber("Main splay fingers", this.properties.mainSplay, (v, e, name) =>
+		{
+			this.properties.mainSplay = v;
+			if(callback)
+				callback();
+		}, {precision: 2, min: 0, max: 1, step: 0.01});
+	}
 
 	// Bend property
 	panel.addDropdown("Main bend", ["", ...HandshapeClip.bendstates], this.properties.mainBend, (v, e, name) => {
@@ -2788,14 +2798,14 @@ function HandConstellationClip(o)
 		hand: "Right",
 		handConstellation: true,
 		//Location of the hand in the specified hand (or dominant hand)
-		srcFinger: "Thumb", // 1,2,3,4,5. If the location does not use a finger, do not include this
-		srcLocation: "Pad", // string from hand locations (although no forearm, elbow, upperarm are valid inputs here)
-		srcSide: "Back", // Ulnar, Radial, Palmar, Back
+		srcFinger: "", // 1,2,3,4,5. If the location does not use a finger, do not include this
+		srcLocation: "", // string from hand locations (although no forearm, elbow, upperarm are valid inputs here)
+		srcSide: "", // Ulnar, Radial, Palmar, Back
 		
 		//Location of the hand in the unspecified hand (or non dominant hand)
-		dstFinger: "Thumb", // 1,2,3,4,5. If the location does not use a finger, do not include this
-		dstLocation: "Base", // string from hand locations or arm locations
-		dstSide: "Palmar", // Ulnar, Radial, Palmar, Back 
+		dstFinger: "", // 1,2,3,4,5. If the location does not use a finger, do not include this
+		dstLocation: "", // string from hand locations or arm locations
+		dstSide: "", // Ulnar, Radial, Palmar, Back 
 
 		// optionals
 		distance: 0, //[-ifinity,+ifninity] where 0 is touching and 1 is the arm size. Distance between endpoints. 
@@ -2856,7 +2866,7 @@ HandConstellationClip.prototype.configure = function(o)
 					this.properties.distanceDirection += "Up";
 					break;
 				case "d":
-					this.properties.distanceDirection +=	"Down";
+					this.properties.distanceDirection += "Down";
 					break;
 				case "l":
 					this.properties.distanceDirection += "Left";
@@ -4006,6 +4016,187 @@ FingerplayMotionClip.prototype.showInfo = function(panel, callback)
 				callback();
 		} )
 	}
+}
+
+//MouthingClip
+MouthingClip.type = "speech";
+
+MouthingClip.id = ANIM.FINGERPLAYMOTION ? ANIM.FINGERPLAYMOTION: ANIM.clipTypes.length;
+MouthingClip.clipColor = "#e6f598";
+
+function MouthingClip(o)
+{
+	this.id= "Mouthing";
+	this.start = 0
+	this.duration = 1;
+	this._width = 0;
+	
+	this.properties = {
+		text: "",
+		// optionals
+		phT: null, // duration (seconds) of each phoneme. Overrides sentT.  [array]
+		sentT: null,  //duration (seconds) of whole sentence. Overrides speed. Delay not included.  
+		speed: 8, //phonemes per second of the whole string. Overrides default speed. Humans speak at 8 phonemes per second (lower boundary) 
+		phInt: null, // intensity of each phoneme. Overrides sentInt. [array]
+		sentInt: 0.5,
+	}
+
+	if(o)
+		this.configure(o);
+
+	this.color = "#1a1f23";
+	this.font = "11px Calibri";
+	this.clipColor = MouthingClip.clipColor;
+}
+
+ANIM.registerClipType( MouthingClip );
+
+MouthingClip.prototype.configure = function(o)
+{
+	if(o.properties)
+	{
+		Object.assign(this.properties, o.properties);
+	}
+	for(let p in this.properties) {
+		if(o[p] != undefined) {
+			this.properties[p] = o[p];
+		}
+		
+	}
+	this.start = o.start || 0;
+	if(o.duration) this.duration = o.duration || 1;
+	if(o.end) this.duration = (o.end - o.start) || this.properties.speed*this.properties.text.length;
+}
+
+MouthingClip.prototype.toJSON = function()
+{
+	var json = {
+		id: this.id,
+		start: this.start,
+		end: this.start + this.duration,
+		type: "speech",
+	}
+
+	for(let i in this.properties)
+	{
+		json[i] = this.properties[i];
+	}
+	return json;
+}
+
+MouthingClip.prototype.fromJSON = function( json )
+{
+	this.id = json.id;
+	this.configure(json);
+}
+
+MouthingClip.prototype.drawClip = function( ctx, w,h, selected )
+{
+	ctx.font = this.font;
+	ctx.globalCompositeOperation =  "source-over";
+	let textInfo = ctx.measureText( this.id );
+	ctx.fillStyle = this.color;
+	if( textInfo.width < (w - 24) )
+		ctx.fillText( this.id, 24,h * 0.7 );
+}
+
+MouthingClip.prototype.showInfo = function(panel, callback)
+{
+	panel.addText(null, "Applies mouthing given a text in ARPABET 1-letter notation. In addition, '.' and ' ' symbols are supported.", null, {disabled: true});
+	panel.addText(null, "More info about ARPABET notation", null, {disabled: true, url: "https://en.wikipedia.org/wiki/ARPABET"});
+	
+	panel.addTextArea("Text", this.properties.text, (v, e) => {
+		this.properties.text = v;
+		this.duration = this.properties.sentT = v.length / this.properties.speed;
+		if(callback)
+			callback(true);
+	}, {});
+
+	panel.addSeparator();
+	
+	panel.addTitle( "Optionals");
+
+	panel.addText(null, "Speed", null, {disabled: true})
+
+	panel.addCheckbox("Set for each phonema", this.properties.phT != null, (v,e) => {
+		if(v) {
+			this.properties.phT = [];
+			this.properties.phT.length = this.properties.text.length;
+			this.properties.phT.fill(this.properties.sentT / this.properties.text.length);
+		}
+		else {
+			this.properties.phT = null;
+			this.properties.speed = 8;
+			this.duration = this.properties.sentT = this.properties.text.length / this.properties.speed;
+		}
+
+		if(callback)
+			callback(true);
+	})
+	if(this.properties.phT == null) {
+
+		// Speed property 
+		panel.addNumber("Speed", this.properties.speed, (v, e, name) =>
+		{
+			this.properties.speed = v;
+			this.duration = this.properties.sentT = this.properties.text.length / v;
+			if(callback)
+				callback(true);
+		}, {precision: 2, min: 0.1, title: "Phonemes per second of the whole string"});
+	} 
+	else {
+		for(let i = 0; i < this.properties.text.length; i++) {
+			let char = this.properties.text[i];
+			panel.addNumber(char, this.properties.phT[i], (v,e) => {
+				this.properties.phT[i] = v;
+				this.duration = 0;
+				for(let j = 0; j < this.properties.phT.length; j++) 
+					this.duration += this.properties.phT[j];
+				if(callback)
+					callback(true);
+			}, {precision: 2, min: 0.1});
+		}
+	}
+
+	panel.addText(null, "Intensity", null, {disabled: true});
+
+	panel.addCheckbox("Set for each phonema", this.properties.phInt != null, (v,e) => {
+		if(v) {
+			this.properties.phInt = [];
+			this.properties.phInt.length = this.properties.text.length;
+			this.properties.phInt.fill(this.properties.sentInt);
+		}
+		else {
+			this.properties.phInt = null;
+			this.properties.sentInt = 0.5;
+		}
+
+		if(callback)
+			callback(true);
+	})
+	if(this.properties.phInt== null) {
+
+		// Speed property 
+		panel.addNumber("Intensity", this.properties.sentInt, (v, e, name) =>
+		{
+			this.properties.sentInt = v;
+			if(callback)
+				callback(true);
+		}, {precision: 2, min: 0, max: 1, title: "Intensity of the whole string"});
+	} 
+	else {
+		for(let i = 0; i < this.properties.text.length; i++) {
+			let char = this.properties.text[i];
+			panel.addNumber(char, this.properties.phInt[i], (v,e) => {
+				this.properties.phInt[i] = v;
+				if(callback)
+					callback(true);
+			}, {precision: 2, min: 0, max: 1});
+		}
+		
+		
+	}
+
 }
 
 SuperClip.type = "super";

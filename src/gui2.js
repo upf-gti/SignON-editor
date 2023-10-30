@@ -1374,6 +1374,7 @@ class ScriptGui extends Gui {
                             clipClass = ANIM.FaceLexemeClip;
                             break;
                         case "speech":
+                            clipClass = ANIM.MouthingClip;
                             break;
                         case "gesture":
                             if(clip.behaviours[i].handConstellation)
@@ -1469,7 +1470,13 @@ class ScriptGui extends Gui {
                 let newClip = new ANIM[clipToCopy.constructor.name](clipToCopy);
                 if( i == 0) 
                     offset = newClip.start;
-                newClip.start -= offset ;
+                newClip.start -= offset
+                if(newClip.attackPeak) newClip.fadein = newClip.attackPeak -= offset;
+                if(newClip.relax) newClip.fadeout = newClip.relax -= offset;
+                if(newClip.ready) newClip.fadein = newClip.ready -= offset;
+                if(newClip.strokeStart) newClip.strokeStart -= offset;
+                if(newClip.stroke) newClip.stroke -= offset;
+                if(newClip.strokeEnd) newClip.strokeEnd -= offset;
                 clips.push(newClip); 
             }
             this.clipsTimeline.addClips(clips);
@@ -1647,6 +1654,8 @@ class ScriptGui extends Gui {
 
             if(clip.constructor.name.includes("Face")) 
                 icon = "fa-solid fa-face-smile"
+            else if(clip.constructor.name.includes("Mouthing")) 
+                icon = "fa-solid fa-comment-dots";
             else if(clip.constructor.name.includes("Head"))
                 icon = "fa-solid fa-user-large";
             else if(clip.constructor.name.includes("Gaze"))
@@ -1906,6 +1915,7 @@ class ScriptGui extends Gui {
                     case "Head movement":
                         idx = that.clipsTimeline.addClip( new ANIM.HeadClip( {lexeme: asset.id.toUpperCase()})); 
                         break;
+                        
                     default:
                         let clipType = asset.id;
                         let data = {properties: {hand: this.editor.dominantHand}};
@@ -1913,7 +1923,17 @@ class ScriptGui extends Gui {
                             let type = clipType.split(" ")[1];
                             clipType = "Shoulder";
                             data["shoulder" + type] = 0.8
+                        } 
+                        else if( clipType.includes("Hand Constellation")) {
+
+                            data.srcFinger = 1;
+                            data.srcLocation = "Pad";
+                            data.srcSide = "Back";
+                            data.dstFinger = 1;
+                            data.dstLocation = "Base";
+                            data.dstSide = "Palmar"; 
                         }
+                    
                         idx = that.clipsTimeline.addClip( new ANIM[clipType.replaceAll(" ", "") + "Clip"](data));
                         
                         break;
@@ -1933,7 +1953,7 @@ class ScriptGui extends Gui {
         let dialog = this.prompt = new LX.Dialog('BML clips', (p) => {
 
             p.attach( asset_browser );
-            let asset_data = [{id: "Face", type: "folder", children: []}, {id: "Gaze", type: "folder",  children: []}, {id: "Head movement", type: "folder",  children: []}, {id: "Body movement", type: "folder",  children: []}];
+            let asset_data = [{id: "Face", type: "folder", children: []}, {id: "Mouthing", type: "folder", children: []}, {id: "Gaze", type: "folder",  children: []}, {id: "Head movement", type: "folder",  children: []}, {id: "Body movement", type: "folder",  children: []}];
                 
             // FACE CLIP
             let values = ANIM.FaceLexemeClip.lexemes;
@@ -1945,6 +1965,14 @@ class ScriptGui extends Gui {
                 }
                 asset_data[0].children.push(data);
             }
+            // MOUTHING CLIP
+            
+            let data = {
+                id: "Mouthing", 
+                type: "Clip"
+            }
+            asset_data[1].children.push(data);
+        
             
             // GAZE CLIP
             values = ANIM.GazeClip.influences;
@@ -1954,7 +1982,7 @@ class ScriptGui extends Gui {
                     type: "Clip",
                     // src: "./data/imgs/thumbnails/" + values[i].toLowerCase().replaceAll(" ", "_") + ".png"
                 }
-                asset_data[1].children.push(data);
+                asset_data[2].children.push(data);
             }
 
             // HEAD CLIP
@@ -1965,7 +1993,7 @@ class ScriptGui extends Gui {
                     type: "Clip",
                     // src: "./data/imgs/thumbnails/" + values[i].toLowerCase().replaceAll(" ", "_") + ".png"
                 }
-                asset_data[2].children.push(data);
+                asset_data[3].children.push(data);
             }
 
             // GESTURE CLIP
@@ -1976,7 +2004,7 @@ class ScriptGui extends Gui {
                     type: "Clip",
                     // src: "./data/imgs/thumbnails/" + values[i].toLowerCase().replaceAll(" ", "_") + ".png"
                 }
-                asset_data[3].children.push(data);
+                asset_data[4].children.push(data);
             }
 
             asset_browser.load( asset_data, (e,v) => {
@@ -2151,19 +2179,25 @@ class ScriptGui extends Gui {
                             const dictionaries = units[i].folders.dictionaries;
                             for(let dictionary in dictionaries) {
                                 data[dictionary] = [];
-                                
-                                await fs.getFiles(units[i].name, "dictionaries/" + dictionary + "/Glosses/").then(async (files, resp) => {
-                                    
-                                    let files_data = [];
-                                    for(let f = 0; f < files.length; f++) {
-                                        files[f].id = files[f].filename;
-                                        files[f].folder = dictionary;
-                                        files[f].type = files[f].filename.split(".")[1];
-                                        files_data.push(files[f]);
-                                    }
-                                    data[dictionary] = files;
-                                    this.dictionaries.push({id: dictionary, type:"folder",  children: files});
-                                })
+                                let assets = [];
+                                for(let folder in dictionaries[dictionary]) {
+                                    await fs.getFiles(units[i].name, "dictionaries/" + dictionary + "/" + folder + "/").then(async (files, resp) => {
+                                        
+                                        let files_data = [];
+                                        for(let f = 0; f < files.length; f++) {
+                                            files[f].id = files[f].filename;
+                                            files[f].folder = dictionary;
+                                            files[f].type = files[f].filename.split(".")[1];
+                                            if(files[f].type == "txt")
+                                                continue;
+                                            files_data.push(files[f]);
+                                        }
+                                        data[dictionary] = files;
+                                        assets.push({id: folder, type:"folder",  children: files});
+                                    })
+                                    // this.dictionaries.push({id: dictionary, type:"folder",  children: assets});
+                                }
+                                this.dictionaries.push({id: dictionary, type:"folder",  children: assets});
                             }
                         }
                     }

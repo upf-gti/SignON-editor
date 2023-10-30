@@ -12,7 +12,7 @@ class BMLController {
         this.undoSteps = [];
 
         this.editor = editor;
-        fetch( "src/libs/bml/Eva_Yconfig.json" ).then(response => response.text()).then( (text) =>{
+        fetch( "src/libs/bml/EvaHandsEyesFixedConfig.json" ).then(response => response.text()).then( (text) =>{
             let config = JSON.parse( text );
             let ECAcontroller = this.ECAcontroller = new CharacterController( {character: editor.scene.getObjectByName(editor.character), characterConfig: config} );
             ECAcontroller.start();
@@ -162,7 +162,7 @@ class BMLController {
 
             //get computed bs weights
             let bs = [];
-            this.ECAcontroller.facialController._morphTargets.Body.morphTargetInfluences.map( x => bs.push(x));
+            this.ECAcontroller.facialController._morphTargets.BodyMesh.morphTargetInfluences.map( x => bs.push(x));
             values.push(bs);
 
             //get computed position and rotation of each bone
