@@ -1411,8 +1411,8 @@ class ScriptGui extends Gui {
                 if(!clipClass)
                     continue;
 
-                globalStart = Math.min(globalStart, clip.behaviours[i].start);
-                globalEnd = Math.max(globalEnd, clip.behaviours[i].end);
+                globalStart = Math.min(globalStart, clip.behaviours[i].start || globalStart);
+                globalEnd = Math.max(globalEnd, clip.behaviours[i].end || globalEnd);
                 
                 if(breakdown)
                     clips.push(new clipClass( clip.behaviours[i]));
