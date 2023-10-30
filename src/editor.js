@@ -630,7 +630,7 @@ class Editor {
             url = "https://webglstudio.org/users/arodriguez/demos/animationLoader/?load=bvhskeletonpreview";
         }
         else{
-            url = "https://webglstudio.org/users/jpozo/SignONRealizer/show/";
+            url = "https://webglstudio.org/users/jpozo/SignONRealizer/dev/";
             let json = this.exportBML();
             if(!json) return;
             const sendData = () => {
@@ -1639,12 +1639,26 @@ class ScriptEditor extends Editor{
             for(let j = 0; j < this.activeTimeline.animationClip.tracks[i].clips.length; j++) {
                 let data = this.activeTimeline.animationClip.tracks[i].clips[j];
                 let type = ANIM[data.constructor.name];
-                if(data.toJSON) data = data.toJSON()
+                if(data.toJSON) data = data.toJSON();
                 if(data)
                 {
-                    json.behaviours.push( data );
-                    json.indices.push(type.id);
+                    if(data.type == "glossa") {
+                        let actions = { faceLexeme: [], gaze: [], head: [], gesture: [], speech: []};
+                       
+                        for(let action in actions) {
+                            if(data[action])
+                                json.behaviours = [...json.behaviours, ...data[action]];
+                            //json.indices.push(type.id);
+                        }
+                    }
+                    else {
+
+                        json.behaviours.push( data );
+                        json.indices.push(type.id);
+                    }
                 }
+                
+                
             }
         }
 

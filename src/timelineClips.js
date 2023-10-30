@@ -407,13 +407,21 @@ ANIM.Track = Track;
 //-----------------------------Face Behaviour-----------------------------//
 //FaceLexemeClip to show captions
 FaceLexemeClip.lexemes = [
-	"Lip Corner Depressor", "Lip Corner Depressor Left","Lip Corner Depressor Right",	"Lip Corner Puller","Lip Corner Puller Left","Lip Corner Puller Right", 
-	"Lip Strecher","Lip Funneler","Lip Tightener", "Lip Puckerer", "Lip Puckerer Left", "Lip Puckerer Right", "Lip Pressor", "Lips Part", "Lip Suck", "Lip Suck Upper", "Lip Suck Lower",
-	"Lower Lip Depressor", "Upper Lip Raiser", "Upper Lip Raiser Left", "Upper Lip Raiser Right", "Chin Raiser", "Dimpler", "Dimpler Left", "Dimpler Right",
+    "Arch", "Brow lowerer", "Brow lowerer left", "Brow lowerer right", "Brow raiser", "Brow raiser left", "Brow raiser right", "Inner brow raiser", "Outer brow raiser", 
 
-	"Nose Wrinkler", "Mouth Stretch", "Mouth Open", "Jaw Drop", "Jaw Sideways Left", "Jaw Sideways Right", "Jaw Thrust", "Tongue Show", "Cheek Blow", "Cheek Suck",
-	"Brow Lowerer", "Brow Lowerer Left", "Brow Lowerer Right", "Brow Raiser", "Brow Raiser Left", "Brow Raiser Right", "Inner Brow Raiser", "Outer Brow Raiser",
-	"Upper Lid Raiser", "Upper Lid Raiser Left", "Upper Lid Raiser Right", "Cheek Raiser", "Lid Tightener", "Eyes Closed", "Blink", "Wink Left", "Wink Right"
+	"Squint", "Blink", "Eyes closed", "Upper lid raiser", "Upper lid raiser left", "Upper lid raiser right", "Cheek raiser", "Lid tightener", "Wink left", "Wink right", 
+
+	"Cheek suck", "Cheek suck left", "Cheek suck right", "Cheek blow", "Cheek blow left", "Cheek blow right", 
+
+	"Nose wrinkler", "Nostril dilator", "Nostril compressor", 
+
+	"Lip corner depressor", "Lip corner depressor left", "Lip corner depressor right", "Lip corner puller", "Lip corner puller left", "Lip corner puller right", "Lip strecher", "Lip funneler", "Lip tightener", "Lip puckerer", "Lip puckerer left", 
+	"Lip puckerer right", "Lip pressor", "Lips part", "Lip suck", "Lip suck upper", "Lip suck lower", "Lower lip depressor", "Lower lip depressor left", "Lower lip depressor right", "Upper lip raiser", "Upper lip raiser left", "Upper lip raiser right", 
+	
+	"Chin raiser", "Dimpler", "Dimpler left", "Dimpler right", "Lip bite", "Smile teeth", "Smile teeth wide", "Smile closed", "Round open", "Round closed", "Mouth stretch", "Close tight", 
+	"Jaw drop", "Jaw thrust", "Jaw sideways left", "Jaw sideways right", 
+	
+	"Tongue bulge left", "Tongue bulge right", "Tongue up", "Tongue show", "Tongue wide", "Lip wipe", "Neck tightener"
 ]
 
 FaceLexemeClip.type = "faceLexeme";

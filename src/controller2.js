@@ -119,7 +119,7 @@ class BMLController {
         this.ECAcontroller.reset();
 
         //convert each clip to BML json format
-        let json = { faceLexeme: [], gaze: [], head: [], gesture: []};
+        let json = { faceLexeme: [], gaze: [], head: [], gesture: [], speech: []};
 
         for(let i = 0; i < timeline.animationClip.tracks.length; i++){
             let track = timeline.animationClip.tracks[i];
@@ -162,7 +162,7 @@ class BMLController {
 
             //get computed bs weights
             let bs = [];
-            this.ECAcontroller.facialController._facialBSFinal.Body.map( x => bs.push(x));
+            this.ECAcontroller.facialController._morphTargets.Body.morphTargetInfluences.map( x => bs.push(x));
             values.push(bs);
 
             //get computed position and rotation of each bone
