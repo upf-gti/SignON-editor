@@ -1864,7 +1864,7 @@ class ScriptGui extends Gui {
         }, {closable: true, onclose: (root) => {
             root.remove();
             this.prompt = null;
-            LX.popup("Click on Timeline tab to discover all the available interactions!", null, {position: [ "10px", "50px"], timeout: 5000})
+            LX.popup("Click on Timeline tab to discover all the available interactions.", "Util info!", {position: [ "10px", "50px"], timeout: 5000})
         },
         size: ["30%", 200], modal: true
     })
