@@ -122,10 +122,10 @@ class Gui {
             menubar.add("Timeline/Shortcuts/Key Selection/Single", { short: "Left Click" });
             menubar.add("Timeline/Shortcuts/Key Selection/Multiple", { short: "Hold LSHIFT" });
             menubar.add("Timeline/Shortcuts/Key Selection/Box", { short: "Hold LSHIFT+Drag" });
+            menubar.add("Timeline/Optimize all tracks", { callback: () => this.editor.optimizeTracks() });
         }
 
 
-        menubar.add("Timeline/Optimize all tracks", { callback: () => this.editor.optimizeTracks() });
         menubar.add("Timeline/Clear tracks", { callback: () => this.editor.clearAllTracks() });
         if(this.showVideo)
             menubar.add("View/Show video", { type: "checkbox", checked: this.showVideo, callback: (v) => {
