@@ -237,9 +237,10 @@ sup {
 
 a {
   /* text-decoration: underline; */
+  color: inherit;
 }
 a:hover {
-  color: rgb(58, 161, 156, 0.6);
+  color: var(--global-color-highlight);
 }
 
 a:not([href]):not([class]), a:not([href]):not([class]):hover {
@@ -11454,7 +11455,7 @@ hr.divider-light {
 }
 
 header.masthead {
-  padding-top: 10rem;
+  /* padding-top: 10rem; */
   padding-bottom: calc(10rem - 4.5rem);
   /* background: linear-gradient(to bottom, rgba(66, 77, 92, 0.8) 0%, rgba(66, 77, 92, 0.8) 100%); , url("images/bg-master.jpg"); */
   background: radial-gradient(#24262d, #242529);
@@ -11470,8 +11471,8 @@ header.masthead h1, header.masthead .h1 {
   header.masthead {
     height: 100vh;
     min-height: 40rem;
-    padding-top: 4.5rem;
-    padding-bottom: 0;
+    /* padding-top: 4.5rem;
+    padding-bottom: 0; */
   }
   header.masthead p {
     font-size: 1.15rem;

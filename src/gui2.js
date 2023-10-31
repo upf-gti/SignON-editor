@@ -393,6 +393,27 @@ class Gui {
             }
         } );
     }
+
+    createLoadingModal(options) {
+        options = options || {size: ["80%", "70%"]};
+
+        return new LX.Dialog(null, m => {
+            const div = document.createElement("div");
+            div.classList.add("load")
+
+            let icon = document.createElement("div");
+            icon.classList = "loading-icon big";
+            div.appendChild(icon);
+            
+            const text = document.createElement("div");
+            text.innerText = "Loading content...";
+            text.style.margin = "-5px 14px";
+            div.appendChild(text);
+            const area = new LX.Area(options);
+            area.attach(div);
+            m.attach(area);
+        }, options);
+    }
 };
 
 class KeyframesGui extends Gui {
@@ -1333,7 +1354,7 @@ class ScriptGui extends Gui {
                 
     }
     
-    loadBMLClip(clip, callback, breakdown = true) {
+    async loadBMLClip(clip, callback, breakdown = true) {
         
         
         let clips = [];
@@ -1553,7 +1574,7 @@ class ScriptGui extends Gui {
         }
 
         if(callback)
-            callback();
+            await callback();
     }
 
     init() {
@@ -2102,19 +2123,21 @@ class ScriptGui extends Gui {
         
         // Create a new dialog
         let dialog = this.prompt = new LX.Dialog('Available signs', async (p) => {
-            const innerSelect = (asset, action) => {
+            const innerSelect = async (asset, action) => {
            
                 that.clipsTimeline.unSelectAllClips();
-                console.log(asset)
-                // sigmlStringToBML
                 asset.bml.name = asset.id;
-                this.loadBMLClip(asset.bml, null, action != "Add as single clip")
+                const modal = this.createLoadingModal();
+
+                const loadClip = async  () => {
+                    return new Promise((resolve) => {
+                    setTimeout(() => {
+                        resolve(this.loadBMLClip(asset.bml, null, action != "Add as single clip"));
+                    }, 100)
+                  });}
                 
-                let idx = null;
-                switch(asset.folder.id) {
-                    default:
-                        break;
-                }
+                await loadClip().then(() => modal.close());
+    
                 asset_browser.clear();
                 dialog.close();
             }
@@ -2169,17 +2192,8 @@ class ScriptGui extends Gui {
             p.attach( asset_browser );
             if(!this.dictionaries) {
                 this.dictionaries = [];
-                let modal = new LX.Dialog(null, m => {
-                    let div = document.createElement("div");
-                    div.classList.add("load")
+                const modal = this.createLoadingModal();
 
-                    let img = document.createElement("img");
-                    img.src = "./data/imgs/monster.png";
-                    img.classList = "loading";
-                    img.width = "50px";
-                    div.appendChild(img);
-                    m.attach(div)
-                }, {size: ["80%", "70%"]})
                 await fs.login();
                 await fs.getFolders(async (units) => {
                    for(let i = 0; i < units.length; i++) {
@@ -2212,7 +2226,7 @@ class ScriptGui extends Gui {
                         }
                     }
                     await loadData();
-                    modal.close()
+                    modal.close();
                     }) 
                      
             }

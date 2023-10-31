@@ -241,30 +241,28 @@ canvas {
 	/* height: 100%; */
 }
 
-.square {
+.loading-icon {
 	width: 45px;
 	height: 45px;
 	border-radius: 4px;
 	background-image: url("../data/imgs/monster.png");/* #4b9cdb;*/
-  }
-
-.loading {
-	width: 45px;
-	height: 45px;
-	border-radius: 4px;
-	background-image: url("../data/imgs/monster.png");/* #4b9cdb;*/
-	top: calc(50% - 22px);
-    left: calc(50% - 22px);
+	background-size: cover;
 }
-.load{
-	top: calc(50% - 22px);
+
+.loading-icon.big {
+	width: 60px;
+	height: 60px;
+}
+
+.load {
+    top: calc(50% - 30px);
     position: relative;
-    left: calc(50% - 22px);
+    left: calc(50% - 30px - 35px);
 }
 
-.load .loading {
-animation: loadingG 1.5s cubic-bezier(0.17, 0.37, 0.43, 0.67) infinite;
-animation: loadingG 1.5s cubic-bezier(0.17, 0.37, 0.43, 0.67) infinite;
+.load .loading-icon {
+	animation: loadingG 1.5s cubic-bezier(0.17, 0.37, 0.43, 0.67) infinite;
+	animation: loadingG 1.5s cubic-bezier(0.17, 0.37, 0.43, 0.67) infinite;
 } 
 
 @keyframes loadingG {
@@ -279,7 +277,7 @@ animation: loadingG 1.5s cubic-bezier(0.17, 0.37, 0.43, 0.67) infinite;
 }
 }
 
-.load-7 .square {
+.load-7 .loading-icon {
 
 	position: relative;
 	top: 0;
