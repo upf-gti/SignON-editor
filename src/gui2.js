@@ -50,7 +50,7 @@ class Gui {
 
         this.menubar = area.addMenubar( m => {
 
-            m.setButtonImage("SignON", "data/imgs/animics_logo.png", () => {window.open("https://signon-project.eu/")}, {float: "left"});
+            m.setButtonImage("SignON", "data/imgs/animics_logo.png", null, {float: "left"});
             
 
         });
