@@ -45,12 +45,12 @@ class App {
                 this.editor = new KeyframeEditor(this, "video");
                 this.onLoadVideo( settings.data );
                 break;
-            case 'bml':
+            case 'bml': case 'json':
                 this.editor = new ScriptEditor(this, 'script');
                 this.onBMLProject( settings.data );
                 break;
             default:
-                alert("Format not supported.\n\nFormats accepted:\n\tVideo: 'mp4','wav'\n\tScript animation: 'bml'\n\tKeyframe animation: 'bvh', 'bvhe'");
+                alert("Format not supported.\n\nFormats accepted:\n\tVideo: 'mp4','wav'\n\tScript animation: 'json'\n\tKeyframe animation: 'bvh', 'bvhe'");
                 return;
                 break;    
         }

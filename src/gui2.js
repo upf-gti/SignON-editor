@@ -1485,20 +1485,25 @@ class ScriptGui extends Gui {
             this.clipsTimeline.unSelectAllClips();
             let offset = 0;
             let clips = [];
+            let globalStart = 1000;
             for(let i = 0; i < this.clipsTimeline.clipsToCopy.length; i++){
                 let [trackIdx, clipIdx] = this.clipsTimeline.clipsToCopy[i];
                 let clipToCopy = this.clipsTimeline.animationClip.tracks[trackIdx].clips[clipIdx];
                 let newClip = new ANIM[clipToCopy.constructor.name](clipToCopy);
-                if( i == 0) 
-                    offset = newClip.start;
-                newClip.start -= offset
-                if(newClip.attackPeak) newClip.fadein = newClip.attackPeak -= offset;
-                if(newClip.relax) newClip.fadeout = newClip.relax -= offset;
-                if(newClip.ready) newClip.fadein = newClip.ready -= offset;
-                if(newClip.strokeStart) newClip.strokeStart -= offset;
-                if(newClip.stroke) newClip.stroke -= offset;
-                if(newClip.strokeEnd) newClip.strokeEnd -= offset;
                 clips.push(newClip); 
+                globalStart = Math.min(newClip.start, globalStart);
+            }
+            for(let i = 0; i < clips.length; i++){
+                
+                
+                offset = clips[i].start - globalStart;
+                clips[i].start = offset
+                if(clips[i].attackPeak) clips[i].fadein = clips[i].attackPeak -= offset;
+                if(clips[i].relax) clips[i].fadeout = clips[i].relax -= offset;
+                if(clips[i].ready) clips[i].fadein = clips[i].ready -= offset;
+                if(clips[i].strokeStart) clips[i].strokeStart -= offset;
+                if(clips[i].stroke) clips[i].stroke -= offset;
+                if(clips[i].strokeEnd) clips[i].strokeEnd -= offset;
             }
             this.clipsTimeline.addClips(clips);
             this.clipsTimeline.clipsToCopy = null;

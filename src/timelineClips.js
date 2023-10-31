@@ -462,8 +462,8 @@ FaceLexemeClip.prototype.configure = function(o)
 	this.start = o.start || 0;
 	if(o.duration) this.duration = o.duration || 1;
 	if(o.end) this.duration = (o.end - o.start) || 1;
-	this.attackPeak = this.fadein = o.attackPeak || 0.25;
-	this.relax = this.fadeout = o.relax || 0.75;
+	this.attackPeak = this.fadein = (o.attackPeak || 0.25);
+	this.relax = this.fadeout = (o.relax || 0.75);
 	for(let property in this.properties) {
 		
 		if(property == "lexeme") {
@@ -495,7 +495,7 @@ FaceLexemeClip.prototype.toJSON = function()
 		id: this.id,
 		start: this.start,
 		end: this.start + this.duration,
-		attackPeak: this.attackPeak,
+		attackPeak: this.fadein,
 		relax : this.relax,
 		type: FaceLexemeClip.type
 	}
@@ -1216,8 +1216,8 @@ GazeClip.prototype.toJSON = function()
 		id: this.id,
 		start: this.start,
 		end: this.start + this.duration,
-		ready: this.ready,
-		relax: this.relax,
+		ready: this.fadein,
+		relax: this.fadeout,
 		type: "gaze"
 	}
 	for(var i in this.properties)
@@ -1380,11 +1380,11 @@ HeadClip.prototype.toJSON = function()
 		id: this.id,
 		start: this.start,
 		end: this.start + this.duration,
-		ready: this.ready,
+		ready: this.fadein,
 		strokeStart: this.strokeStart,
 		stroke : this.stroke ,
 		strokeEnd: this.strokeEnd,
-		relax: this.relax,
+		relax: this.fadeout,
 		type: this.type
 	}
 	for(var i in this.properties)
@@ -1511,8 +1511,8 @@ ElbowRaiseClip.prototype.toJSON = function()
 		id: this.id,
 		start: this.start,
 		end: this.start + this.duration,
-		attackPeak: this.attackPeak,
-		relax: this.relax,
+		attackPeak: this.fadein,
+		relax: this.fadeout,
 		type: "gesture"
 	}
 	
@@ -1643,8 +1643,8 @@ ShoulderClip.prototype.toJSON = function()
 		id: this.id,
 		start: this.start,
 		end: this.start + this.duration,
-		attackPeak: this.attackPeak,
-		relax: this.relax,
+		attackPeak: this.fadein,
+		relax: this.fadeout,
 		type: "gesture"
 	}
 
@@ -1780,8 +1780,8 @@ BodyMovementClip.prototype.toJSON = function()
 		id: this.id,
 		start: this.start,
 		end: this.start + this.duration,
-		attackPeak: this.attackPeak,
-		relax: this.relax,
+		attackPeak: this.fadein,
+		relax: this.fadeout,
 		type: "gesture"
 	}
 	for(var i in this.properties)
@@ -1958,8 +1958,8 @@ ArmLocationClip.prototype.toJSON = function()
 		id: this.id,
 		start: this.start,
 		end: this.start + this.duration,
-		attackPeak: this.attackPeak,
-		relax: this.relax,
+		attackPeak: this.fadein,
+		relax: this.fadeout,
 		type: "gesture"
 	}
 	for(let i in this.properties)
@@ -2244,8 +2244,8 @@ PalmOrientationClip.prototype.toJSON = function()
 		id: this.id,
 		start: this.start,
 		end: this.start + this.duration,
-		attackPeak: this.attackPeak,
-		relax: this.relax,
+		attackPeak: this.fadein,
+		relax: this.fadeout,
 		type: "gesture"
 	}
 	for(var i in this.properties)
@@ -2452,8 +2452,8 @@ HandOrientationClip.prototype.toJSON = function()
 		id: this.id,
 		start: this.start,
 		end: this.start + this.duration,
-		attackPeak: this.attackPeak,
-		relax: this.relax,
+		attackPeak: this.fadein,
+		relax: this.fadeout,
 		type: "gesture"
 	}
 	for(var i in this.properties)
@@ -2614,8 +2614,8 @@ HandshapeClip.prototype.toJSON = function()
 		id: this.id,
 		start: this.start,
 		end: this.start + this.duration,
-		attackPeak: this.attackPeak,
-		relax: this.relax,
+		attackPeak: this.fadein,
+		relax: this.fadeout,
 		type: "gesture"
 	}
 	for(var i in this.properties)
@@ -2895,8 +2895,8 @@ HandConstellationClip.prototype.toJSON = function()
 		id: this.id,
 		start: this.start,
 		end: this.start + this.duration,
-		attackPeak: this.attackPeak,
-		relax: this.relax,
+		attackPeak: this.fadein,
+		relax: this.fadeout,
 		type: "gesture"
 	}
 	for(let i in this.properties)
@@ -3259,8 +3259,8 @@ DirectedMotionClip.prototype.toJSON = function()
 		id: this.id,
 		start: this.start,
 		end: this.start + this.duration,
-		attackPeak: this.attackPeak,
-		relax: this.relax,
+		attackPeak: this.fadein,
+		relax: this.fadeout,
 		type: "gesture",
 	}
 	for(let i in this.properties)
@@ -3757,8 +3757,8 @@ WristMotionClip.prototype.toJSON = function()
 		id: this.id,
 		start: this.start,
 		end: this.start + this.duration,
-		attackPeak: this.attackPeak,
-		relax: this.relax,
+		attackPeak: this.fadein,
+		relax: this.fadeout,
 		type: "gesture"
 	}
 	for(let i in this.properties)
@@ -3925,8 +3925,8 @@ FingerplayMotionClip.prototype.toJSON = function()
 		id: this.id,
 		start: this.start,
 		end: this.start + this.duration,
-		attackPeak: this.attackPeak,
-		relax: this.relax,
+		attackPeak: this.fadein,
+		relax: this.fadeout,
 		type: "gesture",
 	}
 

@@ -3021,8 +3021,15 @@
                         }
                     }
                     else {
-                        clipInCurrentSlot = LX.UTILS.compareThresholdRange(newStart, newStart + clip.duration, trackIdxs[c-1].start, trackIdxs[c-1].end);                
-                        
+
+                        for(let t in trackIdxs) {
+                            if(trackIdxs[i].trackIdx == trackIdxs[c -1].trackIdx) {
+                                clipInCurrentSlot = LX.UTILS.compareThresholdRange(newStart, newStart + clip.duration, trackIdxs[t].start, trackIdxs[t].end);                
+                                if(clipInCurrentSlot)
+                                    break;
+                            }
+                            
+                        }
                         
                         if(!clipInCurrentSlot) {
 
