@@ -2045,7 +2045,7 @@ class ScriptGui extends Gui {
                     case LX.AssetViewEvent.ASSET_RENAMED:
                         console.log(e.item.id + " is now called " + e.value); 
                         break;
-                    case LX.AssetViewEvent.ASSET_DBCLICK: 
+                    case LX.AssetViewEvent.ASSET_DBLCLICK: 
                         innerSelect(e.item);                        
                         break;
                 }
@@ -2151,9 +2151,8 @@ class ScriptGui extends Gui {
                             LX.request({ url: fs.root+ "/"+ e.item.fullpath, dataType: 'text/plain', success: (f) => {
                                 const bytesize = f => new Blob([f]).size;
                                 e.item.bytesize = bytesize();
-                                e.item.bml = e.item.type == "bml" ? f : sigmlStringToBML(f);
-                                e.item.bml.behaviours = e.item.bml.data;
-                                
+                                e.item.bml = e.item.type == "bml" ?  {data: JSON.parse(f)} : sigmlStringToBML(f);
+                                e.item.bml.behaviours = e.item.bml.data;                        
                             } });
                             if(e.multiple)
                                 console.log("Selected: ", e.item); 
@@ -2170,7 +2169,39 @@ class ScriptGui extends Gui {
                         case LX.AssetViewEvent.ASSET_RENAMED:
                             console.log(e.item.id + " is now called " + e.value); 
                             break;
-                        case LX.AssetViewEvent.ASSET_DBCLICK: 
+                        case LX.AssetViewEvent.ASSET_DBLCLICK: 
+                            if(e.item.type == "folder")
+                                return;
+                            if(window.dialog) window.dialog.destroy();
+                            window.dialog = new LX.PocketDialog("Editor", p => {
+                                const area = new LX.Area();
+                                p.attach( area );
+                                const filename = e.item.filename;
+                                const type = e.item.type;
+                                const name = filename.replace("."+ type, "");
+                                let editor = new LX.CodeEditor(area, {
+                                    allow_add_scripts: false,
+                                    name: type,
+                                    title: name,
+                                    disable_edition: true
+                                });
+                                LX.request({ url: fs.root+ "/"+ e.item.fullpath, dataType: 'text/plain', success: (f) => {
+                                    const bytesize = f => new Blob([f]).size;
+                                    e.item.bytesize = bytesize();
+                                    e.item.bml = e.item.type == "bml" ?  {data: JSON.parse(f)} : sigmlStringToBML(f);
+                                    e.item.bml.behaviours = e.item.bml.data;
+                                    let text = f.replaceAll('\r', '').replaceAll('\t', '');
+                                    editor.code.lines = text.split('\n');
+                                    editor.processLines();
+                                    editor._refresh_code_info();
+                                    if(e.item.type == "sigml") {
+                                        editor.addTab("bml", false, name);
+                                        let t = JSON.stringify(e.item.bml.behaviours);
+                                        editor.openedTabs["bml"].lines = editor.toJSONFormat(t).split('\n');    
+                                    }
+                                    editor._change_language( "JSON" );
+                                } });
+                            }, { size: ["40%", "600px"], closable: true });
                             // innerSelect(e.item);                        
                         break;
                     }

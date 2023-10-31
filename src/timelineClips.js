@@ -1832,8 +1832,8 @@ BodyMovementClip.prototype.showInfo = function(panel, callback)
 
 //ArmLocationClip
 ArmLocationClip.type = "gesture";
-ArmLocationClip.locations = ["Head", "Head top", "Forehead", "Nose", "Below nose", "Chin", "Under chin", "Mouth", "Earlobe", "Earlobe Right", "Earlobe Left", "Ear ", "Ear Right", "Ear Left", "Cheek ", "Cheek Right", "Cheek Left", 
-								"Eye ", "Eye Right", "Eye Left", "Eyebrow ", "Eyebrow Left", "Eyebrow Right", "Mouth", "Chest", "Shoulder Line", "Shoulder", "Shoulder Right", "Shoulder Left", "Stomach", "Below stomach", "Neutral"];
+ArmLocationClip.locations = ["Head", "Head top", "Forehead", "Nose", "Below nose", "Chin", "Under chin", "Mouth", "Earlobe", "Earlobe Right", "Earlobe Left", "Ear", "Ear Right", "Ear Left", "Cheek", "Cheek Right", "Cheek Left", 
+								"Eye", "Eye Right", "Eye Left", "Eyebrow", "Eyebrow Left", "Eyebrow Right", "Mouth", "Neck", "Chest", "Shoulder Line", "Shoulder", "Shoulder Right", "Shoulder Left", "Stomach", "Below stomach", "Neutral"];
 ArmLocationClip.sides = { "Right": "rr", "Slightly right": "r", "Left": "ll", "Slightly left": "l"};
 ArmLocationClip.hands = ["Left", "Right", "Both"];
 ArmLocationClip.directions = ["Up", "Down", "Left", "Right", "In", "Out",
@@ -2072,7 +2072,7 @@ ArmLocationClip.prototype.showInfo = function(panel, callback)
 	}, {precision: 2, min: 0, max: 1, step: 0.01, title: "How far from the body to locate the hand. 0 = close, 1 = arm extended"});
 
 	// Displacement property
-	panel.addDropdown("Displace", ArmLocationClip.directions, this.properties.displace, (v, e, name) => {
+	panel.addDropdown("Displace", ["", ...ArmLocationClip.directions], this.properties.displace, (v, e, name) => {
 	
 		this.properties.displace = v;
 		if(callback)
@@ -2097,7 +2097,7 @@ ArmLocationClip.prototype.showInfo = function(panel, callback)
 	panel.addText(null, "Part of the hand that will try to reach the body location", null, {disabled: true});
 
 	// Part of the hand
-	panel.addDropdown("Location", ArmLocationClip.hand_locations, this.properties.srcLocation, (v, e, name) => {
+	panel.addDropdown("Location", ["", ...ArmLocationClip.hand_locations], this.properties.srcLocation, (v, e, name) => {
 				
 		this.properties.srcLocation = v;
 		if(this.properties.srcLocation == "Tip")
@@ -2113,7 +2113,7 @@ ArmLocationClip.prototype.showInfo = function(panel, callback)
 	}, {filter: true});
 
 	if(this.properties.srcLocation && this.properties.srcLocation != "Tip") {
-		panel.addDropdown("Side", ArmLocationClip.hand_sides, this.properties.srcSide, (v, e, name) => {
+		panel.addDropdown("Side", ["", ...ArmLocationClip.hand_sides], this.properties.srcSide, (v, e, name) => {
 				
 			this.properties.srcSide = v;
 		
@@ -2125,7 +2125,7 @@ ArmLocationClip.prototype.showInfo = function(panel, callback)
 	}
 	if(this.properties.srcLocation == "Tip" || this.properties.srcLocation == "Pad" || this.properties.srcLocation == "Mid" || this.properties.srcLocation == "Base") {
 
-		panel.addDropdown("Finger", ArmLocationClip.fingers, this.properties.srcFinger, (v, e, name) => {
+		panel.addDropdown("Finger", ["",...ArmLocationClip.fingers], this.properties.srcFinger, (v, e, name) => {
 				
 			this.properties.srcFinger = v;
 			if(callback)
