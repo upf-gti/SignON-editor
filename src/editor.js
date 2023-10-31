@@ -630,7 +630,7 @@ class Editor {
             url = "https://webglstudio.org/users/arodriguez/demos/animationLoader/?load=bvhskeletonpreview";
         }
         else{
-            url = "https://webglstudio.org/users/jpozo/SignONRealizer/dev/";
+            url = "https://webglstudio.org/users/jpozo/SignONRealizer/show/";
             let json = this.exportBML();
             if(!json) return;
             const sendData = () => {

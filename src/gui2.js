@@ -90,7 +90,7 @@ class Gui {
             LX.prompt("File name", "Export GLB", (v) => this.editor.export("GLB", v), {input: this.editor.clipName, required: true} )     
         });
         // menubar.add("Project/Upload to server", {icon: "fa fa-upload", callback: () => this.editor.getApp().storeAnimation() }); --> NOT YET
-        menubar.add("Project/Preview realizer", {icon: "fa fa-street-view",  callback: () => this.editor.showPreview() });
+        menubar.add("Project/Preview in PERFORMS", {icon: "fa fa-street-view",  callback: () => this.editor.showPreview() });
 
         // menubar.add("Timeline/");
         menubar.add("Timeline/Shortcuts", { icon: "fa fa-keyboard", disabled: true });
