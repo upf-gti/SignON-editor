@@ -1978,6 +1978,7 @@ class ScriptGui extends Gui {
         let asset_browser = new LX.AssetView({  
             root_path: "./src/libs/lexgui/",
             preview_actions: [{
+                type: "Clip",
                 name: 'Add clip', 
                 callback: innerSelect,
                 allowed_types: ["Clip"]
@@ -2225,10 +2226,22 @@ class ScriptGui extends Gui {
 
             let asset_browser = new LX.AssetView({ root_path: "./src/libs/lexgui/", allowed_types: ["sigml", "bml"], preview_actions: [
                 {
+                    type: "sigml",
                     name: 'Add as single clip', 
                     callback: innerSelect.bind("glossa")
                 },
                 {
+                    type: "sigml",
+                    name: 'Breakdown into BML clips', 
+                    callback: innerSelect.bind("clips")
+                },
+                {
+                    type: "bml",
+                    name: 'Add as single clip', 
+                    callback: innerSelect.bind("glossa")
+                },
+                {
+                    type: "bml",
                     name: 'Breakdown into BML clips', 
                     callback: innerSelect.bind("clips")
                 }
