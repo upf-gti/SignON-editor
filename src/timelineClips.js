@@ -1223,8 +1223,8 @@ GazeClip.prototype.toJSON = function()
 	for(var i in this.properties)
 	{
 		json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
-		if(json[i] == "")
-			json[i] = null;
+		if(json[i] == "" || json[i] == null)
+			delete json[i];
 	}
 	return json;
 }
@@ -1980,8 +1980,8 @@ ArmLocationClip.prototype.toJSON = function()
 		else 
 			json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
 
-		if(json[i] == "")
-			json[i] = null;
+		if(json[i] == "" || json[i] == null)
+			delete json[i];
 	}
 	return json;
 }
@@ -2260,8 +2260,8 @@ PalmOrientationClip.prototype.toJSON = function()
 		else 
 			json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
 
-		if(json[i] == "")
-			json[i] = null;
+		if(json[i] == "" || json[i] == null)
+			delete json[i];
 	}
 	return json;
 }
@@ -2915,8 +2915,8 @@ HandConstellationClip.prototype.toJSON = function()
 		else 
 			json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
 
-		if(json[i] == "")
-			json[i] = null;
+		if(json[i] == "" || json[i] == null)
+			delete json[i];
 	}
 	return json;
 }
@@ -3275,8 +3275,8 @@ DirectedMotionClip.prototype.toJSON = function()
 		else 
 			json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
 
-		if(json[i] == "")
-			json[i] = null;
+		if(json[i] == "" || json[i] == null)
+			delete json[i];
 	}
 	return json;
 }
@@ -3567,8 +3567,8 @@ CircularMotionClip.prototype.toJSON = function()
 		else 
 			json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
 
-		if(json[i] == "")
-			json[i] = null;
+		if(json[i] == "" || json[i] == null)
+			delete json[i];
 	}
 	return json;
 }
@@ -3765,8 +3765,8 @@ WristMotionClip.prototype.toJSON = function()
 	{
 		json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
 
-		if(json[i] == "")
-			json[i] = null;
+		if(json[i] == "" || json[i] == null)
+			delete json[i];
 	}
 	return json;
 }
@@ -3945,8 +3945,8 @@ FingerplayMotionClip.prototype.toJSON = function()
 		else 
 			json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
 
-		if(json[i] == "")
-			json[i] = null;
+		if(json[i] == "" || json[i] == null)
+			delete json[i];
 	}
 	return json;
 }

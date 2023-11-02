@@ -1489,6 +1489,13 @@ class ScriptGui extends Gui {
             for(let i = 0; i < this.clipsTimeline.clipsToCopy.length; i++){
                 let [trackIdx, clipIdx] = this.clipsTimeline.clipsToCopy[i];
                 let clipToCopy = this.clipsTimeline.animationClip.tracks[trackIdx].clips[clipIdx];
+
+                if(clipToCopy.attackPeak!=undefined) clipToCopy.attackPeak = clipToCopy.fadein;
+                if(clipToCopy.ready!=undefined) clipToCopy.ready = clipToCopy.fadein;
+                if(clipToCopy.strokeStart!=undefined) clipToCopy.strokeStart = clipToCopy.fadein;
+                if(clipToCopy.relax!=undefined) clipToCopy.relax = clipToCopy.fadeout;
+                if(clipToCopy.strokeEnd!=undefined) clipToCopy.strokeEnd = clipToCopy.fadeout;
+                
                 let newClip = new ANIM[clipToCopy.constructor.name](clipToCopy);
                 clips.push(newClip); 
                 globalStart = Math.min(newClip.start, globalStart);
@@ -1497,13 +1504,14 @@ class ScriptGui extends Gui {
                 
                 
                 offset = clips[i].start - globalStart;
-                clips[i].start = offset
-                if(clips[i].attackPeak) clips[i].fadein = clips[i].attackPeak -= offset;
-                if(clips[i].relax) clips[i].fadeout = clips[i].relax -= offset;
-                if(clips[i].ready) clips[i].fadein = clips[i].ready -= offset;
-                if(clips[i].strokeStart) clips[i].strokeStart -= offset;
-                if(clips[i].stroke) clips[i].stroke -= offset;
-                if(clips[i].strokeEnd) clips[i].strokeEnd -= offset;
+                
+                if(clips[i].attackPeak) clips[i].fadein = clips[i].attackPeak -= globalStart;
+                if(clips[i].relax) clips[i].fadeout = clips[i].relax -= globalStart;
+                if(clips[i].ready) clips[i].fadein = clips[i].ready -= globalStart;
+                if(clips[i].strokeStart) clips[i].strokeStart -= globalStart;
+                if(clips[i].stroke) clips[i].stroke -= globalStart;
+                if(clips[i].strokeEnd) clips[i].strokeEnd -= globalStart;
+                clips[i].start = offset;
             }
             this.clipsTimeline.addClips(clips);
             this.clipsTimeline.clipsToCopy = null;
