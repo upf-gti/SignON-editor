@@ -2581,6 +2581,8 @@ function HandshapeClip(o)
 	if(o)
 		this.configure(o);
 
+	this.applySpecial = (this.properties.specialfingers != "" && this.properties.specialfingers != " ");
+
 	this.color = "#1a1f23";
 	this.font = "11px Calibri";
 	this.clipColor = HandshapeClip.clipColor;
@@ -2618,9 +2620,9 @@ HandshapeClip.prototype.configure = function(o)
 	}
 	if(o.specialfingers) {
 		this.properties.specialfingers = "";
-		for(let char in o.fingers) {
+		for(let char of o.specialfingers) {
 
-			this.properties.fingers += HandshapeClip.fingers[char] + " ";
+			this.properties.specialfingers += HandshapeClip.fingers[char - 1] + " ";
 		}
 	}
 
@@ -2643,11 +2645,14 @@ HandshapeClip.prototype.toJSON = function()
 
 			let fingers = this.properties[i].split(" ");
 			json[i] = "";
+			let idxs = [];
 			for(let f = 0; f < fingers.length; f++) {
 
 				let idx = HandshapeClip.fingers.indexOf(fingers[f]);
-				json[i] += idx <= 0 ? "" : idx + 1;
+				if(idx > 0) 
+					idxs.push(idx+1);
 			}
+			json[i] = idxs.sort().join("");
 		}
 		else {
 
@@ -3961,16 +3966,16 @@ FingerplayMotionClip.prototype.configure = function(o)
 
 	if(o.fingers) {
 		this.properties.fingers = "";
-		for(let char in o.fingers) {
+		for(let char of o.fingers) {
 
-			this.properties.fingers += FingerplayMotionClip.fingers[char] + " ";
+			this.properties.fingers += FingerplayMotionClip.fingers[char - 1] + " ";
 		}
 	}
 	if(o.exemptedFingers) {
 		this.properties.exemptedFingers = "";
-		for(let char in o.exemptedFingers) {
+		for(let char of o.exemptedFingers) {
 
-			this.properties.exemptedFingers += FingerplayMotionClip.fingers[char] + " ";
+			this.properties.exemptedFingers += FingerplayMotionClip.fingers[char - 1] + " ";
 		}
 	}
 }

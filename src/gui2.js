@@ -1489,7 +1489,7 @@ class ScriptGui extends Gui {
             for(let i = 0; i < this.clipsTimeline.clipsToCopy.length; i++){
                 let [trackIdx, clipIdx] = this.clipsTimeline.clipsToCopy[i];
                 let clipToCopy = this.clipsTimeline.animationClip.tracks[trackIdx].clips[clipIdx];
-
+                clipToCopy.end = null;
                 if(clipToCopy.attackPeak!=undefined) clipToCopy.attackPeak = clipToCopy.fadein;
                 if(clipToCopy.ready!=undefined) clipToCopy.ready = clipToCopy.fadein;
                 if(clipToCopy.strokeStart!=undefined) clipToCopy.strokeStart = clipToCopy.fadein;

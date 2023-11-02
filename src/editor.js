@@ -100,8 +100,10 @@ class Editor {
                 break;
                 case 'z':
                     if(e.ctrlKey) {
-                        if(this.activeTimeline.restoreState)
-                            this.activeTimeline.restoreState();
+                        if(this.activeTimeline.undo) {
+                            this.activeTimeline.undo();
+                            this.gui.updateClipPanel();
+                        }
                     }
                     break;
 

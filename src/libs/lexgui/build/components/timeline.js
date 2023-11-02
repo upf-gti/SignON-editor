@@ -1779,7 +1779,7 @@
             });
         }
 
-        restoreState() {
+        undo() {
             
             if(!this.trackState.length)
             return;
@@ -2864,6 +2864,9 @@
                 clipsArray.push(clip);			
             }
 
+            //Save track state before add the new clip
+
+            this.saveState(trackIdx, newIdx);
             this.animationClip.tracks[trackIdx].clips = clipsArray;	
             // Move the other's clips properties
             let track = this.animationClip.tracks[trackIdx];
@@ -3060,7 +3063,6 @@
                         }
                     }
                     
-                    //this.saveState(clipIdx);
                 }
 
                 if(Object.keys(trackIdxs).length == clips.length) {
@@ -3100,6 +3102,8 @@
                     clipsArray.push(clip);			
                 }
 
+                //Save track state before add the new clip
+                this.saveState(trackIdx, newIdx);
                 this.animationClip.tracks[trackIdx].clips = clipsArray;	
                 // Move the other's clips properties
                 let track = this.animationClip.tracks[trackIdx];
@@ -3111,9 +3115,8 @@
                 track.hovered[newIdx] = undefined;
                 track.selected[newIdx] = true;
                 track.edited[newIdx] = undefined;
-
                 this.lastClipsSelected.push( [track.idx, newIdx] );
-                    
+                
                 let end = clip.start + clip.duration;
                 
                 if( end > this.duration || !this.animationClip.duration)
@@ -3302,7 +3305,7 @@
             });
         }
 
-        restoreState() {
+        undo() {
             
             if(!this.trackState.length)
             return;
@@ -4001,7 +4004,7 @@
             });
         }
 
-        restoreState() {
+        undo() {
             
             if(!this.trackState.length)
             return;
