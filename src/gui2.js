@@ -2059,6 +2059,8 @@ class ScriptGui extends Gui {
                         console.log(e.item.id + " is now called " + e.value); 
                         break;
                     case LX.AssetViewEvent.ASSET_DBLCLICK: 
+                        if(e.item.type == "folder")
+                            return;
                         innerSelect(e.item);                        
                         break;
                 }

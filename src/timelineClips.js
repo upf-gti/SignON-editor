@@ -2539,11 +2539,11 @@ HandOrientationClip.prototype.showInfo = function(panel, callback)
 
 //HandshapeClip
 HandshapeClip.type = "gesture";
-HandshapeClip.handshapes = ["Fist", "Finger 2", "Finger 23", "Finger 23 spread", "Finger 2345", "Flat", "Pinch 12", "Pinch 12 open", "Pinchall", "Cee all", "Cee 12", "Cee 12 open"];
+HandshapeClip.handshapes = ["Fist", "Finger 2", "Finger 23", "Finger 23 spread", "Finger 2345", "Flat", "Pinch 12", "Pinch 12 open", "Pinch all", "Cee all", "Cee 12", "Cee 12 open"];
 HandshapeClip.thumbshapes = ["Default", "Out", "Opposed", "Across", "Touch"];
 HandshapeClip.bendstates = ["Straight", "Half bent", "Bent", "Round", "Hooked", "Double bent", "Double hooked"];
 HandshapeClip.hands = ["Left", "Right", "Both"];
-HandshapeClip.fingers = ["","Thumb", "Index", "Middle", "Ring", "Pinky"];
+HandshapeClip.fingers = ["", "Index", "Middle", "Ring", "Pinky"];
 
 HandshapeClip.id = ANIM.HANDSHAPE ? ANIM.HANDSHAPE: ANIM.clipTypes.length;
 HandshapeClip.clipColor = "#9e0142";
@@ -2574,7 +2574,8 @@ function HandshapeClip(o)
 		shift: false,
 		lrSym: null,
 		udSym: null,
-		ioSym: null
+		ioSym: null,
+		specialfingers: ""
 	}
 
 	if(o)
@@ -2602,8 +2603,25 @@ HandshapeClip.prototype.configure = function(o)
 		if(o[p] != undefined) {
 			this.properties[p] = o[p];
 		}
-		if(typeof(this.properties[p]) == 'string')
+		if(typeof(this.properties[p]) == 'string') {
+			if(p == 'specialfingers')  {
+				let fingers = this.properties[p].replaceAll("_", " ").split(" ");
+				for(let i = 0; i < fingers.length; i++) {
+					fingers[i] = capitalize(fingers[i]);
+				}
+				this.properties[p] = fingers.join(" ");
+				if(this.properties[p][this.properties[p].length - 1] != " ")
+					this.properties[p] += " ";
+			}
 			this.properties[p] = capitalize(this.properties[p].replaceAll("_", " "));
+		}
+	}
+	if(o.specialfingers) {
+		this.properties.specialfingers = "";
+		for(let char in o.fingers) {
+
+			this.properties.fingers += HandshapeClip.fingers[char] + " ";
+		}
 	}
 
 }
@@ -2618,16 +2636,28 @@ HandshapeClip.prototype.toJSON = function()
 		relax: this.fadeout,
 		type: "gesture"
 	}
+	
 	for(var i in this.properties)
 	{
-		for(var i in this.properties)
-		{
-			json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
+		if(i == "specialfingers") {
 
-			if(json[i] == "")
-				json[i] = null;
+			let fingers = this.properties[i].split(" ");
+			json[i] = "";
+			for(let f = 0; f < fingers.length; f++) {
+
+				let idx = HandshapeClip.fingers.indexOf(fingers[f]);
+				json[i] += idx <= 0 ? "" : idx + 1;
+			}
 		}
+		else {
+
+			json[i] = typeof(this.properties[i]) == 'string' ? this.properties[i].replaceAll(" ", "_").toUpperCase() : this.properties[i];
+		}
+
+		if(json[i] == "")
+			json[i] = null;
 	}
+
 	return json;
 }
 
@@ -2765,6 +2795,32 @@ HandshapeClip.prototype.showInfo = function(panel, callback)
 		
 	}, {filter: true});
 
+	panel.addCheckbox("Apply to specific fingers", this.applySpecial, (v,e, name) => {
+		this.applySpecial = v;
+		if(!v) {
+			this.properties.specialfingers = "";
+		}
+		if(callback)
+			callback(true);
+	} )
+	if(this.applySpecial) {
+		panel.addText(null, "Select the fingers to apply the movement to.", null, {disabled:true})
+		for(let i=1; i < HandshapeClip.fingers.length; i++) {
+
+			let active = this.properties.specialfingers.includes(HandshapeClip.fingers[i]);
+			panel.addCheckbox(HandshapeClip.fingers[i], active, (v,e, name) => {
+				if(v) {
+					this.properties.specialfingers += name + " ";
+				}
+				else {
+					this.properties.specialfingers = this.properties.specialfingers.replace(name + " ", "");
+				}
+				if(callback)
+					callback();
+			} )
+		}
+	}
+	
 }
 
 
