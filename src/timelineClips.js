@@ -544,7 +544,7 @@ FaceLexemeClip.prototype.showInfo = function(panel, callback)
 	// Lexeme property
 	let values = [];
 	for(let id in FaceLexemeClip.lexemes) {
-		values.push({ value: FaceLexemeClip.lexemes[id], src: "./data/imgs/thumbnails/" + FaceLexemeClip.lexemes[id].toLowerCase().replaceAll(" ", "_") + ".png" })
+		values.push({ value: FaceLexemeClip.lexemes[id], src: "./data/imgs/thumbnails/face lexemes/" + FaceLexemeClip.lexemes[id].toLowerCase() + ".png" })
 	}
 
 	panel.addDropdown("Lexeme", values, this.properties.lexeme, (v, e, name) => {
@@ -552,7 +552,7 @@ FaceLexemeClip.prototype.showInfo = function(panel, callback)
 
 		this.properties.lexeme = v;
 		if(callback)
-			callback();
+			callback(true);
 		
 	}, {filter: true, title: "Lexicon based on Action Units"});
 

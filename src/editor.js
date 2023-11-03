@@ -203,6 +203,8 @@ class Editor {
         // Camera
         let camera = new THREE.PerspectiveCamera(60, pixelRatio, 0.1, 1000);
         camera.position.set(-0.1175218614251044, 1.303585797450244, 1.4343282767035261);
+        // let camera = new THREE.PerspectiveCamera(50, pixelRatio, 0.1, 1000);
+        // camera.position.set( 6.447895542597849, 18.689446428667427, 148.6913892438352);
         window.camera = camera;
         let controls = new OrbitControls(camera, renderer.domElement);
         controls.minDistance = 0.5;

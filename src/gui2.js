@@ -1660,6 +1660,7 @@ class ScriptGui extends Gui {
                     this.clipsTimeline.setDuration(clip.start + clip.duration);
                 }
                 this.editor.gizmo.updateTracks(); 
+                this.editor.setTime(this.clipsTimeline.currentTime);
                                
                 if(this.curve) {
                     let syncvalues = [];
@@ -1996,7 +1997,7 @@ class ScriptGui extends Gui {
                 let data = {
                     id: values[i], 
                     type: "Clip",
-                    src: "./data/imgs/thumbnails/" + values[i].toLowerCase().replaceAll(" ", "_") + ".png"
+                    src: "./data/imgs/thumbnails/face lexemes/" + values[i].toLowerCase() + ".png"
                 }
                 asset_data[0].children.push(data);
             }
