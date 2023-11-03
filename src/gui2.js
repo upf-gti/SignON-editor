@@ -1321,7 +1321,7 @@ class ScriptGui extends Gui {
     /** Create timelines */
     createTimelines( area ) {
 
-        this.clipsTimeline = new LX.ClipsTimeline("Behaviour actions", {});
+        this.clipsTimeline = new LX.ClipsTimeline("Behaviour actions", {trackHeight: 30});
         this.clipsTimeline.setFramerate(30);
         // this.clipsTimeline.setScale(400);
         // this.clipsTimeline.hide();
@@ -1939,40 +1939,29 @@ class ScriptGui extends Gui {
         const innerSelect = (asset) => {
            
                 that.clipsTimeline.unSelectAllClips();
-                let idx = null;
-                switch(asset.folder.id) {
-                    case "Face":
-                        idx = that.clipsTimeline.addClip( new ANIM.FaceLexemeClip({lexeme: asset.id.toUpperCase()})); 
+                let config = {properties: {hand: this.editor.dominantHand}};
+                switch(asset.type) {
+                    case "FaceLexemeClip": case "HeadClip":
+                        config = {lexeme: asset.id.toUpperCase()};
                         break;
-                    case "Gaze":
-                        idx = that.clipsTimeline.addClip( new ANIM.GazeClip({influence: asset.id.toUpperCase()})); 
+                    case "GazeClip":
+                        config = {influence: asset.id.toUpperCase()};
                         break;
-                    case "Head movement":
-                        idx = that.clipsTimeline.addClip( new ANIM.HeadClip( {lexeme: asset.id.toUpperCase()})); 
+                    case "ShoulderClip":
+                        let type = asset.id.split(" ")[1];
+                        config["shoulder" + type] = 0.8;
                         break;
-                        
-                    default:
-                        let clipType = asset.id;
-                        let data = {properties: {hand: this.editor.dominantHand}};
-                        if(clipType.includes("Shoulder")) {
-                            let type = clipType.split(" ")[1];
-                            clipType = "Shoulder";
-                            data["shoulder" + type] = 0.8
-                        } 
-                        else if( clipType.includes("Hand Constellation")) {
-
-                            data.srcFinger = 1;
-                            data.srcLocation = "Pad";
-                            data.srcSide = "Back";
-                            data.dstFinger = 1;
-                            data.dstLocation = "Base";
-                            data.dstSide = "Palmar"; 
-                        }
-                    
-                        idx = that.clipsTimeline.addClip( new ANIM[clipType.replaceAll(" ", "") + "Clip"](data));
-                        
-                        break;
+                    case "HandConstellationClip":
+                        config.srcFinger = 1;
+                        config.srcLocation = "Pad";
+                        config.srcSide = "Back";
+                        config.dstFinger = 1;
+                        config.dstLocation = "Base";
+                        config.dstSide = "Palmar"; 
+                        break;    
                 }
+
+                that.clipsTimeline.addClip( new ANIM[asset.type](config));
                 asset_browser.clear();
                 dialog.close();
         }
@@ -1989,59 +1978,73 @@ class ScriptGui extends Gui {
         let dialog = this.prompt = new LX.Dialog('BML clips', (p) => {
 
             p.attach( asset_browser );
-            let asset_data = [{id: "Face", type: "folder", children: []}, {id: "Mouthing", type: "folder", children: []}, {id: "Gaze", type: "folder",  children: []}, {id: "Head movement", type: "folder",  children: []}, {id: "Body movement", type: "folder",  children: []}];
+            let asset_data = [{id: "Face", type: "folder", children: []}, {id: "Head", type: "folder",  children: []}, {id: "Arms", type: "folder",  children: []}, {id: "Hands", type: "folder",  children: []}, {id: "Body", type: "folder",  children: []}];
                 
             // FACE CLIP
+
+            // Face lexemes
             let values = ANIM.FaceLexemeClip.lexemes;
+            let lexemes = [];
             for(let i = 0; i < values.length; i++){
                 let data = {
                     id: values[i], 
-                    type: "Clip",
+                    type: "FaceLexemeClip",
                     src: "./data/imgs/thumbnails/face lexemes/" + values[i].toLowerCase() + ".png"
                 }
-                asset_data[0].children.push(data);
+                lexemes.push(data);
             }
-            // MOUTHING CLIP
-            
-            let data = {
-                id: "Mouthing", 
-                type: "Clip"
-            }
-            asset_data[1].children.push(data);
+
+            // Face lexemes & Mouthing clips
+            asset_data[0].children = [{ id: "Face lexemes", type: "folder", children: lexemes}, {id: "Mouthing", type: "MouthingClip"}];
         
-            
-            // GAZE CLIP
+            // HEAD
+            // Gaze clip
             values = ANIM.GazeClip.influences;
+            let gazes = [];
             for(let i = 0; i < values.length; i++){
                 let data = {
                     id: values[i], 
-                    type: "Clip",
-                    // src: "./data/imgs/thumbnails/" + values[i].toLowerCase().replaceAll(" ", "_") + ".png"
+                    type: "GazeClip",
                 }
-                asset_data[2].children.push(data);
+                gazes.push(data);
             }
-
-            // HEAD CLIP
+            // Head movemen clip
             values = ANIM.HeadClip.lexemes;
+            let movements = [];
             for(let i = 0; i < values.length; i++){
                 let data = {
                     id: values[i], 
-                    type: "Clip",
-                    // src: "./data/imgs/thumbnails/" + values[i].toLowerCase().replaceAll(" ", "_") + ".png"
+                    type: "HeadClip",
                 }
-                asset_data[3].children.push(data);
+                movements.push(data);
             }
+            asset_data[1].children = [{ id: "Gaze", type: "folder", children: gazes}, {id: "Head movement", type: "folder", children: movements}];
 
-            // GESTURE CLIP
-            values = ["Elbow Raise", "Shoulder Raise", "Shoulder Hunch", "Body Movement", "Arm Location", "Palm Orientation", "Hand Orientation", "Handshape", "Hand Constellation", "Directed Motion", "Circular Motion", "Wrist Motion", "Fingerplay Motion"]
-            for(let i = 0; i < values.length; i++){
-                let data = {
-                    id: values[i], 
-                    type: "Clip",
-                    // src: "./data/imgs/thumbnails/" + values[i].toLowerCase().replaceAll(" ", "_") + ".png"
-                }
-                asset_data[4].children.push(data);
-            }
+            // ARMS
+            // values = ["Elbow Raise", "Shoulder Raise", "Shoulder Hunch", "Arm Location", "Hand Constellation", "Directed Motion", "Circular Motion"];
+            
+            // for(let i = 0; i < values.length; i++){
+            //     let data = {
+            //         id: values[i], 
+            //         type: "Clip",
+            //     }
+            //     asset_data[2].children.push(data);
+            // }
+            asset_data[2].children = [{id: "Elbow Raise", type: "ElbowRaiseClip"}, {id: "Shoulder Raise", type: "ShoulderClip"}, {id:"Shoulder Hunch", type: "ShoulderClip"}, {id: "Arm Location", type: "ArmLocationClip"}, {id: "Hand Constellation", type: "HandConstellationClip"}, {id: "Directed Motion", type: "DirectedMotionClip"}, {id: "Circular Motion", type: "CircularMotionClip"}];
+    
+
+            // HANDS
+            // values = ["Body Movement", "Palm Orientation", "Hand Orientation", "Handshape", "Wrist Motion", "Fingerplay Motion"]
+            // for(let i = 0; i < values.length; i++){
+            //     let data = {
+            //         id: values[i], 
+            //         type: "Clip",
+            //     }
+            //     asset_data[3].children.push(data);
+            // }
+            asset_data[3].children = [{id: "Palm Orientation", type: "PalmOrientationClip"}, {id: "Hand Orientation", type: "HandOrientationClip"}, {id: "Handshape", type: "HandshapeClip"}, {id: "Wrist Motion", type: "WristMotionClip"}, {id: "Fingerplay Motion", type: "FingerplayMotionClip"}];
+            // BODY
+            asset_data[4].children.push({id: "Body movement", type: "BodyMovementClip"});
 
             asset_browser.load( asset_data, (e,v) => {
                 switch(e.type) {

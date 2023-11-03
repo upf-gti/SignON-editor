@@ -426,7 +426,7 @@ FaceLexemeClip.lexemes = [
 
 FaceLexemeClip.type = "faceLexeme";
 FaceLexemeClip.id = ANIM.FACELEXEME ? ANIM.FACELEXEME: ANIM.clipTypes.length;
-FaceLexemeClip.clipColor = "#dda4bd";
+FaceLexemeClip.clipColor = "#57c1c1";
 
 function FaceLexemeClip(o)
 {
@@ -1148,7 +1148,7 @@ GazeClip.directions = ["", "Up right", "Up left", "Down right", "Down left", "Ri
 GazeClip.targets = ["Up right", "Up left", "Down right", "Down left", "Right", "Left", "Up", "Down", "Front"];
 
 GazeClip.id = ANIM.GAZE ? ANIM.GAZE: ANIM.clipTypes.length;
-GazeClip.clipColor = "#7162b4";
+GazeClip.clipColor = "#578cc1"//"#8275bd";
 
 function GazeClip(o)
 {
@@ -1313,7 +1313,7 @@ GazeClip.prototype.showInfo = function(panel, callback)
 HeadClip.type = "head";
 HeadClip.lexemes = ["Nod", "Shake", "Tilt", "Tilt left", "Tilt right", "Tilt forward", "Tilt backward", "Forward", "Backward"];
 HeadClip.id = ANIM.HEAD ? ANIM.HEAD: ANIM.clipTypes.length;
-HeadClip.clipColor = "#66c2a5";
+HeadClip.clipColor = "#5772c1";
 
 function HeadClip(o)
 {
@@ -1452,7 +1452,7 @@ ElbowRaiseClip.type = "gesture";
 ElbowRaiseClip.hands = ["Left", "Right", "Both"];
 ElbowRaiseClip.movements = ["Raise", "Hunch"];
 ElbowRaiseClip.id = ANIM.ELBOW ? ANIM.ELBOW: ANIM.clipTypes.length;
-ElbowRaiseClip.clipColor = "#abdda4";
+ElbowRaiseClip.clipColor = "#a757c1";
 
 function ElbowRaiseClip(o)
 {
@@ -1579,7 +1579,7 @@ ShoulderClip.type = "gesture";
 ShoulderClip.hands = ["Left", "Right", "Both"];
 ShoulderClip.movements = ["Raise", "Hunch"];
 ShoulderClip.id = ANIM.SHOULDER ? ANIM.SHOULDER: ANIM.clipTypes.length;
-ShoulderClip.clipColor = "#abdda4";
+ShoulderClip.clipColor = "#c157c1";
 
 function ShoulderClip(o)
 {
@@ -1723,7 +1723,7 @@ BodyMovementClip.type = "gesture";
 BodyMovementClip.movements = ["Tilt forward", "Tilt backward", "Tilt left", "Tilt right", "Rotate left", "Rotate right"];
 BodyMovementClip.hands = ["Left", "Right", "Both"];
 BodyMovementClip.id = ANIM.BODYMOVEMENT ? ANIM.BODYMOVEMENT: 8;
-BodyMovementClip.clipColor = "#fee08b";
+BodyMovementClip.clipColor = "#c18257";
 
 function BodyMovementClip(o)
 {
@@ -1847,7 +1847,7 @@ ArmLocationClip.hand_locations = ["","Tip", "Pad", "Mid", "Base", "Thumb ball", 
 ArmLocationClip.hand_sides = ["", "Right", "Left", "Ulnar", "Radial", "Front", "Back", "Palmar"];
 
 ArmLocationClip.id = ANIM.ARMLOCATION ? ANIM.ARMLOCATION: ANIM.clipTypes.length;
-ArmLocationClip.clipColor = "#fdae61";
+ArmLocationClip.clipColor = "#c157a7";
 
 function ArmLocationClip(o)
 {
@@ -2141,7 +2141,7 @@ PalmOrientationClip.hands = ["Left", "Right", "Both"];
 PalmOrientationClip.directions = ["Up", "Down", "Left", "Right", "Up Left", "Up Right", "Down Left", "Down Right"];
 
 PalmOrientationClip.id = ANIM.PALMORIENTATION ? ANIM.PALMORIENTATION: ANIM.clipTypes.length;
-PalmOrientationClip.clipColor = "#f46d43";
+PalmOrientationClip.clipColor = "#a7c157";
 
 function PalmOrientationClip(o)
 {
@@ -2337,7 +2337,7 @@ HandOrientationClip.directions = ["Up", "Down", "Left", "Right", "In", "Out",
 							"Down Out Left", "Down Out Right", "Down In Left", "Down In Right"];
 
 HandOrientationClip.id = ANIM.HANDORIENTATION ? ANIM.HANDORIENTATION: ANIM.clipTypes.length;
-HandOrientationClip.clipColor = "#d53e4f";
+HandOrientationClip.clipColor = "#8cc157";
 
 function HandOrientationClip(o)
 {
@@ -2546,7 +2546,7 @@ HandshapeClip.hands = ["Left", "Right", "Both"];
 HandshapeClip.fingers = ["", "Index", "Middle", "Ring", "Pinky"];
 
 HandshapeClip.id = ANIM.HANDSHAPE ? ANIM.HANDSHAPE: ANIM.clipTypes.length;
-HandshapeClip.clipColor = "#9e0142";
+HandshapeClip.clipColor = "#57c172";
 
 function HandshapeClip(o)
 {
@@ -2844,7 +2844,7 @@ HandConstellationClip.directions = ["Up", "Down", "Left", "Right", "In", "Out",
 									"Down Out Left", "Down Out Right", "Down In Left", "Down In Right"];
 
 HandConstellationClip.id = ANIM.HANDCONSTELLATION ? ANIM.HANDCONSTELLATION: ANIM.clipTypes.length;
-HandConstellationClip.clipColor = "#0ac8c8";
+HandConstellationClip.clipColor = "#c1578c";
 
 function HandConstellationClip(o)
 {
@@ -3130,7 +3130,7 @@ DirectedMotionClip.directions = ["Up", "Down", "Left", "Right", "In", "Out",
 DirectedMotionClip.second_directions = ["Up", "Down", "Left", "Right","Up Left", "Up Right", "Down Left", "Down Right"];
 
 DirectedMotionClip.id = ANIM.DIRECTEDMOTION ? ANIM.DIRECTEDMOTION: ANIM.clipTypes.length;
-DirectedMotionClip.clipColor = "#5e9fdd";
+DirectedMotionClip.clipColor = "#c15772";
 
 function DirectedMotionClip(o)
 {
@@ -3473,7 +3473,7 @@ CircularMotionClip.directions = ["Up", "Down", "Left", "Right", "In", "Out",
 CircularMotionClip.second_directions = ["Up", "Down", "Left", "Right","Up Left", "Up Right", "Down Left", "Down Right"];
 
 CircularMotionClip.id = ANIM.CIRCULARMOTION ? ANIM.CIRCULARMOTION: ANIM.clipTypes.length;
-CircularMotionClip.clipColor = "#5e9fdd";
+CircularMotionClip.clipColor = "#c15757";
 
 function CircularMotionClip(o)
 {
@@ -3751,7 +3751,7 @@ WristMotionClip.hands = ["Left", "Right", "Both"];
 WristMotionClip.modes = ["Nod", "Swing", "Twist", "Stir CW", "Stir CCW", "All"];
 
 WristMotionClip.id = ANIM.WRISTMOTION ? ANIM.WRISTMOTION: ANIM.clipTypes.length;
-WristMotionClip.clipColor = "#5e9fdd";
+WristMotionClip.clipColor = "#72c157";
 
 function WristMotionClip(o)
 {
@@ -3897,7 +3897,7 @@ FingerplayMotionClip.hands = ["Left", "Right", "Both"];
 FingerplayMotionClip.fingers = ["Thumb", "Index", "Middle", "Ring", "Pinky"];
 
 FingerplayMotionClip.id = ANIM.FINGERPLAYMOTION ? ANIM.FINGERPLAYMOTION: ANIM.clipTypes.length;
-FingerplayMotionClip.clipColor = "#e6f598";
+FingerplayMotionClip.clipColor = "#57c157";
 
 function FingerplayMotionClip(o)
 {
@@ -4083,7 +4083,7 @@ FingerplayMotionClip.prototype.showInfo = function(panel, callback)
 MouthingClip.type = "speech";
 
 MouthingClip.id = ANIM.FINGERPLAYMOTION ? ANIM.FINGERPLAYMOTION: ANIM.clipTypes.length;
-MouthingClip.clipColor = "#e6f598";
+MouthingClip.clipColor = "#57c1a7";
 
 function MouthingClip(o)
 {
@@ -4262,7 +4262,7 @@ MouthingClip.prototype.showInfo = function(panel, callback)
 
 SuperClip.type = "super";
 SuperClip.id = ANIM.SUPERCLIP ? ANIM.SUPERCLIP: ANIM.clipTypes.length;
-SuperClip.clipColor = "white";
+SuperClip.clipColor = "#cccccc";
 
 function SuperClip(o)
 {
