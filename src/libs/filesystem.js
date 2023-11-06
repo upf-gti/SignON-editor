@@ -72,21 +72,6 @@ class FileSystem{
                 callback();    
         }
     }
-
-    async getTags( folder, session ){
-
-        return new Promise( (resolve, reject)=>{
-
-            var session = this.session;
-
-            session.request(
-                session.server_url, 
-                { action: "tags/getTags"}, e=>{
-                console.log(e);
-                resolve(e);
-            }, reject, e => {});
-        });
-    }
     
     async uploadFile(path, file, metadata){
 
@@ -139,7 +124,7 @@ class FileSystem{
 
             session.request( 
                 session.server_url,
-                { action: "tags/getFilesInFolder", unit: unit, folder: folder }, function(resp){
+                { action: "files/getFilesInFolder", unit: unit, folder: folder }, function(resp){
 
                 if(resp.status < 1){
                     onError(resp.msg);
