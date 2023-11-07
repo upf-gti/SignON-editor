@@ -1903,14 +1903,6 @@ class ScriptGui extends Gui {
         },
         size: ["30%", 200], modal: true
     })
-        // LX.message("You can create an animation from a selected clip or from a preset configuration. You can also import animations or presets in JSON format following the BML standard. Go to Menubar -> Timeline -> Shortcuts for more information about the tool.", "How to start?",  {
-        //     onclose: (root) => {
-            
-        //         root.remove();
-        //         this.prompt = null;
-        //     },
-        //     size: ["25%", 300]
-        // });
 
     }
 
@@ -2020,28 +2012,8 @@ class ScriptGui extends Gui {
             }
             asset_data[1].children = [{ id: "Gaze", type: "folder", children: gazes}, {id: "Head movement", type: "folder", children: movements}];
 
-            // ARMS
-            // values = ["Elbow Raise", "Shoulder Raise", "Shoulder Hunch", "Arm Location", "Hand Constellation", "Directed Motion", "Circular Motion"];
-            
-            // for(let i = 0; i < values.length; i++){
-            //     let data = {
-            //         id: values[i], 
-            //         type: "Clip",
-            //     }
-            //     asset_data[2].children.push(data);
-            // }
             asset_data[2].children = [{id: "Elbow Raise", type: "ElbowRaiseClip"}, {id: "Shoulder Raise", type: "ShoulderClip"}, {id:"Shoulder Hunch", type: "ShoulderClip"}, {id: "Arm Location", type: "ArmLocationClip"}, {id: "Hand Constellation", type: "HandConstellationClip"}, {id: "Directed Motion", type: "DirectedMotionClip"}, {id: "Circular Motion", type: "CircularMotionClip"}];
-    
 
-            // HANDS
-            // values = ["Body Movement", "Palm Orientation", "Hand Orientation", "Handshape", "Wrist Motion", "Fingerplay Motion"]
-            // for(let i = 0; i < values.length; i++){
-            //     let data = {
-            //         id: values[i], 
-            //         type: "Clip",
-            //     }
-            //     asset_data[3].children.push(data);
-            // }
             asset_data[3].children = [{id: "Palm Orientation", type: "PalmOrientationClip"}, {id: "Hand Orientation", type: "HandOrientationClip"}, {id: "Handshape", type: "HandshapeClip"}, {id: "Wrist Motion", type: "WristMotionClip"}, {id: "Fingerplay Motion", type: "FingerplayMotionClip"}];
             // BODY
             asset_data[4].children.push({id: "Body movement", type: "BodyMovementClip"});
@@ -2268,7 +2240,7 @@ class ScriptGui extends Gui {
                                 data[dictionary] = [];
                                 let assets = [];
                                 for(let folder in dictionaries[dictionary]) {
-                                    await fs.getFiles(units[i].name, "dictionaries/" + dictionary + "/" + folder + "/").then(async (files, resp) => {
+                                    await fs.getFiles(units[i].name, "dictionaries/" + dictionary + "/" + folder).then(async (files, resp) => {
                                         
                                         let files_data = [];
                                         for(let f = 0; f < files.length; f++) {
