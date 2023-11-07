@@ -347,10 +347,10 @@
         getCurrentContent(track, time, threshold) {
 
             if(this.getCurrentKeyFrame)
-                this.getCurrentKeyFrame(track, time, threshold);
+                return this.getCurrentKeyFrame(track, time, threshold);
 
             if(this.getCurrentClip)
-                this.getCurrentClip(track, time, threshold);
+                return this.getCurrentClip(track, time, threshold);
         }
 
         /**

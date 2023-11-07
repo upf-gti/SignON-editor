@@ -415,7 +415,7 @@ FaceLexemeClip.lexemes = [
 
 	"Nose wrinkler", "Nostril dilator", "Nostril compressor", 
 
-	"Lip corner depressor", "Lip corner depressor left", "Lip corner depressor right", "Lip corner puller", "Lip corner puller left", "Lip corner puller right", "Lip strecher", "Lip funneler", "Lip tightener", "Lip puckerer", "Lip puckerer left", 
+	"Lip corner depressor", "Lip corner depressor left", "Lip corner depressor right", "Lip corner puller", "Lip corner puller left", "Lip corner puller right", "Lip stretcher", "Lip funneler", "Lip tightener", "Lip puckerer", "Lip puckerer left", 
 	"Lip puckerer right", "Lip pressor", "Lips part", "Lip suck", "Lip suck upper", "Lip suck lower", "Lower lip depressor", "Lower lip depressor left", "Lower lip depressor right", "Upper lip raiser", "Upper lip raiser left", "Upper lip raiser right", 
 	
 	"Chin raiser", "Dimpler", "Dimpler left", "Dimpler right", "Lip bite", "Smile teeth", "Smile teeth wide", "Smile closed", "Round open", "Round closed", "Mouth stretch", "Close tight", 
@@ -981,7 +981,7 @@ FacePresetClip.prototype.addPreset = function(preset){
 			clip = new FaceLexemeClip({lexeme: "LID_TIGHTENER", start: this.start, duration: this.duration, properties: { amount: 0.8}});
 			this.clips.push(clip);
 
-			clip = new FaceLexemeClip({lexeme: "LIP_STRECHER", start: this.start, duration: this.duration, properties: { amount: 0.5}});
+			clip = new FaceLexemeClip({lexeme: "LIP_STRETCHER", start: this.start, duration: this.duration, properties: { amount: 0.5}});
 			this.clips.push(clip);
 			
 			clip = new FaceLexemeClip({lexeme: "JAW_DROP", start: this.start, duration: this.duration, properties: { amount: 0.5}});
