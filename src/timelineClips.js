@@ -1913,6 +1913,24 @@ ArmLocationClip.prototype.configure = function(o)
 			this.properties[p] = capitalize(this.properties[p].replaceAll("_", " "));
 	}
 
+	if(o.srcContact) {
+		// srcFinger + srcLocation + srcSide
+		const src = o.srcContact.split("_");
+		if(!isNaN(Number(src[0]))){
+
+			o.srcFinger = src[0];
+			src.shift();
+		} 
+		for(let i = 1; i < ArmLocationClip.hand_sides.length; i++) {
+			if(src[src.length-1].includes(ArmLocationClip.hand_sides[i].toUpperCase())) {
+				o.srcSide = ArmLocationClip.hand_sides[i].toUpperCase();
+				src.pop();
+				break;
+			}
+		}
+		if(src.length) o.srcLocation = src.join("_");
+	}
+	
 	if(o.side || o.secondSide) {
 		for(let s in ArmLocationClip.sides) {
 			if(o.side == ArmLocationClip.sides[s])
@@ -2909,6 +2927,42 @@ HandConstellationClip.prototype.configure = function(o)
 			this.properties[p] = capitalize(this.properties[p].replaceAll("_", " "));
 	}
 
+	if(o.srcContact) {
+		// srcFinger + srcLocation + srcSide
+		const src = o.srcContact.split("_");
+		if(!isNaN(Number(src[0]))){
+
+			o.srcFinger = src[0];
+			src.shift();
+		} 
+		for(let i = 1; i < ArmLocationClip.hand_sides.length; i++) {
+			if(src[src.length-1].includes(ArmLocationClip.hand_sides[i].toUpperCase())) {
+				o.srcSide = ArmLocationClip.hand_sides[i].toUpperCase();
+				src.pop();
+				break;
+			}
+		}
+		if(src.length) o.srcLocation = src.join("_");
+	}
+
+	if(o.dstContact) {
+		// dstFinger + dstLocation + dstSide
+		const dst = o.dstContact.split("_");
+		if(!isNaN(Number(dst[0]))){
+
+			o.dstFinger = dst[0];
+			dst.shift();
+		} 
+		for(let i = 1; i < ArmLocationClip.hand_sides.length; i++) {
+			if(dst[dst.length-1].includes(ArmLocationClip.hand_sides[i].toUpperCase())) {
+				o.dstSide = ArmLocationClip.hand_sides[i].toUpperCase();
+				dst.pop();
+				break;
+			}
+		}
+		if(dst.length) o.dstLocation = dst.join("_");
+	}
+
 	if(o.srcSide || o.dstSide) {
 		for(let s in HandConstellationClip.sides) {
 			if(o.srcSide == HandConstellationClip.sides[s])
@@ -3399,7 +3453,7 @@ DirectedMotionClip.prototype.showInfo = function(panel, callback)
 		this.properties.distance = v;
 		if(callback)
 			callback();
-	}, {precision: 2, min: 0, step: 0.01, title: "Meters of the displacement"});
+	}, {precision: 3, min: 0, step: 0.01, title: "Meters of the displacement"});
 
 	panel.addDropdown("Curve direction", ["", ...DirectedMotionClip.second_directions], this.properties.curve, (v, e, name) => {
 	
