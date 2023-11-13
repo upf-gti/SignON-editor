@@ -858,7 +858,7 @@
                 }
                 else
                 {
-                    if(!track || track && this.getCurrentContent(track, time, 0.001) == undefined) {
+                    if(!track || track && this.getCurrentContent(track, time, 0.001) != undefined) {
 
                         this.grabbing = true;
                         this.grabTime = time - this.currentTime;
