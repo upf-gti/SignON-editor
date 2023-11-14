@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <title>Animics: Tutorial</title>
+        <link rel="icon" type="image/x-icon" href="../data/imgs/animics_monster.png" />
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+        <style>
+            body{
+                margin: 0;
+                font-family: -apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans",Helvetica,Arial,sans-serif,"Apple Color Emoji","Segoe UI Emoji";
+                color: #404040;
+                background-color: white;
+                text-align: justify;
+            }
+            a {
+                text-decoration: none;
+                color: #404040;
+            }
+            a:hover{
+                color: #6d90b2;
+                font-weight: 600;
+            }
+            ul {
+                list-style: none;
+                /* padding: 0px; */
+                /* margin: 0px; */
+            }
+            ::-webkit-scrollbar {
+                width: 10px;
+            }
+            ::-webkit-scrollbar-track{
+                background-color: rgba(0,0,0,0.05);
+                width: 5px;
+                
+            }
+            ::-webkit-scrollbar-thumb {
+                background-color: #c7c6c6;
+                border-radius: 5px;
+            }
+            .index {
+                padding: 10px;
+                min-width: 20%;
+                background-color: rgba(0,0,0,0.05);
+            }
+            .container {
+                padding: 20px;
+            }
+            .table {
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: space-evenly;
+            }
+            .cell {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                padding: 5px;
+                
+            }
+            .thumbnail {
+                width: 150px;
+            }
+        </style>
+    </head>
+    <body style="display: flex;flex-direction: row;">
+        <div id="index" class="index">
+            <ul>
+                <!-- <li>Overview</li> -->
+                <!-- <li><a href="#keyframe-animation">Keyframe animation</a></li> -->
+                <li><a href="#script-animation">Script animation</a>
+                    <ul>
+                        <li></li>
+                        <li>
+                            <details>
+                                <summary>
+                                    <a href="#introduction">Introduction</a>
+                                </summary>
+                                <ul>
+                                    <li><a href="#visualization">Visualization</a></li>
+                                    <li>
+                                    <details>
+                                        <summary>
+                                            <a href="#bml-clips">Clip types</a>
+                                        </summary>
+                                        <ul>
+                                            <li><a href="#face-lexeme">Face lexeme</a></li>
+                                            <li><a href="#mouthing">Mouthing</a></li>
+                                            <li><a href="#head-movement">Head movement</a></li>
+                                            <li><a href="#gaze">Gaze</a></li>
+                                            <li><a href="#elbow-raise">Elbow Raise</a></li>
+                                            <li><a href="#shoulder-raise">Shoulder Raise</a></li>
+                                            <li><a href="#arm-location">Arm Location</a></li>
+                                            <li><a href="#hand-constellation">Hand Constellation</a></li>
+                                            <li><a href="#directed-motion">Directed Motion</a></li>
+                                            <li><a href="#circular-motion">Circular Motion</a></li>
+                                            <li><a href="#palm-orientation">Palm Orientation</a></li>
+                                            <li><a href="#hand-orientation">Hand Orientation</a></li>
+                                            <li><a href="#wrist-motion">Wrist Motion</a></li>
+                                            <li><a href="#finger-play">Fingerplay</a></li>
+                                            <li><a href="#handshape">Handshape</a></li>
+                                            <li><a href="#body-movement">Body movement</a></li>
+            
+                                        </ul>
+                                    </details>
+                                </li> </ul>
+                            </details>
+                        </li>
+                        <li>
+                            <details>   
+                                <summary>
+                                    <a href="#editing">Editing</a></li>
+                                </summary>
+                            </details>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        <div class="container">
+            <h1 id="script-animation">Script animation</h1>
+            <!-- <h2 id="keyframe-animation">Keyframe animation</h2> -->
+            <video autoPlay muted loop src="bml_animation.mp4" width="800vw"></video>
+            <h2 id="introduction">Introduction</h2>
+            <p>A <i>clip</i> is an instruction for applying a verbal and/or nonverbal behaviour based on an extended Behaviour Markup Language (BML). Each clip has an id, start time and duration. Users have the flexibility to modify these parameters, along with other variable properties. The realization of each behavior can be divided into phases, with each phase marked by a sync-point denoting the associated transition. Notably, these sync-point values are falling within the range [0, duration]. The time and the sync-point parameters are in seconds.</p>
+            
+            <h2 id="visualization">Visualization</h2>
+            The color of a clip depends on its type behaviour.
+            When a clip is selected, it's highlighter and its name color changes to white. And a panel it's opened to the right area showing all its properties.
+            <h2 id="bml-clips">Clip types</h2>
+            <p>Face behaviours: </p>
+            <ul>
+                <li><h3 id="face-lexeme">Face Lexeme</h3></li>
+            </ul>
+            <p>Show a (partial) face expression from a predefined lexicon. This behavior offers a range of predefined expressions. Each lexeme is a convenience shorthand for combinations of more detailed low level face controls. The provided set of core lexemes allows one to perform face expressions using meaningful lexeme names.</p>
+            <h4>Properties:</h4>
+            <ul>
+                <li><b>Id</b><br><p style="text-indent: 1em;">Identifier name. The default value is the name of the lexeme.</p></li>
+                <li><b>Lexeme</b><br><p style="text-indent: 1em;">Name of a face lexeme from the available list.</p></li>
+                <li><b>Intensity</b><br><p style="text-indent: 1em;">A float value between 0..1 to indicate the amount to which the expression should be shown on the face, 0 meaning 'not at all' and 1 meaning 'maximum, highly exaggerated'.</p></li>
+
+            </ul>
+            <p><details></p>
+            <p><summary>Lexemes</summary>
+                <div class="table">
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/arch.png">Arch</div> 
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/brow lowerer.png">Brow lowerer</div> 
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/brow lowerer left.png">Brow lowerer left</div> 
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/brow lowerer right.png">Brow lowerer right</div> 
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/brow raiser.png">Brow raiser</div> 
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/brow raiser left.png">Brow raiser left</div> 
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/brow raiser right.png">Brow raiser right</div> 
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/inner brow raiser.png">Inner brow raiser</div> 
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/outer brow raiser.png">Outer brow raiser</div> 
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/squint.png">Squint</div> 
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/blink.png">Blink</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/eyes closed.png">Eyes closed</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/upper lid raiser.png">Upper lid raiser</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/upper lid raiser left.png">Upper lid raiser left</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/upper lid raiser right.png">Upper lid raiser right</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/cheek raiser.png">Cheek raiser</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lid tightener.png">Lid tightener</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/wink left.png">Wink left</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/wink right.png">Wink right</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/cheek suck.png">Cheek suck</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/cheek suck left.png">Cheek suck left</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/cheek suck right.png">Cheek suck right</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/cheek blow.png">Cheek blow</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/cheek blow left.png">Cheek blow left</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/cheek blow right.png">Cheek blow right</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/nose wrinkler.png">Nose wrinkler</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/nostril dilator.png">Nostril dilator</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/nostril compressor.png">Nostril compressor</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip corner depressor.png">Lip corner depressor</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip corner depressor left.png">Lip corner depressor left</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip corner depressor right.png">Lip corner depressor right</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip corner puller.png">Lip corner puller</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip corner puller left.png">Lip corner puller left</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip corner puller right.png">Lip corner puller right</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip stretcher.png">Lip stretcher</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip funneler.png">Lip funneler</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip tightener.png">Lip tightener</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip puckerer.png">Lip puckerer</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip puckerer left.png">Lip puckerer left</div> 
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip puckerer right.png">Lip puckerer right</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip pressor.png">Lip pressor</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lips part.png">Lips part</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip suck.png">Lip suck</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip suck upper.png">Lip suck upper</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip suck lower.png">Lip suck lower</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lower lip depressor.png">Lower lip depressor</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lower lip depressor left.png">Lower lip depressor left</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lower lip depressor right.png">Lower lip depressor right</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/upper lip raiser.png">Upper lip raiser</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/upper lid raiser left.png">Upper lip raiser left</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/upper lid raiser right.png">Upper lip raiser right</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/chin raiser.png">Chin raiser</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/dimpler.png">Dimpler</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/dimpler left.png">Dimpler left</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/dimpler right.png">Dimpler right</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip bite.png">Lip bite</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/smile teeth.png">Smile teeth</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/smile teeth wide.png">Smile teeth wide</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/smile closed.png">Smile closed</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/round open.png">Round open</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/round closed.png">Round closed</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/mouth stretch.png">Mouth stretch</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/close tight.png">Close tight</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/jaw drop.png">Jaw drop</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/jaw thrust.png">Jaw thrust</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/jaw sideways left.png">Jaw sideways left</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/jaw sideways right.png">Jaw sideways right</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/tongue bulge left.png">Tongue bulge left</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/tongue bulge right.png">Tongue bulge right</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/tongue up.png">Tongue up</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/tongue show.png">Tongue show</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/tongue wide.png">Tongue wide</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip wipe.png">Lip wipe</div>
+                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/neck tightener.png">Neck tightener</div>
+                </div>
+                <p></p>
+            </details>
+            <div class="cell">
+                <img src="face%20lexemes%20gui.PNG" width="400" title="Face lexeme clip panel" style="border-radius: 10px"><p>Example of <i>Face Lexeme clip</i> panel with the lexeme <i>Brow raiser.</i></p>
+            </div>
+            <!-- !["Face lexeme panel"](face%20lexemes%20gui.PNG "Face lexeme clip panel") --></p>
+            <ul>
+                <li><h3 id="mouthing">Mouthing</h3></li>
+            </ul>
+            <p>Head behaviours:</p>
+            <ul>
+                <li><h3 id="head-movement">Head movement</h3></li>
+                <li><h3 id="gaze">Gaze</h3></li>
+            </ul>
+            <p>Arm behaviours: </p>
+            <ul>
+                <li><h3 id="elbow-raise">Elbow Raise</h3></li>
+                <li><h3 id="shoulder-raise">Shoulder Raise</h3></li>
+                <li><h3 id="arm-location">Arm Location</h3></li>
+                <li><h3 id="hand-constellation">Hand Constellation</h3></li>
+                <li><h3 id="directed-motion">Directed Motion</h3></li>
+                <li><h3 id="circular-motion">Circular Motion</h3></li>
+            </ul>
+            <p>Hands behaviours:</p>
+            <ul>
+                <li><h3 id="palm-orientation">Palm Orientation</h3></li>
+                <li><h3 id="hand-orientation">Hand Orientation</h3></li>
+                <li><h3 id="wrist-motion">Wrist Motion</h3></li>
+                <li><h3 id="fingerplay">Fingerplay</h3></li>
+                <li><h3 id="handshape">Handshape</h3></li>
+            </ul>
+            <p>Body behaviours:</p>
+            <ul>
+                <li><h3 id="body-movement">Body movement</h3></li>
+            </ul>
+
+            <h2 id="editing">Editing</h2>
+            <p>Animations can be created in three ways:</p>
+            <ul>
+                <li><strong><em>Add clip</em></strong>: Create the animation from scratch adding a BML clip.</li>
+                <li><strong><em>Add preset</em></strong>: Create the animation from a predefined set of clips based on common patterns.</li>
+                <li><strong><em>Add sign</em></strong>: Create the animation from an existing glossa or sentence in the repository.</li>
+            </ul>
+            <p>To select one of the options, you can press the buttons on the right panel or right click directly on the timeline.</p>
+        </div>
+    </body>
+</html>
