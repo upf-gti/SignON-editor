@@ -858,9 +858,10 @@
                 }
                 else
                 {
-                    if(!track || track && this.getCurrentContent(track, time, 0.001) != undefined) {
+                    
 
-                        this.grabbing = true;
+                    this.grabbing = true;
+                    if(!track || track && this.getCurrentContent(track, time, 0.001) == undefined) {
                         this.grabTime = time - this.currentTime;
     
                         this.grabbing_timeline = current_grabbing_timeline;
@@ -2528,7 +2529,7 @@
                 }
                 
             }
-            else if(!track) {
+            else if(!track || track && this.getCurrentContent(track, time, 0.001) == undefined) {
 
                 if( this.timelineClickedClips )
                 {
