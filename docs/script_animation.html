@@ -40,7 +40,7 @@
             }
             .index {
                 padding: 10px;
-                min-width: 20%;
+                min-width: 15%;
                 background-color: rgba(0,0,0,0.05);
             }
             .container {
@@ -57,10 +57,22 @@
                 justify-content: center;
                 align-items: center;
                 padding: 5px;
+                font-size: small;
                 
             }
             .thumbnail {
                 width: 150px;
+            }
+            .property {
+                font-size: smaller;
+
+            }
+            .property p {
+                text-indent: 1em;
+                margin: 5px 0;
+            }
+            .properties-section {
+                color: darkgray;
             }
             .info {
                 border-radius: 5px;
@@ -72,18 +84,19 @@
             .info svg {
                 padding-right: 5px;
             }
+            
         </style>
     </head>
     <body style="display: flex;flex-direction: row;">
         <div id="index" class="index">
-            <ul>
+            <ul style="position: fixed;">
                 <!-- <li>Overview</li> -->
                 <!-- <li><a href="#keyframe-animation">Keyframe animation</a></li> -->
                 <li><a href="#script-animation">Script animation</a>
                     <ul>
                         <li></li>
                         <li>
-                            <details>
+                            <details open>
                                 <summary>
                                     <a href="#introduction">Introduction</a>
                                 </summary>
@@ -139,119 +152,453 @@
             <p>A <i>clip</i> is an instruction for applying a verbal and/or nonverbal behaviour based on an extended Behaviour Markup Language (BML). Each clip has an id, start time and duration. Users have the flexibility to modify these parameters, along with other variable properties. The realization of each behavior can be divided into phases, with each phase marked by a sync-point denoting the associated transition. Notably, these sync-point values are falling within the range [0, duration]. The time and the sync-point parameters are in seconds.</p>
             
             <h2 id="visualization">Visualization</h2>
-            The color of a clip depends on its type behaviour.
-            When a clip is selected, it's highlighter and its name color changes to white. And a panel it's opened to the right area showing all its properties.
-            <h2 id="bml-clips">Clip types</h2>
-            <p>Face behaviours: </p>
-            <ul>
-                <li><h3 id="face-lexeme">Face Lexeme</h3></li>
-            </ul>
-            <p>Show a (partial) face expression from a predefined lexicon. This behavior offers a range of predefined expressions. Each lexeme is a convenience shorthand for combinations of more detailed low level face controls. The provided set of core lexemes allows one to perform face expressions using meaningful lexeme names.</p>
-            <h4>Properties:</h4>
-            <ul>
-                <li><b>Id</b><br><p style="text-indent: 1em;">Identifier name. The default value is the name of the lexeme.</p></li>
-                <li><b>Lexeme</b><br><p style="text-indent: 1em;">Name of a face lexeme from the available list.</p></li>
-                <li><b>Intensity</b><br><p style="text-indent: 1em;">A float value between 0..1 to indicate the amount to which the expression should be shown on the face, 0 meaning 'not at all' and 1 meaning 'maximum, highly exaggerated'.</p></li>
-
-            </ul>
-            <p><details></p>
-            <p><summary>Lexemes</summary>
-                <div class="table">
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/arch.png">Arch</div> 
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/brow lowerer.png">Brow lowerer</div> 
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/brow lowerer left.png">Brow lowerer left</div> 
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/brow lowerer right.png">Brow lowerer right</div> 
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/brow raiser.png">Brow raiser</div> 
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/brow raiser left.png">Brow raiser left</div> 
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/brow raiser right.png">Brow raiser right</div> 
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/inner brow raiser.png">Inner brow raiser</div> 
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/outer brow raiser.png">Outer brow raiser</div> 
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/squint.png">Squint</div> 
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/blink.png">Blink</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/eyes closed.png">Eyes closed</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/upper lid raiser.png">Upper lid raiser</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/upper lid raiser left.png">Upper lid raiser left</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/upper lid raiser right.png">Upper lid raiser right</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/cheek raiser.png">Cheek raiser</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lid tightener.png">Lid tightener</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/wink left.png">Wink left</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/wink right.png">Wink right</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/cheek suck.png">Cheek suck</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/cheek suck left.png">Cheek suck left</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/cheek suck right.png">Cheek suck right</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/cheek blow.png">Cheek blow</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/cheek blow left.png">Cheek blow left</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/cheek blow right.png">Cheek blow right</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/nose wrinkler.png">Nose wrinkler</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/nostril dilator.png">Nostril dilator</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/nostril compressor.png">Nostril compressor</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip corner depressor.png">Lip corner depressor</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip corner depressor left.png">Lip corner depressor left</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip corner depressor right.png">Lip corner depressor right</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip corner puller.png">Lip corner puller</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip corner puller left.png">Lip corner puller left</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip corner puller right.png">Lip corner puller right</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip stretcher.png">Lip stretcher</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip funneler.png">Lip funneler</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip tightener.png">Lip tightener</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip puckerer.png">Lip puckerer</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip puckerer left.png">Lip puckerer left</div> 
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip puckerer right.png">Lip puckerer right</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip pressor.png">Lip pressor</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lips part.png">Lips part</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip suck.png">Lip suck</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip suck upper.png">Lip suck upper</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip suck lower.png">Lip suck lower</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lower lip depressor.png">Lower lip depressor</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lower lip depressor left.png">Lower lip depressor left</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lower lip depressor right.png">Lower lip depressor right</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/upper lip raiser.png">Upper lip raiser</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/upper lid raiser left.png">Upper lip raiser left</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/upper lid raiser right.png">Upper lip raiser right</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/chin raiser.png">Chin raiser</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/dimpler.png">Dimpler</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/dimpler left.png">Dimpler left</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/dimpler right.png">Dimpler right</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip bite.png">Lip bite</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/smile teeth.png">Smile teeth</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/smile teeth wide.png">Smile teeth wide</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/smile closed.png">Smile closed</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/round open.png">Round open</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/round closed.png">Round closed</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/mouth stretch.png">Mouth stretch</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/close tight.png">Close tight</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/jaw drop.png">Jaw drop</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/jaw thrust.png">Jaw thrust</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/jaw sideways left.png">Jaw sideways left</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/jaw sideways right.png">Jaw sideways right</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/tongue bulge left.png">Tongue bulge left</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/tongue bulge right.png">Tongue bulge right</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/tongue up.png">Tongue up</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/tongue show.png">Tongue show</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/tongue wide.png">Tongue wide</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip wipe.png">Lip wipe</div>
-                    <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/neck tightener.png">Neck tightener</div>
-                </div>
-                <p></p>
-            </details>
+            <p>The color of a clip depends on its type behaviour.
+                Upon selecting a clip, its highlighter and name color shift to white. The <i>fade-in</i> and <i>fade-out</i> animations of the clip are denoted by intensified colors. The <i>fade-in</i> signifies when the action is achieved, while the <i>fade-out</i> marks the point when the character begins returning to their default state.</p>
+            
             <div class="cell">
-                <img src="face%20lexemes%20gui.PNG" width="400" title="Face lexeme clip panel" style="border-radius: 10px"><p>Example of <i>Face Lexeme clip</i> panel with the lexeme <i>Brow raiser.</i></p>
+                <img src="clips_selection.png" width="1000">
+                <p>Selection of a <i>Hand orientation</i> clip in the timeline.</p>
             </div>
-            <!-- !["Face lexeme panel"](face%20lexemes%20gui.PNG "Face lexeme clip panel") --></p>
+            <p>A panel opens to the designated area on the right, displaying all properties of the selected clip. The panel consistently presents the clip <b>Id</b>, a <b>Content</b> section, and a <b>Time</b> section. Depending of the clip type, there may also be <b>Sync-points</b> section. Various other content properties can vary based on the clip's characteristics, which are explained in the <a href="#bml-clips"><i>Clip types section</i></a>.</p>
+            
+            <!-- CLIP TYPES SECTION -->
+            <h2 id="bml-clips">Clip types</h2>
+
+            <p>Face behaviours:</p>
             <ul>
-                <li><h3 id="mouthing">Mouthing</h3></li>
+                <!-- Face lexeme clip -->
+                <li>
+                    <h3 id="face-lexeme">Face Lexeme</h3>
+                    <p>Show a (partial) face expression from a predefined lexicon. This behavior offers a range of predefined expressions. Each lexeme is a convenience shorthand for combinations of more detailed low level face controls. The provided set of core lexemes allows one to perform face expressions using meaningful lexeme names.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>         
+                            <ul>
+                                <li class="property"><b>Id</b><br><p>Identifier name. The default value is the name of the lexeme.</p></li>
+                                <h4 class="properties-section">Content</h4>
+                                <li class="property"><b>Lexeme</b><br><p>Name of a face lexeme from the available list.</p>
+                                    <details>
+                                        <summary style="padding-left: 1em;"><i>List of lexemes</i></summary>
+                                        <div class="table">
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/arch.png">Arch</div> 
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/brow lowerer.png">Brow lowerer</div> 
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/brow lowerer left.png">Brow lowerer left</div> 
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/brow lowerer right.png">Brow lowerer right</div> 
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/brow raiser.png">Brow raiser</div> 
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/brow raiser left.png">Brow raiser left</div> 
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/brow raiser right.png">Brow raiser right</div> 
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/inner brow raiser.png">Inner brow raiser</div> 
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/outer brow raiser.png">Outer brow raiser</div> 
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/squint.png">Squint</div> 
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/blink.png">Blink</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/eyes closed.png">Eyes closed</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/upper lid raiser.png">Upper lid raiser</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/upper lid raiser left.png">Upper lid raiser left</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/upper lid raiser right.png">Upper lid raiser right</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/cheek raiser.png">Cheek raiser</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lid tightener.png">Lid tightener</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/wink left.png">Wink left</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/wink right.png">Wink right</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/cheek suck.png">Cheek suck</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/cheek suck left.png">Cheek suck left</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/cheek suck right.png">Cheek suck right</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/cheek blow.png">Cheek blow</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/cheek blow left.png">Cheek blow left</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/cheek blow right.png">Cheek blow right</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/nose wrinkler.png">Nose wrinkler</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/nostril dilator.png">Nostril dilator</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/nostril compressor.png">Nostril compressor</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip corner depressor.png">Lip corner depressor</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip corner depressor left.png">Lip corner depressor left</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip corner depressor right.png">Lip corner depressor right</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip corner puller.png">Lip corner puller</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip corner puller left.png">Lip corner puller left</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip corner puller right.png">Lip corner puller right</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip stretcher.png">Lip stretcher</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip funneler.png">Lip funneler</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip tightener.png">Lip tightener</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip puckerer.png">Lip puckerer</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip puckerer left.png">Lip puckerer left</div> 
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip puckerer right.png">Lip puckerer right</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip pressor.png">Lip pressor</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lips part.png">Lips part</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip suck.png">Lip suck</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip suck upper.png">Lip suck upper</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip suck lower.png">Lip suck lower</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lower lip depressor.png">Lower lip depressor</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lower lip depressor left.png">Lower lip depressor left</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lower lip depressor right.png">Lower lip depressor right</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/upper lip raiser.png">Upper lip raiser</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/upper lid raiser left.png">Upper lip raiser left</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/upper lid raiser right.png">Upper lip raiser right</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/chin raiser.png">Chin raiser</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/dimpler.png">Dimpler</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/dimpler left.png">Dimpler left</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/dimpler right.png">Dimpler right</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip bite.png">Lip bite</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/smile teeth.png">Smile teeth</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/smile teeth wide.png">Smile teeth wide</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/smile closed.png">Smile closed</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/round open.png">Round open</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/round closed.png">Round closed</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/mouth stretch.png">Mouth stretch</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/close tight.png">Close tight</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/jaw drop.png">Jaw drop</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/jaw thrust.png">Jaw thrust</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/jaw sideways left.png">Jaw sideways left</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/jaw sideways right.png">Jaw sideways right</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/tongue bulge left.png">Tongue bulge left</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/tongue bulge right.png">Tongue bulge right</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/tongue up.png">Tongue up</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/tongue show.png">Tongue show</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/tongue wide.png">Tongue wide</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/lip wipe.png">Lip wipe</div>
+                                            <div class="cell"><img class="thumbnail" src="../data/imgs/thumbnails/face lexemes/neck tightener.png">Neck tightener</div>
+                                        </div>
+                                    </details>
+                                    <p></p>
+                                </li>
+                                <li class="property"><b>Intensity</b><br><p>A float value between 0..1 to indicate the amount to which the expression should be shown on the face, 0 meaning 'not at all' and 1 meaning 'maximum, highly exaggerated'.</p></li>
+                                <h4 class="properties-section">Time</h4>
+                                <li class="property"><b>Start</b><p>Second at which the face expression begins.</p></li>
+                                <li class="property"><b>Duration</b><p>Duration time, in seconds, of the face expression.</p></li>
+                                <h4 class="properties-section">Sync-point</h4>
+                                <li class="property"><b>Attack Peak</b><p>Second at which the maximum expression is achieved. In the interval [0, duration].</p></li>
+                                <li class="property"><b>Relax</b><p>Second at which the decay phase starts. In the interval [0, duration].</p></li>
+                            </ul>
+                            
+                        </div>
+                    
+                        <div class="cell">
+                            <img src="face%20lexemes%20gui.PNG" width="350" title="Face lexeme clip panel" style="border-radius: 10px"><p>Example of <i>Face Lexeme clip</i> panel with the lexeme <i>Brow raiser.</i></p>
+                        </div>
+                    </div>
+                </li>
             </ul>
+            
+            <ul>
+                <!-- Mouthing clip -->
+                <li><h3 id="mouthing">Mouthing</h3></li>
+                <p>Generation of lip movements from a text in <a href="https://en.wikipedia.org/wiki/ARPABET"><i>ARPABET 1-letter notation</i></a>. In which, '.' and ' ' symbols are also supported. </p>
+                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                    <div>
+                        <ul>
+                            <li class="property"><b>Id</b><br><p>Identifier name. The default value is <i>Mouthing</i>.</p></li>
+                        <h4 class="properties-section">Content</h4>
+                            <li class="property"><b>Text</b><br><p>String of the text which is wanted to be simulated in the form of ARPABET 1-letter.</p></li>
+                            <li><p><u>Optionals</u></p></li>
+                            <li class="property"><b>Speed <span style="color: orangered;">*</span></b><br><p>Phonemes per second of the whole string. Humans speak at 8 phonemes per second (lower boundary).</p></li>
+                            <li class="property"><b>Intensity <span style="color: orangered;">*</span></b><br><p>Visual exaggeration of phonemes. In the interval [0,1].</p></li>
+                            <br><li class="property" style="color:gray"><span style="color: orangered;">*</span> It can be specified individually for each phoneme. Turn ON the <i>Set for each phonema</i> property.</li>
+                        <h4 class="properties-section">Time</h4>
+                            <li class="property"><b>Start</b><p>Second at which the mouthing begins.</p></li>
+                            <li class="property"><b>Duration</b><p>Duration time, in seconds, of the utterance. Automatically computed using the content properties.</p></li>
+                        </ul>
+                    </div>
+                </div>
+            </ul>
+
             <p>Head behaviours:</p>
             <ul>
-                <li><h3 id="head-movement">Head movement</h3></li>
-                <li><h3 id="gaze">Gaze</h3></li>
+                <!-- Head movement clip -->
+                <li>
+                    <h3 id="head-movement">Head movement</h3>
+                    <p>Head movement retrieved from a gesticon by requesting the associated lexeme.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>         
+                            <ul>
+                                <li class="property"><b>Id</b><br><p>Identifier name. The default value is the name of the lexeme.</p></li>
+                            <h4 class="properties-section">Content</h4>
+                                <li class="property"><b>Lexeme</b><br><p>Name of the particular head behavior from the available list.</p>
+                                    <details>
+                                        <summary style="padding-left: 1em;"><i>List of lexemes</i></summary>
+                                        <div class="table">
+                                            <div class="cell"><img class="thumbnail" src="">Nod</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Shake</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Tilt</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Tilt left</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Tilt right</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Tilt forward</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Tilt backward</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Forward</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Backward</div> 
+                                        </div>
+                                    </details>
+                                    <p></p>
+                                </li>
+                                <li class="property"><b>Repetitions</b><br><p>Number of times the basic head motion is repeated.</p></li>
+                                <li class="property"><b>Intensity</b><br><p>A float value between 0..1 to indicate the amount of the movement. 0 means immeasurable small; 0.5 means "moderate"; 1 means maximally large.</p></li>
+                            <h4 class="properties-section">Time</h4>
+                                <li class="property"><b>Start</b><p>Second at which the preparation phase of the movement starts.</p></li>
+                                <li class="property"><b>Duration</b><p>Duration time, in seconds, of the head motion.</p></li>
+                            <h4 class="properties-section">Sync-point</h4>
+                                <li class="property"><b>Ready</b><p>Second at which the preparation phase ends. In the interval [0, duration].</p></li>
+                                <li class="property"><b>Stroke start</b><p>Second at which starts the stroke. In the interval [0, duration].</p></li>
+                                <li class="property"><b>Stroke</b><p>Second at which the head motion strokes. In the interval [0, duration].</p></li>
+                                <li class="property"><b>Stroke end</b><p>Second at which the stroke ends. In the interval [0, duration].</p></li>
+                                <li class="property"><b>Relax</b><p>Second at which the retraction phase starts. In the interval [0, duration].</p></li>
+                            </ul>
+                        </div>
+                    </div>
+                </li>
+
+                <!-- Gaze clip -->
+                <li>
+                    <h3 id="gaze">Gaze</h3>
+                    <p>Temporarily directs the gaze of the character towards a target.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>         
+                            <ul>
+                                <li class="property"><b>Id</b><br><p>Identifier name. The default value is the name of the gaze influence.</p></li>
+                            <h4 class="properties-section">Content</h4>
+                                <li class="property"><b>Influence</b><br><p>Determines what parts of the body to move to effect the gaze direction: <i>Eyes</i>, <i>Head</i>, <i>Neck</i>.</p></li>
+                                <li class="property"><b>Target</b><br><p>A reference towards a target instance that represents the target direction of the gaze.</p>
+                                    <details>
+                                        <summary style="padding-left: 1em;"><i>List of targets</i></summary>
+                                        <div class="table">
+                                            <div class="cell"><img class="thumbnail" src="">Front</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Left</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Right</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Up</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Down</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Up left</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Up right</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Down left</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Down right</div> 
+                                        </div>
+                                    </details>
+                                    <p></p>
+                                </li>
+                                <li class="property"><b>Base gaze</b><br><p>Turning <i>ON</i> permanently change the gaze direction of the character towards the target.</p></li>
+                                <li><p><u>Optionals</u></p></li>
+                                <li class="property"><b>Offset angle</b><br><p>Adds an angle degrees offset to gaze direction relative to the target in the direction specified in the <i>Offset direction</i>. In degrees. By default is 0.0.</p>
+                                <li class="property"><b>Offset direction</b><br><p>Direction of the <i>Offset angle</i>> angle. Same directions as target property.</p></li>
+                            <h4 class="properties-section">Time</h4>
+                                <li class="property"><b>Start</b><p>Second at which the gaze starts to move to new target.</p></li>
+                                <li class="property"><b>Duration</b><p>Duration time, in seconds, of gaze returned to default direction.</p></li>
+                            <h4 class="properties-section">Sync-point</h4>
+                                <li class="property"><b>Ready</b><p>Second at which the gaze target is acquired. In the interval [0, duration].</p></li>
+                                <li class="property"><b>Relax</b><p>Second at which the gaze starts returning to default direction. In the interval [0, duration].</p></li>
+                            </ul>
+                        </div>
+                    </div>
+                </li>
             </ul>
             <p>Arm behaviours: </p>
             <ul>
-                <li><h3 id="elbow-raise">Elbow Raise</h3></li>
-                <li><h3 id="shoulder-raise">Shoulder Raise</h3></li>
-                <li><h3 id="arm-location">Arm Location</h3></li>
-                <li><h3 id="hand-constellation">Hand Constellation</h3></li>
+                <!-- Elbow raise clip -->
+                <li>
+                    <h3 id="elbow-raise">Elbow Raise</h3>
+                    <p>Raises the elbow (added to the elbow raise automatically computed while moving the arm).</p>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>         
+                            <ul>
+                                <li class="property"><b>Id</b><br><p>Identifier name. The default value is <i>Elbow Raise</i>.</p></li>
+                            <h4 class="properties-section">Content</h4>
+                                <li class="property"><b>Side</b><br><p>What arm is being moved: <i>Left</i>, <i>Right</i>, <i>Both</i>. By the default is the arm of the specified dominant hand.</p>
+                                <li class="property"><b>Amplitude</b><br><p>A float value between 0..1 to indicate the amount of the movement. 0 means immeasurable small; 0.5 means "moderate"; 1 means maximally large.</p></li>
+                                <li class="property"><b>Base elbow position</b><br><p>Turning <i>ON</i> permanently change the position of the elbow.</p></li>
+                            <h4 class="properties-section">Time</h4>
+                                <li class="property"><b>Start</b><p>Second at which the elbow starts to raise.</p></li>
+                                <li class="property"><b>Duration</b><p>Duration time, in seconds, of elbow returned to default position.</p></li>
+                            <h4 class="properties-section">Sync-point</h4>
+                                <li class="property"><b>Attack Peak</b><p>Second at which the elbow raise is acquired. In the interval [0, duration].</p></li>
+                                <li class="property"><b>Relax</b><p>Second at which the elbow starts returning to default position. In the interval [0, duration].</p></li>
+                            </ul>
+                        </div>
+                    </div>
+                </li>
+
+                <!-- Shoulder clip -->
+                <li>
+                    <h3 id="shoulder-raise">Shoulder movement</h3>
+                    <p>Moves the shoulder up or froward.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>         
+                            <ul>
+                                <li class="property"><b>Id</b><br><p>Identifier name. The default value is the movement type.</p></li>
+                            <h4 class="properties-section">Content</h4>
+                                <li class="property"><b>Movement</b><br><p>Name of the particular shoulder movement. <i>Raise</i> or <i>Hunch</i>.</p>
+                                <li class="property"><b>Side</b><br><p>What arm is being moved: <i>Left</i>, <i>Right</i>, <i>Both</i>. By the default is the arm of the specified dominant hand.</p>
+                                <li class="property"><b>Amplitude</b><br><p>A float value between 0..1 to indicate the amount of the movement. 0 means immeasurable small; 0.5 means "moderate"; 1 means maximally large.</p></li>
+                                <li class="property"><b>Base shoulder position</b><br><p>Turning <i>ON</i> permanently change the position of the shoulder.</p></li>
+                            <h4 class="properties-section">Time</h4>
+                                <li class="property"><b>Start</b><p>Second at which the shoulder starts the movement.</p></li>
+                                <li class="property"><b>Duration</b><p>Duration time, in seconds, of shoulder returned to default position.</p></li>
+                            <h4 class="properties-section">Sync-point</h4>
+                                <li class="property"><b>Attack Peak</b><p>Second at which the shoulder position is acquired. In the interval [0, duration].</p></li>
+                                <li class="property"><b>Relax</b><p>Second at which the shoulder starts returning to default position. In the interval [0, duration].</p></li>
+                            </ul>
+                        </div>
+                    </div>
+                </li>
+
+                <!-- Arm location clip -->
+                <li>
+                    <h3 id="arm-location">Arm Location</h3>
+                    <p>Moves the hand to the specified location of the body.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>         
+                            <ul>
+                                <li class="property"><b>Id</b><br><p>Identifier name. The default value is the movement type.</p></li>
+                            <h4 class="properties-section">Content</h4>
+                                <li class="property"><b>Arm location</b><br><p>A body reference towards a target instance that represents the target arm location.</p>
+                                    <details>
+                                        <summary style="padding-left: 1em;"><i>List of body locations</i></summary>
+                                        <div class="table">
+                                            <div class="cell"><img class="thumbnail" src="">Head</div>
+                                            <div class="cell"><img class="thumbnail" src="">Head top</div>
+                                            <div class="cell"><img class="thumbnail" src="">Forehead</div>
+                                            <div class="cell"><img class="thumbnail" src="">Nose</div>
+                                            <div class="cell"><img class="thumbnail" src="">Below nose</div>
+                                            <div class="cell"><img class="thumbnail" src="">Chin</div>
+                                            <div class="cell"><img class="thumbnail" src="">Under chin</div>
+                                            <div class="cell"><img class="thumbnail" src="">Mouth</div>
+                                            <div class="cell"><img class="thumbnail" src="">Earlobe</div>
+                                            <div class="cell"><img class="thumbnail" src="">Earlobe Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Earlobe Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Ear</div>
+                                            <div class="cell"><img class="thumbnail" src="">Ear Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Ear Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Cheek</div>
+                                            <div class="cell"><img class="thumbnail" src="">Cheek Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Cheek Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Eye</div>
+                                            <div class="cell"><img class="thumbnail" src="">Eye Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Eye Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Eyebrow</div>
+                                            <div class="cell"><img class="thumbnail" src="">Eyebrow Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Eyebrow Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Mouth</div>
+                                            <div class="cell"><img class="thumbnail" src="">Neck</div>
+                                            <div class="cell"><img class="thumbnail" src="">Chest</div>
+                                            <div class="cell"><img class="thumbnail" src="">Shoulder Line</div>
+                                            <div class="cell"><img class="thumbnail" src="">Shoulder</div>
+                                            <div class="cell"><img class="thumbnail" src="">Shoulder Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Shoulder Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Stomach</div>
+                                            <div class="cell"><img class="thumbnail" src="">Below stomach</div>
+                                            <div class="cell"><img class="thumbnail" src="">Neutral</div>
+                                            <div class="cell"><img class="thumbnail" src="">Front</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Left</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Right</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Up</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Down</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Up left</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Up right</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Down left</div> 
+                                            <div class="cell"><img class="thumbnail" src="">Down right</div> 
+                                        </div>
+                                    </details>
+                                    <p></p>
+                                </li>
+                                <li class="property"><b>Arm</b><br><p>What arm is being moved: <i>Left</i>, <i>Right</i>, <i>Both</i>. By the default is the arm of the specified dominant hand.</p></li>
+                                <li class="property"><b>Base shoulder position</b><br><p>Turning <i>ON</i> permanently change the position of the shoulder.</p></li>
+                                <li><p><u>Optionals</u></p></li>
+                                <li class="property"><b>Side</b><br><p>Generic horizontal offset of the chosen point: <i>Left</i>, <i>Right</i>, <i>Slightly Left</i>, <i>Slightly Right</i>.</p></li>
+                                <li class="property"><b>Second location</b><br><p>Same as <i>Arm location</i>. If this property is set, the final point corresponds to the middlepoint between both. Same locations as <i>Arm location</i> property.</p></li>
+                                <li class="property"><b>Second side</b><span style="color: orangered;">*</span><br><p>Generic horizontal offset of the chosen point of the second location. It appears if <i>Second location</i> property is set.</p></li>
+                                <li class="property"><b>Distance</b><br><p>How far from the body the wrist has to be located. 0 means immeasurable close; 1 means maximally arm extended.</p></li>
+                                <li class="property"><b>Displace</b><br><p>Offset direction of the target location.</p>
+                                    <details>
+                                        <summary style="padding-left: 1em;"><i>List of directions</i></summary>
+                                        <div class="table">
+                                            <div class="cell"><img class="thumbnail" src="">Up</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down</div>
+                                            <div class="cell"><img class="thumbnail" src="">Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Left In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Left Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Right In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Right Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Out Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Out Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down In Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down In Right</div>
+                                        </div>
+                                    </details>
+                                    <p></p>
+                                </li>
+                                <li class="property"><b>Displace distance</b><span style="color: orangered;">*</span><br><p>How far the hand is displaced of the offset direction in meters. It appears if <i>Displace</i> property is set.</p></li>
+                                <li class="property"><b>Location</b><br><p>Part of the hand that will try to reach the target. By default is <i>Wrist</i>.</p>
+                                    <details>
+                                        <summary style="padding-left: 1em;"><i>List of hand parts</i></summary>
+                                        <div class="table">
+                                            <div class="cell"><img class="thumbnail" src="">Tip</div>
+                                            <div class="cell"><img class="thumbnail" src="">Pad</div>
+                                            <div class="cell"><img class="thumbnail" src="">Mid</div>
+                                            <div class="cell"><img class="thumbnail" src="">Base</div>
+                                            <div class="cell"><img class="thumbnail" src="">Thumb ball</div>
+                                            <div class="cell"><img class="thumbnail" src="">Hand</div>
+                                            <div class="cell"><img class="thumbnail" src="">Wrist</div>
+                                        </div>
+                                    </details>
+                                    <p></p>
+                                </li>
+                                <li class="property"><b>Finger</b><span style="color: orangered;">*</span><br><p>Finger that will try to reach the target. Only appears if the location is <i>Tip</i>, <i>Pad</i>, <i>Mid</i>, <i>Base</i>.</p></li>
+                                <li class="property"><b>Side</b><span style="color: orangered;">*</span><br><p>Specific hand side that will try to reach the target. Not appears if the location is <i>Tip</i>.</p>
+                                    <details>
+                                        <summary style="padding-left: 1em;"><i>List of hand sides</i></summary>
+                                        <div class="table">
+                                            <div class="cell"><img class="thumbnail" src="">Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Ulnar</div>
+                                            <div class="cell"><img class="thumbnail" src="">Radial</div>
+                                            <div class="cell"><img class="thumbnail" src="">Front</div>
+                                            <div class="cell"><img class="thumbnail" src="">Back</div>
+                                            <div class="cell"><img class="thumbnail" src="">Palmar</div>
+                                        </div>
+                                    </details>
+                                    <p></p>
+                                </li>
+                                <br><li class="property" style="color:gray"><span style="color: orangered;">*</span> It only appears if the related optional property is defined.</li>
+
+                            <h4 class="properties-section">Time</h4>
+                                <li class="property"><b>Start</b><p>Second at which the arm starts the movement.</p></li>
+                                <li class="property"><b>Duration</b><p>Duration time, in seconds, of arm returned to default position.</p></li>
+                            <h4 class="properties-section">Sync-point</h4>
+                                <li class="property"><b>Attack Peak</b><p>Second at which the hand position is acquired. In the interval [0, duration].</p></li>
+                                <li class="property"><b>Relax</b><p>Second at which the hand starts returning to default position. In the interval [0, duration].</p></li>
+                            </ul>
+                        </div>
+                    </div>
+                </li>
+                
+                <!-- Hand constellation clip -->
+                <li>
+                    <h3 id="hand-constellation">Hand Constellation</h3>
+                    <p>Moves the hand positions relative to each other. The motion is stopped if an <i>Arm location</i> clip is executed afterwards.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>         
+                            <!-- <ul>
+                                <li class="property"><b>Id</b><br><p>Identifier name. The default value is <i>Hand Constellation</i>.</p></li>
+                            <h4 class="properties-section">Content</h4>
+                                <li class="property"><b>Hand</b><br><p>What arm is being moved: <i>Left</i>, <i>Right</i>, <i>Both</i>. By the default is the arm of the specified dominant hand.</p>
+                                <li class="property"><b>Amplitude</b><br><p>A float value between 0..1 to indicate the amount of the movement. 0 means immeasurable small; 0.5 means "moderate"; 1 means maximally large.</p></li>
+                                <li class="property"><b>Base elbow position</b><br><p>Turning <i>ON</i> permanently change the position of the elbow.</p></li>
+                            <h4 class="properties-section">Time</h4>
+                                <li class="property"><b>Start</b><p>Second at which the elbow starts to raise.</p></li>
+                                <li class="property"><b>Duration</b><p>Duration time, in seconds, of elbow returned to default position.</p></li>
+                            <h4 class="properties-section">Sync-point</h4>
+                                <li class="property"><b>Attack Peak</b><p>Second at which the elbow raise is acquired. In the interval [0, duration].</p></li>
+                                <li class="property"><b>Relax</b><p>Second at which the elbow starts returning to default position. In the interval [0, duration].</p></li>
+                            </ul> -->
+                        </div>
+                    </div>
+                </li>
                 <li><h3 id="directed-motion">Directed Motion</h3></li>
                 <li><h3 id="circular-motion">Circular Motion</h3></li>
             </ul>

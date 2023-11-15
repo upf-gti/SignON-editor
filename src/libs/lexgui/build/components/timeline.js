@@ -2606,6 +2606,9 @@
                                     }     
                                 // }
                             }
+                            if(this.onContentMoved) {
+                                this.onContentMoved(clip, diff);
+                            }
                         }
                         else if( this.dragClipMode == "fadein" )
                             clip.fadein = Math.min(Math.max((clip.fadein || 0) + diff, clip.start), clip.start+clip.duration);

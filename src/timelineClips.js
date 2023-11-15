@@ -2115,7 +2115,7 @@ ArmLocationClip.prototype.showInfo = function(panel, callback)
 	panel.addText(null, "Part of the hand that will try to reach the body location", null, {disabled: true});
 
 	// Part of the hand
-	panel.addDropdown("Location", ["", ...ArmLocationClip.hand_locations], this.properties.srcLocation, (v, e, name) => {
+	panel.addDropdown("Location", ArmLocationClip.hand_locations, this.properties.srcLocation, (v, e, name) => {
 				
 		this.properties.srcLocation = v;
 		if(this.properties.srcLocation == "Tip")
@@ -2131,7 +2131,7 @@ ArmLocationClip.prototype.showInfo = function(panel, callback)
 	}, {filter: true});
 
 	if(this.properties.srcLocation && this.properties.srcLocation != "Tip") {
-		panel.addDropdown("Side", ["", ...ArmLocationClip.hand_sides], this.properties.srcSide, (v, e, name) => {
+		panel.addDropdown("Side", ArmLocationClip.hand_sides, this.properties.srcSide, (v, e, name) => {
 				
 			this.properties.srcSide = v;
 		

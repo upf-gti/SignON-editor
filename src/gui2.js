@@ -1464,6 +1464,12 @@ class ScriptGui extends Gui {
             this.clipsTimeline.onSetTime(this.clipsTimeline.currentTime) 
         };
 
+        this.clipsTimeline.onContentMoved = (clip, offset)=> {
+           if(clip.strokeStart) clip.strokeStart+=offset;
+           if(clip.stroke) clip.stroke+=offset;
+           if(clip.strokeEnd) clip.strokeEnd+=offset;
+        };
+
         this.clipsTimeline.deleteContent = () => {
             let clipstToDelete = this.clipsTimeline.lastClipsSelected;
             for(let i = 0; i < clipstToDelete.length; i++){
@@ -1813,19 +1819,23 @@ class ScriptGui extends Gui {
                         widgets.addNumber("Ready (s)", (clip.fadein - clip.start).toFixed(2), (v) =>
                         {              
                             clip.ready = clip.fadein = v + clip.start;
-                            updateTracks();
+                            updateTracks(true);
                         }, {min:0, max: clip.fadeout - clip.start, step:0.01, precision:2, title: "Target acquired or end of the preparation phase"});
                 }
 
                 if(clip.strokeStart != undefined) {
+                    clip.strokeStart = clip.strokeStart < clip.ready ? clip.ready : clip.strokeStart;
                     widgets.addNumber("Stroke start (s)", (clip.strokeStart - clip.start).toFixed(2), (v) =>
                     {              
                         clip.strokeStart = v + clip.start;
-                        updateTracks();
+                        updateTracks(true);
                     }, {min: clip.ready - clip.start, max: clip.stroke - clip.start, step:0.01, precision:2, title: "Start of the stroke"});
                 }
 
                 if(clip.stroke != undefined) {
+                    clip.stroke = clip.stroke < clip.strokeStart ? clip.strokeStart : clip.stroke;
+                    clip.stroke = clip.stroke > clip.strokeEnd ? clip.strokeEnd : clip.stroke;
+                    
                     widgets.addNumber("Stroke (s)", (clip.stroke - clip.start).toFixed(2), (v) =>
                     {              
                         clip.stroke = v + clip.start;
@@ -1836,6 +1846,9 @@ class ScriptGui extends Gui {
                 }
 
                 if(clip.strokeEnd != undefined) {
+                    clip.strokeEnd = clip.strokeEnd < clip.stroke ? clip.stroke : clip.strokeEnd;
+                    clip.strokeEnd = clip.strokeEnd > clip.relax ? clip.relax : clip.strokeEnd;
+
                     widgets.addNumber("Stroke end (s)", (clip.strokeEnd - clip.start).toFixed(2), (v) =>
                     {              
                         clip.strokeEnd = v + clip.start;
