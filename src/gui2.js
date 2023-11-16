@@ -1420,9 +1420,9 @@ class ScriptGui extends Gui {
                                 clipClass = ANIM.HandshapeClip;
                             else if(clip.behaviours[i].motion && clip.behaviours[i].motion == "directed")
                                 clipClass = ANIM.DirectedMotionClip;
-                            else if(clip.behaviours[i].motion && clip.behaviours[i].motion == "dircular")
+                            else if(clip.behaviours[i].motion && clip.behaviours[i].motion == "circular")
                                 clipClass = ANIM.CircularMotionClip;
-                            else if(clip.behaviours[i].motion && clip.behaviours[i].motion == "drist")
+                            else if(clip.behaviours[i].motion && clip.behaviours[i].motion == "wrist")
                                 clipClass = ANIM.WristMotionClip;
                             else if(clip.behaviours[i].motion && clip.behaviours[i].motion == "fingerplay")
                                 clipClass = ANIM.FingerplayMotionClip;

@@ -2513,7 +2513,7 @@ HandOrientationClip.prototype.drawClip = function( ctx, w,h, selected )
 
 HandOrientationClip.prototype.showInfo = function(panel, callback)
 {
-	panel.addText(null,"Roll of the wrist joint", null, {disabled: true});
+	panel.addText(null,"Yaw and pitch rotation of the wrist joint", null, {disabled: true});
 	// Direction property
 	panel.addDropdown("Direction", HandOrientationClip.directions, this.properties.extfidir, (v, e, name) => {
 		
@@ -2593,13 +2593,13 @@ function HandshapeClip(o)
 		lrSym: null,
 		udSym: null,
 		ioSym: null,
-		specialfingers: ""
+		specialFingers: ""
 	}
 
 	if(o)
 		this.configure(o);
 
-	this.applySpecial = (this.properties.specialfingers != "" && this.properties.specialfingers != " ");
+	this.applySpecial = (this.properties.specialFingers != "" && this.properties.specialFingers != " ");
 
 	this.color = "#1a1f23";
 	this.font = "11px Calibri";
@@ -2624,7 +2624,7 @@ HandshapeClip.prototype.configure = function(o)
 			this.properties[p] = o[p];
 		}
 		if(typeof(this.properties[p]) == 'string') {
-			if(p == 'specialfingers')  {
+			if(p == 'specialFingers')  {
 				let fingers = this.properties[p].replaceAll("_", " ").split(" ");
 				for(let i = 0; i < fingers.length; i++) {
 					fingers[i] = capitalize(fingers[i]);
@@ -2636,11 +2636,11 @@ HandshapeClip.prototype.configure = function(o)
 			this.properties[p] = capitalize(this.properties[p].replaceAll("_", " "));
 		}
 	}
-	if(o.specialfingers) {
-		this.properties.specialfingers = "";
-		for(let char of o.specialfingers) {
+	if(o.specialFingers) {
+		this.properties.specialFingers = "";
+		for(let char of o.specialFingers) {
 
-			this.properties.specialfingers += HandshapeClip.fingers[char - 1] + " ";
+			this.properties.specialFingers += HandshapeClip.fingers[char - 1] + " ";
 		}
 	}
 
@@ -2659,7 +2659,7 @@ HandshapeClip.prototype.toJSON = function()
 	
 	for(var i in this.properties)
 	{
-		if(i == "specialfingers") {
+		if(i == "specialFingers") {
 
 			let fingers = this.properties[i].split(" ");
 			json[i] = "";
@@ -2723,7 +2723,7 @@ HandshapeClip.prototype.showInfo = function(panel, callback)
 	}, {filter: true});
 
 
-	panel.addCheckbox("Set as base gaze", this.properties.shift, (v, e, name) =>
+	panel.addCheckbox("Set as base shape", this.properties.shift, (v, e, name) =>
 	{
 		this.properties.shift = v;
 		if(callback)
@@ -2821,7 +2821,7 @@ HandshapeClip.prototype.showInfo = function(panel, callback)
 	panel.addCheckbox("Apply to specific fingers", this.applySpecial, (v,e, name) => {
 		this.applySpecial = v;
 		if(!v) {
-			this.properties.specialfingers = "";
+			this.properties.specialFingers = "";
 		}
 		if(callback)
 			callback(true);
@@ -2830,13 +2830,13 @@ HandshapeClip.prototype.showInfo = function(panel, callback)
 		panel.addText(null, "Select the fingers to apply the movement to.", null, {disabled:true})
 		for(let i=1; i < HandshapeClip.fingers.length; i++) {
 
-			let active = this.properties.specialfingers.includes(HandshapeClip.fingers[i]);
+			let active = this.properties.specialFingers.includes(HandshapeClip.fingers[i]);
 			panel.addCheckbox(HandshapeClip.fingers[i], active, (v,e, name) => {
 				if(v) {
-					this.properties.specialfingers += name + " ";
+					this.properties.specialFingers += name + " ";
 				}
 				else {
-					this.properties.specialfingers = this.properties.specialfingers.replace(name + " ", "");
+					this.properties.specialFingers = this.properties.specialFingers.replace(name + " ", "");
 				}
 				if(callback)
 					callback();
@@ -3153,7 +3153,7 @@ HandConstellationClip.prototype.showInfo = function(panel, callback)
 	panel.addTitle( "Optionals");
 	
 	// Distance property 
-	panel.addNumber("Distance from body", this.properties.distance, (v, e, name) =>
+	panel.addNumber("Distance between hands", this.properties.distance, (v, e, name) =>
 	{
 		this.properties.distance = v;
 		if(callback)
@@ -3439,7 +3439,7 @@ DirectedMotionClip.prototype.showInfo = function(panel, callback)
 	panel.addTitle( "Optionals");
 	
 	// Displacement property
-	panel.addDropdown("Second direction", ["", ...DirectedMotionClip.second_directions], this.properties.secondDirection, (v, e, name) => {
+	panel.addDropdown("Second direction", ["", ...DirectedMotionClip.directions], this.properties.secondDirection, (v, e, name) => {
 	
 		this.properties.secondDirection = v;
 		if(callback)
@@ -3455,7 +3455,7 @@ DirectedMotionClip.prototype.showInfo = function(panel, callback)
 			callback();
 	}, {precision: 3, min: 0, step: 0.01, title: "Meters of the displacement"});
 
-	panel.addDropdown("Curve direction", ["", ...DirectedMotionClip.second_directions], this.properties.curve, (v, e, name) => {
+	panel.addDropdown("Curve direction", ["", ...DirectedMotionClip.directions], this.properties.curve, (v, e, name) => {
 	
 		this.properties.curve = v;
 		if(callback)
@@ -3463,7 +3463,7 @@ DirectedMotionClip.prototype.showInfo = function(panel, callback)
 		
 	}, {filter: true});
 
-	panel.addDropdown("Second curve direction", ["", ...DirectedMotionClip.second_directions], this.properties.secondCurve, (v, e, name) => {
+	panel.addDropdown("Second curve direction", ["", ...DirectedMotionClip.directions], this.properties.secondCurve, (v, e, name) => {
 	
 		this.properties.secondCurve = v;
 		if(callback)
@@ -3471,7 +3471,7 @@ DirectedMotionClip.prototype.showInfo = function(panel, callback)
 		
 	}, {filter: true});
 
-	panel.addNumber("Amplitude of the curve", this.properties.curveSize, (v, e, name) =>
+	panel.addNumber("Curve amplitude (m)", this.properties.curveSize, (v, e, name) =>
 	{
 		this.properties.curveSize = v;
 		if(callback)
@@ -3510,7 +3510,7 @@ DirectedMotionClip.prototype.showInfo = function(panel, callback)
 			this.properties.zigzagSpeed = v;
 			if(callback)
 				callback();
-		}, {precision: 2, min: 0, step: 1});
+		}, {precision: 2, min: 0, step: 1, title: "Oscillations per second"});
 	
 	}
 }
@@ -3546,6 +3546,8 @@ function CircularMotionClip(o)
 		distance: 0.05, // number, radius in metres of the circle. Default 0.05 m (5 cm)
 		startAngle: 0, // where in the circle to start. 0º indicates up. Indicated in degrees. Default to 0º. [-infinity, +infinity]
 		endAngle: 360, // where in the circle to finish. 0º indicates up. Indicated in degrees. Default to 360º. [-infinity, +infinity]
+		ellipseAxisDirection: "", // string, direction of the major axis of the ellipse if the direction were set as 'O' (out). 'I' and 'O' are ignored. If unspecified, defaults to 'L'. 
+		ellipseAxisRatio: 1, // number. Sets the ellipse axes ratio minor/major, where 1 is a circle with radius "distance". If unspecified, defaults to 1. 
 		zigzag: "", // string 26 directions
 		zigzagSize: "", // amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
 		zigzagSpeed: "", // oscillations per second. Default 2
@@ -3632,6 +3634,29 @@ CircularMotionClip.prototype.configure = function(o)
 		}
 	}
 
+	if(o.ellipseAxisDirection) {
+		this.properties.ellipseAxisDirection = "";
+		for(let i = 0; i < o.ellipseAxisDirection.length; i++) {
+			this.properties.ellipseAxisDirection += i > 0 ? " " : "";
+			let char = o.ellipseAxisDirection[i];
+			switch(char) {
+				case "u":
+					this.properties.ellipseAxisDirection += "Up";
+					break;
+				case "d":
+					this.properties.ellipseAxisDirection += "Down";
+					break;
+				case "l":
+					this.properties.ellipseAxisDirection += "Left";
+					break;
+				case "r":
+					this.properties.ellipseAxisDirection += "Right";
+					break;
+			}
+		}
+	}
+	
+
 	if(o.zigzag) {
 		this.properties.zigzag = "";
 		for(let i = 0; i < o.zigzag.length; i++) {
@@ -3672,7 +3697,7 @@ CircularMotionClip.prototype.toJSON = function()
 	}
 	for(let i in this.properties)
 	{
-		if ( (i == "direction" || i == "secondDirection" || i == "zigzag") && this.properties[i] != "") {
+		if ( (i == "direction" || i == "secondDirection" || i == "ellipseAxisDirection"  || i == "zigzag") && this.properties[i] != "") {
 			let d = this.properties[i].split(" ");
 			json[i] = "";
 			for(let j = 0; j < d.length; j++) {
@@ -3761,6 +3786,22 @@ CircularMotionClip.prototype.showInfo = function(panel, callback)
 			callback();
 	}, {precision: 2, step: 0.1});
 
+	panel.addString(null, "Define an ellipse motion", null, {disabled: true});
+
+	panel.addDropdown("Ellipse axis direction", [" ", ...CircularMotionClip.second_directions], this.properties.ellipseAxisDirection, (v, e, name) => {
+				
+		this.properties.ellipseAxisDirection = v;
+		if(callback)
+			callback(true);
+		
+	}, {filter: true, title: "Direction of the axis of the ellipse. Defines the plane orientation."});
+
+	panel.addNumber("Ellipse axis ratio", this.properties.ellipseAxisRatio, (v, e, name) =>
+	{
+		this.properties.ellipseAxisRatio = v;
+		if(callback)
+			callback();
+	}, {precision: 2, step: 0.1, min: 0, max: 1, title: "Ratio of the minor/major radius of the ellipse."});
 
 	panel.addCheckbox("Apply zig-zag", this.zigzag, (v, e, name) =>
 	{
@@ -3916,7 +3957,7 @@ WristMotionClip.prototype.showInfo = function(panel, callback)
 	}, {filter: true});
 
 	// Mode property
-	panel.addDropdown("Direction", WristMotionClip.modes, this.properties.mode, (v, e, name) => {
+	panel.addDropdown("Motion", WristMotionClip.modes, this.properties.mode, (v, e, name) => {
 				
 		this.properties.mode = v;
 		if(callback)
@@ -3929,12 +3970,12 @@ WristMotionClip.prototype.showInfo = function(panel, callback)
 	panel.addTitle( "Optionals");
 
 	// Speed property 
-	panel.addNumber("Oscillations per second", this.properties.speed, (v, e, name) =>
+	panel.addNumber("Speed", this.properties.speed, (v, e, name) =>
 	{
 		this.properties.speed = v;
 		if(callback)
 			callback();
-	}, {precision: 2, step: 0.01, title: "Speed of the movement"});
+	}, {precision: 2, step: 0.01, title: "Oscillations per second"});
 
 	// Intensity property
 	panel.addNumber("Intensity", this.properties.intensity, (v, e, name) =>

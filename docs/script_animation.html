@@ -40,7 +40,7 @@
             }
             .index {
                 padding: 10px;
-                min-width: 15%;
+                min-width: 330px;
                 background-color: rgba(0,0,0,0.05);
             }
             .container {
@@ -113,7 +113,7 @@
                                             <li><a href="#head-movement">Head movement</a></li>
                                             <li><a href="#gaze">Gaze</a></li>
                                             <li><a href="#elbow-raise">Elbow Raise</a></li>
-                                            <li><a href="#shoulder-raise">Shoulder Raise</a></li>
+                                            <li><a href="#shoulder-movement">Shoulder Movement</a></li>
                                             <li><a href="#arm-location">Arm Location</a></li>
                                             <li><a href="#hand-constellation">Hand Constellation</a></li>
                                             <li><a href="#directed-motion">Directed Motion</a></li>
@@ -131,11 +131,20 @@
                             </details>
                         </li>
                         <li>
-                            <details>   
+                            <details open>   
                                 <summary>
-                                    <a href="#editing">Editing</a></li>
+                                    <a href="#editing">Editing</a>
                                 </summary>
+                                <ul>
+                                    <li><a href="#editing-repository">From a repository</a></li>
+                                    <li><a href="#editing-preset">From a preset</a></li>
+                                    <li><a href="#editing-clip">From scratch</a></li>
+
+                                    
+    
+                                </ul>
                             </details>
+                        </li>
                     </ul>
                 </li>
             </ul>
@@ -155,7 +164,7 @@
             <p>The color of a clip depends on its type behaviour.
                 Upon selecting a clip, its highlighter and name color shift to white. The <i>fade-in</i> and <i>fade-out</i> animations of the clip are denoted by intensified colors. The <i>fade-in</i> signifies when the action is achieved, while the <i>fade-out</i> marks the point when the character begins returning to their default state.</p>
             
-            <div class="cell">
+            <div class="cell" style="width: fit-content;">
                 <img src="clips_selection.png" width="1000">
                 <p>Selection of a <i>Hand orientation</i> clip in the timeline.</p>
             </div>
@@ -286,8 +295,8 @@
                         <h4 class="properties-section">Content</h4>
                             <li class="property"><b>Text</b><br><p>String of the text which is wanted to be simulated in the form of ARPABET 1-letter.</p></li>
                             <li><p><u>Optionals</u></p></li>
-                            <li class="property"><b>Speed <span style="color: orangered;">*</span></b><br><p>Phonemes per second of the whole string. Humans speak at 8 phonemes per second (lower boundary).</p></li>
-                            <li class="property"><b>Intensity <span style="color: orangered;">*</span></b><br><p>Visual exaggeration of phonemes. In the interval [0,1].</p></li>
+                            <li class="property"><b>Speed <span style="color: orangered;"> *</span></b><br><p>Phonemes per second of the whole string. Humans speak at 8 phonemes per second (lower boundary).</p></li>
+                            <li class="property"><b>Intensity <span style="color: orangered;"> *</span></b><br><p>Visual exaggeration of phonemes. In the interval [0,1].</p></li>
                             <br><li class="property" style="color:gray"><span style="color: orangered;">*</span> It can be specified individually for each phoneme. Turn ON the <i>Set for each phonema</i> property.</li>
                         <h4 class="properties-section">Time</h4>
                             <li class="property"><b>Start</b><p>Second at which the mouthing begins.</p></li>
@@ -368,7 +377,7 @@
                                     </details>
                                     <p></p>
                                 </li>
-                                <li class="property"><b>Base gaze</b><br><p>Turning <i>ON</i> permanently change the gaze direction of the character towards the target.</p></li>
+                                <li class="property"><b>Base gaze</b><br><p>Turning <i>ON</i> permanently changes the gaze direction of the character towards the target.</p></li>
                                 <li><p><u>Optionals</u></p></li>
                                 <li class="property"><b>Offset angle</b><br><p>Adds an angle degrees offset to gaze direction relative to the target in the direction specified in the <i>Offset direction</i>. In degrees. By default is 0.0.</p>
                                 <li class="property"><b>Offset direction</b><br><p>Direction of the <i>Offset angle</i>> angle. Same directions as target property.</p></li>
@@ -396,7 +405,7 @@
                             <h4 class="properties-section">Content</h4>
                                 <li class="property"><b>Side</b><br><p>What arm is being moved: <i>Left</i>, <i>Right</i>, <i>Both</i>. By the default is the arm of the specified dominant hand.</p>
                                 <li class="property"><b>Amplitude</b><br><p>A float value between 0..1 to indicate the amount of the movement. 0 means immeasurable small; 0.5 means "moderate"; 1 means maximally large.</p></li>
-                                <li class="property"><b>Base elbow position</b><br><p>Turning <i>ON</i> permanently change the position of the elbow.</p></li>
+                                <li class="property"><b>Base elbow position</b><br><p>Turning <i>ON</i> permanently changes the position of the elbow.</p></li>
                             <h4 class="properties-section">Time</h4>
                                 <li class="property"><b>Start</b><p>Second at which the elbow starts to raise.</p></li>
                                 <li class="property"><b>Duration</b><p>Duration time, in seconds, of elbow returned to default position.</p></li>
@@ -410,7 +419,7 @@
 
                 <!-- Shoulder clip -->
                 <li>
-                    <h3 id="shoulder-raise">Shoulder movement</h3>
+                    <h3 id="shoulder-movement">Shoulder movement</h3>
                     <p>Moves the shoulder up or froward.</p>
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div>         
@@ -420,7 +429,7 @@
                                 <li class="property"><b>Movement</b><br><p>Name of the particular shoulder movement. <i>Raise</i> or <i>Hunch</i>.</p>
                                 <li class="property"><b>Side</b><br><p>What arm is being moved: <i>Left</i>, <i>Right</i>, <i>Both</i>. By the default is the arm of the specified dominant hand.</p>
                                 <li class="property"><b>Amplitude</b><br><p>A float value between 0..1 to indicate the amount of the movement. 0 means immeasurable small; 0.5 means "moderate"; 1 means maximally large.</p></li>
-                                <li class="property"><b>Base shoulder position</b><br><p>Turning <i>ON</i> permanently change the position of the shoulder.</p></li>
+                                <li class="property"><b>Base shoulder position</b><br><p>Turning <i>ON</i> permanently changes the position of the shoulder.</p></li>
                             <h4 class="properties-section">Time</h4>
                                 <li class="property"><b>Start</b><p>Second at which the shoulder starts the movement.</p></li>
                                 <li class="property"><b>Duration</b><p>Duration time, in seconds, of shoulder returned to default position.</p></li>
@@ -492,11 +501,11 @@
                                     <p></p>
                                 </li>
                                 <li class="property"><b>Arm</b><br><p>What arm is being moved: <i>Left</i>, <i>Right</i>, <i>Both</i>. By the default is the arm of the specified dominant hand.</p></li>
-                                <li class="property"><b>Base shoulder position</b><br><p>Turning <i>ON</i> permanently change the position of the shoulder.</p></li>
+                                <li class="property"><b>Base shoulder position</b><br><p>Turning <i>ON</i> permanently changes the position of the shoulder.</p></li>
                                 <li><p><u>Optionals</u></p></li>
                                 <li class="property"><b>Side</b><br><p>Generic horizontal offset of the chosen point: <i>Left</i>, <i>Right</i>, <i>Slightly Left</i>, <i>Slightly Right</i>.</p></li>
                                 <li class="property"><b>Second location</b><br><p>Same as <i>Arm location</i>. If this property is set, the final point corresponds to the middlepoint between both. Same locations as <i>Arm location</i> property.</p></li>
-                                <li class="property"><b>Second side</b><span style="color: orangered;">*</span><br><p>Generic horizontal offset of the chosen point of the second location. It appears if <i>Second location</i> property is set.</p></li>
+                                <li class="property"><b>Second side</b><span style="color: orangered;"> *</span><br><p>Generic horizontal offset of the chosen point of the second location. It appears if <i>Second location</i> property is set.</p></li>
                                 <li class="property"><b>Distance</b><br><p>How far from the body the wrist has to be located. 0 means immeasurable close; 1 means maximally arm extended.</p></li>
                                 <li class="property"><b>Displace</b><br><p>Offset direction of the target location.</p>
                                     <details>
@@ -547,9 +556,8 @@
                                         </div>
                                     </details>
                                     <p></p>
-                                </li>
-                                <li class="property"><b>Finger</b><span style="color: orangered;">*</span><br><p>Finger that will try to reach the target. Only appears if the location is <i>Tip</i>, <i>Pad</i>, <i>Mid</i>, <i>Base</i>.</p></li>
-                                <li class="property"><b>Side</b><span style="color: orangered;">*</span><br><p>Specific hand side that will try to reach the target. Not appears if the location is <i>Tip</i>.</p>
+                                </li>             
+                                <li class="property"><b>Side</b><span style="color: orangered;"> *</span><br><p>Specific hand side that will try to reach the target. Not appears if the location is <i>Tip</i>.</p>
                                     <details>
                                         <summary style="padding-left: 1em;"><i>List of hand sides</i></summary>
                                         <div class="table">
@@ -564,6 +572,7 @@
                                     </details>
                                     <p></p>
                                 </li>
+                                <li class="property"><b>Finger</b><span style="color: orangered;"> *</span><br><p>Finger that will try to reach the target. Only appears if the location is <i>Tip</i>, <i>Pad</i>, <i>Mid</i>, <i>Base</i>.</p></li>
                                 <br><li class="property" style="color:gray"><span style="color: orangered;">*</span> It only appears if the related optional property is defined.</li>
 
                             <h4 class="properties-section">Time</h4>
@@ -580,49 +589,524 @@
                 <!-- Hand constellation clip -->
                 <li>
                     <h3 id="hand-constellation">Hand Constellation</h3>
-                    <p>Moves the hand positions relative to each other. The motion is stopped if an <i>Arm location</i> clip is executed afterwards.</p>
+                    <p>Moves the hands relative to each other. The motion is stopped if an <i>Arm location</i> clip is executed afterwards.</p>
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div>         
-                            <!-- <ul>
+                            <ul>
                                 <li class="property"><b>Id</b><br><p>Identifier name. The default value is <i>Hand Constellation</i>.</p></li>
                             <h4 class="properties-section">Content</h4>
-                                <li class="property"><b>Hand</b><br><p>What arm is being moved: <i>Left</i>, <i>Right</i>, <i>Both</i>. By the default is the arm of the specified dominant hand.</p>
-                                <li class="property"><b>Amplitude</b><br><p>A float value between 0..1 to indicate the amount of the movement. 0 means immeasurable small; 0.5 means "moderate"; 1 means maximally large.</p></li>
-                                <li class="property"><b>Base elbow position</b><br><p>Turning <i>ON</i> permanently change the position of the elbow.</p></li>
+                                <li class="property"><b>Hand</b><br><p>Main hand that will be moved: <i>Left</i>, <i>Right</i>, <i>Both</i>, <i>Dominant</i>, <i>Non dominant</i>. If <i>Both</i> value is set, the both hands positions will be moved. By the default is the specified dominant hand.</p>
+                                <li class="property"><b>Location</b><span style="color:cadetblue;">*</span><br><p>Part of the hand that will try to reach the other hand. By default is <i>Pad</i>. The secondary hand can have values that include both hand and arm locations.</p>
+                                    <details>
+                                        <summary style="padding-left: 1em;"><i>List of hand parts</i></summary>
+                                        <div class="table">
+                                            <div class="cell"><img class="thumbnail" src="">Tip</div>
+                                            <div class="cell"><img class="thumbnail" src="">Pad</div>
+                                            <div class="cell"><img class="thumbnail" src="">Mid</div>
+                                            <div class="cell"><img class="thumbnail" src="">Base</div>
+                                            <div class="cell"><img class="thumbnail" src="">Thumb ball</div>
+                                            <div class="cell"><img class="thumbnail" src="">Hand</div>
+                                            <div class="cell"><img class="thumbnail" src="">Wrist</div>
+                                        </div>
+                                    </details>
+                                    <p></p>
+                                    <details>
+                                        <summary style="padding-left: 1em;"><i>List of arm parts</i></summary>
+                                        <div class="table">
+                                            <div class="cell"><img class="thumbnail" src="">Forearm</div>
+                                            <div class="cell"><img class="thumbnail" src="">Elbow</div>
+                                            <div class="cell"><img class="thumbnail" src="">Upper arm</div>
+                                        </div>
+                                    </details>
+                                    <p></p>
+                                </li>
+                                <li class="property"><b>Side</b><span style="color: orangered;"> *</span><span style="color:cadetblue;">*</span><br><p>Specific hand side that will try to reach the other hand. Not appears if the location is <i>Tip</i>.</p>
+                                    <details>
+                                        <summary style="padding-left: 1em;"><i>List of hand sides</i></summary>
+                                        <div class="table">
+                                            <div class="cell"><img class="thumbnail" src="">Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Ulnar</div>
+                                            <div class="cell"><img class="thumbnail" src="">Radial</div>
+                                            <div class="cell"><img class="thumbnail" src="">Front</div>
+                                            <div class="cell"><img class="thumbnail" src="">Back</div>
+                                            <div class="cell"><img class="thumbnail" src="">Palmar</div>
+                                        </div>
+                                    </details>
+                                    <p></p>
+                                </li>
+                                <li class="property"><b>Finger</b><span style="color: orangered;"> *</span><span style="color: cadetblue;">*</span><br><p>Finger that will try to reach the other hand. Only appears if the location is <i>Tip</i>, <i>Pad</i>, <i>Mid</i>, <i>Base</i>.</p></li>
+                                <br><li class="property" style="color:gray"><span style="color: orangered;">*</span> It only appears if the related optional property is defined.</li>
+                                <li class="property" style="color:gray"><span style="color: cadetblue;">*</span> It has to be defined for the both hands.</li>
+                                <li><p><u>Optionals</u></p></li>
+                                <li class="property"><b>Distance</b><br><p>Distance between hand targets. 0 is touching; 1 is the arm size.</p></li>
+                                <li class="property"><b>Distance direction</b><br><p>Direction in which to apply the distance. If not provided, defaults to horizontal outwards direction.</p></li>
+
                             <h4 class="properties-section">Time</h4>
-                                <li class="property"><b>Start</b><p>Second at which the elbow starts to raise.</p></li>
-                                <li class="property"><b>Duration</b><p>Duration time, in seconds, of elbow returned to default position.</p></li>
+                                <li class="property"><b>Start</b><p>Second at which the hand/s start/s the movement.</p></li>
+                                <li class="property"><b>Duration</b><p>Duration time, in seconds, of hand/s returned to default position.</p></li>
                             <h4 class="properties-section">Sync-point</h4>
-                                <li class="property"><b>Attack Peak</b><p>Second at which the elbow raise is acquired. In the interval [0, duration].</p></li>
-                                <li class="property"><b>Relax</b><p>Second at which the elbow starts returning to default position. In the interval [0, duration].</p></li>
-                            </ul> -->
+                                <li class="property"><b>Attack Peak</b><p>Second at which the hand/s position is/are acquired. In the interval [0, duration].</p></li>
+                                <li class="property"><b>Relax</b><p>Second at which the hand/s start/s returning to default position. In the interval [0, duration].</p></li>
+                            </ul>
                         </div>
                     </div>
                 </li>
-                <li><h3 id="directed-motion">Directed Motion</h3></li>
-                <li><h3 id="circular-motion">Circular Motion</h3></li>
+
+                <!-- Directed motion clip -->
+                <li>
+                    <h3 id="directed-motion">Directed Motion</h3>
+                    <p>Moves the arm (wrist) along a linear path. The motion is stopped if an <i>Arm location</i> clip is executed afterwards.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>         
+                            <ul>
+                                <li class="property"><b>Id</b><br><p>Identifier name. The default value is <i>Directed Motion</i>.</p></li>
+                            <h4 class="properties-section">Content</h4>
+                                <li class="property"><b>Hand</b><br><p>What arm is being moved: <i>Left</i>, <i>Right</i>, <i>Both</i>. By the default is the arm of the specified dominant hand.</p>
+                                <li class="property"><b>Direction</b><br><p>Direction of the movement.</p>
+                                    <details>
+                                        <summary style="padding-left: 1em;"><i>List of directions</i></summary>
+                                        <div class="table">
+                                            <div class="cell"><img class="thumbnail" src="">Up</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down</div>
+                                            <div class="cell"><img class="thumbnail" src="">Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Left In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Left Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Right In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Right Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Out Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Out Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down In Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down In Right</div>
+                                        </div>
+                                    </details>
+                                    <p></p>
+                                  
+                                <li><p><u>Optionals</u></p></li>
+                                <li class="property"><b>Second direction</b><br><p>If this property is set, the final wrist position corresponds to the middlepoint between both directions.</p></li>
+                                <li class="property"><b>Distance</b><br><p>Meters if the displacement. By default is 0.2m.</p></li>
+                                <li class="property"><b>Curve direction</b><br><p>Defines the curve direction to reach the final position of the wrist. If not specified, the wrist movement follows a straight path.</p></li>
+                                <li class="property"><b>Second curve direction</b><br><p>If this property is set, the final curve motion corresponds to the middlepoint between both directions.</p></li>
+                                <li class="property"><b>Curve amplitude</b><br><p>Amplitude of the curve motion. In meters.</p></li>
+                                <li class="property"><b>Zig-zag direction</b><span style="color: orangered;"> *</span><br><p>Defines the zig-zag direction to reach the final position of the wrist. If not specified, the wrist movement follows a straight path.</p></li>
+                                <li class="property"><b>Zig-zag amplitude</b><span style="color: orangered;"> *</span><br><p>Amplitude of the zig-zag motion. In meters.</p></li>
+                                <li class="property"><b>Zig-zag speed</b><span style="color: orangered;"> *</span><br><p>Oscillations per second.</p></li>
+                                <br><li class="property" style="color:gray"><span style="color: orangered;">*</span> It only appears if <i>Apply zig-zag</i> property is <i>ON</i>.</li>
+
+                            <h4 class="properties-section">Time</h4>
+                                <li class="property"><b>Start</b><p>Second at which the arm starts the movement.</p></li>
+                                <li class="property"><b>Duration</b><p>Duration time, in seconds, of arm returned to default position.</p></li>
+                            <h4 class="properties-section">Sync-point</h4>
+                                <li class="property"><b>Attack Peak</b><p>Second at which the wrist motion is acquired. In the interval [0, duration].</p></li>
+                                <li class="property"><b>Relax</b><p>Second at which the arm starts returning to default position. In the interval [0, duration].</p></li>
+                            </ul>
+                        </div>
+                    </div>
+                </li>
+                
+                <!-- Circular motion clip -->
+                <li>
+                    <h3 id="circular-motion">Circular Motion</h3>
+                    <p>Moves the arm (wrist) along a circular path. The motion is stopped if an <i>Arm location</i> clip is executed afterwards.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>         
+                            <ul>
+                                <li class="property"><b>Id</b><br><p>Identifier name. The default value is <i>Circular Motion</i>.</p></li>
+                            <h4 class="properties-section">Content</h4>
+                                <li class="property"><b>Hand</b><br><p>What arm is being moved: <i>Left</i>, <i>Right</i>, <i>Both</i>. By the default is the arm of the specified dominant hand.</p>
+                                <li class="property"><b>Direction</b><br><p>Direction of the axis rotation.</p>
+                                    <details>
+                                        <summary style="padding-left: 1em;"><i>List of directions</i></summary>
+                                        <div class="table">
+                                            <div class="cell"><img class="thumbnail" src="">Up</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down</div>
+                                            <div class="cell"><img class="thumbnail" src="">Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Left In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Left Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Right In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Right Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Out Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Out Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down In Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down In Right</div>
+                                        </div>
+                                    </details>
+                                    <p></p>
+                                  
+                                <li><p><u>Optionals</u></p></li>
+                                <li class="property"><b>Second direction</b><br><p>If this property is set, the final wrist position corresponds to the middlepoint between both directions.</p></li>
+                                <li class="property"><b>Distance</b><br><p>Radius of the circular displacement in meters.</p></li>
+                                <li class="property"><b>Start angle</b><br><p>Defines the starting angle for the motion within the circle. 0.0 means up; 180 means down. By default is 0.0º.</p></li>
+                                <li class="property"><b>End angle</b><br><p>Defines the finishing angle for the motion within the circle. 0.0 means up; 180 means down. By default is 360.0º.</p></li>
+                                <li class="property"><b>Ellipse axis ratio</b><br><p>Ratio of the minor/major radius in an ellipse. 1 means circle with a radius of <i>distance</i>. By default is 1, a circular motion.</p></li>
+                                <li class="property"><b>Ellipse axis direction</b><br><p>Direction of the major radius of the ellipse. Only applied if the <i>Ellipse axis ratio</i> value is different to 1.</p>
+                                    <details>
+                                        <summary style="padding-left: 1em;"><i>List of directions</i></summary>
+                                        <div class="table">
+                                            <div class="cell"><img class="thumbnail" src="">Up</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down</div>
+                                            <div class="cell"><img class="thumbnail" src="">Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Right</div>
+                                        </div>
+                                    </details>
+                                    <p></p>
+                                </li>
+                                <li class="property"><b>Zig-zag direction</b><span style="color: orangered;"> *</span><br><p>Defines the zig-zag direction to reach the final position of the wrist. If not specified, the wrist movement follows a straight path.</p></li>
+                                <li class="property"><b>Zig-zag amplitude</b><span style="color: orangered;"> *</span><br><p>Amplitude of the zig-zag motion. In meters.</p></li>
+                                <li class="property"><b>Zig-zag speed</b><span style="color: orangered;"> *</span><br><p>Oscillations per second.</p></li>
+                                <br><li class="property" style="color:gray"><span style="color: orangered;">*</span> It only appears if <i>Apply zig-zag</i> property is <i>ON</i>.</li>
+
+                            <h4 class="properties-section">Time</h4>
+                                <li class="property"><b>Start</b><p>Second at which the arm starts the movement.</p></li>
+                                <li class="property"><b>Duration</b><p>Duration time, in seconds, of arm returned to default position.</p></li>
+                            <h4 class="properties-section">Sync-point</h4>
+                                <li class="property"><b>Attack Peak</b><p>Second at which the wrist motion is acquired. In the interval [0, duration].</p></li>
+                                <li class="property"><b>Relax</b><p>Second at which the arm starts returning to default position. In the interval [0, duration].</p></li>
+                            </ul>
+                        </div>
+                    </div>
+                </li>
             </ul>
             <p>Hands behaviours:</p>
             <ul>
-                <li><h3 id="palm-orientation">Palm Orientation</h3></li>
-                <li><h3 id="hand-orientation">Hand Orientation</h3></li>
-                <li><h3 id="wrist-motion">Wrist Motion</h3></li>
-                <li><h3 id="fingerplay">Fingerplay</h3></li>
-                <li><h3 id="handshape">Handshape</h3></li>
+                <!-- Palm orientation clip -->
+                <li>
+                    <h3 id="palm-orientation">Palm Orientation</h3>
+                    <p>Orientation of the hand palm rolling the wrist joint.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>         
+                            <ul>
+                                <li class="property"><b>Id</b><br><p>Identifier name. The default value is <i>Palm orientation</i>.</p></li>
+                            <h4 class="properties-section">Content</h4>
+                                <li class="property"><b>Hand</b><br><p>What hand is being rotated: <i>Left</i>, <i>Right</i>, <i>Both</i>. By the default is the arm of the specified dominant hand.</p>
+                                <li class="property"><b>Direction</b><br><p>Direction relative to the arm.</p>
+                                    <details>
+                                        <summary style="padding-left: 1em;"><i>List of directions</i></summary>
+                                        <div class="table">
+                                            <div class="cell"><img class="thumbnail" src="">Up</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down</div>
+                                            <div class="cell"><img class="thumbnail" src="">Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Left In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Left Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Right In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Right Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Out Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Out Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down In Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down In Right</div>
+                                        </div>
+                                    </details>
+                                    <p></p>
+                                </li>  
+                                <li class="property"><b>Base orientation</b><br><p>Turning <i>ON</i> permanently changes the hand's rotation.</p></li>
+
+                                <li><p><u>Optionals</u></p></li>
+                                <li class="property"><b>Second direction</b><br><p>If this property is set, the final orientation corresponds to the middlepoint between both directions.</p></li>
+
+                            <h4 class="properties-section">Time</h4>
+                                <li class="property"><b>Start</b><p>Second at which the wrist starts the rotation.</p></li>
+                                <li class="property"><b>Duration</b><p>Duration time, in seconds, of wrist returned to default rotation.</p></li>
+                            <h4 class="properties-section">Sync-point</h4>
+                                <li class="property"><b>Attack Peak</b><p>Second at which the palm orientation target is acquired. In the interval [0, duration].</p></li>
+                                <li class="property"><b>Relax</b><p>Second at which the wrist starts returning to default rotation. In the interval [0, duration].</p></li>
+                            </ul>
+                        </div>
+                    </div>
+                </li>
+
+                <!-- Hand orientation clip -->
+                <li>
+                    <h3 id="hand-orientation">Hand Orientation</h3>
+                    <p>Orientation of the hand involving both yawing and pitching of the wrist joint.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>         
+                            <ul>
+                                <li class="property"><b>Id</b><br><p>Identifier name. The default value is <i>Hand orientation</i>.</p></li>
+                            <h4 class="properties-section">Content</h4>
+                                <li class="property"><b>Hand</b><br><p>What hand is being rotated: <i>Left</i>, <i>Right</i>, <i>Both</i>. By the default is the arm of the specified dominant hand.</p>
+                                <li class="property"><b>Direction</b><br><p>Direction relative to the arm.</p>
+                                    <details>
+                                        <summary style="padding-left: 1em;"><i>List of directions</i></summary>
+                                        <div class="table">
+                                            <div class="cell"><img class="thumbnail" src="">Up</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down</div>
+                                            <div class="cell"><img class="thumbnail" src="">Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Right</div>
+                                        </div>
+                                    </details>
+                                    <p></p>
+                                </li>  
+                                <li class="property"><b>Base orientation</b><br><p>Turning <i>ON</i> permanently changes the palm's orientation.</p></li>
+
+                                <li><p><u>Optionals</u></p></li>
+                                <li class="property"><b>Second direction</b><br><p>If this property is set, the final orientation corresponds to the middlepoint between both directions.</p></li>
+
+                            <h4 class="properties-section">Time</h4>
+                                <li class="property"><b>Start</b><p>Second at which the wrist starts the rotation.</p></li>
+                                <li class="property"><b>Duration</b><p>Duration time, in seconds, of wrist returned to default rotation.</p></li>
+                            <h4 class="properties-section">Sync-point</h4>
+                                <li class="property"><b>Attack Peak</b><p>Second at which the hand orientation target is acquired. In the interval [0, duration].</p></li>
+                                <li class="property"><b>Relax</b><p>Second at which the wrist starts returning to default rotation. In the interval [0, duration].</p></li>
+                            </ul>
+                        </div>
+                    </div>
+                </li>
+
+                <!-- Wrist motion clip -->
+                <li>
+                    <h3 id="wrist-motion">Wrist Motion</h3>
+                    <p>Repetitive swinging, nodding, and twisting motions of the wrist, akin to a wiggle for the wrist.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>         
+                            <ul>
+                                <li class="property"><b>Id</b><br><p>Identifier name. The default value is <i>Wrist motion</i>.</p></li>
+                            <h4 class="properties-section">Content</h4>
+                                <li class="property"><b>Hand</b><br><p>What hand wrist is being moved: <i>Left</i>, <i>Right</i>, <i>Both</i>. By the default is the arm of the specified dominant hand.</p>
+                                <li class="property"><b>Motion</b><br><p>What movement the wrist will perform.</p>
+                                    <details>
+                                        <summary style="padding-left: 1em;"><i>List of motions</i></summary>
+                                        <div class="table">
+                                            <div class="cell"><img class="thumbnail" src="">Nod</div>
+                                            <div class="cell"><img class="thumbnail" src="">Swing</div>
+                                            <div class="cell"><img class="thumbnail" src="">Twist</div>
+                                            <div class="cell"><img class="thumbnail" src="">Stir CW</div>
+                                            <div class="cell"><img class="thumbnail" src="">Stir CCW</div>
+                                            <div class="cell"><img class="thumbnail" src="">All</div>
+                                        </div>
+                                    </details>
+                                    <p></p>
+                                </li>  
+                                <li><p><u>Optionals</u></p></li>
+                                <li class="property"><b>Speed</b><br><p>Oscillations (repetitions) per second of the movement.</p></li>
+                                <li class="property"><b>Intensity</b><br><p>Amplitude of the movement.</p></li>
+
+                            <h4 class="properties-section">Time</h4>
+                                <li class="property"><b>Start</b><p>Second at which the wrist starts the rotation.</p></li>
+                                <li class="property"><b>Duration</b><p>Duration time, in seconds, of wrist returned to default rotation.</p></li>
+                            <h4 class="properties-section">Sync-point</h4>
+                                <li class="property"><b>Attack Peak</b><p>Second at which the motion peak is acquired. In the interval [0, duration].</p></li>
+                                <li class="property"><b>Relax</b><p>Second at which the wrist starts returning to default rotation. In the interval [0, duration].</p></li>
+                            </ul>
+                        </div>
+                    </div>
+                </li>
+
+                <!-- Finger play clip -->
+                <li>
+                    <h3 id="fingerplay">Finger play</h3>
+                    <p>Move the fingers of the hand in a wiggling motion.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>         
+                            <ul>
+                                <li class="property"><b>Id</b><br><p>Identifier name. The default value is <i>Fingerplay</i>.</p></li>
+                            <h4 class="properties-section">Content</h4>
+                                <li class="property"><b>Hand</b><br><p>From which hand the fingers are being moved: <i>Left</i>, <i>Right</i>, <i>Both</i>. By the default is the arm of the specified dominant hand.</p>
+                               
+                                <li><p><u>Optionals</u></p></li>
+                                <li class="property"><b>Fingers</b><br><p>Which fingers are being moved. If no one is <i>ON</i>, all fingers are moved by default.</p></li>
+                                <li class="property"><b>Speed</b><br><p>Oscillations (repetitions) per second of the movement.</p></li>
+                                <li class="property"><b>Intensity</b><br><p>Amplitude of the movement.</p></li>
+
+                            <h4 class="properties-section">Time</h4>
+                                <li class="property"><b>Start</b><p>Second at which the fingers start the motion.</p></li>
+                                <li class="property"><b>Duration</b><p>Duration time, in seconds, of fingers returned to default rotation.</p></li>
+                            <h4 class="properties-section">Sync-point</h4>
+                                <li class="property"><b>Attack Peak</b><p>Second at which the motion peak is acquired. In the interval [0, duration].</p></li>
+                                <li class="property"><b>Relax</b><p>Second at which the fingers start returning to default rotation. In the interval [0, duration].</p></li>
+                            </ul>
+                        </div>
+                    </div>
+                </li>
+
+                <!-- Hand shape clip -->
+                <li>
+                    <h3 id="handshape">Hand shape</h3>
+                    <p>Specifies the posture of the fingers of the hand,</p>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>         
+                            <ul>
+                                <li class="property"><b>Id</b><br><p>Identifier name. The default value is <i>Handshape</i>.</p></li>
+                            <h4 class="properties-section">Content</h4>
+                                <li class="property"><b>Hand</b><br><p>From which hand the fingers are being specified: <i>Left</i>, <i>Right</i>, <i>Both</i>. By the default is the arm of the specified dominant hand.</p>
+                                <li class="property"><b>Hand shape</b><br><p>Configuration of the hand from the available list. Fingers are represented as numbers, 1 means <i>thumb</i>; 5 means <i>pinky</i>.</p>
+                                    <details>
+                                        <summary style="padding-left: 1em;"><i>List of hand shapes</i></summary>
+                                        <div class="table">
+                                            <div class="cell"><img class="thumbnail" src="">Fist</div>
+                                            <div class="cell"><img class="thumbnail" src="">Finger 2</div>
+                                            <div class="cell"><img class="thumbnail" src="">Finger 23</div>
+                                            <div class="cell"><img class="thumbnail" src="">Finger 23 spread</div>
+                                            <div class="cell"><img class="thumbnail" src="">Finger 2345</div>
+                                            <div class="cell"><img class="thumbnail" src="">Flat</div>
+                                            <div class="cell"><img class="thumbnail" src="">Pinch 12</div>
+                                            <div class="cell"><img class="thumbnail" src="">Pinch 12 open</div>
+                                            <div class="cell"><img class="thumbnail" src="">Pinch all</div>
+                                            <div class="cell"><img class="thumbnail" src="">Cee all</div>
+                                            <div class="cell"><img class="thumbnail" src="">Cee 12</div>
+                                            <div class="cell"><img class="thumbnail" src="">Cee 12 open</div>
+                                        </div>
+                                    </details>
+                                    <p></p>
+                                </li>
+                                <li class="property"><b>Base shape</b><br><p>Turning <i>ON</i> permanently changes the hand shape.</p></li>
+
+                                <li><p><u>Optionals</u></p></li>
+                                <li class="property"><b>Thumb shape</b><br><p>Specific posture of the thumb finger. It overwirtes the hand shape configuration for this finger. If not specified, the predefined hand shape will be used.</p></li>
+                                <li class="property"><b>Thumb combination opening</b><br><p> Distance between the thumb and the other fingers. Expressed on a scale of 0 to 1, where 0 signifies close proximity; 1 indicates maximum separation.</p>
+                                    <details>
+                                        <summary style="padding-left: 1em;"><i>List of thumb combination hand shapes</i></summary>
+                                        <div class="table">
+                                            <div class="cell"><img class="thumbnail" src="">Default</div>
+                                            <div class="cell"><img class="thumbnail" src="">Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Opposed</div>
+                                            <div class="cell"><img class="thumbnail" src="">Across</div>
+                                            <div class="cell"><img class="thumbnail" src="">Touch</div>
+                                        </div>
+                                    </details>
+                                    <p></p>
+                                </li>                        
+                                <li class="property"><b>Main splay</b><span style="color: orangered;">*</span><br><p>Distance between fingers. Expressed on a scale of 0 to 1, where 0 signifies close proximity; 1 indicates maximum separation. By default is 0.5.</p></li>
+                                <li class="property"><b>Main bend</b><br><p>Flexion applied to chosen fingers from the default hand shape. Basic hand shapes and thumb combination hand shapes have distinct behavior.</p>
+                                    <details>
+                                        <summary style="padding-left: 1em;"><i>List of bend states</i></summary>
+                                        <div class="table">
+                                            <div class="cell"><img class="thumbnail" src="">Straight</div>
+                                            <div class="cell"><img class="thumbnail" src="">Half bent</div>
+                                            <div class="cell"><img class="thumbnail" src="">Bent</div>
+                                            <div class="cell"><img class="thumbnail" src="">Round</div>
+                                            <div class="cell"><img class="thumbnail" src="">Hooked</div>
+                                            <div class="cell"><img class="thumbnail" src="">Double bent</div>
+                                            <div class="cell"><img class="thumbnail" src="">Double hooked</div>
+                                        </div>
+                                    </details>
+                                    <p></p>
+                                </li>
+
+                                <li class="property"><b>Second hand shape</b><br><p>Second configuration of the hand from the available lis.</p>
+                                <li class="property"><b>Second hhumb shape</b><br><p>Second posture of the thumb finger.</p></li>
+                                <li class="property"><b>Second thumb combination opening</b><br><p>Second distance between the thumb and the other fingers.</p>
+                                <li class="property"><b>Second main bend</b><br><p>Second flexion applied to chosen fingers from the default hand shape.</p>
+                                
+                                <li class="property"><b>Specific fingers</b><span style="color: orangered;"> *</span><br><p>Specific fingers to apply the configuration. If no one is specified, by default all are included in the shape.</p>
+
+                                <br><li class="property" style="color:gray"><span style="color: orangered;">*</span> It appears if the related activation property is <i>ON</i>.</li>
+
+                            <h4 class="properties-section">Time</h4>
+                                <li class="property"><b>Start</b><p>Second at which the fingers start the motion.</p></li>
+                                <li class="property"><b>Duration</b><p>Duration time, in seconds, of fingers returned to default hand configuration.</p></li>
+                            <h4 class="properties-section">Sync-point</h4>
+                                <li class="property"><b>Attack Peak</b><p>Second at which the hand shape is acquired. In the interval [0, duration].</p></li>
+                                <li class="property"><b>Relax</b><p>Second at which the fingers start returning to default configuration. In the interval [0, duration].</p></li>
+                            </ul>
+                        </div>
+                    </div>
+                </li>
             </ul>
             <p>Body behaviours:</p>
             <ul>
-                <li><h3 id="body-movement">Body movement</h3></li>
+
+                <!-- Body movement clip -->
+                <li>
+                    <h3 id="body-movement">Body movement</h3>
+                    <p>Moves the position of the body (trunk) by tilting forward-backward, tilting left-right, and rotating left-right. New gestures can be incorporated alongside the existing ones, without replacing them.</p>
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <div>         
+                            <ul>
+                                <li class="property"><b>Id</b><br><p>Identifier name. The default value is <i>Body movement</i>.</p></li>
+                            <h4 class="properties-section">Content</h4>
+                                <li class="property"><b>Movement</b><br><p>Which movement the body perfomrs from the available list.</p>
+                                    <details>
+                                        <summary style="padding-left: 1em;"><i>List of bend states</i></summary>
+                                        <div class="table">
+                                            <div class="cell"><img class="thumbnail" src="">Tilt forward</div>
+                                            <div class="cell"><img class="thumbnail" src="">Tilt backward</div>
+                                            <div class="cell"><img class="thumbnail" src="">Tilt left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Tilt right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Rotate left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Rotate right</div>
+                                        </div>
+                                    </details>
+                                    <p></p>
+                                </li>
+                                <li class="property"><b>Intensity</b><br><p>Amplitude of the movement.</p></li>
+
+                            <h4 class="properties-section">Time</h4>
+                                <li class="property"><b>Start</b><p>Second at which starts the motion.</p></li>
+                                <li class="property"><b>Duration</b><p>Duration time, in seconds, of the body returned to default posture.</p></li>
+                            <h4 class="properties-section">Sync-point</h4>
+                                <li class="property"><b>Attack Peak</b><p>Second at which the movement peak is acquired. In the interval [0, duration].</p></li>
+                                <li class="property"><b>Relax</b><p>Second at which the body start returning to default posture. In the interval [0, duration].</p></li>
+                            </ul>
+                        </div>
+                    </div>
+                </li>
             </ul>
 
             <h2 id="editing">Editing</h2>
             <p>Animations can be created in three ways:</p>
             <ul>
-                <li><strong><em>Add clip</em></strong>: Create the animation from scratch adding a BML clip.</li>
-                <li><strong><em>Add preset</em></strong>: Create the animation from a predefined set of clips based on common patterns.</li>
                 <li><strong><em>Add sign</em></strong>: Create the animation from an existing glossa or sentence in the repository.</li>
+                <li><strong><em>Add preset</em></strong>: Create the animation from a predefined set of clips based on common patterns.</li>
+                <li><strong><em>Add clip</em></strong>: Create the animation from scratch adding a BML clip.</li>
             </ul>
             <p>To select one of the options, you can press the buttons on the right panel or right click directly on the timeline.</p>
+
+            <h2 id="editing-repository">Editing from a repository</h2>
+            <h2 id="editing-preset">Editing from a preset</h2>
+            <h2 id="editing-clip">Editing from scratch</h2>
         </div>
     </body>
 </html>
