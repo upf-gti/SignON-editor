@@ -897,8 +897,10 @@ FacePresetClip.prototype.addPreset = function(preset){
 			// Raise eyebrows
 			clip = new FaceLexemeClip({lexeme: "BROW_RAISER", start: this.start, duration: this.duration});
 			this.clips.push(clip);
-			// Tilt head forward
-			clip = new HeadClip({lexeme: "TILT_FORWARD", start: this.start, repetition: 0, amount: 0.25});
+			// Head forward
+			clip = new HeadClip({lexeme: "FORWARD", start: this.start, repetition: 0, amount: 0.25});
+			this.clips.push(clip);
+			clip = new HeadClip({lexeme: "TILT_RIGHT", start: this.start, repetition: 0, amount: 0.30});
 			this.clips.push(clip);
 			break;
 		case "Negative":
