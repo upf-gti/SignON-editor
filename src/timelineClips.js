@@ -898,7 +898,7 @@ FacePresetClip.prototype.addPreset = function(preset){
 			clip = new FaceLexemeClip({lexeme: "BROW_RAISER", start: this.start, duration: this.duration});
 			this.clips.push(clip);
 			// Tilt head forward
-			clip = new HeadClip({lexeme: "TILT_FORWARD", start: this.start, repetition: 0, amount: 0.5});
+			clip = new HeadClip({lexeme: "TILT_FORWARD", start: this.start, repetition: 0, amount: 0.25});
 			this.clips.push(clip);
 			break;
 		case "Negative":
@@ -911,7 +911,7 @@ FacePresetClip.prototype.addPreset = function(preset){
 			clip = new FaceLexemeClip({lexeme: "BROW_LOWERER", start: this.start, duration: this.duration});
 			this.clips.push(clip);
 			// Tilt head forward
-			clip = new HeadClip({lexeme: "TILT_FORWARD", start: this.start, repetition:0, amount: 0.5});
+			clip = new HeadClip({lexeme: "TILT_FORWARD", start: this.start, repetition:0, amount: 0.25});
 			this.clips.push(clip);
 			break;
 		case "Topic":
@@ -919,7 +919,7 @@ FacePresetClip.prototype.addPreset = function(preset){
 			clip = new FaceLexemeClip({lexeme: "BROW_RAISER", start: this.start, duration: this.duration});
 			this.clips.push(clip);
 			// Tilt head backward
-			clip = new HeadClip({lexeme: "TILT_BACKWARD", start: this.start, repetition:0, amount: 0.5});
+			clip = new HeadClip({lexeme: "TILT_BACKWARD", start: this.start, repetition:0, amount: 0.25});
 			this.clips.push(clip);
 			break;
 		case "RH-Questions":
@@ -1269,15 +1269,16 @@ GazeClip.prototype.showInfo = function(panel, callback)
 		
 	}, {filter: true});
 
+
+	panel.addSeparator();
+	panel.addTitle( "Optionals");
+
 	panel.addCheckbox("Set as base gaze", this.properties.shift, (v, e, name) =>
 	{
 		this.properties.shift = v;
 		if(callback)
 			callback();
 	});
-
-	panel.addText(null, "Optional properties", null, {disabled: true});
-
 	// Offset Driection property
 	panel.addDropdown("Offset direction", ["", ...GazeClip.directions], this.properties.offsetDirection, (v, e, name) => {
 		
@@ -1565,6 +1566,9 @@ ElbowRaiseClip.prototype.showInfo = function(panel, callback)
 			callback();
 	}, options);
 
+	panel.addSeparator();
+	panel.addTitle( "Optionals");
+
 	panel.addCheckbox("Set as base elbow position", this.properties.shift, (v, e, name) =>
 	{
 		this.properties.shift = v;
@@ -1708,6 +1712,9 @@ ShoulderClip.prototype.showInfo = function(panel, callback)
 		if(callback)
 			callback();
 	}, options);
+
+	panel.addSeparator();
+	panel.addTitle( "Optionals");
 
 	panel.addCheckbox("Set as base shoulder position", this.properties.shift, (v, e, name) =>
 	{
@@ -2040,7 +2047,9 @@ ArmLocationClip.prototype.showInfo = function(panel, callback)
 			callback();
 		
 	}, {filter: true, title: "Arm to apply the movement"});
-
+	
+	panel.addSeparator();
+	panel.addTitle( "Optionals");
 
 	panel.addCheckbox("Set as base location", this.properties.shift, (v, e, name) =>
 	{
@@ -2048,10 +2057,6 @@ ArmLocationClip.prototype.showInfo = function(panel, callback)
 		if(callback)
 			callback();
 	});
-	
-	panel.addSeparator();
-	panel.addTitle( "Optionals");
-
 	// Location side
 	panel.addDropdown("Side", ["", ...Object.keys(ArmLocationClip.sides)], this.properties.side, (v, e, name) => {
 		
@@ -2322,6 +2327,8 @@ PalmOrientationClip.prototype.showInfo = function(panel, callback)
 		
 	}, {filter: true});
 
+	panel.addSeparator();
+	panel.addTitle( "Optionals");
 
 	panel.addCheckbox("Set as base orientation", this.properties.shift, (v, e, name) =>
 	{
@@ -2330,10 +2337,6 @@ PalmOrientationClip.prototype.showInfo = function(panel, callback)
 			callback();
 	});
 	
-	panel.addSeparator();
-
-	panel.addTitle( "Optionals");
-
 	// Second direction side
 	panel.addDropdown("Second direction", ["", ...PalmOrientationClip.directions], this.properties.secondPalmor, (v, e, name) => {
 		
@@ -2532,18 +2535,16 @@ HandOrientationClip.prototype.showInfo = function(panel, callback)
 		
 	}, {filter: true});
 
+	panel.addSeparator();
+	panel.addTitle( "Optionals");
 
-	panel.addCheckbox("Set as base exfidir", this.properties.shift, (v, e, name) =>
+	panel.addCheckbox("Set as base rotation", this.properties.shift, (v, e, name) =>
 	{
 		this.properties.shift = v;
 		if(callback)
 			callback();
 	});
 	
-	panel.addSeparator();
-
-	panel.addTitle( "Optionals");
-
 	// Second direction side
 	panel.addDropdown("Second direction", ["", ...HandOrientationClip.directions], this.properties.secondExtfidir, (v, e, name) => {
 		
@@ -2722,6 +2723,8 @@ HandshapeClip.prototype.showInfo = function(panel, callback)
 		
 	}, {filter: true});
 
+	panel.addSeparator();
+	panel.addTitle( "Optionals");
 
 	panel.addCheckbox("Set as base shape", this.properties.shift, (v, e, name) =>
 	{
@@ -2729,10 +2732,6 @@ HandshapeClip.prototype.showInfo = function(panel, callback)
 		if(callback)
 			callback();
 	});
-	
-	panel.addSeparator();
-
-	panel.addTitle( "Optionals");
 
 	// Thumbshape property
 	panel.addDropdown("Thumb shape", ["", ...HandshapeClip.thumbshapes], this.properties.thumbshape, (v, e, name) => {
@@ -4272,7 +4271,7 @@ MouthingClip.prototype.showInfo = function(panel, callback)
 	
 	panel.addTitle( "Optionals");
 
-	panel.addText(null, "Speed", null, {disabled: true})
+	panel.addText(null, "Phonemes per second", null, {disabled: true})
 
 	panel.addCheckbox("Set for each phonema", this.properties.phT != null, (v,e) => {
 		if(v) {
@@ -4314,7 +4313,7 @@ MouthingClip.prototype.showInfo = function(panel, callback)
 		}
 	}
 
-	panel.addText(null, "Intensity", null, {disabled: true});
+	panel.addText(null, "Visual exaggeration of phonemes", null, {disabled: true});
 
 	panel.addCheckbox("Set for each phonema", this.properties.phInt != null, (v,e) => {
 		if(v) {
@@ -4337,8 +4336,8 @@ MouthingClip.prototype.showInfo = function(panel, callback)
 		{
 			this.properties.sentInt = v;
 			if(callback)
-				callback(true);
-		}, {precision: 2, min: 0, max: 1, title: "Intensity of the whole string"});
+				callback();
+		}, {precision: 2, step: 0.1, min: 0, max: 1, title: "Intensity of the whole string"});
 	} 
 	else {
 		for(let i = 0; i < this.properties.text.length; i++) {

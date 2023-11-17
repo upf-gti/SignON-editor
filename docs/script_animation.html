@@ -377,8 +377,8 @@
                                     </details>
                                     <p></p>
                                 </li>
-                                <li class="property"><b>Base gaze</b><br><p>Turning <i>ON</i> permanently changes the gaze direction of the character towards the target.</p></li>
                                 <li><p><u>Optionals</u></p></li>
+                                <li class="property"><b>Base gaze</b><br><p>Turning <i>ON</i> permanently changes the gaze direction of the character towards the target.</p></li>
                                 <li class="property"><b>Offset angle</b><br><p>Adds an angle degrees offset to gaze direction relative to the target in the direction specified in the <i>Offset direction</i>. In degrees. By default is 0.0.</p>
                                 <li class="property"><b>Offset direction</b><br><p>Direction of the <i>Offset angle</i>> angle. Same directions as target property.</p></li>
                             <h4 class="properties-section">Time</h4>
@@ -405,6 +405,7 @@
                             <h4 class="properties-section">Content</h4>
                                 <li class="property"><b>Side</b><br><p>What arm is being moved: <i>Left</i>, <i>Right</i>, <i>Both</i>. By the default is the arm of the specified dominant hand.</p>
                                 <li class="property"><b>Amplitude</b><br><p>A float value between 0..1 to indicate the amount of the movement. 0 means immeasurable small; 0.5 means "moderate"; 1 means maximally large.</p></li>
+                                <li><p><u>Optionals</u></p></li>
                                 <li class="property"><b>Base elbow position</b><br><p>Turning <i>ON</i> permanently changes the position of the elbow.</p></li>
                             <h4 class="properties-section">Time</h4>
                                 <li class="property"><b>Start</b><p>Second at which the elbow starts to raise.</p></li>
@@ -429,6 +430,7 @@
                                 <li class="property"><b>Movement</b><br><p>Name of the particular shoulder movement. <i>Raise</i> or <i>Hunch</i>.</p>
                                 <li class="property"><b>Side</b><br><p>What arm is being moved: <i>Left</i>, <i>Right</i>, <i>Both</i>. By the default is the arm of the specified dominant hand.</p>
                                 <li class="property"><b>Amplitude</b><br><p>A float value between 0..1 to indicate the amount of the movement. 0 means immeasurable small; 0.5 means "moderate"; 1 means maximally large.</p></li>
+                                <li><p><u>Optionals</u></p></li>
                                 <li class="property"><b>Base shoulder position</b><br><p>Turning <i>ON</i> permanently changes the position of the shoulder.</p></li>
                             <h4 class="properties-section">Time</h4>
                                 <li class="property"><b>Start</b><p>Second at which the shoulder starts the movement.</p></li>
@@ -501,8 +503,8 @@
                                     <p></p>
                                 </li>
                                 <li class="property"><b>Arm</b><br><p>What arm is being moved: <i>Left</i>, <i>Right</i>, <i>Both</i>. By the default is the arm of the specified dominant hand.</p></li>
-                                <li class="property"><b>Base shoulder position</b><br><p>Turning <i>ON</i> permanently changes the position of the shoulder.</p></li>
                                 <li><p><u>Optionals</u></p></li>
+                                <li class="property"><b>Base shoulder position</b><br><p>Turning <i>ON</i> permanently changes the position of the shoulder.</p></li>
                                 <li class="property"><b>Side</b><br><p>Generic horizontal offset of the chosen point: <i>Left</i>, <i>Right</i>, <i>Slightly Left</i>, <i>Slightly Right</i>.</p></li>
                                 <li class="property"><b>Second location</b><br><p>Same as <i>Arm location</i>. If this property is set, the final point corresponds to the middlepoint between both. Same locations as <i>Arm location</i> property.</p></li>
                                 <li class="property"><b>Second side</b><span style="color: orangered;"> *</span><br><p>Generic horizontal offset of the chosen point of the second location. It appears if <i>Second location</i> property is set.</p></li>
@@ -847,9 +849,9 @@
                                     </details>
                                     <p></p>
                                 </li>  
-                                <li class="property"><b>Base orientation</b><br><p>Turning <i>ON</i> permanently changes the hand's rotation.</p></li>
-
+                                
                                 <li><p><u>Optionals</u></p></li>
+                                <li class="property"><b>Base orientation</b><br><p>Turning <i>ON</i> permanently changes the hand's rotation.</p></li>
                                 <li class="property"><b>Second direction</b><br><p>If this property is set, the final orientation corresponds to the middlepoint between both directions.</p></li>
 
                             <h4 class="properties-section">Time</h4>
@@ -889,9 +891,9 @@
                                     </details>
                                     <p></p>
                                 </li>  
-                                <li class="property"><b>Base orientation</b><br><p>Turning <i>ON</i> permanently changes the palm's orientation.</p></li>
-
+                                
                                 <li><p><u>Optionals</u></p></li>
+                                <li class="property"><b>Base orientation</b><br><p>Turning <i>ON</i> permanently changes the palm's orientation.</p></li>
                                 <li class="property"><b>Second direction</b><br><p>If this property is set, the final orientation corresponds to the middlepoint between both directions.</p></li>
 
                             <h4 class="properties-section">Time</h4>
@@ -1001,9 +1003,9 @@
                                     </details>
                                     <p></p>
                                 </li>
-                                <li class="property"><b>Base shape</b><br><p>Turning <i>ON</i> permanently changes the hand shape.</p></li>
-
+                                
                                 <li><p><u>Optionals</u></p></li>
+                                <li class="property"><b>Base shape</b><br><p>Turning <i>ON</i> permanently changes the hand shape.</p></li>
                                 <li class="property"><b>Thumb shape</b><br><p>Specific posture of the thumb finger. It overwirtes the hand shape configuration for this finger. If not specified, the predefined hand shape will be used.</p></li>
                                 <li class="property"><b>Thumb combination opening</b><br><p> Distance between the thumb and the other fingers. Expressed on a scale of 0 to 1, where 0 signifies close proximity; 1 indicates maximum separation.</p>
                                     <details>

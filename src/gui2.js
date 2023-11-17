@@ -1775,7 +1775,14 @@ class ScriptGui extends Gui {
                     clip.attackPeak = clip.fadein += diff;
                 if(clip.ready != undefined)      
                     clip.ready = clip.fadein += diff;
-                clip.relax = clip.fadeout += diff;
+                if(clip.relax != undefined)
+                    clip.relax = clip.fadeout += diff;
+                if(clip.strokeStart != undefined) 
+                    clip.strokeStart += diff;
+                if(clip.stroke != undefined) 
+                    clip.stroke += diff;
+                if(clip.strokeEnd != undefined) 
+                    clip.strokeEnd += diff;
                 this.clipInPanel.start = v;
                 clip.start = v;
                 
@@ -1789,12 +1796,24 @@ class ScriptGui extends Gui {
 
             widgets.addNumber("Duration", clip.duration.toFixed(2), (v) =>
             {
+                clip.duration = v;
                 this.clipInPanel.duration = v;
+                const end = v + clip.start;
+                if(clip.relax != undefined)
+                    clip.relax = clip.fadeout = clip.fadeout > end ? end : clip.fadeout;
+                if(clip.strokeEnd != undefined) 
+                    clip.strokeEnd = clip.strokeEnd > clip.relax ? clip.relax : clip.strokeEnd;
+                if(clip.stroke != undefined) 
+                    clip.stroke = clip.stroke > clip.strokeEnd ? clip.strokeEnd : clip.stroke;
+                if(clip.strokeStart != undefined) 
+                    clip.strokeStart = clip.strokeStart > clip.stroke ? clip.stroke : clip.strokeStart;
+
                 if(clip.attackPeak != undefined)  
-                    clip.attackPeak = clip.fadein = Math.min(v + clip.start, clip.attackPeak);
+                    clip.attackPeak = clip.fadein = Math.clamp(clip.fadein, clip.start, clip.relax);
                 if(clip.ready != undefined)  
-                    clip.attackPeak = clip.fadein = Math.min(v + clip.start, clip.ready);
-                clip.relax = clip.fadeout = Math.min(v + clip.start, clip.relax);
+                    clip.ready = clip.fadein =  Math.clamp(clip.fadein, clip.start, clip.relax);
+                
+               
                 updateTracks(true);
                 // this.updateClipPanel(clip);
             }, {min:0.01, step:0.01, precision:2, disabled: clip.type == "custom"});
@@ -1809,6 +1828,7 @@ class ScriptGui extends Gui {
                 {
                     syncvalues.push([clip.fadein - clip.start, (clip.properties.amount || 1) - 0.2]);
                     if(clip.attackPeak != undefined)
+                        // clip.attackPeak = clip.fadein = Math.clamp(clip.start, clip.relax);
                         widgets.addNumber("Attack Peak (s)", (clip.fadein - clip.start).toFixed(2), (v) =>
                         {              
                             clip.attackPeak = clip.fadein = v + clip.start;
@@ -1824,7 +1844,8 @@ class ScriptGui extends Gui {
                 }
 
                 if(clip.strokeStart != undefined) {
-                    clip.strokeStart = clip.strokeStart < clip.ready ? clip.ready : clip.strokeStart;
+
+                    // clip.strokeStart = Math.clamp(clip.strokeStart, clip.ready, clip.stroke);
                     widgets.addNumber("Stroke start (s)", (clip.strokeStart - clip.start).toFixed(2), (v) =>
                     {              
                         clip.strokeStart = v + clip.start;
@@ -1833,8 +1854,7 @@ class ScriptGui extends Gui {
                 }
 
                 if(clip.stroke != undefined) {
-                    clip.stroke = clip.stroke < clip.strokeStart ? clip.strokeStart : clip.stroke;
-                    clip.stroke = clip.stroke > clip.strokeEnd ? clip.strokeEnd : clip.stroke;
+                    // clip.stroke = Math.clamp(clip.stroke, clip.strokeStart, clip.strokeEnd);
                     
                     widgets.addNumber("Stroke (s)", (clip.stroke - clip.start).toFixed(2), (v) =>
                     {              
@@ -1846,8 +1866,7 @@ class ScriptGui extends Gui {
                 }
 
                 if(clip.strokeEnd != undefined) {
-                    clip.strokeEnd = clip.strokeEnd < clip.stroke ? clip.stroke : clip.strokeEnd;
-                    clip.strokeEnd = clip.strokeEnd > clip.relax ? clip.relax : clip.strokeEnd;
+                    // clip.strokeEnd = Math.clamp(clip.strokeEnd, clip.stroke, clip.relax); 
 
                     widgets.addNumber("Stroke end (s)", (clip.strokeEnd - clip.start).toFixed(2), (v) =>
                     {              
@@ -1864,14 +1883,15 @@ class ScriptGui extends Gui {
                     syncvalues.push([clip.fadeout - clip.start, (clip.properties.amount || 1) - 0.2]);
                     
                     if(clip.relax != undefined)
+                        // clip.relax = clip.fadeout = Math.clamp(clip.relax, clip.strokeEnd, clip.start + clip.duration); 
                         widgets.addNumber("Relax (s)", (clip.fadeout - clip.start).toFixed(2), (v) =>
                         {              
                             clip.relax = clip.fadeout = v + clip.start;
                             if(clip.attackPeak != undefined)
-                                clip.attackPeak = Math.min(clip.fadeout, clip.fadein);
+                                clip.attackPeak = clip.fadein = Math.clamp( clip.fadein, clip.start, clip.relax);
 
                             if(clip.ready != undefined)
-                                clip.ready = Math.min(clip.fadeout, clip.fadein);
+                                clip.ready = clip.fadein = Math.clamp( clip.fadein, clip.start, clip.relax);
                             updateTracks();
                         }, {min: clip.fadein - clip.start, max: clip.duration , step:0.01, precision:2, title: "Decay or retraction phase starts"});
                 }
@@ -1974,19 +1994,16 @@ class ScriptGui extends Gui {
                 asset_browser.clear();
                 dialog.close();
         }
-        let asset_browser = new LX.AssetView({  
-            root_path: "./src/libs/lexgui/",
-            preview_actions: [{
-                type: "Clip",
-                name: 'Add clip', 
-                callback: innerSelect,
-                allowed_types: ["Clip"]
-            }]
-        });
-        
+        let preview_actions =  [{
+            type: "Clip",
+            name: 'Add clip', 
+            callback: innerSelect,
+            allowed_types: ["Clip"]
+        }];
+
+        let asset_browser = null;
         let dialog = this.prompt = new LX.Dialog('BML clips', (p) => {
 
-            p.attach( asset_browser );
             let asset_data = [{id: "Face", type: "folder", children: []}, {id: "Head", type: "folder",  children: []}, {id: "Arms", type: "folder",  children: []}, {id: "Hands", type: "folder",  children: []}, {id: "Body", type: "folder",  children: []}];
                 
             // FACE CLIP
@@ -2002,10 +2019,20 @@ class ScriptGui extends Gui {
                 }
                 lexemes.push(data);
             }
-
+            preview_actions.push({
+                type: "FaceLexemeClip",
+                name: 'Add clip', 
+                callback: innerSelect,
+                allowed_types: ["Clip"]
+            })
             // Face lexemes & Mouthing clips
             asset_data[0].children = [{ id: "Face lexemes", type: "folder", children: lexemes}, {id: "Mouthing", type: "MouthingClip"}];
-        
+            preview_actions.push({
+                type: "MouthingClip",
+                name: 'Add clip', 
+                callback: innerSelect,
+                allowed_types: ["Clip"]
+            })
             // HEAD
             // Gaze clip
             values = ANIM.GazeClip.influences;
@@ -2017,6 +2044,13 @@ class ScriptGui extends Gui {
                 }
                 gazes.push(data);
             }
+
+            preview_actions.push({
+                type: "GazeClip",
+                name: 'Add clip', 
+                callback: innerSelect,
+                allowed_types: ["Clip"]
+            })
             // Head movemen clip
             values = ANIM.HeadClip.lexemes;
             let movements = [];
@@ -2027,14 +2061,91 @@ class ScriptGui extends Gui {
                 }
                 movements.push(data);
             }
+            preview_actions.push({
+                type: "HeadClip",
+                name: 'Add clip', 
+                callback: innerSelect,
+                allowed_types: ["Clip"]
+            })
             asset_data[1].children = [{ id: "Gaze", type: "folder", children: gazes}, {id: "Head movement", type: "folder", children: movements}];
 
             asset_data[2].children = [{id: "Elbow Raise", type: "ElbowRaiseClip"}, {id: "Shoulder Raise", type: "ShoulderClip"}, {id:"Shoulder Hunch", type: "ShoulderClip"}, {id: "Arm Location", type: "ArmLocationClip"}, {id: "Hand Constellation", type: "HandConstellationClip"}, {id: "Directed Motion", type: "DirectedMotionClip"}, {id: "Circular Motion", type: "CircularMotionClip"}];
-
+            preview_actions.push({
+                type: "ElbowRaiseClip",
+                name: 'Add clip', 
+                callback: innerSelect,
+                allowed_types: ["Clip"]
+            })
+            preview_actions.push({
+                type: "ShoulderClip",
+                name: 'Add clip', 
+                callback: innerSelect,
+                allowed_types: ["Clip"]
+            })
+            preview_actions.push({
+                type: "ArmLocationClip",
+                name: 'Add clip', 
+                callback: innerSelect,
+                allowed_types: ["Clip"]
+            })
+            preview_actions.push({
+                type: "HandConstellationClip",
+                name: 'Add clip', 
+                callback: innerSelect,
+                allowed_types: ["Clip"]
+            })
+            preview_actions.push({
+                type: "DirectedMotionClip",
+                name: 'Add clip', 
+                callback: innerSelect,
+                allowed_types: ["Clip"]
+            })
+            preview_actions.push({
+                type: "CircularMotionClip",
+                name: 'Add clip', 
+                callback: innerSelect,
+                allowed_types: ["Clip"]
+            })
             asset_data[3].children = [{id: "Palm Orientation", type: "PalmOrientationClip"}, {id: "Hand Orientation", type: "HandOrientationClip"}, {id: "Handshape", type: "HandshapeClip"}, {id: "Wrist Motion", type: "WristMotionClip"}, {id: "Fingerplay Motion", type: "FingerplayMotionClip"}];
+            preview_actions.push({
+                type: "PalmOrientationClip",
+                name: 'Add clip', 
+                callback: innerSelect,
+                allowed_types: ["Clip"]
+            })
+            preview_actions.push({
+                type: "HandOrientationClip",
+                name: 'Add clip', 
+                callback: innerSelect,
+                allowed_types: ["Clip"]
+            })
+            preview_actions.push({
+                type: "WristMotionClip",
+                name: 'Add clip', 
+                callback: innerSelect,
+                allowed_types: ["Clip"]
+            })
+            preview_actions.push({
+                type: "FingerplayMotionClip",
+                name: 'Add clip', 
+                callback: innerSelect,
+                allowed_types: ["Clip"]
+            })
             // BODY
             asset_data[4].children.push({id: "Body movement", type: "BodyMovementClip"});
+            preview_actions.push({
+                type: "BodyMovementClip",
+                name: 'Add clip', 
+                callback: innerSelect,
+                allowed_types: ["Clip"]
+            })
 
+            
+            asset_browser = new LX.AssetView({  
+                root_path: "./src/libs/lexgui/",
+                preview_actions
+            });
+            p.attach( asset_browser );
             asset_browser.load( asset_data, (e,v) => {
                 switch(e.type) {
                     case LX.AssetViewEvent.ASSET_SELECTED: 
