@@ -462,8 +462,9 @@ FaceLexemeClip.prototype.configure = function(o)
 	this.start = o.start || 0;
 	if(o.duration) this.duration = o.duration || 1;
 	if(o.end) this.duration = (o.end - o.start) || 1;
-	this.attackPeak = this.fadein = (o.attackPeak || 0.25);
-	this.relax = this.fadeout = (o.relax || 0.75);
+	const offset = this.duration/4;
+	this.attackPeak = this.fadein = (o.attackPeak || this.start + offset);
+	this.relax = this.fadeout = (o.relax || this.start + this.duration - offset);
 	for(let property in this.properties) {
 		
 		if(property == "lexeme") {
@@ -1185,8 +1186,9 @@ GazeClip.prototype.configure = function(o)
 	this.start = o.start || 0;
 	if(o.duration) this.duration = o.duration || 1;
 	if(o.end) this.duration = (o.end - o.start) || 1;
-	if(o.ready) this.ready = this.fadein = o.ready;
-	if(o.relax) this.relax = this.fadeout = o.relax;
+	const offset = this.duration/4;
+	this.ready = this.fadein = ( o.ready || this.start + offset);
+	this.relax = this.fadeout = (o.relax || this.start + this.duration - offset);
 	if(o.properties)
 	{
 		Object.assign(this.properties, o.properties);
@@ -1357,11 +1359,12 @@ HeadClip.prototype.configure = function(o)
 	this.start = o.start || 0;
 	if(o.duration) this.duration = o.duration || 1;
 	if(o.end) this.duration = (o.end - o.start) || 1;
-	if(o.ready) this.ready = this.fadein = o.ready;
+	const offset = this.duration/4;
+	this.ready = this.fadein = (o.ready || offset);
 	if(o.strokeStart) this.strokeStart = o.strokeStart;
 	if(o.stroke) this.stroke  = o.stroke ;
 	if(o.strokeEnd) this.strokeEnd = o.strokeEnd;
-	if(o.relax) this.relax = this.fadeout = o.relax;
+	this.relax = this.fadeout = (o.relax || this.start + this.duration - offset);
 
 	if(o.properties)
 	{
@@ -1491,8 +1494,9 @@ ElbowRaiseClip.prototype.configure = function(o)
 	this.start = o.start || 0;
 	if(o.duration) this.duration = o.duration || 1;
 	if(o.end) this.duration = (o.end - o.start) || 1;
-	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
-	if(o.relax) this.relax = this.fadeout = o.relax;
+	const offset = this.duration/4;
+	this.attackPeak = this.fadein = (o.attackPeak || this.start + offset);
+	this.relax = this.fadeout = (o.relax || this.start + this.duration - offset);
 	if(o.properties)
 	{
 		Object.assign(this.properties, o.properties);		
@@ -1622,8 +1626,9 @@ ShoulderClip.prototype.configure = function(o)
 	this.start = o.start || 0;
 	if(o.duration) this.duration = o.duration || 1;
 	if(o.end) this.duration = (o.end - o.start) || 1;
-	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
-	if(o.relax) this.relax = this.fadeout = o.relax;
+	const offset = this.duration/4;
+	this.attackPeak = this.fadein = (o.attackPeak || this.start + offset);
+	this.relax = this.fadeout = (o.relax || this.start + this.duration - offset);
 	if(o.properties)
 	{
 		Object.assign(this.properties, o.properties);		
@@ -1768,8 +1773,9 @@ BodyMovementClip.prototype.configure = function(o)
 	this.start = o.start || 0;
 	if(o.duration) this.duration = o.duration || 1;
 	if(o.end) this.duration = (o.end - o.start) || 1;
-	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
-	if(o.relax) this.relax = this.fadeout = o.relax;
+	const offset = this.duration/4;
+	this.attackPeak = this.fadein = (o.attackPeak || this.start + offset);
+	this.relax = this.fadeout = (o.relax || this.start + this.duration - offset);
 	if(o.properties)
 	{
 		Object.assign(this.properties, o.properties);
@@ -1908,8 +1914,9 @@ ArmLocationClip.prototype.configure = function(o)
 	this.start = o.start || 0;
 	if(o.duration) this.duration = o.duration || 1;
 	if(o.end) this.duration = (o.end - o.start) || 1;
-	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
-	if(o.relax) this.relax = this.fadeout = o.relax;
+	const offset = this.duration/4;
+	this.attackPeak = this.fadein = (o.attackPeak || this.start + offset);
+	this.relax = this.fadeout = (o.relax || this.start + this.duration - offset);
 	if(o.properties)
 	{
 		Object.assign(this.properties, o.properties);
@@ -2204,8 +2211,9 @@ PalmOrientationClip.prototype.configure = function(o)
 	this.start = o.start || 0;
 	if(o.duration) this.duration = o.duration || 1;
 	if(o.end) this.duration = (o.end - o.start) || 1;
-	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
-	if(o.relax) this.relax = this.fadeout = o.relax;
+	const offset = this.duration/4;
+	this.attackPeak = this.fadein = (o.attackPeak || this.start + offset);
+	this.relax = this.fadeout = (o.relax || this.start + this.duration - offset);
 	if(o.properties)
 	{
 		Object.assign(this.properties, o.properties);
@@ -2398,8 +2406,9 @@ HandOrientationClip.prototype.configure = function(o)
 	this.start = o.start || 0;
 	if(o.duration) this.duration = o.duration || 1;
 	if(o.end) this.duration = (o.end - o.start) || 1;
-	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
-	if(o.relax) this.relax = this.fadeout = o.relax;
+	const offset = this.duration/4;
+	this.attackPeak = this.fadein = (o.attackPeak || this.start + offset);
+	this.relax = this.fadeout = (o.relax || this.start + this.duration - offset);
 	if(o.properties)
 	{
 		Object.assign(this.properties, o.properties);
@@ -2616,8 +2625,9 @@ HandshapeClip.prototype.configure = function(o)
 	this.start = o.start || 0;
 	if(o.duration) this.duration = o.duration || 1;
 	if(o.end) this.duration = (o.end - o.start) || 1;
-	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
-	if(o.relax) this.relax = this.fadeout = o.relax;
+	const offset = this.duration/4;
+	this.attackPeak = this.fadein = (o.attackPeak || this.start + offset);
+	this.relax = this.fadeout = (o.relax || this.start + this.duration - offset);
 	if(o.properties)
 	{
 		Object.assign(this.properties, o.properties);
@@ -2914,8 +2924,9 @@ HandConstellationClip.prototype.configure = function(o)
 	this.start = o.start || 0;
 	if(o.duration) this.duration = o.duration || 1;
 	if(o.end) this.duration = (o.end - o.start) || 1;
-	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
-	if(o.relax) this.relax = this.fadeout = o.relax;
+	const offset = this.duration/4;
+	this.attackPeak = this.fadein = (o.attackPeak || this.start + offset);
+	this.relax = this.fadeout = (o.relax || this.start + this.duration - offset);
 	if(o.properties)
 	{
 		Object.assign(this.properties, o.properties);
@@ -3230,8 +3241,9 @@ DirectedMotionClip.prototype.configure = function(o)
 	this.start = o.start || 0;
 	if(o.duration) this.duration = o.duration || 1;
 	if(o.end) this.duration = (o.end - o.start) || 1;
-	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
-	if(o.relax) this.relax = this.fadeout = o.relax;
+	const offset = this.duration/4;
+	this.attackPeak = this.fadein = (o.attackPeak || this.start + offset);
+	this.relax = this.fadeout = (o.relax || this.start + this.duration - offset);
 	if(o.properties)
 	{
 		Object.assign(this.properties, o.properties);
@@ -3892,8 +3904,9 @@ WristMotionClip.prototype.configure = function(o)
 	this.start = o.start || 0;
 	if(o.duration) this.duration = o.duration || 1;
 	if(o.end) this.duration = (o.end - o.start) || 1;
-	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
-	if(o.relax) this.relax = this.fadeout = o.relax;
+	const offset = this.duration/4;
+	this.attackPeak = this.fadein = (o.attackPeak || this.start + offset);
+	this.relax = this.fadeout = (o.relax || this.start + this.duration - offset);
 	if(o.properties)
 	{
 		Object.assign(this.properties, o.properties);
@@ -4032,8 +4045,9 @@ FingerplayMotionClip.prototype.configure = function(o)
 	this.start = o.start || 0;
 	if(o.duration) this.duration = o.duration || 1;
 	if(o.end) this.duration = (o.end - o.start) || 1;
-	if(o.attackPeak) this.attackPeak = this.fadein = o.attackPeak;
-	if(o.relax) this.relax = this.fadeout = o.relax;
+	const offset = this.duration/4;
+	this.attackPeak = this.fadein = (o.attackPeak || this.start + offset);
+	this.relax = this.fadeout = (o.relax || this.start + this.duration - offset);
 	if(o.properties)
 	{
 		Object.assign(this.properties, o.properties);

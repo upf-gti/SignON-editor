@@ -859,12 +859,11 @@
                 else
                 {
                     
-
                     this.grabbing = true;
+                    this.grabbing_timeline = current_grabbing_timeline;
                     if(!track || track && this.getCurrentContent(track, time, 0.001) == undefined) {
                         this.grabTime = time - this.currentTime;
     
-                        this.grabbing_timeline = current_grabbing_timeline;
                     }
 
                     if(this.onMouseDown && this.active )
