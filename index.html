@@ -17,129 +17,7 @@
 		<link rel="stylesheet" href="src/libs/lexgui/build/lexgui.css">
 		<link rel="stylesheet" href="css/jquery-ui.css">
     </head>
-    <body id="page-top">
-        <!-- Navigation-->
-        <!-- <nav class="navbar navbar-expand-lg navbar-light fixed-top py-3" id="mainNav">
-            <div class="container px-4 px-lg-5">
-                <h1 class="navbar-brand"><a class="fs-2 mb-3 icon-link" href="https://www.upf.edu/web/gti"><img src = "data/imgs/GTIlogo.png" width = "200px"></a></h1>
-                <button class="navbar-toggler navbar-toggler-right" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
-                <div class="collapse navbar-collapse" id="navbarResponsive">
-                    <ul class="navbar-nav ms-auto my-2 my-lg-0">
-                        <li class="nav-item"><a class="bi-github fs-2 mb-3 icon-link" href="https://github.com/upf-gti/"></a></li>
-                        <li class="nav-item"><a class="bi-twitter fs-2 mb-3 icon-link" href="https://twitter.com/gti_upf"></a></li>
-                    </ul>
-                </div>
-            </div>
-        </nav> -->
-        <!-- Masthead (to change the background image look for header.masthead in the template css)-->
-        <header class="masthead">
-            <div class="container px-4 px-lg-5 h-100">
-                <div id="init-dialog" class="row gx-4 gx-lg-5 h-100 align-items-center justify-content-center text-center">
-                    <div class="col-lg-8 align-self-end">
-                        <!-- <h1 class="text-white font-weight-bold">Animics</h1> -->
-						<img src = "docs/animics_white.png" width = "700px">
-						<br><br>
-                    </div>
-                    <div class="col-lg-8 align-self-baseline">
-                        <p class="text-white-75 mb-5">End-to-end system able to generate animations of the signing avatar from user input.</p>
-						<hr class="divider" />
 
-						<p class="text-white-75 mb-5">Start new animation project based on</p>
-						<!-- <a id="from-file" class="btn btn-primary btn-xl">From Video or Animation</a>
-						<a id="new-capture" class="btn btn-primary btn-xl">New Capture</a> -->
-						<a id="keyframe-project" class="btn btn-primary btn-xl" title="From video or webcam input">Keyframe animation</a>
-						<a id="bml-project" class="btn btn-primary btn-xl" title="From text instructions">Script animation</a>
-						<br>
-						<br>
-						<p class="text-white-75 ">or</p>
-						<a id="import" class="btn btn-drag btn-xl" title="Import video or animation">Import source</a>
-                    </div>
-                </div>
-            </div>
-        </header>
-		<footer class="card-footer fixed-bottom" style="width: 100%; color: #747f8a; display: flex; flex-direction: row; align-content: center; justify-content: center;">
-			<div class="navbar-brand" style="display: flex; justify-content: space-between; align-items: center; width: 96%; padding-bottom: 0px!important;">
-				<div style="display: flex; flex-direction: column;">
-					<a class="fs-2 mb-3 icon-link" href="https://www.upf.edu/web/gti"><img src="data/imgs/GTIlogo.png" width="250px" style="filter:invert(0.5)"></a>
-					<div id="mainNav" class="py-2" style="font-size: 1rem;">©️ 2021-2023 GTI - UPF | This application has been developed within the <a class="" href="https://signon-project.eu/" target="_blank">SignON PROJECT</a>. Released under the MIT License</div>
-				</div>
-				<div style="display: flex;">
-					<div style="padding: 0 20px;">
-						<h1 class="fs-5 mb-3" style="color:var(--global-text-secondary);"><b>APPLICATIONS</b></h1>
-						<a href="https://webglstudio.org/users/jpozo/SignONRealizer/show/" target="_blank" style="text-decoration: none;"><h3 class="fs-6 mb-3 px-4" style="color:var(--global-text);"><img src = "data/imgs/performs_monster.png" width = "25px"> PERFORMS</h3></a>
-						<a href="https://webglstudio.org/users/evalls/SignON-editor/" target="_blank" style="text-decoration: none;"><h3 class="fs-6 mb-3 px-4" style="color:var(--global-text);"><img src = "data/imgs/animics_logo.png" width = "25px"> ANIMICS</h3></a>
-				
-					</div> 
-					<div style="padding: 0 20px;">
-						<h1 class="fs-5 mb-3" style="color:var(--global-text-secondary);"><b>MORE INFO</b></h1>
-						<div >
-							<ul class="navbar-nav ms-auto my-2 my-lg-0" style="flex-direction: row; justify-content: center;">
-								<li class="nav-item"><a class="bi-github fs-2 mb-3 icon-link" href="https://github.com/upf-gti/"></a></li>
-								<!-- <li class="nav-item"><a class="bi-youtube fs-2 mb-3 icon-link"></a></li> -->
-								<li class="nav-item"><a class="bi-twitter fs-2 mb-3 icon-link" href="https://twitter.com/gti_upf"></a></li>
-							</ul>
-						</div>
-					</div>
-				</div> 
-			</div>
-			<!-- <div class=" py-2" id="mainNav" style="position: absolute; bottom: 5px;"> -->
-			<div class="">
-					
-					
-					<!-- <button class="navbar-toggler navbar-toggler-right" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
-						<span class="navbar-toggler-icon"></span>
-					</button> -->
-					<!--  -->
-					
-				</div>
-				
-			</div>
-
-			</footer>
-    
-		<!-- Modals -->
-		<div id="loading" class="modal hidden">
-			<div class="load-7">
-				<p>Loading application, please wait</p>
-				<div class="square-holder">
-					<img class="loading-icon" src="data/imgs/monster.png" width="50" height="50"></div>
-				</div>
-			</div>
-		</div>
-
-		<div id="endOfCapture" class="modal" style="display: none">
-			<!-- <button id="redo_btn" class="onEndBtn" style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Redo
-					the video</span></button> -->
-			<button id="trimData_btn" class="onEndBtn"
-				style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Trim video</span></button>
-			<button id="loadData_btn" class="onEndBtn"
-				style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Create 3D animation</span></button>
-		</div>
-
-		<!---->
-
-		<div id="capture" class="expanded hidden" draggable="false">
-			<div id="capture-area" class="flex-horizontal" style ="width: 100%;">
-				<div id="video-area" class="flex-vertical">
-					<video id="inputVideo" class="hidden" muted audio="false"></video>
-					<div style="display: flex;    height: 100%;
-					width: 100%;
-					justify-content: space-around; paddding: 10px">
-						<canvas id="outputVideo" class="border-animation" width="1280px" height="720px" style="z-index: 1;" tabindex="1"></canvas>
-						<video id="recording" class="hidden" muted audio="false"></video>
-					</div>
-				</div>
-			</div>
-		</div>
-		  
-		<!-- <div id="timeline" class="hidden">
-			<div id="timeline-splitbar" class="litesplitbar vertical"></div>
-			<canvas id="timelineCanvas" class="timeline" height = "200" tabindex="1" style="display:none"></canvas>
-			<canvas id="timelineNMFCanvas" class="timeline" height = "300" tabindex="1" style="display:none"></canvas>
-		</div> -->
-
-    </body>
-	
 	<script type="text/javascript" src="src/libs/jquery-3.5.0.min.js"></script>
 	<script type="text/javascript" src="src/libs/jquery-ui.min.js"></script>
 	<script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.5/js/select2.js"></script>
@@ -251,5 +129,129 @@
 		} );
 	
 	</script>
+    <body id="page-top">
+        <!-- Navigation-->
+        <!-- <nav class="navbar navbar-expand-lg navbar-light fixed-top py-3" id="mainNav">
+            <div class="container px-4 px-lg-5">
+                <h1 class="navbar-brand"><a class="fs-2 mb-3 icon-link" href="https://www.upf.edu/web/gti"><img src = "data/imgs/GTIlogo.png" width = "200px"></a></h1>
+                <button class="navbar-toggler navbar-toggler-right" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+                <div class="collapse navbar-collapse" id="navbarResponsive">
+                    <ul class="navbar-nav ms-auto my-2 my-lg-0">
+                        <li class="nav-item"><a class="bi-github fs-2 mb-3 icon-link" href="https://github.com/upf-gti/"></a></li>
+                        <li class="nav-item"><a class="bi-twitter fs-2 mb-3 icon-link" href="https://twitter.com/gti_upf"></a></li>
+                    </ul>
+                </div>
+            </div>
+        </nav> -->
+        <!-- Masthead (to change the background image look for header.masthead in the template css)-->
+        <header class="masthead">
+            <div class="container px-4 px-lg-5 h-100">
+                <div id="init-dialog" class="row gx-4 gx-lg-5 h-100 align-items-center justify-content-center text-center">
+                    <div class="col-lg-8 align-self-end">
+                        <!-- <h1 class="text-white font-weight-bold">Animics</h1> -->
+						<img src = "docs/animics_white.png" width = "700px">
+						<br><br>
+                    </div>
+                    <div class="col-lg-8 align-self-baseline">
+                        <p class="text-white-75 mb-5">End-to-end system able to generate animations of the signing avatar from user input.</p>
+						<hr class="divider" />
+
+						<p class="text-white-75 mb-5">Start new animation project based on</p>
+						<!-- <a id="from-file" class="btn btn-primary btn-xl">From Video or Animation</a>
+						<a id="new-capture" class="btn btn-primary btn-xl">New Capture</a> -->
+						<a id="bml-project" class="btn btn-primary btn-xl" title="From text instructions">Script animation</a>
+						<a id="keyframe-project" class="btn btn-primary btn-xl" style="    background: rgb(85 129 215 / 47%); color: var(--global-text);" title="From video or webcam input">Keyframe animation</a>
+						<br>
+						<br>
+						<p class="text-white-75 ">or</p>
+						<a id="import" class="btn btn-drag btn-xl" title="Import video or animation">Import source</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+		<footer class="card-footer fixed-bottom" style="width: 100%; color: #747f8a; display: flex; flex-direction: row; align-content: center; justify-content: center;">
+			<div class="navbar-brand" style="display: flex; justify-content: space-between; align-items: center; width: 96%; padding-bottom: 0px!important;">
+				<div style="display: flex; flex-direction: column;">
+					<a class="fs-2 mb-3 icon-link" href="https://www.upf.edu/web/gti"><img src="data/imgs/GTIlogo.png" width="250px" style="filter:invert(0.5)"></a>
+					<div id="mainNav" class="py-2" style="font-size: 1rem;">©️ 2021-2023 GTI - UPF | This application has been developed within the <a class="" href="https://signon-project.eu/" target="_blank">SignON PROJECT</a>. Released under the MIT License</div>
+				</div>
+				<div style="display: flex;">
+					<div style="padding: 0 20px;">
+						<h1 class="fs-5 mb-3" style="color:var(--global-text-secondary);"><b>APPLICATIONS</b></h1>
+						<a href="https://webglstudio.org/users/jpozo/SignONRealizer/show/" target="_blank" style="text-decoration: none;"><h3 class="fs-6 mb-3 px-4" style="color:var(--global-text);"><img src = "data/imgs/performs_monster.png" width = "25px"> PERFORMS</h3></a>
+						<a href="https://webglstudio.org/users/evalls/SignON-editor/" target="_blank" style="text-decoration: none;"><h3 class="fs-6 mb-3 px-4" style="color:var(--global-text);"><img src = "data/imgs/animics_logo.png" width = "25px"> ANIMICS</h3></a>
+				
+					</div> 
+					<div style="padding: 0 20px;">
+						<h1 class="fs-5 mb-3" style="color:var(--global-text-secondary);"><b>MORE INFO</b></h1>
+						<div >
+							<ul class="navbar-nav ms-auto my-2 my-lg-0" style="flex-direction: row; justify-content: center;">
+								<li class="nav-item"><a class="bi-github fs-2 mb-3 icon-link" href="https://github.com/upf-gti/"></a></li>
+								<!-- <li class="nav-item"><a class="bi-youtube fs-2 mb-3 icon-link"></a></li> -->
+								<li class="nav-item"><a class="bi-twitter fs-2 mb-3 icon-link" href="https://twitter.com/gti_upf"></a></li>
+							</ul>
+						</div>
+					</div>
+				</div> 
+			</div>
+			<!-- <div class=" py-2" id="mainNav" style="position: absolute; bottom: 5px;"> -->
+			<div class="">
+					
+					
+					<!-- <button class="navbar-toggler navbar-toggler-right" type="button" data-bs-toggle="collapse" data-bs-target="#navbarResponsive" aria-controls="navbarResponsive" aria-expanded="false" aria-label="Toggle navigation">
+						<span class="navbar-toggler-icon"></span>
+					</button> -->
+					<!--  -->
+					
+				</div>
+				
+			</div>
+
+			</footer>
+    
+		<!-- Modals -->
+		<div id="loading" class="modal hidden">
+			<div class="load-7">
+				<p>Loading application, please wait</p>
+				<div class="square-holder">
+					<img class="loading-icon" src="data/imgs/monster.png" width="50" height="50"></div>
+				</div>
+			</div>
+		</div>
+
+		<div id="endOfCapture" class="modal" style="display: none">
+			<!-- <button id="redo_btn" class="onEndBtn" style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Redo
+					the video</span></button> -->
+			<button id="trimData_btn" class="onEndBtn"
+				style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Trim video</span></button>
+			<button id="loadData_btn" class="onEndBtn"
+				style="height: 25%; width: 100%; background: rgba(54,61,61,0.7);"><span>Create 3D animation</span></button>
+		</div>
+
+		<!---->
+
+		<div id="capture" class="expanded hidden" draggable="false">
+			<div id="capture-area" class="flex-horizontal" style ="width: 100%;">
+				<div id="video-area" class="flex-vertical">
+					<video id="inputVideo" class="hidden" muted audio="false"></video>
+					<div style="display: flex;    height: 100%;
+					width: 100%;
+					justify-content: space-around; paddding: 10px">
+						<canvas id="outputVideo" class="border-animation" width="1280px" height="720px" style="z-index: 1;" tabindex="1"></canvas>
+						<video id="recording" class="hidden" muted audio="false"></video>
+					</div>
+				</div>
+			</div>
+		</div>
+		  
+		<!-- <div id="timeline" class="hidden">
+			<div id="timeline-splitbar" class="litesplitbar vertical"></div>
+			<canvas id="timelineCanvas" class="timeline" height = "200" tabindex="1" style="display:none"></canvas>
+			<canvas id="timelineNMFCanvas" class="timeline" height = "300" tabindex="1" style="display:none"></canvas>
+		</div> -->
+
+    </body>
+	
+	
 	
 </html>
