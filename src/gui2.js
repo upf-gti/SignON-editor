@@ -2261,6 +2261,40 @@ class ScriptGui extends Gui {
                 asset_browser.clear();
                 dialog.close();
             }
+
+            const showSourceCode = (asset) => {
+                if(window.dialog) 
+                    window.dialog.destroy();
+                window.dialog = new LX.PocketDialog("Editor", p => {
+                    const area = new LX.Area();
+                    p.attach( area );
+                    const filename = asset.filename;
+                    const type = asset.type;
+                    const name = filename.replace("."+ type, "");
+                    let editor = new LX.CodeEditor(area, {
+                        allow_add_scripts: false,
+                        name: type,
+                        title: name,
+                        disable_edition: true
+                    });
+                    LX.request({ url: fs.root+ "/"+ asset.fullpath, dataType: 'text/plain', success: (f) => {
+                        const bytesize = f => new Blob([f]).size;
+                        asset.bytesize = bytesize();
+                        asset.bml = asset.type == "bml" ?  {data: JSON.parse(f)} : sigmlStringToBML(f);
+                        asset.bml.behaviours = asset.bml.data;
+                        let text = f.replaceAll('\r', '').replaceAll('\t', '');
+                        editor.code.lines = text.split('\n');
+                        editor.processLines();
+                        editor._refresh_code_info();
+                        if(asset.type == "sigml") {
+                            editor.addTab("bml", false, name);
+                            let t = JSON.stringify(asset.bml.behaviours);
+                            editor.openedTabs["bml"].lines = editor.toJSONFormat(t).split('\n');    
+                        }
+                        editor._change_language( "JSON" );
+                    } });
+                }, { size: ["40%", "600px"], closable: true });
+            }
             const loadData = () => {
                 asset_browser.load( this.dictionaries, e => {
                     switch(e.type) {
@@ -2292,43 +2326,18 @@ class ScriptGui extends Gui {
                         case LX.AssetViewEvent.ASSET_DBLCLICK: 
                             if(e.item.type == "folder")
                                 return;
-                            if(window.dialog) window.dialog.destroy();
-                            window.dialog = new LX.PocketDialog("Editor", p => {
-                                const area = new LX.Area();
-                                p.attach( area );
-                                const filename = e.item.filename;
-                                const type = e.item.type;
-                                const name = filename.replace("."+ type, "");
-                                let editor = new LX.CodeEditor(area, {
-                                    allow_add_scripts: false,
-                                    name: type,
-                                    title: name,
-                                    disable_edition: true
-                                });
-                                LX.request({ url: fs.root+ "/"+ e.item.fullpath, dataType: 'text/plain', success: (f) => {
-                                    const bytesize = f => new Blob([f]).size;
-                                    e.item.bytesize = bytesize();
-                                    e.item.bml = e.item.type == "bml" ?  {data: JSON.parse(f)} : sigmlStringToBML(f);
-                                    e.item.bml.behaviours = e.item.bml.data;
-                                    let text = f.replaceAll('\r', '').replaceAll('\t', '');
-                                    editor.code.lines = text.split('\n');
-                                    editor.processLines();
-                                    editor._refresh_code_info();
-                                    if(e.item.type == "sigml") {
-                                        editor.addTab("bml", false, name);
-                                        let t = JSON.stringify(e.item.bml.behaviours);
-                                        editor.openedTabs["bml"].lines = editor.toJSONFormat(t).split('\n');    
-                                    }
-                                    editor._change_language( "JSON" );
-                                } });
-                            }, { size: ["40%", "600px"], closable: true });
-                            // innerSelect(e.item);                        
+                            showSourceCode(e.item);
                         break;
                     }
                 })
             }
 
             let asset_browser = new LX.AssetView({ root_path: "./src/libs/lexgui/", allowed_types: ["sigml", "bml"], preview_actions: [
+                {
+                    type: "sigml",
+                    name: 'View source', 
+                    callback: showSourceCode
+                },
                 {
                     type: "sigml",
                     name: 'Add as single clip', 
@@ -2338,6 +2347,11 @@ class ScriptGui extends Gui {
                     type: "sigml",
                     name: 'Breakdown into BML clips', 
                     callback: innerSelect.bind("clips")
+                },
+                {
+                    type: "bml",
+                    name: 'View source', 
+                    callback: showSourceCode
                 },
                 {
                     type: "bml",
