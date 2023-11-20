@@ -425,7 +425,7 @@ FaceLexemeClip.lexemes = [
 ]
 
 FaceLexemeClip.type = "faceLexeme";
-FaceLexemeClip.id = ANIM.FACELEXEME ? ANIM.FACELEXEME: ANIM.clipTypes.length;
+FaceLexemeClip.id = ANIM.FACELEXEME != undefined ? ANIM.FACELEXEME: ANIM.clipTypes.length;
 FaceLexemeClip.clipColor = "#57c1c1";
 
 function FaceLexemeClip(o)

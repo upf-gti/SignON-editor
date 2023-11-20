@@ -2379,8 +2379,8 @@ class ScriptGui extends Gui {
                                                 continue;
                                             files_data.push(files[f]);
                                         }
-                                        data[dictionary] = files;
-                                        assets.push({id: folder, type:"folder",  children: files});
+                                        data[dictionary] = files_data;
+                                        assets.push({id: folder, type:"folder",  children: files_data});
                                     })
                                     // this.dictionaries.push({id: dictionary, type:"folder",  children: assets});
                                 }
