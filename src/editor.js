@@ -1501,7 +1501,8 @@ class ScriptEditor extends Editor{
             this.gizmo.onUpdateTracks = () => {
                 if(this.mixer._actions.length) this.mixer._actions.pop();
                 this.mixer.clipAction( this.animation  ).setEffectiveWeight( 1.0 ).play();
-                this.mixer.update(this.mixer.time);
+                this.mixer.update(0);
+                this.mixer.setTime(this.mixer.time);
             }
             this.activeTimeline.onUpdateTrack = this.gizmo.updateTracks.bind(this.gizmo);
             this.gizmo.begin(this.activeTimeline);
