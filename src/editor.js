@@ -319,7 +319,8 @@ class Editor {
         if(this.state && !force)
             return;
 
-        this.mixer.setTime(t);
+        this.mixer.setTime(t*this.mixer.timeScale);
+        this.mixer.update(0);
     }
 
     clearAllTracks() {
@@ -1138,12 +1139,13 @@ class KeyframeEditor extends Editor{
 
         if(this.state && !force)
             return;
-
-        this.mixer.setTime(t);
             
         this.onUpdateAnimationTime();
         this.gizmo.updateBones();
         
+        this.mixer.setTime(t* this.mixer.timeScale);
+        this.mixer.update(0);
+
         // Update video
         this.video.currentTime = this.video.startTime + t;
         if(this.state && force) {
@@ -1499,10 +1501,13 @@ class ScriptEditor extends Editor{
           
             this.gizmo = new BMLController(this, skinnedMeshes, this.morphTargets);
             this.gizmo.onUpdateTracks = () => {
-                if(this.mixer._actions.length) this.mixer._actions.pop();
+                if(this.mixer._actions.length) {
+                    this.mixer.stopAllAction();
+                    this.mixer.uncacheAction(this.mixer._actions[this.mixer._actions.length - 1]);
+                    this.mixer._actions.pop();
+                }
                 this.mixer.clipAction( this.animation  ).setEffectiveWeight( 1.0 ).play();
-                this.mixer.update(0);
-                this.mixer.setTime(this.mixer.time);
+                this.setTime(this.activeTimeline.currentTime);
             }
             this.activeTimeline.onUpdateTrack = this.gizmo.updateTracks.bind(this.gizmo);
             this.gizmo.begin(this.activeTimeline);
@@ -1561,7 +1566,6 @@ class ScriptEditor extends Editor{
       /** BML ANIMATION */ 
     
     updateTracks(tracks) {
-        this.mixer.update(this.activeTimeline.currentTime);
 
         if(!this.gizmo)
             return;
@@ -1591,6 +1595,8 @@ class ScriptEditor extends Editor{
                 }
             }
         }
+        this.mixer.update(0);
+
     }
 
     clearAllTracks(showConfirmation = true) {
