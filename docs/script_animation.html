@@ -359,7 +359,7 @@
                             <ul>
                                 <li class="property"><b>Id</b><br><p>Identifier name. The default value is the name of the gaze influence.</p></li>
                             <h4 class="properties-section">Content</h4>
-                                <li class="property"><b>Influence</b><br><p>Determines what parts of the body to move to effect the gaze direction: <i>Eyes</i>, <i>Head</i>, <i>Neck</i>.</p></li>
+                                <li class="property"><b>Influence</b><br><p>Determines what parts of the body to move to affect the gaze direction: <i>Eyes</i>, <i>Head</i>, <i>Neck</i>.</p></li>
                                 <li class="property"><b>Target</b><br><p>A reference towards a target instance that represents the target direction of the gaze.</p>
                                     <details>
                                         <summary style="padding-left: 1em;"><i>List of targets</i></summary>
@@ -380,7 +380,7 @@
                                 <li><p><u>Optionals</u></p></li>
                                 <li class="property"><b>Base gaze</b><br><p>Turning <i>ON</i> permanently changes the gaze direction of the character towards the target.</p></li>
                                 <li class="property"><b>Offset angle</b><br><p>Adds an angle degrees offset to gaze direction relative to the target in the direction specified in the <i>Offset direction</i>. In degrees. By default is 0.0.</p>
-                                <li class="property"><b>Offset direction</b><br><p>Direction of the <i>Offset angle</i>> angle. Same directions as target property.</p></li>
+                                <li class="property"><b>Offset direction</b><br><p>Direction of the <i>Offset angle</i> angle. Same directions as target property.</p></li>
                             <h4 class="properties-section">Time</h4>
                                 <li class="property"><b>Start</b><p>Second at which the gaze starts to move to new target.</p></li>
                                 <li class="property"><b>Duration</b><p>Duration time, in seconds, of gaze returned to default direction.</p></li>
@@ -504,9 +504,9 @@
                                 </li>
                                 <li class="property"><b>Arm</b><br><p>What arm is being moved: <i>Left</i>, <i>Right</i>, <i>Both</i>. By the default is the arm of the specified dominant hand.</p></li>
                                 <li><p><u>Optionals</u></p></li>
-                                <li class="property"><b>Base shoulder position</b><br><p>Turning <i>ON</i> permanently changes the position of the shoulder.</p></li>
+                                <li class="property"><b>Base arm location</b><br><p>Turning <i>ON</i> permanently changes the position of the arm.</p></li>
                                 <li class="property"><b>Side</b><br><p>Generic horizontal offset of the chosen point: <i>Left</i>, <i>Right</i>, <i>Slightly Left</i>, <i>Slightly Right</i>.</p></li>
-                                <li class="property"><b>Second location</b><br><p>Same as <i>Arm location</i>. If this property is set, the final point corresponds to the middlepoint between both. Same locations as <i>Arm location</i> property.</p></li>
+                                <li class="property"><b>Second location</b><br><p>Same as <i>Arm location</i>. If this property is set, the final point corresponds to the middle point between both. Same locations as <i>Arm location</i> property.</p></li>
                                 <li class="property"><b>Second side</b><span style="color: orangered;"> *</span><br><p>Generic horizontal offset of the chosen point of the second location. It appears if <i>Second location</i> property is set.</p></li>
                                 <li class="property"><b>Distance</b><br><p>How far from the body the wrist has to be located. 0 means immeasurable close; 1 means maximally arm extended.</p></li>
                                 <li class="property"><b>Displace</b><br><p>Offset direction of the target location.</p>
@@ -642,7 +642,40 @@
                                 <li class="property" style="color:gray"><span style="color: cadetblue;">*</span> It has to be defined for the both hands.</li>
                                 <li><p><u>Optionals</u></p></li>
                                 <li class="property"><b>Distance</b><br><p>Distance between hand targets. 0 is touching; 1 is the arm size.</p></li>
-                                <li class="property"><b>Distance direction</b><br><p>Direction in which to apply the distance. If not provided, defaults to horizontal outwards direction.</p></li>
+                                <li class="property"><b>Distance direction</b><br><p>Direction in which to apply the distance. If not provided, defaults to horizontal outwards direction.</p>
+                                    <details>
+                                        <summary style="padding-left: 1em;"><i>List of directions</i></summary>
+                                        <div class="table">
+                                            <div class="cell"><img class="thumbnail" src="">Up</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down</div>
+                                            <div class="cell"><img class="thumbnail" src="">Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Left In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Left Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Right In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Right Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down In</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Out Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Out Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Out Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down In Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down In Right</div>
+                                        </div>
+                                    </details>
+                                    <p></p>
+                                </li>
 
                             <h4 class="properties-section">Time</h4>
                                 <li class="property"><b>Start</b><p>Second at which the hand/s start/s the movement.</p></li>
@@ -698,12 +731,27 @@
                                         </div>
                                     </details>
                                     <p></p>
-                                  
+                                </li>
                                 <li><p><u>Optionals</u></p></li>
-                                <li class="property"><b>Second direction</b><br><p>If this property is set, the final wrist position corresponds to the middlepoint between both directions.</p></li>
-                                <li class="property"><b>Distance</b><br><p>Meters if the displacement. By default is 0.2m.</p></li>
-                                <li class="property"><b>Curve direction</b><br><p>Defines the curve direction to reach the final position of the wrist. If not specified, the wrist movement follows a straight path.</p></li>
-                                <li class="property"><b>Second curve direction</b><br><p>If this property is set, the final curve motion corresponds to the middlepoint between both directions.</p></li>
+                                <li class="property"><b>Second direction</b><br><p>If this property is set, the final wrist position corresponds to the middle point between both directions.</p></li>
+                                <li class="property"><b>Distance</b><br><p>Meters of the displacement. By default is 0.2m.</p></li>
+                                <li class="property"><b>Curve direction</b><br><p>Defines the curve direction to reach the final position of the wrist. If not specified, the wrist movement follows a straight path.</p>
+                                    <details>
+                                        <summary style="padding-left: 1em;"><i>List of directions</i></summary>
+                                        <div class="table">
+                                            <div class="cell"><img class="thumbnail" src="">Up</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down</div>
+                                            <div class="cell"><img class="thumbnail" src="">Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Up Right</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Left</div>
+                                            <div class="cell"><img class="thumbnail" src="">Down Right</div>
+                                        </div>
+                                    </details>
+                                    <p></p>
+                                </li>
+                                <li class="property"><b>Second curve direction</b><br><p>If this property is set, the final curve motion corresponds to the middle point between both directions.</p></li>
                                 <li class="property"><b>Curve amplitude</b><br><p>Amplitude of the curve motion. In meters.</p></li>
                                 <li class="property"><b>Zig-zag direction</b><span style="color: orangered;"> *</span><br><p>Defines the zig-zag direction to reach the final position of the wrist. If not specified, the wrist movement follows a straight path.</p></li>
                                 <li class="property"><b>Zig-zag amplitude</b><span style="color: orangered;"> *</span><br><p>Amplitude of the zig-zag motion. In meters.</p></li>
@@ -766,7 +814,7 @@
                                     <p></p>
                                   
                                 <li><p><u>Optionals</u></p></li>
-                                <li class="property"><b>Second direction</b><br><p>If this property is set, the final wrist position corresponds to the middlepoint between both directions.</p></li>
+                                <li class="property"><b>Second direction</b><br><p>If this property is set, the final wrist position corresponds to the middle point between both directions.</p></li>
                                 <li class="property"><b>Distance</b><br><p>Radius of the circular displacement in meters.</p></li>
                                 <li class="property"><b>Start angle</b><br><p>Defines the starting angle for the motion within the circle. 0.0 means up; 180 means down. By default is 0.0º.</p></li>
                                 <li class="property"><b>End angle</b><br><p>Defines the finishing angle for the motion within the circle. 0.0 means up; 180 means down. By default is 360.0º.</p></li>
@@ -851,8 +899,8 @@
                                 </li>  
                                 
                                 <li><p><u>Optionals</u></p></li>
-                                <li class="property"><b>Base orientation</b><br><p>Turning <i>ON</i> permanently changes the hand's rotation.</p></li>
-                                <li class="property"><b>Second direction</b><br><p>If this property is set, the final orientation corresponds to the middlepoint between both directions.</p></li>
+                                <li class="property"><b>Base orientation</b><br><p>Turning <i>ON</i> permanently changes the palm's rotation.</p></li>
+                                <li class="property"><b>Second direction</b><br><p>If this property is set, the final orientation corresponds to the middle point between both directions.</p></li>
 
                             <h4 class="properties-section">Time</h4>
                                 <li class="property"><b>Start</b><p>Second at which the wrist starts the rotation.</p></li>
@@ -893,8 +941,8 @@
                                 </li>  
                                 
                                 <li><p><u>Optionals</u></p></li>
-                                <li class="property"><b>Base orientation</b><br><p>Turning <i>ON</i> permanently changes the palm's orientation.</p></li>
-                                <li class="property"><b>Second direction</b><br><p>If this property is set, the final orientation corresponds to the middlepoint between both directions.</p></li>
+                                <li class="property"><b>Base orientation</b><br><p>Turning <i>ON</i> permanently changes the hand's orientation.</p></li>
+                                <li class="property"><b>Second direction</b><br><p>If this property is set, the final orientation corresponds to the middle point between both directions.</p></li>
 
                             <h4 class="properties-section">Time</h4>
                                 <li class="property"><b>Start</b><p>Second at which the wrist starts the rotation.</p></li>
@@ -976,13 +1024,13 @@
                 <!-- Hand shape clip -->
                 <li>
                     <h3 id="handshape">Hand shape</h3>
-                    <p>Specifies the posture of the fingers of the hand,</p>
+                    <p>Specifies the posture of the fingers of the hand.</p>
                     <div style="display: flex; justify-content: space-between; align-items: flex-start;">
                         <div>         
                             <ul>
                                 <li class="property"><b>Id</b><br><p>Identifier name. The default value is <i>Handshape</i>.</p></li>
                             <h4 class="properties-section">Content</h4>
-                                <li class="property"><b>Hand</b><br><p>From which hand the fingers are being specified: <i>Left</i>, <i>Right</i>, <i>Both</i>. By the default is the arm of the specified dominant hand.</p>
+                                <li class="property"><b>Hand</b><br><p>From which hand the fingers are being configured: <i>Left</i>, <i>Right</i>, <i>Both</i>. By the default is the arm of the specified dominant hand.</p>
                                 <li class="property"><b>Hand shape</b><br><p>Configuration of the hand from the available list. Fingers are represented as numbers, 1 means <i>thumb</i>; 5 means <i>pinky</i>.</p>
                                     <details>
                                         <summary style="padding-left: 1em;"><i>List of hand shapes</i></summary>
@@ -1006,10 +1054,9 @@
                                 
                                 <li><p><u>Optionals</u></p></li>
                                 <li class="property"><b>Base shape</b><br><p>Turning <i>ON</i> permanently changes the hand shape.</p></li>
-                                <li class="property"><b>Thumb shape</b><br><p>Specific posture of the thumb finger. It overwirtes the hand shape configuration for this finger. If not specified, the predefined hand shape will be used.</p></li>
-                                <li class="property"><b>Thumb combination opening</b><br><p> Distance between the thumb and the other fingers. Expressed on a scale of 0 to 1, where 0 signifies close proximity; 1 indicates maximum separation.</p>
+                                <li class="property"><b>Thumb shape</b><br><p>Specific posture of the thumb finger. It overwrites the hand shape configuration for this finger. If not specified, the predefined hand shape will be used.</p>
                                     <details>
-                                        <summary style="padding-left: 1em;"><i>List of thumb combination hand shapes</i></summary>
+                                        <summary style="padding-left: 1em;"><i>List of thumb shapes</i></summary>
                                         <div class="table">
                                             <div class="cell"><img class="thumbnail" src="">Default</div>
                                             <div class="cell"><img class="thumbnail" src="">Out</div>
@@ -1019,7 +1066,8 @@
                                         </div>
                                     </details>
                                     <p></p>
-                                </li>                        
+                                </li>
+                                <li class="property"><b>Thumb combination opening</b><br><p> Distance between the thumb and the other fingers. Expressed on a scale of 0 to 1, where 0 signifies close proximity; 1 indicates maximum separation.</p></li>                        
                                 <li class="property"><b>Main splay</b><span style="color: orangered;">*</span><br><p>Distance between fingers. Expressed on a scale of 0 to 1, where 0 signifies close proximity; 1 indicates maximum separation. By default is 0.5.</p></li>
                                 <li class="property"><b>Main bend</b><br><p>Flexion applied to chosen fingers from the default hand shape. Basic hand shapes and thumb combination hand shapes have distinct behavior.</p>
                                     <details>
@@ -1037,8 +1085,8 @@
                                     <p></p>
                                 </li>
 
-                                <li class="property"><b>Second hand shape</b><br><p>Second configuration of the hand from the available lis.</p>
-                                <li class="property"><b>Second hhumb shape</b><br><p>Second posture of the thumb finger.</p></li>
+                                <li class="property"><b>Second hand shape</b><br><p>Second configuration of the hand from the available list.</p>
+                                <li class="property"><b>Second thumb shape</b><br><p>Second posture of the thumb finger.</p></li>
                                 <li class="property"><b>Second thumb combination opening</b><br><p>Second distance between the thumb and the other fingers.</p>
                                 <li class="property"><b>Second main bend</b><br><p>Second flexion applied to chosen fingers from the default hand shape.</p>
                                 
@@ -1069,9 +1117,9 @@
                             <ul>
                                 <li class="property"><b>Id</b><br><p>Identifier name. The default value is <i>Body movement</i>.</p></li>
                             <h4 class="properties-section">Content</h4>
-                                <li class="property"><b>Movement</b><br><p>Which movement the body perfomrs from the available list.</p>
+                                <li class="property"><b>Movement</b><br><p>Which movement the body performs from the available list.</p>
                                     <details>
-                                        <summary style="padding-left: 1em;"><i>List of bend states</i></summary>
+                                        <summary style="padding-left: 1em;"><i>List of movements</i></summary>
                                         <div class="table">
                                             <div class="cell"><img class="thumbnail" src="">Tilt forward</div>
                                             <div class="cell"><img class="thumbnail" src="">Tilt backward</div>
@@ -1090,7 +1138,7 @@
                                 <li class="property"><b>Duration</b><p>Duration time, in seconds, of the body returned to default posture.</p></li>
                             <h4 class="properties-section">Sync-point</h4>
                                 <li class="property"><b>Attack Peak</b><p>Second at which the movement peak is acquired. In the interval [0, duration].</p></li>
-                                <li class="property"><b>Relax</b><p>Second at which the body start returning to default posture. In the interval [0, duration].</p></li>
+                                <li class="property"><b>Relax</b><p>Second at which the body starts returning to default posture. In the interval [0, duration].</p></li>
                             </ul>
                         </div>
                     </div>
