@@ -152,7 +152,7 @@ class BMLController {
         //manage bml blocks sync
         let dt = 1.0/timeline.framerate;
         let times = [];
-        let values = [];
+        let values = {};
         let transformations = {};
 
         for(let time = 0; time < timeline.duration; time+= dt){
@@ -161,10 +161,13 @@ class BMLController {
             this.ECAcontroller.update(dt, time);
 
             //get computed bs weights
-            let bs = [];
-            this.ECAcontroller.facialController._morphTargets.BodyMesh.morphTargetInfluences.map( x => bs.push(x));
-            values.push(bs);
-
+            for(let skinnedMesh in this.morphDictionary) {
+                let bs = [];
+                this.ECAcontroller.facialController._morphTargets[skinnedMesh].morphTargetInfluences.map( x => bs.push(x));
+                if(!values[skinnedMesh])
+                    values[skinnedMesh] = [];
+                values[skinnedMesh].push(bs);
+            }
             //get computed position and rotation of each bone
             this.ECAcontroller.bodyController.skeleton.bones.map( x => {
                 if(!transformations[x.name]) 
@@ -179,16 +182,23 @@ class BMLController {
         //create clip animation from computed weights, positions and rotations by character controller
 
         //convert blendshapes' weights to animation clip
-        for(let morph in this.morphDictionary){
-            let i = this.morphDictionary[morph];
-            let v = [];
-            values.forEach(element => {
-                v.push(element[i]);
-            });
-
-            for(let mesh of this.skinnedMeshes)
-            {
+        for(let skinnedMesh in this.morphDictionary) {
+        
+            for(let morph in this.morphDictionary[skinnedMesh]){
+                let i = this.morphDictionary[skinnedMesh][morph];
+                let v = [];
+                if(!values[skinnedMesh]) {
+                    console.error("Character skinned mesh not found:", skinnedMesh);
+                    continue
+                }
+                
+                values[skinnedMesh].forEach(element => {
+                    v.push(element[i]);
+                });
+                const mesh = this.skinnedMeshes[skinnedMesh];
+                
                 tracks.push(new THREE.NumberKeyframeTrack(mesh.name + '.morphTargetInfluences['+ morph +']', times, v));                
+                
             }
         }
 

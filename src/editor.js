@@ -51,7 +51,7 @@ class Editor {
         this.mode = this.eModes[mode];
         
         this.animation = null; //ThreeJS animation (only bones in keyframing mode) : {values: [], times: []}
-        this.morphTargets = null;
+        this.morphTargets = {};
 
         // Keep "private"
         this.__app = app;
@@ -605,11 +605,11 @@ class Editor {
                 let LOCAL_STORAGE = 1;
                 if(this.mode == this.eModes.script) {
                     BVHExporter.export(this.mixer._actions[0], this.skeletonHelper, this.animation, LOCAL_STORAGE );
-                    BVHExporter.exportMorphTargets(this.mixer._actions[0], this.morphTargets, this.animation, LOCAL_STORAGE);
+                    BVHExporter.exportMorphTargets(this.mixer._actions[0], this.morphTargets.BodyMesh, this.animation, LOCAL_STORAGE);
                 }
                 else {
                     BVHExporter.export(this.mixer._actions[0], this.skeletonHelper, this.bodyAnimation, LOCAL_STORAGE);
-                    BVHExporter.exportMorphTargets(this.mixer._actions[1], this.morphTargets, this.animation, LOCAL_STORAGE);
+                    BVHExporter.exportMorphTargets(this.mixer._actions[1], this.morphTargets.BodyMesh, this.animation, LOCAL_STORAGE);
                 }
                 
                 let bvh = window.localStorage.getItem("bvhskeletonpreview");
@@ -695,8 +695,7 @@ class KeyframeEditor extends Editor{
 
         this.video = document.getElementById("recording");
         this.video.startTime = 0;
-    
-        
+ 
     }
 
     /** -------------------- CREATE ANIMATIONS FROM MEDIAPIPE -------------------- */
@@ -734,13 +733,15 @@ class KeyframeEditor extends Editor{
 
                         if (object.name == "Eyelashes")
                             object.castShadow = false;
+                        else if (object.name == "Body")
+                            object.name == "BodyMesh";
 
                         if(object.material.map)
                             object.material.map.anisotropy = 16; 
 
                         this.help = object.skeleton;
                         if(object.morphTargetDictionary)
-                            this.morphTargets = object.morphTargetDictionary;
+                            this.morphTargets[object.name] = object.morphTargetDictionary;
                         
                     } else if (object.isBone) {
                         object.scale.set(1.0, 1.0, 1.0);
@@ -945,12 +946,12 @@ class KeyframeEditor extends Editor{
         }
         
         // Load the target model (Eva) 
-        UTILS.loadGLTF("models/Eva_Y.glb", (gltf) => {
+        UTILS.loadGLTF("models/EvaHandsEyesFixed.glb", (gltf) => {
             let model = gltf.scene;
             model.name = this.character;
             model.visible = true;
             
-            let skinnedMeshes = [];
+            let skinnedMeshes = {};
             model.traverse( o => {
                 if (o.isMesh || o.isSkinnedMesh) {
                     o.castShadow = true;
@@ -959,10 +960,12 @@ class KeyframeEditor extends Editor{
                     if ( o.skeleton ){ 
                         this.skeleton = o.skeleton;
                     }
+                    if (o.name == "Body")
+                            o.name == "BodyMesh";
                     if(o.morphTargetDictionary)
                     {
-                        this.morphTargets = o.morphTargetDictionary;
-                        skinnedMeshes.push(o);
+                        this.morphTargets[o.name] = o.morphTargetDictionary;
+                        skinnedMeshes[o.name] = o;
                     }
                     o.material.side = THREE.FrontSide;
                     
@@ -1410,8 +1413,8 @@ class ScriptEditor extends Editor{
         this.dominantHand = "Right";
         
         this.blendshapesManager = null;
-  
-    	this.onDrawTimeline = null;
+
+        this.onDrawTimeline = null;
 	    this.onDrawSettings = null;
 
         this.activeTimeline = null;
@@ -1427,7 +1430,7 @@ class ScriptEditor extends Editor{
             model.name = this.character;
             model.visible = true;
             
-            let skinnedMeshes = [];
+            let skinnedMeshes = {};
              model.traverse( (object) => {
                     if ( object.isMesh || object.isSkinnedMesh ) {
                         object.material.side = THREE.FrontSide;
@@ -1437,15 +1440,16 @@ class ScriptEditor extends Editor{
 
                         if (object.name == "Eyelashes")
                             object.castShadow = false;
-
+                        else if (object.name == "Body")
+                            object.name == "BodyMesh";
                         if(object.material.map)
                             object.material.map.anisotropy = 16; 
 
                         this.help = object.skeleton;
-                        if(object.morphTargetDictionary && object.name == "BodyMesh") {
+                        if(object.morphTargetDictionary ) {
 
-                            this.morphTargets = object.morphTargetDictionary;
-                            skinnedMeshes.push(object)
+                            this.morphTargets[object.name] = object.morphTargetDictionary;
+                            skinnedMeshes[object.name] = object;
                         }
                         
                     } else if (object.isBone) {

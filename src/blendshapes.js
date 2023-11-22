@@ -2,7 +2,7 @@ import * as THREE from 'three'
 
 class BlendshapesManager {
 
-    constructor(skinnedMeshes = [], morphTargetDictionary, mapNames ) {
+    constructor(skinnedMeshes = {}, morphTargetDictionary, mapNames ) {
 
         this.mapNames = mapNames;
         this.skinnedMeshes = skinnedMeshes;
@@ -215,11 +215,11 @@ class BlendshapesManager {
             else
             {
                 
-                for(let mesh of this.skinnedMeshes)
+                for(let mesh in this.skinnedMeshes)
                 {
-                    let mtIdx = this.morphTargetDictionary[bs]
+                    let mtIdx = this.morphTargetDictionary[mesh][bs]
                     if(mtIdx>-1)
-                        tracks.push( new THREE.NumberKeyframeTrack(mesh.name +'.morphTargetInfluences['+ bs + ']', times, clipData[bs]) );
+                        tracks.push( new THREE.NumberKeyframeTrack(this.skinnedMeshes[mesh].name +'.morphTargetInfluences['+ bs + ']', times, clipData[bs]) );
 
                 }
             }
@@ -263,10 +263,10 @@ class BlendshapesManager {
             map = [map];
         }
     
-        for(let mesh of this.skinnedMeshes) {
+        for(let mesh in this.skinnedMeshes) {
 
             for(let i = 0; i < map.length; i++) {
-                bs.push(mesh.name +'.morphTargetInfluences['+ map[i] + ']');
+                bs.push(this.skinnedMeshes[mesh].name +'.morphTargetInfluences['+ map[i] + ']');
             }
         }
         return bs;
