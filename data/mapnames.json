@@ -223,5 +223,80 @@
             "RightEyePitch": null,
             "RightEyeRoll": null
         }
-    }
+    },
+
+    "mediapipe2AU" : { 
+     
+        "EyeBlinkLeft": "Wink_Left",
+        "EyeLookDownLeft": "Wink_Left",
+        "EyeLookInLeft": null,
+        "EyeLookOutLeft": null,
+        "EyeLookUpLeft": "Upper_Lip_Raiser_Left",
+        "EyeSquintLeft": "Squint_Left",
+        "EyeWideLeft": "Upper_Lip_Raiser_Left",
+
+        "EyeBlinkRight": "Wink_Right",
+        "EyeLookDownRight": "Wink_Right",
+        "EyeLookInRight": null,
+        "EyeLookOutRight": null,
+        "EyeLookUpRight": "Upper_Lid_Raiser_Right",
+        "EyeSquintRight": "Squint_Right",
+        "EyeWideRight": "Upper_Lid_Raiser_Right",
+
+        "JawForward": "Jaw_Thrust",
+        "JawLeft": "Jaw_Sideways_Left",
+        "JawRight": "Jaw_Sideways_Right",
+        "JawOpen": "Jaw_Drop",
+
+        "MouthClose": null,
+        "MouthFunnel": "Lip_Funneler",
+        "MouthPucker": ["Lip_Puckerer_Left", "Lip_Puckerer_Right"],
+        "MouthRight": "Lip_Puckerer_Right",
+        "MouthLeft": "Lip_Puckerer_Left",
+        "MouthSmileLeft": "Lip_Corner_Puller_Left",
+        "MouthSmileRight": "Lip_Corner_Puller_Right",
+        "MouthFrownLeft": "Lip_Corner_Depressor_Left",
+        "MouthFrownRight": "Lip_Corner_Depressor_Right",
+        "MouthDimpleLeft": "Dimpler_Left",
+        "MouthDimpleRight": "Dimpler_Right",
+        "MouthStretchLeft": "Lip_Stretcher_Left",
+        "MouthStretchRight": "Lip_Stretcher_Right",
+
+        "MouthRollLower": "Lip_Suck_Lower",
+        "MouthRollUpper": "Lip_Suck_Upper",
+        "MouthShrugLower": ["Lower_Lip_Depressor_Left", "Lower_Lip_Depressor_Right"],
+        "MouthShrugUpper": ["Upper_Lip_Raiser_Left", "Upper_Lip_Raiser_Right"],
+        "MouthPressLeft": "Lip_Pressor_Left",
+        "MouthPressRight": "Lip_Pressor_Right",
+        "MouthLowerDownLeft": "Lower_Lip_Depressor_Left",
+        "MouthLowerDownRight": "Lower_Lip_Depressor_Right",
+        "MouthUpperUpLeft": "Upper_Lip_Raiser_Left",
+        "MouthUpperUpRight": "Upper_Lip_Raiser_Right",
+
+        "BrowDownLeft": "Brow_Lowerer_Left",
+        "BrowDownRight": "Brow_Lowerer_Right",
+        "BrowInnerUp": "Inner_Brow_Raiser",
+        "BrowOuterUpLeft": "Outer_Brow_Raiser_Left",
+        "BrowOuterUpRight": "Outer_Brow_Raiser_Right",
+        
+        "CheekPuff": ["Cheek_Blow_Left", "Cheek_Blow_Right"],
+        "CheekSquintLeft": "Cheek_Raiser_Left",
+        "CheekSquintRight": "Cheek_Raiser_Right",
+        "NoseSneerLeft": "Nose_Wrinkler_Left",
+        "NoseSneerRight": "Nose_Wrinkler_Right",
+
+        "TongueOut": "Tongue_Show",
+
+        "HeadYaw": null,
+        "HeadPitch": null,
+        "HeadRoll": null,
+
+        "LeftEyeYaw": null,
+        "LeftEyePitch": null,
+        "LeftEyeRoll": null,
+
+        "RightEyeYaw": null,
+        "RightEyePitch": null,
+        "RightEyeRoll": null
+    } 
 }

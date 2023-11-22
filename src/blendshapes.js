@@ -2,9 +2,10 @@ import * as THREE from 'three'
 
 class BlendshapesManager {
 
-    constructor(skinnedMeshes = {}, morphTargetDictionary, mapNames ) {
+    constructor(skinnedMeshes = {}, morphTargetDictionary, mapNames, config ) {
 
         this.mapNames = mapNames;
+        this.au2bs = config.faceController.blendshapeMap;
         this.skinnedMeshes = skinnedMeshes;
         this.morphTargetDictionary = morphTargetDictionary;
         this.faceAreas =  [
@@ -169,27 +170,37 @@ class BlendshapesManager {
                         continue;
                 }
                 else if (typeof(map) == 'string'){
-                    if(!clipData[map])
-                    {
-                        clipData[map] = [];
-                        clipData[map].length = data.length;
-                        clipData[map].fill(0);
+                    let au2bs = this.au2bs[map]
+                    for(let bs = 0; bs < au2bs.length; bs++ ){
+                        const name = au2bs[bs][0]
+                        const w = au2bs[bs][1];
+                        if(!clipData[name])
+                        {
+                            clipData[name] = [];
+                            clipData[name].length = data.length;
+                            clipData[name].fill(0);
+                        }
+                        //overwirting value
+                        value*=w;
+                        clipData[name][idx] = Math.max(clipData[name][idx], value );
                     }
-                    if(map.includes("Blink"))
-                        value*=0.75;
-                    clipData[map][idx] = Math.max(clipData[map][idx], value );
                 }
                 else if( typeof(map) == 'object'){
                     for(let j = 0; j < map.length; j++){
-                        if(!clipData[map[j]])
-                        {
-                            clipData[map[j]] = [];
-                            clipData[map[j]].length = data.length;
-                            clipData[map[j]].fill(0);
+                        let au2bs = this.au2bs[map[j]]
+                        for(let bs = 0; bs < au2bs.length; bs++ ){
+                            const name = au2bs[bs][0]
+                            const w = au2bs[bs][1];
+                            if(!clipData[name])
+                            {
+                                clipData[name] = [];
+                                clipData[name].length = data.length;
+                                clipData[name].fill(0);
+                            }
+                            //overwirting value
+                            value*=w;
+                            clipData[name][idx] = Math.max(clipData[name][idx], value );
                         }
-                        if(map[j].includes("Blink"))
-                            value*=0.75;
-                        clipData[map[j]][idx] = Math.max(clipData[map[j]][idx], value );; 
                     }
                 }
             
@@ -257,16 +268,25 @@ class BlendshapesManager {
 
     getBlendshapesMap = function(name) {
         let map = this.mapNames[name];
-        if(!map) return [];
         let bs = [];
-        if(typeof map == 'string') {
+        
+        if(!map) 
+            return bs;
+        else if (typeof map == 'string')
             map = [map];
-        }
-    
-        for(let mesh in this.skinnedMeshes) {
+   
+        for(let j = 0; j < map.length; j++) {
 
-            for(let i = 0; i < map.length; i++) {
-                bs.push(this.skinnedMeshes[mesh].name +'.morphTargetInfluences['+ map[i] + ']');
+            let au2bs = this.au2bs[map[j]]
+            // if(typeof au2bs == 'string') {
+            //     au2bs = [au2bs];
+            // }
+        
+            for(let mesh in this.skinnedMeshes) {
+    
+                for(let i = 0; i < au2bs.length; i++) {
+                    bs.push(this.skinnedMeshes[mesh].name +'.morphTargetInfluences['+ au2bs[i][0] + ']');
+                }
             }
         }
         return bs;

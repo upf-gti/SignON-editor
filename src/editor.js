@@ -15,6 +15,7 @@ import { BMLController } from "./controller2.js"
 import { BlendshapesManager } from "./blendshapes.js"
 
 // const MapNames = await import('../data/mapnames.json', {assert: { type: 'json' }});
+const config = await (await fetch('src/libs/bml/EvaHandsEyesFixedConfig.json')).json();
 const MapNames = await (await fetch('./data/mapnames.json')).json();
 // Correct negative blenshapes shader of ThreeJS
 THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
@@ -318,7 +319,6 @@ class Editor {
         // this.gui.currentTime = t;
         if(this.state && !force)
             return;
-
         this.mixer.setTime(t*this.mixer.timeScale);
         this.mixer.update(0);
     }
@@ -689,7 +689,7 @@ class KeyframeEditor extends Editor{
         this.retargeting = new AnimationRetargeting();
         this.video = app.video;
         
-        this.mapNames = MapNames.map_llnames[this.character];
+        this.mapNames = MapNames.mediapipe2AU;//MapNames.map_llnames[this.character];
         this.mode = this.eModes[mode];
         this.gui = new KeyframesGui(this);
 
@@ -995,7 +995,7 @@ class KeyframeEditor extends Editor{
             this.skeletonHelper.skeleton = this.skeleton; //= createSkeleton();
 
             //Create face animation from mediapipe blendshapes
-            this.blendshapesManager = new BlendshapesManager(skinnedMeshes, this.morphTargets, this.mapNames);
+            this.blendshapesManager = new BlendshapesManager(skinnedMeshes, this.morphTargets, this.mapNames, config);
             let anim = this.blendshapesManager.createAnimationFromBlendshapes("au-animation", this.blendshapesArray);
             this.faceAnimation = anim[0];
             this.auAnimation = anim[1];
@@ -1108,7 +1108,7 @@ class KeyframeEditor extends Editor{
     // Stop all animations 
     onStop() {
 
-        this.gizmo.updateBones(t);
+        this.gizmo.updateBones(0);
         if(this.video.sync) {
             this.video.pause();
             this.video.currentTime = this.video.startTime;
