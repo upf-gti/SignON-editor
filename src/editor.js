@@ -1442,7 +1442,7 @@ class ScriptEditor extends Editor{
                             object.material.map.anisotropy = 16; 
 
                         this.help = object.skeleton;
-                        if(object.morphTargetDictionary) {
+                        if(object.morphTargetDictionary && object.name == "BodyMesh") {
 
                             this.morphTargets = object.morphTargetDictionary;
                             skinnedMeshes.push(object)
