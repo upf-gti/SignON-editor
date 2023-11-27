@@ -3185,6 +3185,7 @@
             if( !this.disabled )
             {
                 wValue = document.createElement('input');
+                wValue.type = options.type || "";
                 wValue.value = wValue.iValue = value || "";
                 wValue.style.width = "100%";
                 wValue.style.textAlign = options.float ?? "";
