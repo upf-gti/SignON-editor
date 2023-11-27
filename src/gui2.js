@@ -363,7 +363,7 @@ class Gui {
             p.addText(null, "Be sure you have exported the animation. If you exit now, your data will be lost. How would you like to proceed?", null, {disabled: true});
             p.addButton(null, "Export", () => {
                 p.clear();
-                p.addString("File name", this.editor.clipName, (v) => this.editor.clipName = v);
+                p.addText("File name", this.editor.clipName, (v) => this.editor.clipName = v);
                 p.addButton(null, "Export extended BVH", () => this.editor.export("BVH extended", this.editor.clipName));
                 if(this.editor.mode == this.editor.eModes.script) {
                     p.addButton( null, "Export BML", () => this.editor.export("", this.editor.clipName ));
@@ -1602,7 +1602,7 @@ class ScriptGui extends Gui {
 
     init() {
         this.createSidePanel();
-        this.updateMenubar()
+        this.updateMenubar();
         if(!this.duration)
             this.showGuide();
         this.showTimeline();
