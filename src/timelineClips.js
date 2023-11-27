@@ -3799,7 +3799,7 @@ CircularMotionClip.prototype.showInfo = function(panel, callback)
 			callback();
 	}, {precision: 2, step: 0.1});
 
-	panel.addString(null, "Define an ellipse motion", null, {disabled: true});
+	panel.addText(null, "Define an ellipse motion", null, {disabled: true});
 
 	panel.addDropdown("Ellipse axis direction", [" ", ...CircularMotionClip.second_directions], this.properties.ellipseAxisDirection, (v, e, name) => {
 				
