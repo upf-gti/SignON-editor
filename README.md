@@ -1,3 +1,6 @@
+> [!IMPORTANT]  
+> This GitHub repository serves as a legacy archive, marking the culmination of past contributions within the SignON European project. A new repository has been created to build upon this foundation, where ongoing work and advancements can be found. Please visit the successor repository ([here](https://github.com/upf-gti/animics)) to stay up-to-date with the latest developments.
+
 # SignON-editor
 
 This web application estimates computer animations from a single-camera input video. It is hosted in this [link](https://webglstudio.org/projects/signon/animations_editor/).
